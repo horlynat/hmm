@@ -1,0 +1,35 @@
+<div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200 mx-auto">
+	{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
+
+	<div class="grid grid-cols-1 gap-6">
+		<div>
+			{{ form_label(form.title, 'Titre de l\'article', {'label_attr': {'class': 'block text-sm font-semibold text-slate-700 mb-2'}}) }}
+            {{ form_widget(form.title, {'attr': {'class': 'w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all'}}) }}
+            {{ form_errors(form.title, {'attr': {'class': 'text-red-600 text-xs mt-1'}}) }}
+        </div>
+
+        <div>
+            {{ form_label(form.content, 'Contenu complet', {'label_attr': {'class': 'block text-sm font-semibold text-slate-700 mb-2'}}) }}
+            {{ form_widget(form.content, {'attr': {'class': 'w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none h-40 transition-all'}}) }}
+            {{ form_errors(form.content, {'attr': {'class': 'text-red-600 text-xs mt-1'}}) }}
+        </div>
+
+        <div>
+            {{ form_label(form.tags, 'Catégories / Tags', {'label_attr': {'class': 'block text-sm font-semibold text-slate-700 mb-2'}}) }}
+            {{ form_widget(form.tags, {'attr': {'class': 'w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none'}}) }}
+            <p class="text-xs text-slate-400 mt-2">Maintenez la touche Ctrl (ou Cmd) pour sélectionner plusieurs tags.</p>
+            {{ form_errors(form.tags, {'attr': {'class': 'text-red-600 text-xs mt-1'}}) }}
+        </div>
+    </div>
+
+    <div class="pt-4 border-t border-slate-100 flex justify-end">
+        <button type="submit" 
+                {# onclick="this.disabled=true; this.innerText='Enregistrement...'; this.form.submit();" #}
+
+                class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-blue-200 transition-all flex items-center space-x-2">
+            <span class="material-icons text-sm">save</span>
+            <span>{{ button_label|default('Enregistrer l\'article') }}</span>
+	</button>
+</div>
+
+{{ form_end(form) }}</div>

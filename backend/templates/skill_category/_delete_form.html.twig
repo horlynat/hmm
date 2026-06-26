@@ -1,0 +1,8 @@
+<form method="post" action="{{ path('skill_category_delete', {'id': skill_category.id}) }}" onsubmit="return confirm('Voulez-vous vraiment supprimer cette catégorie de compétences ?');" class="inline-block">
+	<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ skill_category.id) }}">
+	<button class="px-5 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg shadow hover:scale-105 transform transition flex items-center space-x-2">
+		<span class="material-icons">delete_forever</span>
+		<span>Supprimer</span>
+	</button>
+</form>
+

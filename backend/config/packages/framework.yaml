@@ -1,0 +1,33 @@
+framework:
+    secret: '%env(APP_SECRET)%'
+
+    # Sessions sécurisées
+    session:
+        cookie_secure: auto
+        cookie_samesite: strict
+        cookie_httponly: true
+        handler_id: null
+
+    # Protection CSRF
+    csrf_protection: true
+
+    # Rate limiter (API abuse uniquement, login supprimé)
+    rate_limiter:
+        login:
+            policy: fixed_window
+            limit: 5
+            interval: '1 minute'
+        api:
+            policy: sliding_window
+            limit: 100
+            interval: '1 minute'
+
+    # HTTP cache et fragments (désactivés par défaut)
+    # esi: true
+    # fragments: true
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file

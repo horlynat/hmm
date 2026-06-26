@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<title>Register</title>
+		<script src="https://cdn.tailwindcss.com"></script>
+		<style>
+			/* Animation underline depuis le centre */
+			.input-underline {
+				position: relative;
+			}
+			.input-underline input {
+				border: none;
+				border-bottom: 2px solid transparent;
+				outline: none;
+				width: 100%;
+				padding: 0.75rem 2.5rem; /* espace pour icône */
+			}
+			.input-underline .focus-line {
+				position: absolute;
+				bottom: 0;
+				left: 50%;
+				height: 2px;
+				width: 0;
+				background-color: #1e3a8a; /* blue-900 */
+				transition: all 0.3s ease;
+				transform: translateX(-50%);
+			}
+			.input-underline input:focus ~ .focus-line {
+				width: 100%;
+			}
+			.input-underline .icon {
+				position: absolute;
+				left: 0.5rem;
+				top: 50%;
+				transform: translateY(-50%);
+				color: #1e3a8a;
+			}
+		</style>
+	</head>
+	<body class="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 font-sans">
+
+		<div class="min-h-screen flex items-center justify-center">
+			<div class="w-full max-w-md bg-white/90 backdrop-blur-md shadow-2xl rounded-xl p-8">
+
+				{% for flash_error in app.flashes('verify_email_error') %}
+					<div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg border border-red-300">
+						{{ flash_error }}
+					</div>
+				{% endfor %}
+
+				<h1 class="text-3xl font-extrabold text-blue-900 mb-6 text-center">🚀 Créer un compte</h1>
+
+				{{ form_start(registrationForm, {'attr': {'class': 'space-y-6'}}) }}
+
+				<!-- Champ Email -->
+				<div class="input-underline">
+					<span class="icon">📧</span>
+					{{ form_label(registrationForm.email, null, {'label_attr': {'class': 'block text-gray-700 font-medium mb-1'}}) }}
+					{{ form_widget(registrationForm.email, {
+                'attr': {
+                    'class': 'w-full',
+                    'autocomplete': 'email',
+                    'required': true
+                }
+            }) }}
+					<span class="focus-line"></span>
+					{% if registrationForm.email.vars.errors|length %}
+						<p class="text-red-500 text-sm mt-1">{{ form_errors(registrationForm.email) }}</p>
+					{% endif %}
+				</div>
+
+				<!-- Champ Mot de passe -->
+				<div class="input-underline">
+					<span class="icon">🔑</span>
+					{{ form_label(registrationForm.plainPassword, 'Mot de passe', {'label_attr': {'class': 'block text-gray-700 font-medium mb-1'}}) }}
+					{{ form_widget(registrationForm.plainPassword, {
+                'attr': {
+                    'class': 'w-full',
+                    'autocomplete': 'new-password',
+                    'required': true
+                }
+            }) }}
+					<span class="focus-line"></span>
+					{% if registrationForm.plainPassword.vars.errors|length %}
+						<p class="text-red-500 text-sm mt-1">{{ form_errors(registrationForm.plainPassword) }}</p>
+					{% endif %}
+				</div>
+
+				<!-- Conditions -->
+				<div class="flex items-center space-x-2">
+					{{ form_widget(registrationForm.agreeTerms, {
+                'attr': {'class': 'h-4 w-4 text-blue-900 border-gray-300 rounded focus:ring-blue-900'}
+            }) }}
+					<label class="text-sm text-gray-600">J’accepte les conditions d’utilisation</label>
+					{% if registrationForm.agreeTerms.vars.errors|length %}
+						<p class="text-red-500 text-sm mt-1">{{ form_errors(registrationForm.agreeTerms) }}</p>
+					{% endif %}
+				</div>
+
+				<!-- Bouton -->
+				<button type="submit" class="w-full bg-blue-900 text-white font-semibold py-3 rounded-lg shadow-lg hover:from-blue-800 hover:to-blue-600 transition transform hover:scale-[1.01]">
+					✅ S’inscrire
+				</button>
+
+				{{ form_end(registrationForm) }}
+
+				<!-- Lien vers connexion -->
+				<p class="mt-6 text-center text-sm text-gray-500">
+					Déjà inscrit ?
+					<a href="{{ path('login') }}" class="text-blue-900 font-semibold hover:underline">Connectez-vous</a>
+				</p>
+			</div>
+		</div>
+	</body>
+</html>
