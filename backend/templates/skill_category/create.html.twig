@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des catégories de compétences
+{% endblock %}
+
+{% block body %}
+	<main
+		class="p-8 bg-gray-50 min-h-screen">
+
+		<!-- Header -->
+		<div class="flex justify-between items-center mb-8">
+			<h1 class="text-2xl font-bold text-gray-800 flex items-center space-x-2">
+				<span class="material-icons text-orange-600">category</span>
+				<span>Ajouter une nouvelle catégorie de compétences</span>
+			</h1>
+			<a href="{{ path('skill_category_index') }}" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition flex items-center space-x-2">
+				<span class="material-icons">arrow_back</span>
+				<span>Retour à la liste</span>
+			</a>
+		</div>
+
+		<!-- Formulaire -->
+		{% include 'skill_category/_form.html.twig' %}
+
+	</main>
+{% endblock %}
+

@@ -1,0 +1,158 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block body %}
+
+<main class="flex-1 p-8 space-y-8">
+
+    <!-- Cards KPI -->
+    <section class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
+        
+        <!-- Projets réalisés -->
+        <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+            <h2 class="text-sm text-gray-500 flex items-center">
+                <span class="material-icons text-green-600 mr-2">check_circle</span> Projets réalisés
+            </h2>
+            <p class="text-2xl font-bold text-gray-800">24</p>
+            <span class="text-green-600 text-sm">+3 ce mois</span>
+        </div>
+
+        <!-- Projets en cours -->
+        <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+            <h2 class="text-sm text-gray-500 flex items-center">
+                <span class="material-icons text-blue-600 mr-2">autorenew</span> Projets en cours
+            </h2>
+            <p class="text-2xl font-bold text-gray-800">5</p>
+            <span class="text-blue-600 text-sm">Suivi actif</span>
+        </div>
+
+        <!-- Projets à venir -->
+        <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+            <h2 class="text-sm text-gray-500 flex items-center">
+                <span class="material-icons text-yellow-600 mr-2">schedule</span> Projets à venir
+            </h2>
+            <p class="text-2xl font-bold text-gray-800">7</p>
+            <span class="text-yellow-600 text-sm">Planifiés</span>
+        </div>
+
+        <!-- Demandes de devis -->
+        <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+            <h2 class="text-sm text-gray-500 flex items-center">
+                <span class="material-icons text-indigo-600 mr-2">request_quote</span> Demandes de devis
+            </h2>
+            
+            <p class="text-2xl font-bold text-gray-800">12</p>
+            <span class="text-indigo-600 text-sm">En attente</span>
+        </div>
+
+        <!-- Collaborations -->
+        <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+            <h2 class="text-sm text-gray-500 flex items-center">
+                <span class="material-icons text-pink-600 mr-2">group_work</span> Collaborations
+            </h2>
+            <p class="text-2xl font-bold text-gray-800">4</p>
+            <span class="text-pink-600 text-sm">Nouvelles demandes</span>
+        </div>
+
+        <!-- Revenus -->
+        <div class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+            <h2 class="text-sm text-gray-500 flex items-center">
+                <span class="material-icons text-green-600 mr-2">attach_money</span> Revenus
+            </h2>
+            <p class="text-2xl font-bold text-gray-800">$18,450</p>
+            <span class="text-green-600 text-sm">+15% ce mois</span>
+        </div>
+    </section>
+
+    <!-- Timeline des projets -->
+    <section class="bg-white p-6 rounded-xl shadow">
+        <h2 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+            <span class="material-icons text-blue-600 mr-2">timeline</span> Timeline des projets
+        </h2>
+        <ul class="space-y-4">
+            <li class="flex items-center">
+                <span class="material-icons text-green-600 mr-2">check_circle</span>
+                <div>
+                    <p class="font-semibold">Site e-commerce terminé</p>
+                    <p class="text-sm text-gray-500">Mai 2026</p>
+                </div>
+            </li>
+            <li class="flex items-center">
+                <span class="material-icons text-blue-600 mr-2">autorenew</span>
+                <div>
+                    <p class="font-semibold">Application mobile en cours</p>
+                    <p class="text-sm text-gray-500">Mai - Juin 2026</p>
+                </div>
+            </li>
+            <li class="flex items-center">
+                <span class="material-icons text-yellow-600 mr-2">schedule</span>
+                <div>
+                    <p class="font-semibold">Plateforme SaaS prévue</p>
+                    <p class="text-sm text-gray-500">Juillet 2026</p>
+                </div>
+            </li>
+        </ul>
+    </section>
+
+    <!-- Tableau des projets -->
+    <section class="bg-white rounded-xl shadow overflow-hidden">
+        <table class="min-w-full text-left">
+            <thead class="bg-gray-100 text-gray-600 uppercase text-sm">
+                <tr>
+                    <th class="px-6 py-3">Projet</th>
+                    <th class="px-6 py-3">Client</th>
+                    <th class="px-6 py-3">Date début</th>
+                    <th class="px-6 py-3">Date fin</th>
+                    <th class="px-6 py-3">Statut</th>
+                    <th class="px-6 py-3">Budget</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4">Site e-commerce</td>
+                    <td class="px-6 py-4">Entreprise X</td>
+                    <td class="px-6 py-4">01/05/2026</td>
+                    <td class="px-6 py-4">20/05/2026</td>
+                    <td class="px-6 py-4 text-green-600 font-semibold">Terminé</td>
+                    <td class="px-6 py-4">$3,200</td>
+                </tr>
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4">Application mobile</td>
+                    <td class="px-6 py-4">Startup Y</td>
+                    <td class="px-6 py-4">15/05/2026</td>
+                    <td class="px-6 py-4">En cours</td>
+                    <td class="px-6 py-4 text-blue-600 font-semibold">En cours</td>
+                    <td class="px-6 py-4">$5,000</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Témoignages -->
+    <section class="bg-white p-6 rounded-xl shadow">
+        <h2 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+            <span class="material-icons text-pink-600 mr-2">chat</span> Témoignages clients
+        </h2>
+        <blockquote class="border-l-4 border-yellow-400 pl-4 italic text-gray-600">
+            "Horlynat a livré un projet exceptionnel, avec une qualité et une réactivité remarquables."
+        </blockquote>
+    </section>
+
+    <!-- CTA rapide -->
+    <section class="flex space-x-4">
+        <button class="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow hover:scale-105 transform transition flex items-center space-x-2">
+            <span class="material-icons">request_quote</span>
+            <span>Demander un devis</span>
+        </button>
+        <button class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg shadow hover:scale-105 transform transition flex items-center space-x-2">
+            <span class="material-icons">event</span>
+            <span>Planifier un rendez-vous</span>
+        </button>
+    </section>
+</main>
+
+</section>
+</main>
+
+{% endblock %}

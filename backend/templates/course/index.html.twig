@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des cours
+{% endblock %}
+
+{% block body %}
+	<main class="p-8 bg-gray-50 min-h-screen">
+
+		<div class="flex justify-between items-center mb-8">
+			<h1 class="text-2xl font-bold text-gray-800 flex items-center space-x-2">
+				<span class="material-icons text-indigo-600">school</span>
+				<span>Gestion des cours</span>
+			</h1>
+			<a href="{{ path('course_create') }}" class="px-5 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg shadow hover:scale-105 transform transition flex items-center space-x-2">
+				<span class="material-icons">add_circle</span>
+				<span>Créer un nouveau cours</span>
+			</a>
+		</div>
+
+		{% for label, messages in app.flashes %}
+			{% for message in messages %}
+				<div class="mb-4 p-4 {% if label == 'success' %}bg-green-100 border-green-400 text-green-700{% else %}bg-red-100 border-red-400 text-red-700{% endif %} border rounded-lg">
+					{{ message }}
+				</div>
+			{% endfor %}
+		{% endfor %}
+
+		<div class="bg-white rounded-xl shadow overflow-hidden">
+			<table class="min-w-full text-left">
+				<thead class="bg-gray-100 text-gray-600 uppercase text-sm sticky top-0">
+					<tr>
+						<th class="px-6 py-3">Id</th>
+						<th class="px-6 py-3">Titre</th>
+						<th class="px-6 py-3">Institution</th>
+						<th class="px-6 py-3">Dates</th>
+						<th class="px-6 py-3">Description</th>
+						<th class="px-6 py-3">Actions</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-gray-200">
+					{% for course in courses %}
+						<tr class="hover:bg-gray-50 transition">
+							<td class="px-6 py-4 text-gray-700">{{ course.id }}</td>
+							<td class="px-6 py-4 font-semibold text-gray-800">{{ course.title }}</td>
+							<td class="px-6 py-4 text-gray-600">{{ course.institution }}</td>
+							<td class="px-6 py-4 text-gray-500 text-sm">
+								{{ course.startDate|date('d/m/y') }}
+								-
+								{{ course.endDate|date('d/m/y') }}
+							</td>
+							<td class="px-6 py-4 text-gray-600 truncate max-w-xs">{{ course.description }}</td>
+							<td class="px-6 py-4 flex space-x-3">
+								<a href="{{ path('course_read', {'id': course.id}) }}" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition flex items-center space-x-1 text-sm">
+									<span class="material-icons text-sm">visibility</span>
+									<span>Détails</span>
+								</a>
+								<a href="{{ path('course_update', {'id': course.id}) }}" class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition flex items-center space-x-1 text-sm">
+									<span class="material-icons text-sm">edit</span>
+									<span>Modifier</span>
+								</a>
+
+								{{ include('course/_delete_form.html.twig', {'course': course}) }}
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="6" class="px-6 py-12 text-center text-gray-500">Aucun cours trouvé</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</main>
+{% endblock %}
