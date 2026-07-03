@@ -1,0 +1,26 @@
+# config/packages/messenger.yaml
+framework:
+    messenger:
+        transports:
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    use_notify: true
+                    check_delayed_interval: 60000  # ✅ 60 secondes en millisecondes (60 * 1000)
+                    table_name: messenger_messages   # Optionnel : nom de la table
+                    queue_name: async                # Optionnel : nom de la file
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000        # 1 seconde avant le 1er retry
+                    multiplier: 2      # délai x2 à chaque retry
+                    max_delay: 30000   # max 30 secondes
+
+            failed:
+                dsn: 'doctrine://default?queue_name=failed'
+
+        routing:
+            # C'est ici que se trouve l'erreur
+            'App\Message\LoginNotification': async 
+            'App\Message\SendEmail': async
+
+        failure_transport: failed

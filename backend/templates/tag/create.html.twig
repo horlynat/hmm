@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des Tags{% endblock %}
+
+{% block body %}
+<main class="p-8 bg-gray-50 min-h-screen">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center space-x-2">
+            <span class="material-icons text-purple-600">label</span>
+            <span>Créer un nouveau Tag</span>
+        </h1>
+        <a href="{{ path('tag_index') }}"
+           class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition flex items-center space-x-2">
+            <span class="material-icons">arrow_back</span>
+            <span>Retour à la liste</span>
+        </a>
+    </div>
+
+    <!-- Formulaire premium -->
+    <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+        {{ include('tag/_form.html.twig', {'button_label': 'Enregistrer'}) }}
+    </div>
+
+</main>
+{% endblock %}

@@ -1,0 +1,8 @@
+{# templates/experience/_delete_form.html.twig #}
+<form method="post" action="{{ path('experience_delete', {'id': experience.id}) }}" onsubmit="return confirm('Voulez-vous vraiment supprimer cette expérience ?');" class="inline-block">
+	<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ experience.id) }}">
+	<button type="submit" class="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition flex items-center space-x-1 text-sm">
+		<span class="material-icons text-sm">delete</span>
+		<span>Supprimer</span>
+	</button>
+</form>
