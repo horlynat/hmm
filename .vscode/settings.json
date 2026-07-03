@@ -1,7 +1,33 @@
 {
-    "typescript.updateImportsOnFileMove.enabled": "never",
-    "javascript.updateImportsOnFileMove.enabled": "never",
-    "python.analysis.autoImportCompletions": false,
-    "python.analysis.autoSearchPaths": false,
-    "python.analysis.fixAll": []
+  "python.analysis.autoImportCompletions": false,
+  "python.analysis.autoSearchPaths": false,
+  "python.analysis.fixAll": [],
+  "intelephense.diagnostics.undefinedTypes": false,
+  "intelephense.diagnostics.undefinedMethods": false,
+  "intelephense.diagnostics.undefinedConstants": false,
+  "intelephense.diagnostics.undefinedFunctions": false,
+  "intelephense.diagnostics.undefinedProperties": false,
+
+  // Active uniquement les diagnostics vraiment utiles
+  "intelephense.diagnostics.runtime": true,
+  "intelephense.diagnostics.typeErrors": true,
+  "intelephense.diagnostics.unexpectedTokens": true,
+
+  // Améliore la reconnaissance des namespaces Symfony
+  "intelephense.environment.includePaths": [
+    "vendor/symfony",
+    "vendor/doctrine",
+    "vendor/psr",
+    "vendor/phpunit"
+  ],
+
+  // Cache plus agressif pour éviter les faux positifs
+  "intelephense.files.maxSize": 5000000,
+  "intelephense.files.exclude": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/vendor/**/{Tests,tests}/**"
+  ],
+  "typescript.updateImportsOnFileMove.enabled": "never",
+  "javascript.updateImportsOnFileMove.enabled": "never"
 }

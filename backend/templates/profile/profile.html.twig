@@ -1,0 +1,15 @@
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Profile
+{% endblock %}
+
+{% block profile_content %}
+
+	<div class="flex flex-col gap-4">
+		{% include 'profile/_profile_info.html.twig' %}
+		{% include 'profile/_profile_security.html.twig' %}
+		{% include 'profile/_profile_activity.html.twig' %}
+	</div>
+
+{% endblock %}

@@ -22,10 +22,11 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Supprime les messages flash après 5 seconde
-setTimeout(() => {
-    document.querySelectorAll('.animate-fade-in-down, .relative').forEach(el => {
-        el.style.opacity = '0';
-        setTimeout(() => el.remove(), 600); // attend la fin de l'effet de disparition
-    });
-}, 5000);
+// // Supprime les messages flash après 5 seconde
+// setTimeout(() => {
+//     document.querySelectorAll('.animate-fade-in-down, .relative').forEach(el => {
+//         el.style.opacity = '0';
+//         setTimeout(() => el.remove(), 600); // attend la fin de l'effet de disparition
+//     });
+// }, 5000);
+
