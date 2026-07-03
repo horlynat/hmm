@@ -6,6 +6,7 @@ use App\Entity\User;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -124,14 +125,15 @@ class ProfileType extends AbstractType
                     'readonly' => true,
                 ],
             ])
-            ->add('lastLoginAt', TextType::class, [
-                'label' => 'Dernière connexion',
-                'disabled' => true,
-                'attr' => [
-                    'class' => 'block w-full text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded text-gray-800 dark:text-gray-200',
-                    'readonly' => true,
-                ],
+
+            ->add('lastLoginAt', DateTimeType::class, [
+                    'widget' => 'single_text',
+                    'disabled' => true,
+                    'html5' => false, // ⚠️ désactive HTML5
+                    'required' => false,
+                    'format' => 'yyyy-MM-dd HH:mm', // format lisible
             ])
+
             ->add('lastDevice', TextType::class, [
                 'label' => 'Dernier appareil',
                 'disabled' => true,

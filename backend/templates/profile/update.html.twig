@@ -1,11 +1,13 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Edit User{% endblock %}
+{% block title %}Mise à jour du profil
+{% endblock %}
 
-{% block body %}
-    <h1>Edit User</h1>
+{% block profile_content %}
 
-    {{ include('profile/_form.html.twig', {'button_label': 'Update'}) }}
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold mb-6">Mise à jour du profil</h1>
 
-    <a href="{{ path('profile_read') }}">Retour</a>
+        {% include 'profile/_form.html.twig' %}
+    </div>
 {% endblock %}
