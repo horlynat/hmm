@@ -1,0 +1,71 @@
+{# templates/profile/_profile_activity.html.twig #}
+{% import 'profile/macros.html.twig' as macros %}
+
+<div class="bg-[var(--surface-2)] border-[0.5px] border-[var(--border)] rounded-xl py-4 px-4 card-hover">
+	<p class="flex items-center gap-2 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-4">
+		<span class="material-icons">history</span>
+		Activité et connexions
+	</p>
+
+	{# Dernière connexion mise en avant #}
+	{% if user.lastLoginAt %}
+		<div class="flex items-center gap-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-slate-800 dark:to-slate-900 border-[0.5px] border-indigo-200 dark:border-slate-700 rounded-xl p-4 mb-4">
+			<div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+				<span class="material-icons text-indigo-600 dark:text-indigo-400">login</span>
+			</div>
+			<div>
+				<p class="text-xs uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-0.5">Dernière connexion</p>
+				<p class="text-sm font-medium text-[var(--text-primary)]">
+					{{ user.lastLoginAt|date('d/m/Y \à H:i') }}
+				</p>
+			</div>
+		</div>
+	{% endif %}
+
+	{# Grille pour IP, Localisation #}
+	<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+		{{ macros.stat('Adresse IP', user.lastIp ?? 'N/A', 'computer') }}
+		{{ macros.stat('Localisation', user.lastLocation ?? 'Inconnue', 'location_on') }}
+	</div>
+
+	{# Appareil (pleine largeur) #}
+	{{ macros.stat('Dernier appareil', user.lastDevice ?? 'Non enregistré', 'phone_iphone') }}
+
+	{# Historique des connexions #}
+	<div class="mt-6">
+		<p class="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-3">Historique des connexions</p>
+		{% if user.loginHistory is defined and user.loginHistory|length > 0 %}
+			<div class="overflow-x-auto rounded-lg border border-[var(--border)]">
+				<table class="min-w-full text-left text-sm">
+					<thead class="bg-[var(--surface-1)]">
+						<tr>
+							<th class="px-4 py-2.5 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Date</th>
+							<th class="px-4 py-2.5 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">IP</th>
+							<th class="px-4 py-2.5 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider hidden md:table-cell">Localisation</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-[var(--border)]">
+						{% for login in user.loginHistory|slice(0, 5) %}
+							<tr class="hover:bg-[var(--surface-1)] transition-colors">
+								<td class="px-4 py-3 text-[var(--text-secondary)] whitespace-nowrap">
+									{{ login.loginAt|date('d/m/Y H:i') }}
+								</td>
+								<td class="px-4 py-3 font-mono text-[var(--text-secondary)] whitespace-nowrap">
+									{{ login.ip }}
+								</td>
+								<td class="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">
+									{{ login.location ?? '—' }}
+								</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		{% else %}
+			<div class="flex flex-col items-center py-6 text-center">
+				<span class="material-icons text-[var(--text-muted)] text-4xl mb-2">history_toggle_off</span>
+				<p class="text-sm text-[var(--text-muted)]">Aucun historique de connexion disponible.</p>
+			</div>
+		{% endif %}
+	</div>
+</div>

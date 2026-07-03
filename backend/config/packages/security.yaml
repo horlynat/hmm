@@ -13,6 +13,7 @@ security:
             cost: 12
             memory_cost: 1024
 
+    # enable_authenticator_manager: true
     firewalls:
         # 🔒 Firewall principal (site web)
         main:
@@ -43,8 +44,9 @@ security:
 
     # 🔒 Contrôle d'accès par rôle
     access_control:
-        - { path: ^/admin, roles: ROLE_ADMIN }
-        - { path: ^/dashboard, roles: ROLE_USER }
+        - { path: ^/dashboard, roles: ROLE_ADMIN }
+        - { path: ^/profile, roles: ROLE_USER }
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/register, roles: PUBLIC_ACCESS }
-        - { path: ^/api, roles: ROLE_USER }
+        - { path: ^/verify/email, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }

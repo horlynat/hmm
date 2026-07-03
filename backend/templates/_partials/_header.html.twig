@@ -50,14 +50,15 @@
             <!-- Menu déroulant (visible si open est true) -->
             <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 py-2">
 
-                <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition">
+                <a href="{{ path('profile_read', {'id': app.user.id}) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition">
+
                     <span class="material-icons text-base mr-3 opacity-70">person</span>
                     Mon profil
                 </a>
 
-                <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition">
-                    <span class="material-icons text-base mr-3 opacity-70">settings</span>
-                    Paramètres
+                <a href="{{ path('profile_update', {'id': app.user.id}) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition">
+                    <span class="material-icons text-base mr-3 opacity-70">edit</span>
+                    Modifier mon profil
                 </a>
 
                 <hr class="my-1 border-gray-100">

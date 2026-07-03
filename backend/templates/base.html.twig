@@ -1,61 +1,71 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8">
-		<title>
-			{% block title %}Dashboard
-			{% endblock %}
-			— Portfolio Admin
-		</title>
-		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+<html lang="fr" class="{{ app.request.attributes.get('_route') starts with 'profile' ? 'dark' : '' }}">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{% block title %}Dashboard{% endblock %} — Portfolio Admin</title>
 
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
+	{# Fonts et Icônes communes #}
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Round|Material+Icons+Sharp" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 
-		{% block stylesheets %}
+	{% block stylesheets %}
+		{# Charge dynamiquement le CSS selon la route #}
+		{% if app.request.attributes.get('_route') starts with 'profile' %}
+			{{ encore_entry_link_tags('profile') }}
+		{% else %}
 			{{ encore_entry_link_tags('app') }}
-		{% endblock %}
+		{% endif %}
+	{% endblock %}
 
-		<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+	<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body class="{{ app.request.attributes.get('_route') starts with 'profile' ? 'min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors' : 'h-screen bg-gray-50 flex overflow-hidden' }}">
+
+	{% if app.request.attributes.get('_route') starts with 'profile' %}
+
+	{# Layout Profil #}
+	<div class="max-w-6xl mx-auto p-6">
+
+		{% include 'profile/_profile_header.html.twig' %}
+
+		<div class="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6">
+
+			{% include 'profile/_profile_sidebar.html.twig' %}
+			<main class="flex-1 p-6"> {% block profile_content %}{% endblock %}
+				</main>
+			</div>
+
+			{# Bouton Dark Mode spécifique au profil #}
+			<button id="darkModeToggle" class="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 shadow-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+				<span class="material-icons-outlined text-gray-600 dark:text-gray-300">dark_mode</span>
+			</button>
+
+		</div>
+	{% else %}
+
+		{# Layout Admin Standard #}
+		{% include '_partials/_admin.nav.html.twig' %}
+
+		<div class="flex-1 flex flex-col overflow-y-auto">
+			{% include '_partials/_header.html.twig' %}
+			{% include '_partials/_flashes.html.twig' %}
+
+			<main class="flex-1 p-6"> {% block body %}{% endblock %}
+				</main>
+			</div>
+		{% endif %}
 
 		{% block javascripts %}
-			{{ encore_entry_script_tags('app') }}
+			{% if app.request.attributes.get('_route') starts with 'profile' %}
+				{{ encore_entry_script_tags('profile') }}
+			{% else %}
+				{{ encore_entry_script_tags('app') }}
+			{% endif %}
 		{% endblock %}
 
-		{% set frankenphpHotReload = app.request.server.get('FRANKENPHP_HOT_RELOAD') %}
-
-		{% if frankenphpHotReload %}
-			<meta name="frankenphp-hot-reload:url" content="{{ frankenphpHotReload }}">
-			<script src="https://cdn.jsdelivr.net/npm/idiomorph"></script>
-			<script src="https://cdn.jsdelivr.net/npm/frankenphp-hot-reload/+esm" type="module"></script>
-		{% endif %}
-	</head>
-	<body>
-
-		<div class="h-screen bg-gray-50 flex overflow-hidden">
-			{% include '_partials/_dashboard.html.twig' %}
-
-			<div class="flex-1 flex flex-col overflow-y-auto">
-				{# ajout de la barre de navigation #}
-				{% include '_partials/_header.html.twig' %}
-
-				{# Ajout des messages flash #}
-				{% include '_partials/_flashes.html.twig' %}
-
-				{# Ajout du bloc body pour le contenu spécifique de chaque page #}
-				<main class="flex-1 p-6"> {% block body %}{% endblock %}</main>
-			</div>
-		</div>
-		
-		
-		<script>
-			
-		</script>
-
-
-		</body>
-	</html>
+	</body>
+</html>
