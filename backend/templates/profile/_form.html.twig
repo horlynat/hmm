@@ -1,0 +1,87 @@
+<div class="max-w-4xl mx-auto py-10 px-6">
+	{{ form_start(form, {'attr': {'class': 'bg-white dark:bg-gray-900 shadow-xl rounded-2xl p-8 border border-gray-200 dark:border-gray-700'}}) }}
+
+	<!-- Erreurs globales -->
+	{% if form_errors(form) %}
+		<div class="mb-6 p-4 bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg border border-red-200 dark:border-red-700">
+			{{ form_errors(form) }}
+		</div>
+	{% endif %}
+
+	<div
+		class="grid grid-cols-1 md:grid-cols-2 gap-8">
+		<!-- Informations de base -->
+		<div class="space-y-6">
+			{{ form_row(form.fullName, {'attr': {'class': 'modern-input'}}) }}
+			{{ form_row(form.email, {'attr': {'class': 'modern-input'}}) }}
+			{{ form_row(form.phone, {'attr': {'class': 'modern-input'}}) }}
+			{{ form_row(form.plainPassword, {'attr': {'class': 'modern-input hidden', 'placeholder': 'Laisser vide pour ne pas changer'}}) }}
+			{{ form_row(form.confirmPassword, {'attr': {'class': 'modern-input hidden', 'placeholder': 'Laisser vide pour ne pas changer'}}) }}
+		</div>
+
+		<!-- Rôles et Statuts -->
+		<div class="space-y-6">
+			<div class=" hidden">
+				{{ form_label(form.roles, 'Rôles', {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2'}}) }}
+				<div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+					{{ form_widget(form.roles, {'attr': {'class': 'flex flex-wrap gap-4 text-gray-800 dark:text-gray-200'}}) }}
+				</div>
+				{{ form_errors(form.roles) }}
+			</div>
+
+			<div class="flex flex-col gap-4">
+				<label class="flex items-center gap-2">
+					{{ form_widget(form.isVerified, {'attr': {'class': 'modern-checkbox'}}) }}
+					<span class="text-sm text-gray-700 dark:text-gray-300">Email vérifié</span>
+				</label>
+				<label class="flex items-center gap-2">
+					{{ form_widget(form.isActive, {'attr': {'class': 'modern-checkbox'}}) }}
+					<span class="text-sm text-gray-700 dark:text-gray-300">Compte actif</span>
+				</label>
+				<label class="flex items-center gap-2  hidden">
+					{{ form_widget(form.isTwoFactorEnabled, {'attr': {'class': 'modern-checkbox'}}) }}
+					<span class="text-sm text-gray-700 dark:text-gray-300">2FA activé</span>
+				</label>
+			</div>
+		</div>
+	</div>
+
+	<!-- Informations système -->
+	<div class="mt-10 bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600 hidden min:sm:hidden">
+		<h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-6">Informations système</h3>
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-6 ">
+			<div>
+				{{ form_label(form.lastIp, 'Dernière IP') }}
+				<input type="text" value="{{ form.lastIp.vars.data ?? '' }}" class="modern-readonly" readonly>
+			</div>
+
+			<div>
+				{{ form_label(form.lastLocation, 'Localisation') }}
+				<input type="text" value="{{ form.lastLocation.vars.data ?? '' }}" class="modern-readonly" readonly>
+			</div>
+
+			<div>
+				{{ form_label(form.lastLoginAt, 'Dernière connexion') }}
+				<input type="text" value="{{ form.lastLoginAt.vars.data ? form.lastLoginAt.vars.data|date('d/m/Y H:i') : '' }}" class="modern-readonly" readonly>
+			</div>
+		</div>
+
+		<div class="mt-6">
+			{{ form_label(form.lastDevice, 'Dernier appareil') }}
+			<input type="text" value="{{ form.lastDevice.vars.data ?? '' }}" class="modern-readonly" readonly>
+		</div>
+	</div>
+
+	<!-- Actions -->
+	<div class="mt-10 flex justify-end gap-4">
+		<a href="{{ path('profile_read', {'id': user.id}) }}" class="btn-secondary">
+			Annuler
+		</a>
+		<button type="submit" class="btn-primary">
+			💾 Enregistrer les modifications
+		</button>
+	</div>
+
+	{{ form_end(form) }}
+</div>
+

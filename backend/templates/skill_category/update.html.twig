@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit SkillCategory{% endblock %}
+
+{% block body %}
+    <h1>Edit SkillCategory</h1>
+
+    {{ include('skill_category/_form.html.twig', {'button_label': 'Update'}) }}
+
+    <a href="{{ path('skill_category_index') }}">back to list</a>
+
+    {{ include('skill_category/_delete_form.html.twig') }}
+{% endblock %}

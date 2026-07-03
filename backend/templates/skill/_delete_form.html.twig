@@ -1,0 +1,7 @@
+<form method="post" action="{{ path('skill_delete', {'id': skill.id}) }}" class="inline-block">
+	<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ skill.id) }}">
+	<button type="button" aria-label="Supprimer la compétence {{ skill.name }}" class="px-5 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg shadow hover:scale-105 transform transition flex items-center space-x-2" onclick="if (confirm('Voulez-vous vraiment supprimer cette compétence ?')) { this.closest('form').submit(); }">
+		<span class="material-icons" aria-hidden="true">delete_forever</span>
+		<span>Supprimer</span>
+	</button>
+</form>

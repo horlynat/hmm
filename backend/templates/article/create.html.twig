@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ajouter un article{% endblock %}
+
+{% block body %}
+<main class="p-8 bg-gray-50 min-h-screen">
+
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center space-x-2">
+            <span class="material-icons text-blue-600">edit_note</span>
+            <span>Nouvelle publication</span>
+        </h1>
+        <a href="{{ path('article_index') }}"
+           class="px-5 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg shadow-sm hover:bg-gray-50 transition flex items-center space-x-2">
+            <span class="material-icons text-sm">arrow_back</span>
+            <span>Retour</span>
+        </a>
+    </div>
+
+    {# On passe button_label au fragment de formulaire #}
+    {% include 'article/_form.html.twig' with {'button_label': 'Publier l\'article'} %}
+
+</main>
+{% endblock %}
