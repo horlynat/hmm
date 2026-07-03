@@ -1,1 +1,21 @@
 @use "tailwindcss";
+
+.modern-input {
+    @apply mt-1 block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-gray-800 dark:text-gray-200 px-3 py-2;
+}
+
+.modern-checkbox {
+    @apply h-5 w-5 text-indigo-600 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500 bg-white dark:bg-gray-700;
+}
+
+.modern-readonly {
+    @apply block w-full text-sm bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-800 dark:text-gray-200 px-3 py-2 cursor-not-allowed;
+}
+
+.btn-primary {
+    @apply px-5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg shadow hover:bg-indigo-700 transition;
+}
+
+.btn-secondary {
+    @apply px-5 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition;
+}

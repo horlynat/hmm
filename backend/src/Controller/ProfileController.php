@@ -60,7 +60,7 @@ class ProfileController extends AbstractController
                     $user->setPasswordChangedAt(new \DateTimeImmutable());
                 } else {
                     $form->get('plainPassword')->addError(new \Symfony\Component\Form\FormError('Les mots de passe ne correspondent pas.'));
-                    return $this->render('profile/_form.html.twig', [
+                    return $this->render('profile/update.html.twig', [
                         'user' => $user,
                         'form' => $form->createView(),
                     ]);
@@ -74,7 +74,7 @@ class ProfileController extends AbstractController
             return $this->redirectToRoute('profile_read', ['id' => $user->getId()]);
         }
 
-        return $this->render('profile/_form.html.twig', [
+        return $this->render('profile/update.html.twig', [
             'user' => $user,
             'form' => $form->createView(),
         ]);

@@ -1,106 +1,87 @@
-{# templates/user/_form.html.twig #}
-<div class="max-w-4xl mx-auto py-8 px-4">
-	<h1 class="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-200">Modifier le profil :
-		{{ user.fullName }}</h1>
+<div class="max-w-4xl mx-auto py-10 px-6">
+	{{ form_start(form, {'attr': {'class': 'bg-white dark:bg-gray-900 shadow-xl rounded-2xl p-8 border border-gray-200 dark:border-gray-700'}}) }}
 
-	{{ form_start(form, {'attr': {'class': 'bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 border border-gray-200 dark:border-gray-700'}}) }}
-
-	{# Erreurs globales du formulaire #}
-	{{ form_errors(form, {'attr': {'class': 'mb-4 p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded'}}) }}
+	<!-- Erreurs globales -->
+	{% if form_errors(form) %}
+		<div class="mb-6 p-4 bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg border border-red-200 dark:border-red-700">
+			{{ form_errors(form) }}
+		</div>
+	{% endif %}
 
 	<div
-		class="grid grid-cols-1 md:grid-cols-2 gap-6">
-		{# Informations de base #}
-		<div class="space-y-4">
-			<div>
-				{{ form_label(form.fullName, 'Nom complet', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
-				{{ form_widget(form.fullName, {'attr': {'class': 'mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-gray-800 dark:text-gray-200'}}) }}
-				{{ form_errors(form.fullName, {'attr': {'class': 'text-red-500 dark:text-red-400 text-xs mt-1'}}) }}
-			</div>
-
-			<div>
-				{{ form_label(form.email, 'Email', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
-				{{ form_widget(form.email, {'attr': {'class': 'mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-gray-800 dark:text-gray-200'}}) }}
-				{{ form_errors(form.email, {'attr': {'class': 'text-red-500 dark:text-red-400 text-xs mt-1'}}) }}
-			</div>
-
-			<div>
-				{{ form_label(form.phone, 'Téléphone', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
-				{{ form_widget(form.phone, {'attr': {'class': 'mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-gray-800 dark:text-gray-200'}}) }}
-				{{ form_errors(form.phone, {'attr': {'class': 'text-red-500 dark:text-red-400 text-xs mt-1'}}) }}
-			</div>
-
-			<div>
-				{{ form_label(form.plainPassword, 'Nouveau mot de passe', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
-				{{ form_widget(form.plainPassword, {'attr': {'class': 'mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-gray-800 dark:text-gray-200', 'placeholder': 'Laisser vide pour ne pas changer'}}) }}
-				{{ form_errors(form.plainPassword, {'attr': {'class': 'text-red-500 dark:text-red-400 text-xs mt-1'}}) }}
-			</div>
-
-			<div>
-				{{ form_label(form.confirmPassword, 'Confirmer le mot de passe', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300'}}) }}
-				{{ form_widget(form.confirmPassword, {'attr': {'class': 'mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-gray-800 dark:text-gray-200', 'placeholder': 'Laisser vide pour ne pas changer'}}) }}
-				{{ form_errors(form.confirmPassword, {'attr': {'class': 'text-red-500 dark:text-red-400 text-xs mt-1'}}) }}
-			</div>
+		class="grid grid-cols-1 md:grid-cols-2 gap-8">
+		<!-- Informations de base -->
+		<div class="space-y-6">
+			{{ form_row(form.fullName, {'attr': {'class': 'modern-input'}}) }}
+			{{ form_row(form.email, {'attr': {'class': 'modern-input'}}) }}
+			{{ form_row(form.phone, {'attr': {'class': 'modern-input'}}) }}
+			{{ form_row(form.plainPassword, {'attr': {'class': 'modern-input hidden', 'placeholder': 'Laisser vide pour ne pas changer'}}) }}
+			{{ form_row(form.confirmPassword, {'attr': {'class': 'modern-input hidden', 'placeholder': 'Laisser vide pour ne pas changer'}}) }}
 		</div>
 
-		{# Rôles et Statuts #}
-		<div class="space-y-4">
-			<div>
-				{{ form_label(form.roles, 'Rôles', {'label_attr': {'class': 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'}}) }}
-				<div class="space-y-2">
-					{{ form_widget(form.roles, {'attr': {'class': 'flex items-center gap-4 text-gray-800 dark:text-gray-200'}}) }}
+		<!-- Rôles et Statuts -->
+		<div class="space-y-6">
+			<div class=" hidden">
+				{{ form_label(form.roles, 'Rôles', {'label_attr': {'class': 'block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2'}}) }}
+				<div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+					{{ form_widget(form.roles, {'attr': {'class': 'flex flex-wrap gap-4 text-gray-800 dark:text-gray-200'}}) }}
 				</div>
-				{{ form_errors(form.roles, {'attr': {'class': 'text-red-500 dark:text-red-400 text-xs mt-1'}}) }}
+				{{ form_errors(form.roles) }}
 			</div>
 
-			<div class="flex items-center gap-6">
-				<div class="flex items-center">
-					{{ form_widget(form.isVerified, {'attr': {'class': 'h-4 w-4 text-indigo-600 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500 bg-white dark:bg-gray-700'}}) }}
-					{{ form_label(form.isVerified, 'Email vérifié', {'label_attr': {'class': 'ml-2 block text-sm text-gray-900 dark:text-gray-300'}}) }}
-				</div>
-				<div class="flex items-center">
-					{{ form_widget(form.isActive, {'attr': {'class': 'h-4 w-4 text-indigo-600 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500 bg-white dark:bg-gray-700'}}) }}
-					{{ form_label(form.isActive, 'Compte actif', {'label_attr': {'class': 'ml-2 block text-sm text-gray-900 dark:text-gray-300'}}) }}
-				</div>
-				<div class="flex items-center">
-					{{ form_widget(form.isTwoFactorEnabled, {'attr': {'class': 'h-4 w-4 text-indigo-600 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500 bg-white dark:bg-gray-700'}}) }}
-					{{ form_label(form.isTwoFactorEnabled, '2FA activé', {'label_attr': {'class': 'ml-2 block text-sm text-gray-900 dark:text-gray-300'}}) }}
-				</div>
+			<div class="flex flex-col gap-4">
+				<label class="flex items-center gap-2">
+					{{ form_widget(form.isVerified, {'attr': {'class': 'modern-checkbox'}}) }}
+					<span class="text-sm text-gray-700 dark:text-gray-300">Email vérifié</span>
+				</label>
+				<label class="flex items-center gap-2">
+					{{ form_widget(form.isActive, {'attr': {'class': 'modern-checkbox'}}) }}
+					<span class="text-sm text-gray-700 dark:text-gray-300">Compte actif</span>
+				</label>
+				<label class="flex items-center gap-2  hidden">
+					{{ form_widget(form.isTwoFactorEnabled, {'attr': {'class': 'modern-checkbox'}}) }}
+					<span class="text-sm text-gray-700 dark:text-gray-300">2FA activé</span>
+				</label>
 			</div>
 		</div>
 	</div>
 
-	{# Informations système #}
-	<div class="mt-8 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-		<h3 class="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">Informations système</h3>
-		<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+	<!-- Informations système -->
+	<div class="mt-10 bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600 hidden min:sm:hidden">
+		<h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-6">Informations système</h3>
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-6 ">
 			<div>
 				{{ form_label(form.lastIp, 'Dernière IP') }}
-				{{ form_widget(form.lastIp, {'attr': {'class': 'block w-full text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded text-gray-800 dark:text-gray-200', 'readonly': true}}) }}
+				<input type="text" value="{{ form.lastIp.vars.data ?? '' }}" class="modern-readonly" readonly>
 			</div>
+
 			<div>
 				{{ form_label(form.lastLocation, 'Localisation') }}
-				{{ form_widget(form.lastLocation, {'attr': {'class': 'block w-full text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded text-gray-800 dark:text-gray-200', 'readonly': true}}) }}
+				<input type="text" value="{{ form.lastLocation.vars.data ?? '' }}" class="modern-readonly" readonly>
 			</div>
+
 			<div>
 				{{ form_label(form.lastLoginAt, 'Dernière connexion') }}
-				{{ form_widget(form.lastLoginAt, {'attr': {'class': 'block w-full text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded text-gray-800 dark:text-gray-200', 'readonly': true}}) }}
+				<input type="text" value="{{ form.lastLoginAt.vars.data ? form.lastLoginAt.vars.data|date('d/m/Y H:i') : '' }}" class="modern-readonly" readonly>
 			</div>
 		</div>
-		<div class="mt-4">
+
+		<div class="mt-6">
 			{{ form_label(form.lastDevice, 'Dernier appareil') }}
-			{{ form_widget(form.lastDevice, {'attr': {'class': 'block w-full text-sm bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded text-gray-800 dark:text-gray-200', 'readonly': true}}) }}
+			<input type="text" value="{{ form.lastDevice.vars.data ?? '' }}" class="modern-readonly" readonly>
 		</div>
 	</div>
 
-	<div class="mt-8 flex justify-end gap-4">
-		<a href="{{ path('profile_read', {'id': user.id}) }}" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition">
+	<!-- Actions -->
+	<div class="mt-10 flex justify-end gap-4">
+		<a href="{{ path('profile_read', {'id': user.id}) }}" class="btn-secondary">
 			Annuler
 		</a>
-		<button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition">
-			Enregistrer les modifications
+		<button type="submit" class="btn-primary">
+			💾 Enregistrer les modifications
 		</button>
 	</div>
 
 	{{ form_end(form) }}
 </div>
+

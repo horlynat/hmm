@@ -14,11 +14,12 @@
 
 	{% block stylesheets %}
 		{# Charge dynamiquement le CSS selon la route #}
-		{% if app.request.attributes.get('_route') starts with 'profile' %}
+		{# {% if app.request.attributes.get('_route') starts with 'profile' %}
 			{{ encore_entry_link_tags('profile') }}
 		{% else %}
 			{{ encore_entry_link_tags('app') }}
-		{% endif %}
+		{% endif %} #}
+		{{ encore_entry_link_tags('app') }}
 	{% endblock %}
 
 	<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
@@ -27,44 +28,39 @@
 
 	{% if app.request.attributes.get('_route') starts with 'profile' %}
 
-	{# Layout Profil #}
-	<div class="max-w-6xl mx-auto p-6">
+		{# Layout Profil #}
+		<div class="max-w-6xl mx-auto p-6">
 
-		{% include 'profile/_profile_header.html.twig' %}
+			{% include 'profile/_profile_header.html.twig' %}
 
-		<div class="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6">
+			<div class="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6">
 
-			{% include 'profile/_profile_sidebar.html.twig' %}
-			<main class="flex-1 p-6"> {% block profile_content %}{% endblock %}
-				</main>
+				{% include 'profile/_profile_sidebar.html.twig' %}
+				<main class="flex-1 p-6"> {% block profile_content %}{% endblock %}
+					</main>
+				</div>
+
+				{# Bouton Dark Mode spécifique au profil #}
+				<button id="darkModeToggle" class="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 shadow-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+					<span class="material-icons-outlined text-gray-600 dark:text-gray-300">dark_mode</span>
+				</button>
+
 			</div>
-
-			{# Bouton Dark Mode spécifique au profil #}
-			<button id="darkModeToggle" class="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 shadow-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-				<span class="material-icons-outlined text-gray-600 dark:text-gray-300">dark_mode</span>
-			</button>
-
-		</div>
 	{% else %}
 
 		{# Layout Admin Standard #}
 		{% include '_partials/_admin.nav.html.twig' %}
 
-		<div class="flex-1 flex flex-col overflow-y-auto">
-			{% include '_partials/_header.html.twig' %}
-			{% include '_partials/_flashes.html.twig' %}
+			<div class="flex-1 flex flex-col overflow-y-auto">
+				{% include '_partials/_header.html.twig' %}
+				{% include '_partials/_flashes.html.twig' %}
 
-			<main class="flex-1 p-6"> {% block body %}{% endblock %}
-				</main>
+				<main class="flex-1 p-6"> {% block body %}{% endblock %}</main>
 			</div>
 		{% endif %}
 
 		{% block javascripts %}
-			{% if app.request.attributes.get('_route') starts with 'profile' %}
-				{{ encore_entry_script_tags('profile') }}
-			{% else %}
-				{{ encore_entry_script_tags('app') }}
-			{% endif %}
+			{{ encore_entry_script_tags('app') }}
 		{% endblock %}
 
 	</body>

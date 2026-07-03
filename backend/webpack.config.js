@@ -19,7 +19,7 @@ Encore
      * 🎯 Entrées principales
      */
     .addEntry("app", "./assets/app.js")
-    .addEntry("profile", "./assets/profile.js")
+    // .addEntry("profile", "./assets/profile.js")
 
     /*
      * ⚡ Optimisations
