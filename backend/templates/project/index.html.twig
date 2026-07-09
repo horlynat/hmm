@@ -63,10 +63,7 @@
 									<span class="material-icons text-sm">edit</span>
 									<span>Modifier</span>
 								</a>
-								<a href="{{ path('project_delete', {'id': project.id}) }}" class="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition flex items-center space-x-1 text-sm">
-									<span class="material-icons text-sm">delete</span>
-									<span>Supprimer</span>
-								</a>
+								{% include 'project/_delete_form.html.twig' with { project: project } %}
 							</td>
 						</tr>
 					{% else %}

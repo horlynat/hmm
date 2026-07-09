@@ -1,13 +1,36 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Edit Project{% endblock %}
+{% block title %}Modifier un projet
+{% endblock %}
 
 {% block body %}
-    <h1>Edit Project</h1>
+	<main
+		class="p-8 bg-gray-50 min-h-screen">
 
-    {{ include('project/_form.html.twig', {'button_label': 'Update'}) }}
+		<!-- Header -->
+		<div class="flex justify-between items-center mb-8">
+			<h1 class="text-2xl font-bold text-gray-800 flex items-center space-x-2">
+				<span class="material-icons text-indigo-600">edit</span>
+				<span>Modifier le projet</span>
+			</h1>
+			<a href="{{ path('project_index') }}" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition flex items-center space-x-2">
+				<span class="material-icons">arrow_back</span>
+				<span>Retour à la liste</span>
+			</a>
+		</div>
 
-    <a href="{{ path('project_index') }}">back to list</a>
+        <!-- Formulaire premium -->
+		{{ include('project/_form.html.twig', { form: form, button_label: 'Mettre à jour' }) }}
 
-    {{ include('project/_delete_form.html.twig') }}
+		<!-- Actions -->
+		<div class="flex space-x-4 mt-6">
+			<a href="{{ path('project_index') }}" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition flex items-center space-x-2">
+				<span class="material-icons">list</span>
+				<span>Retour à la liste</span>
+			</a>
+
+			{{ include('project/_delete_form.html.twig', { project: project }) }}
+		</div>
+	</main>
 {% endblock %}
+

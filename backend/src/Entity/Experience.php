@@ -5,59 +5,51 @@ namespace App\Entity;
 use App\Repository\ExperienceRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ExperienceRepository::class)]
 class Experience
 {
-    #[ORM\Id]
+     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['api_public', 'api_admin'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: "Le nom de l'entreprise est obligatoire.")]
-    #[Assert\Length(
-        min: 2,
-        minMessage: "Le nom de l'entreprise doit contenir au moins {{ limit }} caractères.",
-        max: 100,
-        maxMessage: "Le nom de l'entreprise ne peut pas dépasser {{ limit }} caractères."
-    )]
+    #[Assert\Length(min: 2, max: 100)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $company = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le titre est obligatoire")]
-    #[Assert\Length(
-        max: 255,
-        maxMessage: "Le role ne peut pas dépasser {{ limit }} caractères"
-    )]
+    #[Assert\Length(max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $role = null;
 
     #[ORM\Column]
     #[Assert\NotNull(message: "La date de début est obligatoire.")]
     #[Assert\Type(\DateTimeImmutable::class)]
-    #[Assert\LessThanOrEqual("today", message: "La date de début ne peut pas être dans le futur.")]
+    #[Groups(['api_admin'])]
     private ?\DateTimeImmutable $startDate = null;
 
     #[ORM\Column(nullable: true)]
     #[Assert\Type(\DateTimeImmutable::class)]
-    #[Assert\Expression(
-        "this.getEndDate() === null or this.getEndDate() >= this.getStartDate()",
-        message: "La date de fin doit être postérieure ou égale à la date de début."
-    )]
+    #[Groups(['api_admin'])]
     private ?\DateTimeImmutable $endDate = null;
 
     #[ORM\Column(type: Types::TEXT)]
     #[Assert\NotBlank(message: "La description est obligatoire.")]
-    #[Assert\Length(
-        min: 10,
-        minMessage: "La description doit contenir au moins {{ limit }} caractères."
-    )]
+    #[Assert\Length(min: 10)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'experience')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(message: "Un utilisateur doit être associé à l'expérience.")]
+    #[Groups(['api_admin'])] // exposé seulement côté admin
     private ?User $user = null;
 
     public function getId(): ?int

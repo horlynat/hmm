@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\ContactMessageRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ContactMessageRepository::class)]
@@ -13,42 +14,36 @@ class ContactMessage
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["api_admin"])] // exposé uniquement côté admin
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["api_public", "api_admin"])]
     #[Assert\NotBlank(message: "Le nom est obligatoire")]
-    #[Assert\Length(
-        max: 255,
-        maxMessage: "Le nom ne peut pas dépasser {{ limit }} caractères"
-    )]
+    #[Assert\Length(max: 255)]
     private ?string $name = null;
 
     #[ORM\Column(length: 150)]
+    #[Groups(["api_admin"])] // email visible uniquement côté admin
     #[Assert\NotBlank(message: "L'email est obligatoire")]
-    #[Assert\Email(message: "Veuillez entrer une adresse email valide")]
-    #[Assert\Length(
-        max: 150,
-        maxMessage: "L'email ne peut pas dépasser {{ limit }} caractères"
-    )]
+    #[Assert\Email]
+    #[Assert\Length(max: 150)]
     private ?string $email = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["api_public", "api_admin"])]
     #[Assert\NotBlank(message: "Le sujet est obligatoire")]
-    #[Assert\Length(
-        max: 255,
-        maxMessage: "Le sujet ne peut pas dépasser {{ limit }} caractères"
-    )]
+    #[Assert\Length(max: 255)]
     private ?string $subject = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups(["api_public", "api_admin"])]
     #[Assert\NotBlank(message: "Le message est obligatoire")]
-    #[Assert\Length(
-        min: 10,
-        minMessage: "Le message doit contenir au moins {{ limit }} caractères"
-    )]
+    #[Assert\Length(min: 10)]
     private ?string $message = null;
 
     #[ORM\Column]
+    #[Groups(["api_admin"])]
     #[Assert\NotNull(message: "La date de création est obligatoire")]
     #[Assert\Type(\DateTimeImmutable::class)]
     private ?\DateTimeImmutable $createdAt = null;

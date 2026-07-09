@@ -10,72 +10,161 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
+use Symfony\Component\Form\FormInterface;
 
-#[Route('/user')]
+#[Route('/admin/users', name: 'user_')]
+#[Security("is_granted('ROLE_ADMIN')")] 
 final class UserController extends AbstractController
 {
-    #[Route(name: 'app_user_index', methods: ['GET'])]
-    public function index(UserRepository $userRepository): Response
+    /**
+     * Constructeur
+     * Injection des dépendances principales pour la gestion des utilisateurs.
+     */
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager,
+        private readonly UserRepository $userRepository,
+        private readonly UserPasswordHasherInterface $passwordHasher
+    ) {}
+
+    /**
+     * 📌 Liste des utilisateurs
+     * - Récupère tous les utilisateurs
+     * - Affiche la vue Twig correspondante
+     */
+    #[Route(name: 'index', methods: ['GET'])]
+    public function index(): Response
     {
+        $users = $this->userRepository->findAll();
+
         return $this->render('user/index.html.twig', [
-            'users' => $userRepository->findAll(),
+            'users' => $users,
         ]);
     }
 
-    #[Route('/new', name: 'app_user_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    /**
+     * 📌 Créer un nouvel utilisateur
+     * - Affiche un formulaire UserType
+     * - Hash le mot de passe si fourni
+     * - Persiste l’utilisateur en base
+     */
+    #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
+    public function create(Request $request): Response
     {
         $user = new User();
         $form = $this->createForm(UserType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($user);
-            $entityManager->flush();
+            $this->handlePassword($user, $form);
 
-            return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+
+            $this->addFlash('success', sprintf("Utilisateur #%d créé avec succès !", $user->getId()));
+            return $this->redirectToRoute('user_index');
         }
 
-        return $this->render('user/new.html.twig', [
+        return $this->render('user/create.html.twig', [
             'user' => $user,
-            'form' => $form,
+            'form' => $form->createView(),
         ]);
     }
 
-    #[Route('/{id}', name: 'app_user_show', methods: ['GET'])]
-    public function show(User $user): Response
+    /**
+     * 📌 Afficher un utilisateur
+     * - Affiche les détails d’un utilisateur
+     * - Retourne une erreur si l’utilisateur n’existe pas
+     */
+    #[Route('/{id}', name: 'read', methods: ['GET'])]
+    public function read(int $id): Response
     {
-        return $this->render('user/show.html.twig', [
+        $user = $this->userRepository->find($id);
+
+        if (!$user) {
+            throw $this->createNotFoundException("Utilisateur #$id introuvable.");
+        }
+
+        return $this->render('user/read.html.twig', [
             'user' => $user,
         ]);
     }
 
-    #[Route('/{id}/edit', name: 'app_user_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, User $user, EntityManagerInterface $entityManager): Response
+    /**
+     * 📌 Modifier un utilisateur
+     * - Affiche un formulaire UserType
+     * - Met à jour les informations
+     * - Hash le mot de passe si modifié
+     * - Met à jour la date de modification
+     */
+    #[Route('/{id}/edit', name: 'update', methods: ['GET', 'POST'])]
+    public function update(Request $request, int $id): Response
     {
+        $user = $this->userRepository->find($id);
+
+        if (!$user) {
+            throw $this->createNotFoundException("Utilisateur #$id introuvable.");
+        }
+
         $form = $this->createForm(UserType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->flush();
+            $this->handlePassword($user, $form);
 
-            return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
+            $user->setUpdatedAt(new \DateTimeImmutable());
+            $this->entityManager->flush();
+
+            $this->addFlash('success', sprintf("Utilisateur #%d mis à jour avec succès !", $user->getId()));
+            return $this->redirectToRoute('user_index');
         }
 
-        return $this->render('user/edit.html.twig', [
+        return $this->render('user/update.html.twig', [
             'user' => $user,
-            'form' => $form,
+            'form' => $form->createView(),
         ]);
     }
 
-    #[Route('/{id}', name: 'app_user_delete', methods: ['POST'])]
-    public function delete(Request $request, User $user, EntityManagerInterface $entityManager): Response
+    /**
+     * 📌 Supprimer un utilisateur
+     * - Vérifie le token CSRF
+     * - Supprime l’utilisateur si valide
+     */
+    #[Route('/{id}', name: 'delete', methods: ['POST'])]
+    public function delete(Request $request, int $id): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$user->getId(), $request->getPayload()->getString('_token'))) {
-            $entityManager->remove($user);
-            $entityManager->flush();
+        $user = $this->userRepository->find($id);
+
+        if (!$user) {
+            throw $this->createNotFoundException("Utilisateur #$id introuvable.");
         }
 
-        return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
+        if ($this->isCsrfTokenValid('delete'.$user->getId(), $request->request->get('_token'))) {
+            $this->entityManager->remove($user);
+            $this->entityManager->flush();
+
+            $this->addFlash('success', sprintf("Utilisateur #%d supprimé avec succès !", $user->getId()));
+        } else {
+            $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+        }
+
+        return $this->redirectToRoute('user_index');
     }
+
+    
+    /**
+     * 🔒 Méthode privée pour gérer le hash du mot de passe
+     * - Vérifie si plainPassword est défini
+     * - Hash et définit le mot de passe
+     */
+    private function handlePassword(User $user, FormInterface $form): void
+    {
+        if ($form->get('plainPassword')->getData()) {
+            $user->setPassword(
+                $this->passwordHasher->hashPassword($user, $form->get('plainPassword')->getData())
+            );
+        }
+    }
+
 }

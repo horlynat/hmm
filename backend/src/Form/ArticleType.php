@@ -6,10 +6,12 @@ use App\Entity\Article;
 use App\Entity\Tag;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\File;
 
 class ArticleType extends AbstractType
 {
@@ -28,6 +30,18 @@ class ArticleType extends AbstractType
                 'attr' => [
                     'rows' => 8,
                     'placeholder' => 'Rédigez le contenu de l’article (min. 20 caractères)'
+                ],
+            ])
+            ->add('media', FileType::class, [
+                'label' => 'Image | PDF de l’article',
+                'mapped' => false, // pas directement lié à l’entité Article
+                'required' => false,
+                'constraints' => [
+                    new File(
+                        maxSize: '5M',
+                        mimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
+                        mimeTypesMessage: 'Seules les images JPG, PNG ou PDF sont autorisées.'
+                    )
                 ],
             ])
             ->add('tags', EntityType::class, [

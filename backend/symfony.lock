@@ -49,6 +49,18 @@
             "migrations/.gitignore"
         ]
     },
+    "lexik/jwt-authentication-bundle": {
+        "version": "3.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "2.5",
+            "ref": "e9481b233a11ef7e15fe055a2b21fd3ac1aa2bb7"
+        },
+        "files": [
+            "config/packages/lexik_jwt_authentication.yaml"
+        ]
+    },
     "nelmio/cors-bundle": {
         "version": "2.6",
         "recipe": {
@@ -72,6 +84,15 @@
         "files": [
             "config/packages/nelmio_security.yaml"
         ]
+    },
+    "pentatrion/vite-bundle": {
+        "version": "8.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "6.5",
+            "ref": "3a6673f248f8fc1dd364dadfef4c5b381d1efab6"
+        }
     },
     "phpunit/phpunit": {
         "version": "13.1",
@@ -256,12 +277,12 @@
         ]
     },
     "symfony/stimulus-bundle": {
-        "version": "3.0",
+        "version": "3.2",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
-            "version": "2.24",
-            "ref": "d21494ed2ddbde38942e8278299a23ce5cf4a9a1"
+            "version": "2.25",
+            "ref": "9b51a69079f3629061dfe0e5d7e20f5a9b20752c"
         },
         "files": [
             "assets/controllers.json",
@@ -306,7 +327,7 @@
         }
     },
     "symfony/ux-turbo": {
-        "version": "3.0",
+        "version": "3.2",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -364,22 +385,6 @@
         },
         "files": [
             "config/packages/messenger.yaml"
-        ]
-    },
-    "symfony/webpack-encore-bundle": {
-        "version": "2.4",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "main",
-            "version": "2.1",
-            "ref": "b346dae458e64a1921ded2125993d94bd719a8dd"
-        },
-        "files": [
-            "assets/app.js",
-            "assets/styles/app.css",
-            "config/packages/webpack_encore.yaml",
-            "package.json",
-            "webpack.config.js"
         ]
     },
     "symfonycasts/verify-email-bundle": {

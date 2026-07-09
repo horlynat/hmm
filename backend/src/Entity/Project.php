@@ -7,9 +7,10 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
 #[UniqueEntity(fields: ['slug'], message: "Ce slug est déjà utilisé pour un autre projet.")]
@@ -18,46 +19,38 @@ class Project
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['api_public', 'api_admin'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le titre est obligatoire.")]
-    #[Assert\Length(
-        min: 3,
-        minMessage: "Le titre doit contenir au moins {{ limit }} caractères.",
-        max: 255,
-        maxMessage: "Le titre ne peut pas dépasser {{ limit }} caractères."
-    )]
+    #[Assert\Length(min: 3, max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $title = null;
 
-
     #[ORM\Column(length: 255, unique: true)]
-    #[Gedmo\Slug(fields: ['title'])] // Génère automatiquement le slug depuis le titre
+    #[Gedmo\Slug(fields: ['title'])]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $slug = null;
 
     #[ORM\Column(type: Types::TEXT)]
     #[Assert\NotBlank(message: "La description est obligatoire.")]
-    #[Assert\Length(
-        min: 20,
-        minMessage: "La description doit contenir au moins {{ limit }} caractères."
-    )]
+    #[Assert\Length(min: 20)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $description = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le lien est obligatoire.")]
     #[Assert\Url(message: "Le lien doit être une URL valide.")]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $link = null;
 
-    /**
-     * @var Collection<int, Skill>
-     */
     #[ORM\ManyToMany(targetEntity: Skill::class, inversedBy: 'projects')]
+    #[Groups(['api_admin'])]
     private Collection $skill;
 
-    /**
-     * @var Collection<int, Media>
-     */
-    #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'project')]
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Media::class, cascade: ['persist'], orphanRemoval: true)]
+    #[Groups(["api_detailed"])]
     private Collection $media;
 
     public function __construct()
@@ -151,22 +144,22 @@ class Project
         return $this->media;
     }
 
-    public function addMedium(Media $medium): static
+    public function addMedia(Media $media): static
     {
-        if (!$this->media->contains($medium)) {
-            $this->media->add($medium);
-            $medium->setProject($this);
+        if (!$this->media->contains($media)) {
+            $this->media->add($media);
+            $media->setProject($this);
         }
 
         return $this;
     }
 
-    public function removeMedium(Media $medium): static
+    public function removeMedia(Media $media): static
     {
-        if ($this->media->removeElement($medium)) {
+        if ($this->media->removeElement($media)) {
             // set the owning side to null (unless already changed)
-            if ($medium->getProject() === $this) {
-                $medium->setProject(null);
+            if ($media->getProject() === $this) {
+                $media->setProject(null);
             }
         }
 
