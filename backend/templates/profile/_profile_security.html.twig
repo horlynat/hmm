@@ -1,4 +1,3 @@
-{# templates/profile/_profile_security.html.twig #}
 {% import 'profile/macros.html.twig' as macros %}
 
 <div class="bg-[var(--surface-2)] border-[0.5px] border-[var(--border)] rounded-xl py-4 px-4 card-hover">
@@ -21,7 +20,7 @@
 		<div>
 			<p class="text-sm text-[var(--text-secondary)] mb-1">Dernier changement de mot de passe</p>
 			<p class="text-sm font-medium text-[var(--text-primary)]">
-				{{ user.passwordChangedAt ? user.passwordChangedAt|date('d/m/Y \à H:i') : 'Jamais' }}
+				{{ user.passwordChangedAt ? user.passwordChangedAt|date('d/m/Y à H:i') : 'Jamais' }}
 			</p>
 		</div>
 
@@ -33,3 +32,4 @@
 		</div>
 	</div>
 </div>
+

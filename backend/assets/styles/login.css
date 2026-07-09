@@ -1,0 +1,16 @@
+@import "./app.css";
+
+/* Container principal */
+.login-container {
+    @apply grid grid-cols-1 md:grid-cols-2 h-screen max-w-7xl mx-auto shadow-2xl rounded-md overflow-hidden my-5;
+}
+
+/* Colonne gauche */
+.login-left {
+    @apply flex items-center justify-center bg-linear-to-br from-brand-dark via-brand-primary to-brand-accent relative overflow-hidden;
+}
+
+/* Carte de connexion */
+.login-card {
+    @apply w-full max-w-md bg-bg-card/90 backdrop-blur-xl shadow-2xl rounded-2xl p-10 border border-gray-200;
+}

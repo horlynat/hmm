@@ -9,37 +9,54 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-#[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
+#[UniqueEntity(fields: ['email'], message: "Il existe déjà un compte avec cet email.")]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-   
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["api_user", "api_admin"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
+    #[Groups(["api_user", "api_admin"])]
+    #[Assert\NotBlank(message: "L'email est obligatoire.")]
+    #[Assert\Email(message: "Veuillez entrer un email valide.")]
     private ?string $email = null;
 
     #[ORM\Column]
+    #[Groups(["api_admin"])]
     private array $roles = [];
 
     #[ORM\Column]
+    #[Assert\Length(min: 8, minMessage: "Le mot de passe doit contenir au moins {{ limit }} caractères.")]
+    #[Assert\Regex(
+        pattern: "/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).+$/",
+        message: "Le mot de passe doit contenir une majuscule, une minuscule, un chiffre et un caractère spécial."
+    )]
     private ?string $password = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["api_user", "api_admin"])]
+    #[Assert\Length(max: 255, maxMessage: "Le nom complet ne peut pas dépasser {{ limit }} caractères.")]
     private ?string $fullName = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["api_user", "api_admin"])]
+    #[Assert\Url(message: "L'image de profil doit être une URL valide.")]
     private ?string $profileImage = null;
 
     #[ORM\Column(type: 'boolean')]
+    #[Groups(["api_admin"])]
     private bool $isVerified = false;
 
     #[ORM\Column(type: 'boolean')]
+    #[Groups(["api_admin"])]
     private bool $isActive = true;
 
     #[ORM\Column(length: 45, nullable: true)]
@@ -55,31 +72,54 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $lastDevice = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(["api_admin"])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(["api_admin"])]
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $passwordChangedAt = null;
 
     #[ORM\Column(length: 20, nullable: true)]
+    #[Groups(["api_user", "api_admin"])]
+    #[Assert\Length(min: 7, max: 20, minMessage: "Le numéro doit contenir au moins {{ limit }} caractères.")]
+    #[Assert\Regex(
+        pattern: '/^[0-9+\-\s\(\)]+$/',
+        message: "Le numéro de téléphone contient des caractères invalides."
+    )]
     private ?string $phone = null;
 
     #[ORM\Column(type: 'boolean')]
+    #[Groups(["api_admin"])]
     private bool $isTwoFactorEnabled = false;
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: LoginHistory::class, cascade: ['persist'], orphanRemoval: true)]
     private Collection $loginHistory;
 
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Experience::class)]
+    #[Groups(["api_user"])]
+    private Collection $experience;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Course::class)]
+    #[Groups(["api_user"])]
+    private Collection $course;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: QuoteRequest::class)]
+    private Collection $quoteRequest;
+
     public function __construct()
     {
         $this->loginHistory = new ArrayCollection();
+        $this->experience = new ArrayCollection();
+        $this->course = new ArrayCollection();
+        $this->quoteRequest = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }
 
-    // Getters et Setters
+    // ===== Getters et Setters =====
     public function getId(): ?int
     {
         return $this->id;
@@ -287,6 +327,87 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->loginHistory->removeElement($loginHistory)) {
             if ($loginHistory->getUser() === $this) {
                 $loginHistory->setUser(null);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Experience>
+     */
+    public function getExperience(): Collection
+    {
+        return $this->experience;
+    }
+
+    public function addExperience(Experience $experience): self
+    {
+        if (!$this->experience->contains($experience)) {
+            $this->experience->add($experience);
+            $experience->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeExperience(Experience $experience): self
+    {
+        if ($this->experience->removeElement($experience)) {
+            if ($experience->getUser() === $this) {
+                $experience->setUser(null);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Course>
+     */
+    public function getCourse(): Collection
+    {
+        return $this->course;
+    }
+
+    public function addCourse(Course $course): self
+    {
+        if (!$this->course->contains($course)) {
+            $this->course->add($course);
+            $course->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeCourse(Course $course): self
+    {
+        if ($this->course->removeElement($course)) {
+            if ($course->getUser() === $this) {
+                $course->setUser(null);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, QuoteRequest>
+     */
+    public function getQuoteRequest(): Collection
+    {
+        return $this->quoteRequest;
+    }
+
+    public function addQuoteRequest(QuoteRequest $quoteRequest): self
+    {
+        if (!$this->quoteRequest->contains($quoteRequest)) {
+            $this->quoteRequest->add($quoteRequest);
+            $quoteRequest->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeQuoteRequest(QuoteRequest $quoteRequest): self
+    {
+        if ($this->quoteRequest->removeElement($quoteRequest)) {
+            if ($quoteRequest->getUser() === $this) {
+                $quoteRequest->setUser(null);
             }
         }
         return $this;

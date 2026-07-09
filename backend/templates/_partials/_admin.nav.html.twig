@@ -1,103 +1,100 @@
-<aside class="w-60 h-screen bg-blue-950 text-white shadow-xl flex flex-col overflow-y-auto">
-	
-	<div
-		class="p-6 border-b border-blue-900/50 flex items-center space-x-4">
-		{# Gestion de la photo de profil #}
-		<div class="h-12 w-12 rounded-full overflow-hidden bg-blue-800 flex items-center justify-center border border-blue-700">
-			{% if app.user and app.user.profileImage %}
-				<img src="{{ asset('uploads/profiles/' ~ app.user.profileImage) }}" alt="{{ app.user.fullName }}" class="h-full w-full object-cover">
-			{% else %}
-				{# Avatar par défaut : affiche les initiales si pas de photo #}
-				<img src="https://ui-avatars.com/api/?name={{ app.user ? app.user.fullName : 'Horlynat MAMPASSI' }}&background=1e3a8a&color=fff&size=128" alt="Avatar" class="h-full w-full object-cover">
-			{% endif %}
-		</div>
+<aside
+	class="w-64 h-screen bg-(--bg-default) text-(--brand-dark) flex flex-col">
 
-		<div>
-			<h2 class="text-lg font-bold">
-				{{ app.user ? app.user.fullName : 'Horlynat MAMPASSI' }}
-			</h2>
-			<p class="text-sm text-gray-400">Développeur Web FullStack, Mobile et Integrateur des solutions AI</p>
-
-		</div>
+	<!-- Logo / Titre -->
+	<div class="p-6 border-b border-gray-200">
+		<h1 class="text-xl font-heading font-bold">Soft UI Dashboard</h1>
+		<p class="text-sm text-gray-500">Portfolio Admin</p>
 	</div>
 
-
+	<!-- Navigation -->
 	<nav
-		class="flex-1 p-4 space-y-6">
+		class="flex-1 p-4 space-y-8 overflow-y-auto">
 
-		{# Section Principal #}
+		<!-- Principal -->
 		<div>
-			<p class="text-[10px] uppercase text-gray-500 font-bold mb-2 ml-4">Principal</p>
-			{% set active = app.request.attributes.get('_route') starts with 'dashboard_' %}
-			<a href="{{ path('dashboard_index') }}" class="flex items-center px-4 py-2 rounded-lg transition {{ active ? 'bg-blue-900 text-white shadow-inner' : 'hover:bg-blue-900' }}">
-				<span class="material-icons mr-3">home</span>
-				Accueil
+			<p class="text-[10px] uppercase text-gray-400 font-bold mb-2 ml-4">Principal</p>
+			<a href="{{ path('dashboard_index') }}" class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-50 transition">
+				<i class="ti ti-home mr-3"></i>
+				Dashboard
 			</a>
 		</div>
 
-		{# Section Contenu #}
+		<!-- Gestion du contenu -->
 		<div>
-			<p class="text-[10px] uppercase text-gray-500 font-bold mb-2 ml-4">Contenu</p>
-			{% for item in [
-                {route: 'project_index', label: 'Projets', icon: 'work'},
-                {route: 'article_index', label: 'Blog', icon: 'article'},
-                {route: 'course_index', label: 'Formations', icon: 'school'},
-                {route: 'experience_index', label: 'Expériences', icon: 'history'}
-            ] %}
-				{% set active = app.request.attributes.get('_route') starts with item.route|split('_')[0] %}
-				<a href="{{ path(item.route) }}" class="flex items-center px-4 py-2 rounded-lg transition {{ active ? 'bg-blue-900 text-white shadow-inner' : 'hover:bg-blue-900' }}">
-					<span class="material-icons mr-3">{{ item.icon }}</span>
-					{{ item.label }}
-				</a>
-			{% endfor %}
+			<p class="text-[10px] uppercase text-gray-400 font-bold mb-2 ml-4">Contenu</p>
+			<a href="{{ path('project_index') }}" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-briefcase mr-3"></i>
+				Projets</a>
+			<a href="{{ path('skill_index') }}" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-code mr-3"></i>
+				Compétences</a>
+			<a href="{{ path('article_index') }}" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-notebook mr-3"></i>
+				Articles</a>
+			<a href="{{ path('course_index') }}" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-school mr-3"></i>
+				Formations</a>
+			<a href="{{ path('experience_index') }}" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-history mr-3"></i>
+				Expériences</a>
 		</div>
 
-		{# Section Compétences #}
+		<!-- Utilisateurs -->
 		<div>
-			<p class="text-[10px] uppercase text-gray-500 font-bold mb-2 ml-4">Compétences</p>
-			{% for item in [
-                {route: 'skill_index', label: 'Skills', icon: 'code'},
-                {route: 'skill_category_index', label: 'Catégories', icon: 'category'},
-                {route: 'tag_index', label: 'Tags', icon: 'label'}
-            ] %}
-				<a href="{{ path(item.route) }}" class="flex items-center px-4 py-2 rounded-lg transition hover:bg-blue-900">
-					<span class="material-icons mr-3">{{ item.icon }}</span>
-					{{ item.label }}
-				</a>
-			{% endfor %}
+			<p class="text-[10px] uppercase text-gray-400 font-bold mb-2 ml-4">Utilisateurs</p>
+			<a href="{{ path('user_index') }}" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-users mr-3"></i>
+				Clients</a>
+			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-shield mr-3"></i>
+				Admin</a>
+			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-mail mr-3"></i>
+				Contacts</a>
+			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-inbox mr-3"></i>
+				Requests</a>
+			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-chat mr-3"></i>
+				Témoignages</a>
 		</div>
 
-		{# Nouvelle Section Relations & Suivi #}
+		<!-- Sécurité -->
 		<div>
-			<p class="text-[10px] uppercase text-gray-500 font-bold mb-2 ml-4">Relations & Suivi</p>
-			<a href="#" class="flex items-center px-4 py-2 rounded-lg hover:bg-blue-900 transition">
-				<span class="material-icons mr-3">inbox</span>
-				Demandes
-			</a>
-			<a href="#" class="flex items-center px-4 py-2 rounded-lg hover:bg-blue-900 transition">
-				<span class="material-icons mr-3">mail</span>
-				Messages
-			</a>
+			<p class="text-[10px] uppercase text-gray-400 font-bold mb-2 ml-4">Sécurité</p>
+			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-lock mr-3"></i>
+				Logs</a>
+			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-shield-check mr-3"></i>
+				Sessions</a>
+			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-key mr-3"></i>
+				Rôles & Permissions</a>
+			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-eye mr-3"></i>
+				Audit & Monitoring</a>
+		</div>
+
+		<!-- Paramètres -->
+		<div>
+			<p class="text-[10px] uppercase text-gray-400 font-bold mb-2 ml-4">Paramètres</p>
+			<a href="~" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-settings mr-3"></i>
+				Configuration</a>
+			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-bell mr-3"></i>
+				Notifications</a>
+			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
+				<i class="ti ti-plug mr-3"></i>
+				Intégrations</a>
 		</div>
 	</nav>
 
-	<div class="p-4 border-t border-blue-900/50 bg-[#0f1729]">
-		<div class="flex justify-center space-x-4 text-gray-400">
-			<a href="https://www.linkedin.com/in/horlynat/" target="_blank" class="hover:text-white transition">
-				<i class="ti ti-brand-linkedin text-lg"></i>
-			</a>
-			<a href="https://github.com/horlynat" target="_blank" class="hover:text-white transition">
-				<i class="ti ti-brand-github text-lg"></i>
-			</a>
-			<a href="https://www.facebook.com/horlynat92" target="_blank" class="hover:text-white transition">
-				<i class="ti ti-brand-facebook text-lg"></i>
-			</a>
-			<a href="https://wa.me/+242066429090" target="_blank" class="hover:text-white transition">
-				<i class="ti ti-brand-whatsapp text-lg"></i>
-			</a>
-			<a href="https://www.instagram.com/_horlynat/" target="_blank" class="hover:text-white transition">
-				<i class="ti ti-brand-instagram text-lg"></i>
-			</a>
-		</div>
+	<!-- Footer -->
+	<div class="p-4 border-t border-gray-200 bg-(--bg-default)">
+		<p class="text-xs text-gray-400 mb-2 text-center">Soft UI Dashboard v1.0</p>
 	</div>
 </aside>
+

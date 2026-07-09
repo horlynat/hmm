@@ -1,7 +1,13 @@
+# config/services.yaml
 parameters:
     app.default_sender: '%env(APP_DEFAULT_SENDER)%'
 
+    # ✅ CORRECTION 1 : utiliser %kernel.project_dir% ici (paramètre Symfony)
+    #    et non dans .env où cette syntaxe n'est pas supportée
+    app.upload_dir: '%kernel.project_dir%/public/uploads'
+
 services:
+    # ✅ CORRECTION 2 : _defaults TOUJOURS en premier
     _defaults:
         autowire: true
         autoconfigure: true
@@ -13,14 +19,18 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    # Configuration explicite pour JWTService (optionnelle, car autowire est activé)
+    # ✅ CORRECTION 3 : injection du paramètre Symfony (pas de variable .env)
+    App\Service\MediaUploader:
+        arguments:
+            $targetDirectory: '%app.upload_dir%'
+
     App\Service\JWTService:
         arguments:
             $secret: '%env(APP_JWTSECRET)%'
-    
+
     App\Service\ProfileCompletionService: ~
     App\Service\GeolocationService: ~
 
-    App\EventListener\LoginListener:
-        tags:
-            - { name: kernel.event_listener, event: security.interactive_login, method: onLogin }
+    # ✅ CORRECTION 4 : LoginListener déjà géré par #[AsEventListener]
+    #    La déclaration manuelle via tags est redondante et peut créer des doublons.
+    #    Supprimée — autoconfigure: true s'en charge automatiquement.

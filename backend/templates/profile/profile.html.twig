@@ -4,6 +4,13 @@
 {% block title %}Profile
 {% endblock %}
 
+{# Styles du profile.html.twig #}
+{{ vite_entry_link_tags('profile') }}
+
+{# JS du profile.html.twig #}
+{{ vite_entry_script_tags('profile') }}
+
+
 {% block profile_content %}
 
 	<div class="flex flex-col gap-4">

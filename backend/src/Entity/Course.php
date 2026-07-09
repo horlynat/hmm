@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\CourseRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CourseRepository::class)]
@@ -13,49 +14,44 @@ class Course
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['api_public', 'api_admin'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le titre est obligatoire")]
-    #[Assert\Length(
-        max: 255,
-        maxMessage: "Le titre ne peut pas dépasser {{ limit }} caractères"
-    )]
+    #[Assert\Length(max: 255, maxMessage: "Le titre ne peut pas dépasser {{ limit }} caractères")]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $title = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: "L'institution est obligatoire")]
-    #[Assert\Length(
-        max: 100,
-        maxMessage: "Le nom de l'institution ne peut pas dépasser {{ limit }} caractères"
-    )]
+    #[Assert\Length(max: 100, maxMessage: "Le nom de l'institution ne peut pas dépasser {{ limit }} caractères")]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $institution = null;
 
     #[ORM\Column]
     #[Assert\NotNull(message: "La date de début est obligatoire")]
     #[Assert\Type(\DateTimeImmutable::class)]
+    #[Groups(['api_admin'])]
     private ?\DateTimeImmutable $startDate = null;
 
     #[ORM\Column]
     #[Assert\NotNull(message: "La date de fin est obligatoire")]
     #[Assert\Type(\DateTimeImmutable::class)]
-    #[Assert\GreaterThan(
-        propertyPath: "startDate",
-        message: "La date de fin doit être postérieure à la date de début"
-    )]
+    #[Assert\GreaterThan(propertyPath: "startDate", message: "La date de fin doit être postérieure à la date de début")]
+    #[Groups(['api_admin'])]
     private ?\DateTimeImmutable $endDate = null;
 
     #[ORM\Column(type: Types::TEXT)]
     #[Assert\NotBlank(message: "La description est obligatoire")]
-    #[Assert\Length(
-        min: 10,
-        minMessage: "La description doit contenir au moins {{ limit }} caractères"
-    )]
+    #[Assert\Length(min: 10, minMessage: "La description doit contenir au moins {{ limit }} caractères")]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'course')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(message: "Le cours doit être lié à un utilisateur")]
+    #[Groups(['api_admin'])] // exposé seulement côté admin
     private ?User $user = null;
 
     public function getId(): ?int
