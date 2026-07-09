@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Repository\LoginHistoryRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: LoginHistoryRepository::class)]
 class LoginHistory
@@ -13,29 +14,34 @@ class LoginHistory
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["api_admin"])] // exposé uniquement côté admin
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'loginHistory')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(["api_admin"])] // visible uniquement côté admin
     private ?User $user = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(["api_admin"])]
     private ?\DateTimeImmutable $loginAt = null;
 
     #[ORM\Column(length: 45, nullable: true)]
+    #[Groups(["api_admin"])]
     private ?string $ip = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["api_admin"])]
     private ?string $device = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["api_admin"])]
     private ?string $location = null;
 
     public function __construct()
     {
         $this->loginAt = new \DateTimeImmutable();
     }
-
     public function getId(): ?int
     {
         return $this->id;

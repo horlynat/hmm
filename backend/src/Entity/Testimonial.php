@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TestimonialRepository::class)]
@@ -15,52 +16,42 @@ class Testimonial
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['api_public', 'api_admin'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "L'auteur est obligatoire.")]
-    #[Assert\Length(
-        max: 255,
-        maxMessage: "Le nom de l'auteur ne peut pas dépasser {{ limit }} caractères."
-    )]
+    #[Assert\Length(max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $author = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le contenu est obligatoire.")]
-    #[Assert\Length(
-        min: 10,
-        minMessage: "Le témoignage doit contenir au moins {{ limit }} caractères.",
-        max: 255,
-        maxMessage: "Le témoignage ne peut pas dépasser {{ limit }} caractères."
-    )]
+    #[Assert\Length(min: 10, max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $content = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 0, nullable: true)]
-    #[Assert\PositiveOrZero(message: "La note doit être un nombre positif.")]
-    #[Assert\Range(
-        min: 0,
-        max: 5,
-        notInRangeMessage: "La note doit être comprise entre {{ min }} et {{ max }}."
-    )]
+    #[Assert\PositiveOrZero]
+    #[Assert\Range(min: 0, max: 5)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $rating = null;
 
     #[ORM\Column]
     #[Assert\NotNull(message: "La date de publication est obligatoire.")]
     #[Assert\Type(\DateTimeImmutable::class)]
-    #[Assert\LessThanOrEqual("today", message: "La date de publication ne peut pas être dans le futur.")]
+    #[Assert\LessThanOrEqual("today")]
+    #[Groups(['api_admin'])] // exposé seulement côté admin
     private ?\DateTimeImmutable $publishedAt = null;
 
-    /**
-     * @var Collection<int, Media>
-     */
     #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'testimonial')]
+    #[Groups(['api_public', 'api_admin'])]
     private Collection $media;
 
     public function __construct()
     {
         $this->media = new ArrayCollection();
     }
-
     public function getId(): ?int
     {
         return $this->id;

@@ -1,51 +1,72 @@
-<!-- Formulaire premium compact -->
-<div class="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-	{{ form_start(form, {'attr': {'class': 'space-y-4'}}) }}
+<div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200 mx-auto">
+	{{ form_start(form, {
+        'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'},
+        'enctype': 'multipart/form-data'
+    }) }}
 
-	<!-- Champ Titre du projet -->
-	<div>
-		<label class="block text-sm font-medium text-gray-700 mb-1">Titre du projet</label>
-		{{ form_widget(form.title, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-600 focus:outline-none'}}) }}
-		{% if form_errors(form.title) %}
-			<p class="text-red-600 text-xs mt-1">{{ form_errors(form.title) }}</p>
-		{% endif %}
-	</div>
+	<div
+		class="grid grid-cols-1 gap-6">
+		<!-- Champ Titre -->
+		<div>
+			{{ form_label(form.title, 'Titre du projet', {'label_attr': {'class': 'block text-sm font-semibold text-slate-700 mb-2'}}) }}
+			{{ form_widget(form.title, {'attr': {'class': 'w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all'}}) }}
+			{{ form_errors(form.title, {'attr': {'class': 'text-red-600 text-xs mt-1'}}) }}
+		</div>
 
-	<!-- Champ Description -->
-	<div>
-		<label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-		{{ form_widget(form.description, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-600 focus:outline-none h-24'}}) }}
-		{% if form_errors(form.description) %}
-			<p class="text-red-600 text-xs mt-1">{{ form_errors(form.description) }}</p>
-		{% endif %}
-	</div>
+		<!-- Champ Description -->
+		<div>
+			{{ form_label(form.description, 'Description complète', {'label_attr': {'class': 'block text-sm font-semibold text-slate-700 mb-2'}}) }}
+			{{ form_widget(form.description, {'attr': {'class': 'w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none h-40 transition-all'}}) }}
+			{{ form_errors(form.description, {'attr': {'class': 'text-red-600 text-xs mt-1'}}) }}
+		</div>
 
-	<!-- Champ Technologies -->
-	<div>
-		<label class="block text-sm font-medium text-gray-700 mb-1">Technologies utilisées</label>
-		{{ form_widget(form.skill, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-600 focus:outline-none'}}) }}
-		<p class="text-xs text-gray-500 mt-1">Sélectionne une ou plusieurs technologies liées au projet.</p>
-		{% if form_errors(form.skill) %}
-			<p class="text-red-600 text-xs mt-1">{{ form_errors(form.skill) }}</p>
-		{% endif %}
-	</div>
+		<!-- Champ Technologies -->
+		<div>
+			{{ form_label(form.skill, 'Technologies utilisées', {'label_attr': {'class': 'block text-sm font-semibold text-slate-700 mb-2'}}) }}
+			{{ form_widget(form.skill, {'attr': {'class': 'w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none'}}) }}
+			<p class="text-xs text-slate-400 mt-2">Maintenez Ctrl (ou Cmd) pour sélectionner plusieurs technologies.</p>
+			{{ form_errors(form.skill, {'attr': {'class': 'text-red-600 text-xs mt-1'}}) }}
+		</div>
 
-	<!-- Champ Lien -->
-	<div>
-		<label class="block text-sm font-medium text-gray-700 mb-1">Lien du projet</label>
-		{{ form_widget(form.link, {'attr': {'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-600 focus:outline-none'}}) }}
-		{% if form_errors(form.link) %}
-			<p class="text-red-600 text-xs mt-1">{{ form_errors(form.link) }}</p>
-		{% endif %}
-	</div>
+		<!-- Champ Lien -->
+		<div>
+			{{ form_label(form.link, 'Lien du projet', {'label_attr': {'class': 'block text-sm font-semibold text-slate-700 mb-2'}}) }}
+			{{ form_widget(form.link, {'attr': {'class': 'w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none', 'placeholder': 'https://monprojet.com'}}) }}
+			{{ form_errors(form.link, {'attr': {'class': 'text-red-600 text-xs mt-1'}}) }}
+		</div>
 
-	<!-- Bouton CTA -->
-	<div class="flex justify-end">
-		<button class="px-5 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-md shadow hover:scale-105 transform transition flex items-center space-x-2">
-			<span class="material-icons text-sm">save</span>
-			<span>{{ button_label|default('Enregistrer') }}</span>
-		</button>
-	</div>
+		<!-- Champ Médias avec Drag & Drop -->
+		<div>
+			{{ form_label(form.media, 'Médias (Images / PDF)', {'label_attr': {'class': 'block text-sm font-semibold text-slate-700 mb-2'}}) }}
+			<div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-md p-4 text-center bg-gray-50 cursor-pointer transition hover:bg-gray-100 active:scale-95">
+				{{ form_widget(form.media, {'attr': {'class': 'hidden'}}) }}
+				<label for="{{ form.media.vars.id }}" class="cursor-pointer">
+					<div class="flex flex-col items-center justify-center space-y-2">
+						<svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+						</svg>
+						<p class="text-sm text-gray-600">
+							<span class="font-medium text-indigo-600">Glissez-déposez des fichiers ici</span>
+							<span class="text-gray-500">
+								ou cliquez pour sélectionner</span>
+						</p>
+						<p class="text-xs text-gray-500">Formats autorisés : JPG, PNG, PDF. Taille max : 5 Mo.</p>
+					</div>
+				</label>
+			</div>
+			{{ form_errors(form.media, {'attr': {'class': 'text-red-600 text-xs mt-1'}}) }}
+		</div>
+		
+		<!-- Aperçu des fichiers sélectionnés -->
+		<div id="mediaPreview" class="grid grid-cols-2 md:grid-cols-4 gap-4 hidden"></div>
+
+		<!-- Bouton -->
+		<div class="pt-4 border-t border-slate-100 flex justify-end">
+			<button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-blue-200 transition-all flex items-center space-x-2">
+				<span class="material-icons text-sm">save</span>
+				<span>{{ button_label|default('Enregistrer le projet') }}</span>
+			</button>
+		</div>
 
 	{{ form_end(form) }}
 </div>

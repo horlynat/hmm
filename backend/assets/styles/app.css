@@ -1,0 +1,252 @@
+/* Importation des styles globaux pour l'application */
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   @theme — Tailwind v4 : déclare les tokens custom comme classes utilitaires
+   Permet d'utiliser bg-brand-primary, text-brand-dark, font-heading, etc.
+───────────────────────────────────────────────────────────────────────────── */
+@theme {
+    /* Couleurs de marque */
+    --color-brand-dark:    #03045E;
+    --color-brand-primary: #0077B6;
+    --color-brand-accent:  #00B4D8;
+    --color-brand-light:   #CAF0F8;
+
+    /* États */
+    --color-success: #16A34A;
+    --color-info:    #0EA5E9;
+    --color-warning: #FACC15;
+    --color-danger:  #DC2626;
+
+    /* Backgrounds */
+    --color-bg-default: #F9FAFB;
+    --color-bg-card:    #FFFFFF;
+    --color-bg-dark:    #1F2937;
+
+    /* Typographie */
+    --font-heading: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    --font-sans:    "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono";
+
+    /* Border radius */
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Variables CSS globales (pour usage direct : var(--brand-primary))
+   Séparées de @theme car @theme génère les classes Tailwind
+───────────────────────────────────────────────────────────────────────────── */
+:root {
+    --brand-dark:    #03045E;
+    --brand-primary: #0077B6;
+    --brand-accent:  #00B4D8;
+    --brand-light:   #CAF0F8;
+    --success:       #16A34A;
+    --info:          #0EA5E9;
+    --warning:       #FACC15;
+    --danger:        #DC2626;
+    --bg-default:    #F9FAFB;
+    --bg-card:       #FFFFFF;
+    --bg-dark:       #1F2937;
+}
+
+/* Dark mode */
+.dark {
+    --bg-default:    #0b1220;
+    --bg-card:       #0f1724;
+    --brand-dark:    #e6eefc;
+    --brand-primary: #60a5fa;
+    --brand-accent:  #38bdf8;
+    --brand-light:   #0ea5e9;
+    --success:       #86efac;
+    --info:          #7dd3fc;
+    --warning:       #facc15;
+    --danger:        #fca5a5;
+    /* Sync @theme tokens avec dark mode */
+    --color-brand-dark:    #e6eefc;
+    --color-brand-primary: #60a5fa;
+    --color-brand-accent:  #38bdf8;
+    --color-brand-light:   #0ea5e9;
+    --color-success:       #86efac;
+    --color-danger:        #fca5a5;
+    --color-bg-default:    #0b1220;
+    --color-bg-card:       #0f1724;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Base global
+───────────────────────────────────────────────────────────────────────────── */
+html, body { height: 100%; }
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-default);
+    color: var(--brand-dark);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.45;
+    margin: 0;
+}
+h1, h2, h3, .heading {
+    font-family: var(--font-heading);
+    margin: 0 0 .5rem 0;
+    color: var(--brand-dark);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Composants
+───────────────────────────────────────────────────────────────────────────── */
+
+/* Card */
+.card {
+    @apply rounded-xl shadow-lg p-6 border transition-transform;
+    border-radius: var(--radius-md);
+    background-color: var(--bg-card);
+    border: 1px solid rgba(15,23,42,0.06);
+}
+@media (prefers-reduced-motion: no-preference) {
+    .card:hover { transform: scale(1.02); }
+}
+
+/* Table */
+.table { @apply w-full border-collapse rounded-lg overflow-hidden; }
+.table th {
+    background-color: var(--brand-dark);
+    color: #fff;
+    text-align: left;
+    padding: .5rem 1rem;
+    font-family: var(--font-heading);
+}
+.table td { border-top: 1px solid rgba(0,0,0,0.06); padding: .5rem 1rem; font-size: .95rem; }
+.table tr:hover { background-color: rgba(202,240,248,0.15); }
+
+/* Inputs base */
+.input {
+    @apply rounded-sm px-5 py-2 text-base placeholder-gray-400 focus:outline-none transition-colors duration-200 ease-in-out;
+    border: 1px solid rgba(15,23,42,0.06);
+    background-color: var(--bg-card);
+    color: inherit;
+}
+
+/* Variantes d'inputs */
+.input-primary   { border-color: var(--brand-primary); }
+.input-secondary { border-color: #9CA3AF; }
+.input-success   { border-color: var(--success); color: var(--success); }
+.input-danger    { border-color: var(--danger);  color: var(--danger); }
+.input-warning   { border-color: var(--warning); color: var(--warning); }
+.input-info      { border-color: var(--info);    color: var(--info); }
+.input-disabled  { @apply bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed; }
+
+.input-password { letter-spacing: .08em; }
+.input-number   { text-align: right; }
+.textarea       { @apply h-32 resize-y; }
+
+.input-file {
+    @apply cursor-pointer file:px-4 file:py-2 file:rounded-md file:border-0 file:text-white;
+    background-color: transparent;
+}
+
+.input-search {
+    @apply pl-10 bg-no-repeat bg-left;
+    background-image: url("data:image/svg+xml,%3Csvg fill='gray' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M12.9 14.32a8 8 0 111.414-1.414l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    background-size: 1rem;
+    background-position: .5rem center;
+}
+
+.input-checkbox, .input-radio {
+    @apply h-4 w-4 rounded border-gray-300;
+    accent-color: var(--brand-primary);
+}
+.input-select {
+    @apply appearance-none pr-8 bg-no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg fill='gray' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.25 7.5l4.75 4.75 4.75-4.75H5.25z'/%3E%3C/svg%3E");
+    background-position: right .5rem center;
+    background-size: 1rem;
+}
+.input-range { @apply w-full h-2 bg-gray-200 rounded-lg; }
+
+/* ✅ CORRECTION : bg-brand-primary → CSS var directe */
+.input-range::-webkit-slider-thumb {
+    @apply w-4 h-4 rounded-full;
+    background-color: var(--brand-primary);
+}
+
+.input-switch       { @apply inline-flex items-center cursor-pointer; }
+.input-switch-track { @apply h-6 w-11 rounded-full bg-gray-300 transition-colors; }
+.input-switch-thumb { @apply inline-block h-4 w-4 transform rounded-full bg-white shadow transition; }
+.input-with-icon    { padding-left: 2.5rem; position: relative; }
+.input-icon         { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); color: #9CA3AF; }
+
+.label { @apply text-base font-medium text-gray-700 mb-2; }
+
+/* Buttons */
+.btn {
+    @apply inline-flex items-center justify-center text-base px-4 py-3 rounded-sm shadow-md transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2;
+    font-family: var(--font-heading);
+}
+.btn-primary   { background: linear-gradient(90deg, var(--brand-dark), var(--brand-primary) 60%, var(--brand-accent)); color: #fff; }
+.btn-secondary { @apply bg-gray-200 text-gray-800; }
+.btn-success   { background-color: var(--success); color: #fff; }
+.btn-danger    { background-color: var(--danger);  color: #fff; }
+
+/* Alerts */
+.alert         { @apply rounded-md p-4 border text-base; }
+.alert-success { background-color: rgba(22,163,74,0.08);  color: var(--success); border-color: rgba(22,163,74,0.16); }
+.alert-error   { background-color: rgba(220,38,38,0.08);  color: var(--danger);  border-color: rgba(220,38,38,0.16); }
+
+/* Modal / Tooltip */
+.modal         { @apply fixed inset-0 flex items-center justify-center bg-black/50 z-50; }
+.modal-content { @apply bg-white rounded-xl shadow-xl p-6 max-w-lg w-full; }
+.tooltip       { @apply absolute bg-gray-800 text-white text-xs rounded px-2 py-1 shadow-lg; }
+
+/* ✅ CORRECTION : sidebar/sidebar-item — CSS vars au lieu de bg-brand-* */
+.sidebar {
+    @apply h-screen w-64 text-white flex flex-col;
+    background-color: var(--brand-dark);
+}
+.sidebar-item { @apply px-4 py-2 transition-colors cursor-pointer; }
+.sidebar-item:hover { background-color: var(--brand-primary); }
+
+.dashboard-card { @apply bg-white rounded-lg shadow-md p-6 flex flex-col items-start; }
+.badge          { @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium; }
+
+/* Pagination */
+.pagination      { @apply flex space-x-2; }
+.page-item       { @apply px-3 py-1 rounded-md border border-gray-300 text-base hover:bg-gray-100; }
+.page-item-active { background-color: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+
+/* ✅ CORRECTION : tabs — hover:text-brand-primary → CSS var */
+.tabs { @apply flex border-b border-gray-200; }
+.tab  { @apply px-4 py-2 text-base font-medium text-gray-600 transition-colors; }
+.tab:hover { color: var(--brand-primary); }
+
+/* ✅ CORRECTION : tab-active — border-brand-primary, text-brand-primary → CSS vars */
+.tab-active {
+    border-bottom: 2px solid var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+/* Accordion */
+.accordion-item    { @apply border-b border-gray-200; }
+.accordion-header  { @apply cursor-pointer px-4 py-2; font-family: var(--font-heading); }
+.accordion-content { @apply px-4 py-2 text-base text-gray-600 hidden; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Accessibilité
+───────────────────────────────────────────────────────────────────────────── */
+:focus-visible { outline: 3px solid rgba(59,130,246,0.25); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+    .card, .btn, .modal-content { transition: none !important; animation: none !important; }
+}
+
+/* Utilities */
+.text-truncate  { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.center         { display: flex; align-items: center; justify-content: center; }
+.hidden-visually {
+    position: absolute !important;
+    height: 1px; width: 1px;
+    overflow: hidden;
+    clip: rect(1px,1px,1px,1px);
+    white-space: nowrap;
+}

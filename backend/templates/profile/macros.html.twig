@@ -1,21 +1,22 @@
 {# templates/profile/macros.html.twig #}
 
-{% macro badge(label, color = 'indigo', icon = null) %}
-	<span class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-semibold tracking-wide shadow-sm
-			{% if color == 'indigo' %}bg-indigo-600 text-white hover:bg-indigo-700
-			{% elseif color == 'green' %}bg-[var(--bg-success)] text-[var(--text-success)] border border-[var(--border-success)] hover:bg-green-50
-			{% elseif color == 'red' %}bg-[var(--bg-danger)] text-[var(--text-danger)] border border-[var(--border-danger)] hover:bg-red-50
-			{% elseif color == 'blue' %}bg-blue-600 text-white hover:bg-blue-700
-			{% elseif color == 'slate' %}bg-[var(--surface-1)] text-[var(--text-secondary)] border border-[var(--border)] hover:bg-slate-100 dark:hover:bg-slate-800
-			{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}
-			transition-colors duration-200 ease-in-out">
-		{% if icon %}
+{# Badge réutilisable pour afficher un état ou une info #}
+	{% macro badge(label, color = 'indigo', icon = null) %}
+		<span class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-semibold tracking-wide shadow-sm
+			            {% if color == 'indigo' %}bg-indigo-600 text-white hover:bg-indigo-700
+			            {% elseif color == 'green' %}bg-[var(--bg-success)] text-[var(--text-success)] border border-[var(--border-success)] hover:bg-green-50
+			            {% elseif color == 'red' %}bg-[var(--bg-danger)] text-[var(--text-danger)] border border-[var(--border-danger)] hover:bg-red-50
+			            {% elseif color == 'blue' %}bg-blue-600 text-white hover:bg-blue-700
+			            {% elseif color == 'slate' %}bg-[var(--surface-1)] text-[var(--text-secondary)] border border-[var(--border)] hover:bg-slate-100 dark:hover:bg-slate-800
+			            {% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}
+			            transition-colors duration-200 ease-in-out"> {% if icon %}
 			<span class="material-icons text-xs">{{ icon }}</span>
 		{% endif %}
 		{{ label }}
 	</span>
 {% endmacro %}
 
+{# Statistique réutilisable pour afficher une info avec icône #}
 {% macro stat(title, value, icon = null, color = 'slate') %}
 	<div class="flex items-center gap-3 bg-[var(--surface-1)] border border-[var(--border)] rounded-xl p-4 shadow-sm card-hover">
 		{% if icon %}
@@ -29,4 +30,3 @@
 		</div>
 	</div>
 {% endmacro %}
-

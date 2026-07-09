@@ -1,0 +1,317 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard
+{% endblock %}
+
+{% block body %}
+	<main class="flex-1 px-2 space-y-10">
+
+		<!-- Section KPI -->
+		<section class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {% set kpis = [
+                {'icon':'check_circle','color':'text-success','label':'Projets réalisés','value':'24','sub':'+3 ce mois'},
+                {'icon':'autorenew','color':'text-info','label':'Projets en cours','value':'5','sub':'Suivi actif'},
+                {'icon':'schedule','color':'text-warning','label':'Projets à venir','value':'7','sub':'Planifiés'},
+                {'icon':'request_quote','color':'text-brand-primary','label':'Demandes de devis','value':'12','sub':'En attente'},
+                {'icon':'group_work','color':'text-brand-accent','label':'Collaborations','value':'4','sub':'Nouvelles demandes'},
+                {'icon':'attach_money','color':'text-success','label':'Revenus','value':'$18,450','sub':'+15% ce mois'}
+            ] %}
+            
+            {% for kpi in kpis %}
+                <div class="card group hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between mb-1">
+                        <h2 class="text-sm text-gray-500 flex items-center">
+                        <span class="material-icons {{ kpi.color }} mr-2">{{ kpi.icon }}</span>
+                        {{ kpi.label }}
+                        </h2>
+                        <!-- Badge décoratif -->
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ kpi.color }} bg-bg-default">
+                        KPI
+                        </span>
+                    </div>
+                    
+                    <!-- Valeur principale -->
+                    <p class="text-xl text-end mr-2 font-heading font-bold text-brand-dark group-hover:text-brand-primary transition">
+                        {{ kpi.value }}
+                    </p>
+                    
+                    <!-- Sous-texte -->
+                    {# <span class="{{ kpi.color }} text-sm italic">{{ kpi.sub }}</span> #}
+                </div>
+            {% endfor %}
+        </section>
+
+        <!-- Sécurité -->
+        <section class="card group hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300">
+            <h2 class="text-xl font-heading font-bold text-brand-dark mb-6 flex items-center">
+                <span class="material-icons text-success mr-2">security</span>
+                Sécurité
+            </h2>
+
+            <div
+                class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Email vérifié -->
+                <div class="flex items-center justify-between p-4 rounded-lg bg-success/10">
+                    <span class="flex items-center text-sm font-medium text-brand-dark">
+                        <span class="material-icons text-success mr-2">verified</span>
+                        Email vérifié
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-success text-white">Oui</span>
+                </div>
+
+                <!-- 2FA -->
+                <div class="flex items-center justify-between p-4 rounded-lg bg-info/10">
+                    <span class="flex items-center text-sm font-medium text-brand-dark">
+                        <span class="material-icons text-info mr-2">shield</span>
+                        2FA activé
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-info text-white">Oui</span>
+                </div>
+
+                <!-- Dernier changement de mot de passe -->
+                <div class="flex items-center justify-between p-4 rounded-lg bg-warning/10">
+                    <span class="flex items-center text-sm font-medium text-brand-dark">
+                        <span class="material-icons text-warning mr-2">lock_reset</span>
+                        Dernier changement de mot de passe
+                    </span>
+                    <span class="text-sm font-semibold text-brand-dark">05/07/2026</span>
+                </div>
+
+                <!-- Historique des connexions -->
+                <div class="flex items-center justify-between p-4 rounded-lg bg-brand-light/10">
+                    <span class="flex items-center text-sm font-medium text-brand-dark">
+                        <span class="material-icons text-brand-primary mr-2">history</span>
+                        Dernière connexion
+                    </span>
+                    <span class="text-sm font-semibold text-brand-dark">08/07/2026 à 16:45</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Activité des utilisateurs -->
+        <section class="card group hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-heading font-bold text-brand-dark flex items-center">
+                    <span class="material-icons text-brand-primary mr-2">people</span>
+                    Activité des utilisateurs
+                </h2>
+                <span class="px-3 py-1 rounded-full text-xs font-medium bg-brand-light text-brand-dark">
+                    Statistiques en temps réel
+                </span>
+            </div>
+
+            <!-- KPIs utilisateurs -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                <div class="bg-success/10 rounded-lg p-3 text-center">
+                    <p class="text-2xl font-bold text-success">1,245</p>
+                    <p class="text-xs text-gray-500">Total Users</p>
+                </div>
+                <div class="bg-info/10 rounded-lg p-3 text-center">
+                    <p class="text-2xl font-bold text-info">320</p>
+                    <p class="text-xs text-gray-500">Connectés</p>
+                </div>
+                <div class="bg-brand-primary/10 rounded-lg p-3 text-center">
+                    <p class="text-2xl font-bold text-brand-primary">890</p>
+                    <p class="text-xs text-gray-500">Actifs</p>
+                </div>
+                <div class="bg-warning/10 rounded-lg p-3 text-center">
+                    <p class="text-2xl font-bold text-warning">210</p>
+                    <p class="text-xs text-gray-500">Inactifs</p>
+                </div>
+                <div class="bg-danger/10 rounded-lg p-3 text-center">
+                    <p class="text-2xl font-bold text-danger">45</p>
+                    <p class="text-xs text-gray-500">Désactivés</p>
+                </div>
+            </div>
+
+            <!-- Mini graphique -->
+            <canvas id="usersChart" class="w-full h-48"></canvas>
+        </section>
+
+		{# <!-- Section Graphiques -->
+		<section class="card">
+			<h2 class="text-lg font-heading font-bold text-brand-dark mb-4 flex items-center">
+				<span class="material-icons text-brand-primary mr-2">insights</span>
+				Statistiques globales
+			</h2>
+			<canvas id="revenusChart" class="w-full h-64"></canvas>
+		</section> #}
+              
+        <!-- Timeline par statut enrichie -->
+        <section
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+            <!-- Terminés -->
+            <div class="card group hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300">
+                <h2 class="text-lg font-heading font-bold text-success mb-4 flex items-center justify-between">
+                    <span class="flex items-center">
+                        <span class="material-icons mr-2">check_circle</span>
+                        Terminés
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">3 projets</span>
+                </h2>
+                <ul class="space-y-4">
+                    <li class="flex items-start group-hover:translate-x-1 transition">
+                        <span class="material-icons text-success mr-3">done</span>
+                        <div>
+                            <p class="font-semibold text-brand-dark">Site e-commerce</p>
+                            <p class="text-sm text-gray-500">Mai 2026</p>
+                        </div>
+                    </li>
+                    <!-- autres projets terminés -->
+                </ul>
+            </div>
+
+            <!-- En cours -->
+            <div class="card group hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300">
+                <h2 class="text-lg font-heading font-bold text-info mb-4 flex items-center justify-between">
+                    <span class="flex items-center">
+                        <span class="material-icons mr-2">autorenew</span>
+                        En cours
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-info/10 text-info">2 projets</span>
+                </h2>
+                <ul class="space-y-4">
+                    <li class="flex items-start group-hover:translate-x-1 transition">
+                        <span class="material-icons text-info mr-3 animate-spin-slow">autorenew</span>
+                        <div>
+                            <p class="font-semibold text-brand-dark">Application mobile</p>
+                            <p class="text-sm text-gray-500">Mai - Juin 2026</p>
+                        </div>
+                    </li>
+                    <!-- autres projets en cours -->
+                </ul>
+            </div>
+
+            <!-- Collaborations -->
+            <div class="card group hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300">
+                <h2 class="text-lg font-heading font-bold text-brand-accent mb-4 flex items-center justify-between">
+                    <span class="flex items-center">
+                        <span class="material-icons mr-2">group_work</span>
+                        Collaborations
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-brand-accent/10 text-brand-accent">1 projet</span>
+                </h2>
+                <ul class="space-y-4">
+                    <li class="flex items-start group-hover:translate-x-1 transition">
+                        <span class="material-icons text-brand-accent mr-3">handshake</span>
+                        <div>
+                            <p class="font-semibold text-brand-dark">Partenariat Startup Z</p>
+                            <p class="text-sm text-gray-500">Juin 2026</p>
+                        </div>
+                    </li>
+                    <!-- autres collaborations -->
+                </ul>
+            </div>
+
+            <!-- Planifiés -->
+            <div class="card group hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300">
+                <h2 class="text-lg font-heading font-bold text-warning mb-4 flex items-center justify-between">
+                    <span class="flex items-center">
+                        <span class="material-icons mr-2">schedule</span>
+                        Planifiés
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-warning/10 text-warning">2 projets</span>
+                </h2>
+                <ul class="space-y-4">
+                    <li class="flex items-start group-hover:translate-x-1 transition">
+                        <span class="material-icons text-warning mr-3">event</span>
+                        <div>
+                            <p class="font-semibold text-brand-dark">Plateforme SaaS</p>
+                            <p class="text-sm text-gray-500">Juillet 2026</p>
+                        </div>
+                    </li>
+                    <!-- autres projets planifiés -->
+                </ul>
+            </div>
+        </section>
+
+        <!-- Tableau -->
+        <section class="card overflow-hidden group hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-heading font-bold text-brand-dark flex items-center">
+                    <span class="material-icons text-brand-primary mr-2">table_chart</span>
+                    Projets en détail
+                </h2>
+                <!-- Badge décoratif -->
+                <span class="px-3 py-1 rounded-full text-xs font-medium bg-brand-light text-brand-dark">
+                    2 projets actifs
+                </span>
+            </div>
+
+            <table class="table text-left">
+                <thead>
+                    <tr>
+                        <th>Projet</th>
+                        <th>Client</th>
+                        <th>Date début</th>
+                        <th>Date fin</th>
+                        <th>Statut</th>
+                        <th>Budget</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hover:bg-brand-light/10 transition">
+                        <td>Site e-commerce</td>
+                        <td>Entreprise X</td>
+                        <td>01/05/2026</td>
+                        <td>20/05/2026</td>
+                        <td>
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">Terminé</span>
+                        </td>
+                        <td>$3,200</td>
+                    </tr>
+                    <tr class="hover:bg-brand-light/10 transition">
+                        <td>Application mobile</td>
+                        <td>Startup Y</td>
+                        <td>15/05/2026</td>
+                        <td>En cours</td>
+                        <td>
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-info/10 text-info">En cours</span>
+                        </td>
+                        <td>$5,000</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Témoignages -->
+        <section class="card group hover:shadow-xl hover:-translate-y-1 transform transition-all duration-300">
+            <h2 class="text-xl font-heading font-bold text-brand-dark mb-6 flex items-center">
+                <span class="material-icons text-brand-accent mr-2">chat</span>
+                Témoignages clients
+            </h2>
+
+            <blockquote class="border-l-4 border-warning pl-4 italic text-gray-600 mb-4">
+                "Horlynat a livré un projet exceptionnel, avec une qualité et une réactivité remarquables."
+            </blockquote>
+
+            <blockquote class="border-l-4 border-success pl-4 italic text-gray-600">
+                "Une collaboration fluide et des résultats au‑delà de nos attentes."
+            </blockquote>
+        </section>
+
+        <!-- CTA -->
+        <section class="flex flex-wrap gap-4">
+            <button class="btn btn-primary flex items-center space-x-2 hover:scale-105 transform transition">
+                <span class="material-icons">request_quote</span>
+                <span>Demander un devis</span>
+            </button>
+
+            <button class="btn btn-success flex items-center space-x-2 hover:scale-105 transform transition">
+                <span class="material-icons">event</span>
+                <span>Planifier un rendez-vous</span>
+            </button>
+
+            <button class="btn btn-warning flex items-center space-x-2 hover:scale-105 transform transition">
+                <span class="material-icons">support_agent</span>
+                <span>Contacter le support</span>
+            </button>
+        </section>
+
+
+	</main>
+
+{% endblock %}
+
