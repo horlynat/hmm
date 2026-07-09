@@ -14,5 +14,5 @@
             }
         }
     },
-    "entrypoints": []
+    "entrypoints": ["./assets/controllers/csrf_protection_controller.js"]
 }

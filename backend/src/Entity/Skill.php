@@ -7,8 +7,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: SkillRepository::class)]
 #[UniqueEntity(fields: ['name'], message: "Cette compétence existe déjà.")]
@@ -17,36 +18,29 @@ class Skill
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['api_public', 'api_admin'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le nom de la compétence est obligatoire.")]
-    #[Assert\Length(
-        min: 2,
-        minMessage: "Le nom de la compétence doit contenir au moins {{ limit }} caractères.",
-        max: 255,
-        maxMessage: "Le nom de la compétence ne peut pas dépasser {{ limit }} caractères."
-    )]
+    #[Assert\Length(min: 2, max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::INTEGER)]
     #[Assert\NotNull(message: "Le niveau est obligatoire.")]
-    #[Assert\Range(
-        min: 1,
-        max: 10,
-        notInRangeMessage: "Le niveau doit être compris entre {{ min }} et {{ max }}."
-    )]
+    #[Assert\Range(min: 1, max: 10)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?int $level = null;
 
-    /**
-     * @var Collection<int, Project>
-     */
     #[ORM\ManyToMany(targetEntity: Project::class, mappedBy: 'skill')]
+    #[Groups(['api_admin'])] // exposé seulement côté admin
     private Collection $projects;
 
     #[ORM\ManyToOne(inversedBy: 'skill')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(message: "La catégorie de compétence est obligatoire.")]
+    #[Groups(['api_admin'])] // exposé seulement côté admin
     private ?SkillCategory $skillCategory = null;
 
     public function __construct()

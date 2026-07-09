@@ -1,36 +1,28 @@
 {% for label, messages in app.flashes %}
-	{# Configuration des styles selon le type de message #}
-	{% set style = {
-        'success': 'bg-emerald-200 text-emerald-800 border-emerald-300',
-        'danger':  'bg-red-200 text-red-800 border-red-300',
-        'error':   'bg-rose-300 text-rose-800 border-rose-400',
-        'warning': 'bg-amber-200 text-amber-800 border-amber-300',
-        'info':    'bg-blue-200 text-blue-800 border-blue-300'
-    } %}
-
-	{# Configuration des icônes #}
-	{% set icons = {
-        'success': 'check_circle',
-        'danger':  'dangerous',
-        'error':   'error',
-        'warning': 'warning',
-        'info':    'info'
-    } %}
-
-	{# Récupération du style/icône, par défaut 'info' #}
-	{% set current_style = style[label] ?? style['info'] %}
-	{% set current_icon  = icons[label] ?? icons['info'] %}
-
 	{% for message in messages %}
-		<div class="relative flex items-center p-4 mb-4 rounded-xl border shadow-sm transition-all duration-300 {{ current_style }}">
+		<div
+			class="alert alert-{{ label }} flex items-center mb-4 transition-all duration-300">
 
-			<span class="material-icons mr-3 text-xl">{{ current_icon }}</span>
+			<!-- Icône -->
+			{% set icons = {
+          'success': 'check_circle',
+          'danger':  'dangerous',
+          'error':   'error',
+          'warning': 'warning',
+          'info':    'info'
+      } %}
+			<span class="material-icons mr-3 text-xl opacity-80">
+				{{ icons[label] ?? icons['info'] }}
+			</span>
 
+			<!-- Message -->
 			<span class="text-sm font-medium flex-1">{{ message }}</span>
 
+			<!-- Bouton de fermeture -->
 			<button onclick="this.parentElement.remove();" class="ml-4 opacity-60 hover:opacity-100 transition-opacity">
 				<span class="material-icons text-lg">close</span>
 			</button>
 		</div>
 	{% endfor %}
 {% endfor %}
+

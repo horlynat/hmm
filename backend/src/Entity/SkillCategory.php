@@ -6,8 +6,9 @@ use App\Repository\SkillCategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: SkillCategoryRepository::class)]
 #[UniqueEntity(fields: ['name'], message: "Cette catégorie existe déjà.")]
@@ -16,22 +17,17 @@ class SkillCategory
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['api_public', 'api_admin'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: "Le nom de la catégorie est obligatoire.")]
-    #[Assert\Length(
-        min: 3,
-        minMessage: "Le nom de la catégorie doit contenir au moins {{ limit }} caractères.",
-        max: 100,
-        maxMessage: "Le nom de la catégorie ne peut pas dépasser {{ limit }} caractères."
-    )]
+    #[Assert\Length(min: 3, max: 100)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $name = null;
 
-    /**
-     * @var Collection<int, Skill>
-     */
     #[ORM\OneToMany(targetEntity: Skill::class, mappedBy: 'skillCategory')]
+    #[Groups(['api_admin'])] // exposé seulement côté admin
     private Collection $skill;
 
     public function __construct()

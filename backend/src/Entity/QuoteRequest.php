@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\QuoteRequestRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: QuoteRequestRepository::class)]
@@ -13,48 +14,43 @@ class QuoteRequest
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['api_admin'])] // exposé uniquement côté admin
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le nom est obligatoire.")]
-    #[Assert\Length(
-        min: 2,
-        minMessage: "Le nom doit contenir au moins {{ limit }} caractères.",
-        max: 255,
-        maxMessage: "Le nom ne peut pas dépasser {{ limit }} caractères."
-    )]
+    #[Assert\Length(min: 2, max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: "L'email est obligatoire.")]
-    #[Assert\Email(message: "Veuillez entrer une adresse email valide.")]
-    #[Assert\Length(max: 100, maxMessage: "L'email ne peut pas dépasser {{ limit }} caractères.")]
+    #[Assert\Email]
+    #[Assert\Length(max: 100)]
+    #[Groups(['api_admin'])] // email visible côté admin uniquement
     private ?string $email = null;
 
     #[ORM\Column(type: Types::STRING, length: 20)]
     #[Assert\NotBlank(message: "Le numéro de téléphone est obligatoire.")]
-    #[Assert\Regex(
-        pattern: "/^\+?[0-9\s\-]{7,20}$/",
-        message: "Le numéro de téléphone doit être valide (chiffres, espaces ou tirets)."
-    )]
+    #[Assert\Regex(pattern: "/^\+?[0-9\s\-]{7,20}$/")]
+    #[Groups(['api_admin'])] // téléphone visible côté admin uniquement
     private ?string $phone = null;
 
     #[ORM\Column(type: Types::TEXT)]
     #[Assert\NotBlank(message: "Le message est obligatoire.")]
-    #[Assert\Length(
-        min: 10,
-        minMessage: "Le message doit contenir au moins {{ limit }} caractères."
-    )]
+    #[Assert\Length(min: 10)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $message = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['api_admin'])]
     private ?bool $status = null;
 
     #[ORM\ManyToOne(inversedBy: 'quoteRequest')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(message: "Un utilisateur doit être associé à la demande.")]
+    #[Groups(['api_admin'])]
     private ?User $user = null;
-
     public function getId(): ?int
     {
         return $this->id;

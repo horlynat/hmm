@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\TagRepository;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TagRepository::class)]
@@ -13,29 +14,23 @@ class Tag
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['api_public', 'api_admin'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: "Le nom du tag est obligatoire.")]
-    #[Assert\Length(
-        min: 2,
-        minMessage: "Le nom du tag doit contenir au moins {{ limit }} caractères.",
-        max: 100,
-        maxMessage: "Le nom du tag ne peut pas dépasser {{ limit }} caractères."
-    )]
+    #[Assert\Length(min: 2, max: 100)]
+    #[Groups(['api_public', 'api_admin'])]
     private ?string $name = null;
 
-    /**
-     * @var Collection<int, Article>
-     */
     #[ORM\ManyToMany(targetEntity: Article::class, mappedBy: 'tags')]
+    #[Groups(['api_admin'])] // exposé seulement côté admin
     private Collection $articles;
 
     public function __construct()
     {
         $this->articles = new \Doctrine\Common\Collections\ArrayCollection();
     }
-
     public function getId(): ?int
     {
         return $this->id;
