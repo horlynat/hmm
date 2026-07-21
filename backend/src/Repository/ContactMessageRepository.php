@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\ContactMessage;
+use App\Enum\ContactMessageStatusEnum;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -14,6 +15,31 @@ class ContactMessageRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, ContactMessage::class);
+    }
+
+    /**
+     * @return ContactMessage[]
+     */
+    public function findByStatus(ContactMessageStatusEnum $status): array
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.status = :status')
+            ->setParameter('status', $status)
+            ->orderBy('c.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    public function countUnread(): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.status = :status')
+            ->setParameter('status', ContactMessageStatusEnum::NEW)
+            ->getQuery()
+            ->getSingleScalarResult()
+        ;
     }
 
     //    /**

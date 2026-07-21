@@ -96,15 +96,15 @@
 					<i class="ti ti-user-dollar text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Clients
 				</a>
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_contact_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_contact' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-mail text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Contacts
 				</a>
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_request_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_request' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-git-pull-request text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Requests
 				</a>
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_testimonial_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_testimonial' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-message-star text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Témoignages
 				</a>

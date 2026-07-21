@@ -1,0 +1,66 @@
+{# templates/admin/request/read.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Demande de devis :
+	{{ quoteRequest.name }}
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<div class="mb-6">
+			<a href="{{ path('admin_request_index') }}" class="btn btn-secondary gap-2 px-3 py-2 text-sm w-fit">
+				<span class="material-icons text-base">arrow_back</span>
+				<span>Retour à la liste des demandes</span>
+			</a>
+		</div>
+
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+			<!-- 📖 CONTENU (70%) -->
+			<div class="lg:col-span-2 card space-y-6">
+				<div>
+					{% if quoteRequest.status is null %}
+						<span class="badge bg-yellow-500 text-black">En attente</span>
+					{% elseif quoteRequest.status %}
+						<span class="badge bg-green-500 text-white">Acceptée</span>
+					{% else %}
+						<span class="badge bg-red-500 text-white">Refusée</span>
+					{% endif %}
+					<h1 class="text-3xl font-heading font-bold tracking-tight mt-3 text-brand-dark">
+						{{ quoteRequest.name }}
+					</h1>
+					<p class="text-sm opacity-60 mt-1">{{ quoteRequest.email }} — {{ quoteRequest.phone }}</p>
+				</div>
+
+				<div class="leading-relaxed text-base space-y-4 whitespace-pre-line border-t border-gray-100 pt-6 text-brand-dark/80">
+					{{ quoteRequest.message }}
+				</div>
+			</div>
+
+			<!-- ⚙️ INFOS LATÉRALES (30%) -->
+			<div class="space-y-6">
+				<div class="card space-y-4">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">
+						Fiche Technique
+					</h3>
+
+					<div class="space-y-3 text-sm">
+						<div class="flex justify-between items-center">
+							<span class="opacity-60">Compte lié :</span>
+							<span class="font-bold text-brand-dark">{{ quoteRequest.user ? quoteRequest.user.fullName ?? quoteRequest.user.email : '—' }}</span>
+						</div>
+					</div>
+
+					<div class="pt-4 border-t border-gray-100 flex flex-col gap-3">
+						{% include 'admin/request/_status_forms.html.twig' with {'quoteRequest': quoteRequest} %}
+						<div class="w-full [&>div]:w-full [&>div>form]:w-full text-center">
+							{% include 'admin/request/_delete_form.html.twig' with {'quoteRequest': quoteRequest} %}
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</main>
+{% endblock %}

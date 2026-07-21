@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\ContactMessageStatusEnum;
 use App\Repository\ContactMessageRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -47,6 +48,15 @@ class ContactMessage
     #[Assert\NotNull(message: "La date de création est obligatoire")]
     #[Assert\Type(\DateTimeImmutable::class)]
     private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(length: 20, enumType: ContactMessageStatusEnum::class)]
+    #[Groups(["api_admin"])]
+    private ContactMessageStatusEnum $status = ContactMessageStatusEnum::NEW;
+
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
@@ -109,6 +119,34 @@ class ContactMessage
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getStatus(): ContactMessageStatusEnum
+    {
+        return $this->status;
+    }
+
+    public function setStatus(ContactMessageStatusEnum $status): static
+    {
+        $this->status = $status;
+
+        return $this;
+    }
+
+    public function markAsRead(): static
+    {
+        if (ContactMessageStatusEnum::NEW === $this->status) {
+            $this->status = ContactMessageStatusEnum::READ;
+        }
+
+        return $this;
+    }
+
+    public function archive(): static
+    {
+        $this->status = ContactMessageStatusEnum::ARCHIVED;
 
         return $this;
     }

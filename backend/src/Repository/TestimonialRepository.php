@@ -16,6 +16,32 @@ class TestimonialRepository extends ServiceEntityRepository
         parent::__construct($registry, Testimonial::class);
     }
 
+    /**
+     * @return Testimonial[]
+     */
+    public function findPublished(): array
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.publishedAt IS NOT NULL')
+            ->orderBy('t.publishedAt', 'DESC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    /**
+     * @return Testimonial[]
+     */
+    public function findPending(): array
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.publishedAt IS NULL')
+            ->orderBy('t.id', 'DESC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
     //    /**
     //     * @return Testimonial[] Returns an array of Testimonial objects
     //     */
