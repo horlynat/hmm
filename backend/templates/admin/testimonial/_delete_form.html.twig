@@ -1,0 +1,35 @@
+{# templates/admin/testimonial/_delete_form.html.twig #}
+<div class="inline-block">
+
+	<button type="button" onclick="document.getElementById('delete-modal-testimonial-{{ testimonial.id }}').showModal()" class="p-2 hover:bg-danger/10 text-danger rounded-sm transition-colors flex items-center justify-center cursor-pointer" title="Supprimer le témoignage">
+		<span class="material-icons text-lg block">delete_forever</span>
+	</button>
+
+	<dialog id="delete-modal-testimonial-{{ testimonial.id }}" class="card p-6 max-w-md w-full bg-bg-card backdrop:bg-brand-dark/40 backdrop:backdrop-blur-sm shadow-2xl border-0">
+		<div class="text-center">
+			<div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-danger/10 text-danger mb-4">
+				<span class="material-icons text-2xl">warning</span>
+			</div>
+
+			<h3 class="text-lg font-heading font-bold text-brand-dark">Supprimer ce témoignage ?</h3>
+			<p class="text-sm opacity-80 mt-2 px-2">
+				Êtes-vous sûr de vouloir supprimer le témoignage de
+				<span class="font-bold text-brand-dark">"{{ testimonial.author }}"</span>
+				? Cette action est irréversible et supprimera aussi les médias associés.
+			</p>
+
+			<div class="mt-6 flex flex-col sm:flex-row-reverse gap-3">
+				<form method="post" action="{{ path('admin_testimonial_delete', {'id': testimonial.id}) }}" class="w-full sm:w-auto flex-1">
+					<input type="hidden" name="_token" value="{{ csrf_token('admin_testimonial_delete_' ~ testimonial.id) }}">
+					<button type="submit" onclick="this.disabled=true; this.form.submit();" class="btn bg-danger text-white w-full gap-2 px-4 py-2 border-0">
+						Confirmer
+					</button>
+				</form>
+
+				<button type="button" onclick="document.getElementById('delete-modal-testimonial-{{ testimonial.id }}').close()" class="btn btn-secondary w-full sm:w-auto flex-1 px-4 py-2">
+					Annuler
+				</button>
+			</div>
+		</div>
+	</dialog>
+</div>

@@ -1,0 +1,89 @@
+{# templates/admin/contact/messages.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Messages de contact
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+			<div>
+				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+					<span class="material-icons text-brand-primary">mail</span>
+					<span>Messages de contact</span>
+					{% if unreadCount > 0 %}
+						<span class="badge bg-blue-500 text-white">{{ unreadCount }} nouveau{{ unreadCount > 1 ? 'x' : '' }}</span>
+					{% endif %}
+				</h1>
+				<p class="text-sm opacity-60 mt-1">Consultez et gérez les messages reçus depuis le formulaire de contact du site.</p>
+			</div>
+		</div>
+
+		<!-- 🔎 FILTRES -->
+		<form method="get" class="soft-card mb-6 flex flex-col sm:flex-row gap-3 sm:items-end p-4">
+			<div class="flex-1">
+				<label class="text-xs font-bold uppercase opacity-60">Recherche</label>
+				<input type="text" name="search" value="{{ filters.search }}" placeholder="Nom, email, sujet..." class="input w-full mt-1">
+			</div>
+			<div>
+				<label class="text-xs font-bold uppercase opacity-60">Statut</label>
+				<select name="status" class="input mt-1">
+					<option value="">Tous</option>
+					{% for status in statuses %}
+						<option value="{{ status.value }}" {% if filters.status == status.value %}selected{% endif %}>{{ status.getLabel() }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<button type="submit" class="btn btn-primary">Filtrer</button>
+		</form>
+
+		<!-- 📊 TABLEAU -->
+		<div class="soft-card">
+			<table class="table">
+				<thead>
+					<tr>
+						<th class="w-24">Id</th>
+						<th>Statut</th>
+						<th>Expéditeur</th>
+						<th>Sujet</th>
+						<th>Reçu le</th>
+						<th class="w-24 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for message in messages %}
+						<tr class="{% if message.status.value == 'nouveau' %}font-semibold{% endif %}">
+							<td class="font-mono text-xs opacity-50">{{ message.id }}</td>
+							<td>
+								<span class="badge {{ message.status.getBadgeClass() }}">{{ message.status.getLabel() }}</span>
+							</td>
+							<td>
+								<div>{{ message.name }}</div>
+								<div class="text-xs opacity-60">{{ message.email }}</div>
+							</td>
+							<td>{{ message.subject }}</td>
+							<td class="text-sm opacity-70">{{ message.createdAt ? message.createdAt|date('d/m/Y H:i') : '—' }}</td>
+							<td>
+								<div class="flex items-center justify-end gap-2">
+									<a href="{{ path('admin_contact_read', {'id': message.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir">
+										<span class="material-icons text-lg block">visibility</span>
+									</a>
+									{% include 'admin/contact/_delete_form.html.twig' with {'message': message} %}
+								</div>
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="6" class="text-center py-12 opacity-40">
+								<span class="material-icons text-4xl block mb-2">mail_off</span>
+								Aucun message pour le moment.
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</main>
+{% endblock %}

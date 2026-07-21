@@ -37,8 +37,7 @@ class Testimonial
     #[Groups(['api_public', 'api_admin'])]
     private ?string $rating = null;
 
-    #[ORM\Column]
-    #[Assert\NotNull(message: "La date de publication est obligatoire.")]
+    #[ORM\Column(nullable: true)]
     #[Assert\Type(\DateTimeImmutable::class)]
     #[Assert\LessThanOrEqual("today")]
     #[Groups(['api_admin'])] // exposé seulement côté admin
@@ -98,11 +97,16 @@ class Testimonial
         return $this->publishedAt;
     }
 
-    public function setPublishedAt(\DateTimeImmutable $publishedAt): static
+    public function setPublishedAt(?\DateTimeImmutable $publishedAt): static
     {
         $this->publishedAt = $publishedAt;
 
         return $this;
+    }
+
+    public function isPublished(): bool
+    {
+        return null !== $this->publishedAt;
     }
 
     /**

@@ -1,0 +1,94 @@
+{# templates/admin/testimonial/testimonials.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Témoignages
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+			<div>
+				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+					<span class="material-icons text-brand-primary">rate_review</span>
+					<span>Témoignages</span>
+				</h1>
+				<p class="text-sm opacity-60 mt-1">Modérez et publiez les témoignages clients affichés sur le site public.</p>
+			</div>
+			<a href="{{ path('admin_testimonial_create') }}" class="btn btn-primary gap-2">
+				<span class="material-icons text-sm">add_circle</span>
+				<span>Ajouter un témoignage</span>
+			</a>
+		</div>
+
+		<!-- 🔎 FILTRES -->
+		<form method="get" class="soft-card mb-6 flex flex-col sm:flex-row gap-3 sm:items-end p-4">
+			<div class="flex-1">
+				<label class="text-xs font-bold uppercase opacity-60">Recherche</label>
+				<input type="text" name="search" value="{{ filters.search }}" placeholder="Auteur, contenu..." class="input w-full mt-1">
+			</div>
+			<div>
+				<label class="text-xs font-bold uppercase opacity-60">Statut</label>
+				<select name="status" class="input mt-1">
+					<option value="">Tous</option>
+					<option value="published" {% if filters.status == 'published' %}selected{% endif %}>Publiés</option>
+					<option value="pending" {% if filters.status == 'pending' %}selected{% endif %}>En attente</option>
+				</select>
+			</div>
+			<button type="submit" class="btn btn-primary">Filtrer</button>
+		</form>
+
+		<!-- 📊 TABLEAU -->
+		<div class="soft-card">
+			<table class="table">
+				<thead>
+					<tr>
+						<th class="w-24">Id</th>
+						<th>Statut</th>
+						<th>Auteur</th>
+						<th>Note</th>
+						<th class="w-32 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for testimonial in testimonials %}
+						<tr>
+							<td class="font-mono text-xs opacity-50">{{ testimonial.id }}</td>
+							<td>
+								{% if testimonial.isPublished %}
+									<span class="badge bg-green-500 text-white">Publié</span>
+								{% else %}
+									<span class="badge bg-yellow-500 text-black">En attente</span>
+								{% endif %}
+							</td>
+							<td>
+								<div class="font-medium">{{ testimonial.author }}</div>
+								<div class="text-xs opacity-60 truncate max-w-xs">{{ testimonial.content }}</div>
+							</td>
+							<td>{{ testimonial.rating ? testimonial.rating ~ ' ★' : '—' }}</td>
+							<td>
+								<div class="flex items-center justify-end gap-2">
+									<a href="{{ path('admin_testimonial_read', {'id': testimonial.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir">
+										<span class="material-icons text-lg block">visibility</span>
+									</a>
+									<a href="{{ path('admin_testimonial_update', {'id': testimonial.id}) }}" class="p-2 hover:bg-warning/20 rounded-sm transition-colors text-warning" title="Modifier">
+										<span class="material-icons text-lg block">edit</span>
+									</a>
+									{% include 'admin/testimonial/_delete_form.html.twig' with {'testimonial': testimonial} %}
+								</div>
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="5" class="text-center py-12 opacity-40">
+								<span class="material-icons text-4xl block mb-2">rate_review</span>
+								Aucun témoignage pour le moment.
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</main>
+{% endblock %}
