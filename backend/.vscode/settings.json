@@ -39,5 +39,6 @@
     ],
     "typescript.updateImportsOnFileMove.enabled": "never",
     "javascript.updateImportsOnFileMove.enabled": "never",
+    "git.ignoreLimitWarning": true,
 
 }

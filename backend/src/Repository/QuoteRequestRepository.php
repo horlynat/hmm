@@ -16,6 +16,27 @@ class QuoteRequestRepository extends ServiceEntityRepository
         parent::__construct($registry, QuoteRequest::class);
     }
 
+    /**
+     * @return QuoteRequest[]
+     */
+    public function findByStatus(?bool $status): array
+    {
+        $queryBuilder = $this->createQueryBuilder('q');
+
+        if (null === $status) {
+            $queryBuilder->andWhere('q.status IS NULL');
+        } else {
+            $queryBuilder->andWhere('q.status = :status')
+                ->setParameter('status', $status);
+        }
+
+        return $queryBuilder
+            ->orderBy('q.id', 'DESC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
     //    /**
     //     * @return QuoteRequest[] Returns an array of QuoteRequest objects
     //     */
