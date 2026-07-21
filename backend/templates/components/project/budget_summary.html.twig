@@ -1,0 +1,48 @@
+{# templates/components/project/_budget_summary.html.twig #}
+<div
+	class="soft-card p-6 border {% if this.isBudgetCritical %}border-danger/30{% else %}border-gray-100{% endif %} transition-all duration-300" {{ attributes }}>
+
+	{# En-tête de la carte financière #}
+	<div class="flex justify-between items-center mb-4">
+		<h4 class="text-xs font-bold text-brand-dark uppercase tracking-wider mb-0">Consommation Budgétaire</h4>
+		{% if this.isBudgetCritical %}
+			<span class="badge bg-danger text-white animate-pulse-danger">Alerte Critique</span>
+		{% else %}
+			<span class="badge bg-success text-white">Budget Sain</span>
+		{% endif %}
+	</div>
+
+	{# Grille des montants #}
+	<div class="grid grid-cols-2 gap-4 mb-4">
+		<div>
+			<span class="text-xs text-gray-400 block mb-1">Budget Initial</span>
+			<span class="text-xl font-extrabold text-brand-dark">
+				{{ project.budget|number_format(2, ',', ' ') }}
+				€
+			</span>
+		</div>
+		<div>
+			<span class="text-xs text-gray-400 block mb-1">Dépensé</span>
+			<span class="text-xl font-extrabold {% if this.isBudgetCritical %}text-danger{% else %}text-brand-primary{% endif %}">
+				{{ project.spent|number_format(2, ',', ' ') }}
+				€
+			</span>
+		</div>
+	</div>
+
+	{# Barre de progression #}
+	<div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3 overflow-hidden mb-3">
+		<div class="h-full rounded-full {% if this.isBudgetCritical %}bg-danger{% else %}bg-brand-primary{% endif %} transition-all duration-500" style="width: {{ min(this.percentageSpent, 100) }}%"></div>
+	</div>
+
+	{# Pied de carte statistique #}
+	<div class="flex justify-between items-center text-xs text-gray-500">
+		<span>Consommé :
+			<strong class="text-brand-dark">{{ this.percentageSpent|number_format(1) }}%</strong>
+		</span>
+		<span>Reste :
+			<strong class="{% if this.isBudgetCritical %}text-danger font-bold{% else %}text-brand-dark{% endif %}">{{ (project.budget - project.spent)|number_format(2, ',', ' ') }}
+				€</strong>
+		</span>
+	</div>
+</div>

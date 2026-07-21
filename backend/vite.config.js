@@ -16,6 +16,7 @@ export default defineConfig({
                 login: "./assets/js/login.js",
                 register: "./assets/js/register.js",
                 dashboard: "./assets/js/dashboard.js",
+                project: "./assets/js/project.js",
                 profile: "./assets/js/profile.js",
             },
         },

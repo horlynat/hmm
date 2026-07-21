@@ -13,7 +13,7 @@
 				<span class="material-icons text-indigo-600">folder</span>
 				<span>Détails du projet</span>
 			</h1>
-			<a href="{{ path('project_index') }}" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition flex items-center space-x-2">
+			<a href="{{ path('admin_project_index') }}" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition flex items-center space-x-2">
 				<span class="material-icons">arrow_back</span>
 				<span>Retour à la liste</span>
 			</a>
@@ -53,11 +53,11 @@
 
 		<!-- Actions -->
 		<div class="flex space-x-4 mt-6">
-			<a href="{{ path('project_update', {'id': project.id}) }}" class="px-5 py-2 bg-yellow-100 text-yellow-700 rounded-lg shadow hover:bg-yellow-200 transition flex items-center space-x-2">
+			<a href="{{ path('admin_project_update', {'id': project.id}) }}" class="px-5 py-2 bg-yellow-100 text-yellow-700 rounded-lg shadow hover:bg-yellow-200 transition flex items-center space-x-2">
 				<span class="material-icons">edit</span>
 				<span>Modifier</span>
 			</a>
-			{{ include('project/_delete_form.html.twig') }}
+			{{ include('admin/project/_delete_form.html.twig') }}
 		</div>
 	</main>
 {% endblock %}

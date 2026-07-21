@@ -1,7 +1,43 @@
 {
-    "typescript.updateImportsOnFileMove.enabled": "never",
-    "javascript.updateImportsOnFileMove.enabled": "never",
     "python.analysis.autoImportCompletions": false,
     "python.analysis.autoSearchPaths": false,
-    "python.analysis.fixAll": []
+    "python.analysis.fixAll": [],
+    "python.analysis.typeCheckingMode": "off",
+    "intelephense.environment.phpVersion": "8.2.0",
+    "intelephense.environment.includePaths": [
+        "./vendor/doctrine/orm/lib/Doctrine/ORM/Mapping",
+        "./vendor/doctrine/collections/src"
+    ],
+    "intelephense.diagnostics.undefinedTypes": true,
+    "intelephense.diagnostics.undefinedFunctions": true,
+    "intelephense.diagnostics.undefinedConstants": true,
+    "intelephense.diagnostics.undefinedClassConstants": true,
+    "intelephense.diagnostics.undefinedProperties": true,
+    "intelephense.diagnostics.undefinedMethods": true,
+    "intelephense.diagnostics.undefinedNamespaces": true,
+    "intelephense.diagnostics.undefinedTraits": true,
+    "intelephense.diagnostics.undefinedInterfaces": true,
+    "intelephense.diagnostics.undefinedLabels": true,
+    "intelephense.diagnostics.undefinedTypesInDocblocks": true,
+    "intelephense.diagnostics.undefinedFunctionsInDocblocks": true,
+    "intelephense.diagnostics.undefinedConstantsInDocblocks": true,
+    "intelephense.diagnostics.undefinedClassConstantsInDocblocks": true,
+    "intelephense.diagnostics.undefinedPropertiesInDocblocks": true,
+    "intelephense.diagnostics.undefinedMethodsInDocblocks": true,
+    "intelephense.diagnostics.undefinedVariablesInDocblocks": true,
+    "intelephense.diagnostics.undefinedNamespacesInDocblocks": true,
+
+    "files.exclude": {
+        "**/vendor": true,
+        "**/assets/vendor": true,
+        "**/var": true
+    },
+    "phpstorm.lsp.excludePaths": [
+        "vendor",
+        "assets/vendor",
+        "var"
+    ],
+    "typescript.updateImportsOnFileMove.enabled": "never",
+    "javascript.updateImportsOnFileMove.enabled": "never",
+
 }

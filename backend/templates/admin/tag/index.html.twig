@@ -1,0 +1,69 @@
+{# templates/admin/tag/index.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des Tags
+{% endblock %}
+
+{% block body %}
+	<main
+		class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+			<div>
+				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+					<span class="material-icons text-brand-primary">label</span>
+					<span>Gestion des Tags</span>
+				</h1>
+				<p class="text-sm opacity-60 mt-1">Gérez les étiquettes de classification pour vos articles et projets.</p>
+			</div>
+			<a href="{{ path('admin_tag_create') }}" class="btn btn-primary gap-2">
+				<span class="material-icons text-sm">add_circle</span>
+				<span>Créer un nouveau Tag</span>
+			</a>
+		</div>
+
+		<!-- 📊 TABLEAU DU COMPOSANT STRUCTURÉ .TABLE -->
+		<div class="soft-card">
+			<table class="table">
+				<thead>
+					<tr>
+						<th class="w-24">Id</th>
+						<th>Nom du Tag</th>
+						<th class="w-40 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for tag in tags %}
+						<tr>
+							<td class="font-mono text-xs opacity-50">{{ tag.id }}</td>
+							<td>
+								<span class="badge bg-brand-light text-brand-primary font-bold">
+									{{ tag.name }}
+								</span>
+							</td>
+							<td>
+								<div class="flex items-center justify-end gap-2">
+									<a href="{{ path('admin_tag_read', {'id': tag.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir">
+										<span class="material-icons text-lg block">visibility</span>
+									</a>
+									<a href="{{ path('admin_tag_update', {'id': tag.id}) }}" class="p-2 hover:bg-warning/20 rounded-sm transition-colors text-warning" title="Modifier">
+										<span class="material-icons text-lg block">edit</span>
+									</a>
+									{% include 'admin/tag/_delete_form.html.twig' with {'tag': tag} %}
+								</div>
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="3" class="text-center py-12 opacity-40">
+								<span class="material-icons text-4xl block mb-2">label_off</span>
+								<span>Aucun tag trouvé pour le moment.</span>
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</main>
+{% endblock %}

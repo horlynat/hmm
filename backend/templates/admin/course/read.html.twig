@@ -1,0 +1,71 @@
+{# templates/admin/course/read.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Détails :
+	{{ course.title }}
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<div class="mb-6">
+			<a href="{{ path('admin_course_index') }}" class="btn btn-secondary gap-2 px-3 py-2 text-sm w-fit">
+				<span class="material-icons text-base">arrow_back</span>
+				<span>Retour à la liste</span>
+			</a>
+		</div>
+
+		<div
+			class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+			<!-- 📖 CONTENU (70%) -->
+			<div class="lg:col-span-2 card space-y-6">
+				<div>
+					<span class="badge bg-brand-light text-brand-primary">ID : #{{ course.id }}</span>
+					<h1 class="text-3xl font-heading font-bold tracking-tight mt-3 text-brand-dark">
+						{{ course.title }}
+					</h1>
+					<p class="text-lg opacity-80 mt-1 flex items-center gap-1.5 font-bold text-brand-primary">
+						<span class="material-icons text-base">account_balance</span>
+						{{ course.institution }}
+					</p>
+				</div>
+
+				<div class="leading-relaxed text-base space-y-4 whitespace-pre-line border-t border-gray-100 pt-6">
+					{{ course.description ?: '<em class="opacity-40">Aucune description renseignée pour cette formation.</em>'|raw }}
+				</div>
+			</div>
+
+			<!-- ⚙️ INFOS LATÉRALES (30%) -->
+			<div class="space-y-6">
+				<div class="card space-y-4">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">
+						Période & Détails
+					</h3>
+
+					<div class="space-y-3 text-sm">
+						<div class="flex justify-between items-center">
+							<span class="opacity-60">Date de début :</span>
+							<span class="font-bold">{{ course.startDate ? course.startDate|date('d/m/Y') : '—' }}</span>
+						</div>
+						<div class="flex justify-between items-center">
+							<span class="opacity-60">Date de fin :</span>
+							<span class="font-bold">{{ course.endDate ? course.endDate|date('d/m/Y') : 'En cours' }}</span>
+						</div>
+					</div>
+
+					<div class="pt-4 border-t border-gray-100 flex flex-col gap-3">
+						<a href="{{ path('admin_course_update', {'id': course.id}) }}" class="btn btn-primary w-full text-sm gap-2">
+							<span class="material-icons text-sm">edit</span>
+							<span>Modifier la formation</span>
+						</a>
+						<div class="w-full [&>form]:w-full text-center">
+							{{ include('admin/course/_delete_form.html.twig', {'course': course}) }}
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</main>
+{% endblock %}

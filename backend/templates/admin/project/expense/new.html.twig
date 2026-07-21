@@ -1,0 +1,61 @@
+{# templates/admin/project/expense/new.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle dépense -
+	{{ project.title }}
+{% endblock %}
+
+{% block body %}
+	<div class="container mx-auto px-4 py-8">
+
+		{# Fil d'Ariane #}
+		<div class="mb-6">
+			<a href="{{ path('admin_project_read', {id: project.id}) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-brand-dark transition-colors">
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+				Retour au projet
+			</a>
+		</div>
+
+		{# Formulaire dans une soft-card #}
+		<div class="soft-card p-8 bg-white border border-gray-100 shadow-sm rounded-xl">
+			<div class="mb-6 border-b border-gray-100 pb-4">
+				<h1 class="text-2xl font-extrabold text-brand-dark mb-1">Enregistrer un coût</h1>
+				<p class="text-sm text-gray-500">Projet :
+					<span class="font-bold text-brand-primary">{{ project.title }}</span>
+				</p>
+			</div>
+
+			{{ form_start(form, {'attr': {'class': 'space-y-5'}}) }}
+
+			{# Libellé de la dépense #}
+			<div>
+				{{ form_label(form.description, 'Désignation de la dépense', {'label_attr': {'class': 'block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2'}}) }}
+				{{ form_widget(form.description, {'attr': {'placeholder': 'Ex: Licence SaaS, Achat matériel...', 'class': 'w-full rounded-lg border-gray-200 focus:border-brand-primary focus:ring-brand-primary text-sm p-3 bg-gray-50/50'}}) }}
+				{{ form_errors(form.description) }}
+			</div>
+
+			{# Montant HT/TTC #}
+			<div>
+				{{ form_label(form.amount, 'Montant (€)', {'label_attr': {'class': 'block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2'}}) }}
+				<div class="relative rounded-md shadow-xs">
+					{{ form_widget(form.amount, {'attr': {'placeholder': '0.00', 'class': 'w-full rounded-lg border-gray-200 focus:border-brand-primary focus:ring-brand-primary text-sm p-3 pr-12 bg-gray-50/50'}}) }}
+					<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
+						<span class="text-gray-400 text-sm font-semibold">€</span>
+					</div>
+				</div>
+				{{ form_errors(form.amount) }}
+			</div>
+
+			<div class="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
+				<a href="{{ path('admin_project_read', {id: project.id}) }}" class="btn-secondary text-sm px-5 py-2.5">
+					Annuler
+				</a>
+				<button type="submit" class="btn-primary text-sm px-6 py-2.5">
+					Enregistrer la dépense
+				</button>
+			</div>
+
+			{{ form_end(form) }}
+		</div>
+	</div>
+{% endblock %}

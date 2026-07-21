@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\Traits\SlugTrait;
 use App\Repository\ArticleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -14,6 +15,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 class Article
 {
+    use SlugTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -25,11 +28,6 @@ class Article
     #[Assert\Length(max: 255, maxMessage: "Le titre ne peut pas dépasser {{ limit }} caractères")]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $title = null;
-
-    #[ORM\Column(length: 255, unique: true)]
-    #[Gedmo\Slug(fields: ['title'])]
-    #[Groups(['api_public'])]
-    private ?string $slug = null;
 
     #[ORM\Column(type: Types::TEXT)]
     #[Assert\NotBlank(message: "Le contenu est obligatoire")]
@@ -85,12 +83,9 @@ class Article
     public function setTitle(string $title): static
     {
         $this->title = $title;
-        $this->slug  = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $title)));
+        // $this->slug  = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $title)));
         return $this;
     }
-
-    public function getSlug(): ?string { return $this->slug; }
-    public function setSlug(string $slug): static { $this->slug = $slug; return $this; }
 
     public function getContent(): ?string { return $this->content; }
     public function setContent(string $content): static { $this->content = $content; return $this; }

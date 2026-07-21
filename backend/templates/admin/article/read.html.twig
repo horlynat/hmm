@@ -1,0 +1,100 @@
+{# templates/admin/article/read.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Détails :
+	{{ article.title }}
+{% endblock %}
+
+{% block body %}
+	<main
+		class="container mx-auto px-4 py-8">
+
+		<!-- ↩️ RETOUR -->
+		<div class="mb-6">
+			<a href="{{ path('admin_article_index') }}" class="inline-flex items-center gap-2 text-sm font-semibold opacity-60 hover:text-brand-primary transition">
+				<i class="ti ti-arrow-left"></i>
+				<span>Retour à la liste des articles</span>
+			</a>
+		</div>
+
+		<!-- 📊 CONTENU & CONFIGURATION -->
+		<div
+			class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+			<!-- Contenu principal -->
+			<div class="lg:col-span-2 card space-y-6">
+				<div>
+					<span class="text-xs font-mono bg-brand-light/30 px-2.5 py-1 rounded-sm text-brand-primary font-bold">
+						slug :
+						{{ article.slug }}
+					</span>
+					<h1 class="text-3xl font-bold tracking-tight mt-3">
+						{{ article.title }}
+					</h1>
+				</div>
+
+				<!-- Image de Couverture si présente -->
+				{% if article.media is not empty %}
+					{% set uploadedMedia = article.media|first %}
+					<div class="rounded-md overflow-hidden max-h-96 border border-gray-100">
+						<img src="{{ asset('uploads/articles/' ~ uploadedMedia.filePath) }}" alt="{{ uploadedMedia.altText|default('Couverture') }}" class="w-full object-cover">
+					</div>
+				{% endif %}
+
+				<div class="leading-relaxed text-base space-y-4 whitespace-pre-line border-t border-gray-100 pt-6">
+					{{ article.content }}
+				</div>
+			</div>
+
+			<!-- Fiche technique & actions -->
+			<div class="space-y-6">
+				<div class="card space-y-4">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 flex items-center gap-1.5">
+						<i class="ti ti-info-circle"></i>
+						Fiche Technique
+					</h3>
+
+					<div class="space-y-3 text-sm">
+						<div class="flex justify-between items-center">
+							<span class="opacity-50">Statut :</span>
+							{% if article.publishedAt %}
+								<span class="badge bg-emerald-50 text-success font-bold">Publié</span>
+							{% else %}
+								<span class="badge bg-amber-50 text-warning font-bold">Brouillon</span>
+							{% endif %}
+						</div>
+						<div class="flex justify-between items-center">
+							<span class="opacity-50">Publication :</span>
+							<span class="font-medium text-xs">
+								{{ article.publishedAt ? article.publishedAt|date('d/m/Y H:i') : 'Non planifiée' }}
+							</span>
+						</div>
+						<div class="border-t border-gray-100 pt-3">
+							<span class="block opacity-50 mb-1.5">Tags liés :</span>
+							<div class="flex flex-wrap gap-1">
+								{% for tag in article.tags %}
+									<span class="badge bg-brand-light/20 text-brand-primary text-[10px] font-bold">
+										{{ tag.name }}
+									</span>
+								{% else %}
+									<span class="text-xs opacity-40">Aucun tag lié</span>
+								{% endfor %}
+							</div>
+						</div>
+					</div>
+
+					<div class="pt-4 border-t border-gray-100 flex flex-col gap-3">
+						<a href="{{ path('admin_article_update', {'slug': article.slug}) }}" class="btn btn-primary w-full text-sm gap-2 cursor-pointer">
+							<i class="ti ti-edit"></i>
+							<span>Modifier l'article</span>
+						</a>
+						<div class="w-full [&>form]:w-full text-center">
+							{{ include('admin/article/_delete_form.html.twig', {'article': article}) }}
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</main>
+{% endblock %}

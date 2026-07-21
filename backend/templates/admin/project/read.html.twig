@@ -1,0 +1,207 @@
+{# templates/admin/project/read.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Projet :
+	{{ project.title }}
+{% endblock %}
+
+{% block body %}
+	<div
+		class="container mx-auto px-4 py-8 space-y-8">
+
+		{# ================= HEADER ================= #}
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+			<div>
+				<h1 class="heading text-3xl font-extrabold mb-2">{{ project.title }}</h1>
+				<div
+					class="flex items-center gap-3">
+					{# ✅ APPEL STANDARD #}
+					<twig:project:badge_status
+					:status="project.status"/>
+
+					{# ================= CHANGEMENT RAPIDE DE STATUT ================= #}
+					{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
+						<div class="relative" x-data="{ statusMenuOpen: false }">
+							<button type="button" class="text-sm text-brand-primary font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer" @click="statusMenuOpen = !statusMenuOpen" @click.outside="statusMenuOpen = false">
+								<span class="material-icons text-sm">sync_alt</span>
+								Changer le statut
+							</button>
+
+							<div x-show="statusMenuOpen" x-transition class="absolute z-10 mt-2 w-56 card p-2" style="display: none;">
+								{% for statusOption in statuses %}
+									<form method="POST" action="{{ path('admin_project_change_status', {id: project.id, status: statusOption.value}) }}">
+										<input type="hidden" name="_token" value="{{ csrf_token('change_status_' ~ project.id) }}">
+										<button type="submit" class="w-full text-left text-sm px-3 py-2 rounded-sm hover:bg-gray-50 bg-transparent border-0 cursor-pointer {{ statusOption == project.status ? 'font-bold text-brand-primary' : 'text-brand-dark' }}" {{ statusOption == project.status ? 'disabled' }}>
+											{{ statusOption.label }}
+											{% if statusOption == project.status %}
+												<span class="text-xs text-gray-400">(actuel)</span>
+											{% endif %}
+										</button>
+									</form>
+								{% endfor %}
+							</div>
+						</div>
+					{% endif %}
+				</div>
+			</div>
+
+			<div class="flex gap-2">
+				{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
+					<a href="{{ path('admin_project_update', {id: project.id}) }}" class="btn btn-primary gap-2">
+						<span class="material-icons text-sm">edit</span>
+						Modifier le Projet
+					</a>
+				{% endif %}
+			</div>
+		</div>
+
+		{# ================= ACTIONS RAPIDES ================= #}
+		{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
+			<div class="flex flex-wrap gap-2">
+				<a href="{{ path('admin_project_add_expense', {id: project.id}) }}" class="btn btn-primary gap-2 text-sm py-2">
+					<span class="material-icons text-sm">payments</span>
+					Ajouter une dépense
+				</a>
+				<a href="{{ path('admin_project_add_collaborator', {id: project.id}) }}" class="btn btn-primary gap-2 text-sm py-2">
+					<span class="material-icons text-sm">person_add</span>
+					Ajouter un collaborateur
+				</a>
+				<button type="button" class="btn btn-primary gap-2 text-sm py-2" onclick="document.querySelector('[data-tab-target=team]').click(); document.getElementById('assign-client-email').focus();">
+					<span class="material-icons text-sm">badge</span>
+					{{ project.client ? 'Changer le client' : 'Assigner un client' }}
+				</button>
+				{% if is_granted('ROLE_ADMIN') %}
+					<button type="button" class="btn btn-primary gap-2 text-sm py-2" onclick="document.querySelector('[data-tab-target=history]').click();">
+						<span class="material-icons text-sm">history</span>
+						Suivre l'évolution
+					</button>
+				{% endif %}
+			</div>
+		{% endif %}
+
+		{# ================= RÉSUMÉ BUDGET ================= #}
+		{# ✅ APPEL STANDARD #}
+		<twig:project:budget_summary
+		:project="project"/>
+
+		{# ================= SYSTÈME D'ONGLETS SANS INLINE JS ================= #}
+		<div class="mt-8">
+			<div class="tabs mb-6">
+				<button class="tab tab-active" data-tab-target="media">Détails & Médias</button>
+				<button class="tab" data-tab-target="expenses">Dépenses</button>
+				<button class="tab" data-tab-target="team">Équipe</button>
+				{% if is_granted('ROLE_ADMIN') %}
+					<button class="tab" data-tab-target="history">Historique</button>
+				{% endif %}
+			</div>
+
+			<div
+				class="soft-card p-6">
+
+				{# CONTENU DE L'ONGLET 1 : Détails & Médias #}
+				<div id="tab-media" class="tab-content space-y-6">
+					<p class="text-gray-600 leading-relaxed text-base">{{ project.description }}</p>
+					{# ✅ APPEL STANDARD #}
+					<twig:project:media_grid :project="project"/>
+				</div>
+
+				{# CONTENU DE L'ONGLET 2 : Dépenses #}
+				<div id="tab-expenses" class="tab-content hidden">
+					<div class="flex justify-between items-center mb-6">
+						<h3 class="heading text-xl">Dépenses liées</h3>
+						{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
+							<a href="{{ path('admin_project_add_expense', {id: project.id}) }}" class="btn btn-primary gap-2 text-sm py-2">
+								<span class="material-icons text-sm">add</span>
+								Nouvelle Dépense
+							</a>
+						{% endif %}
+					</div>
+					{# ✅ APPEL STANDARD #}
+					<twig:project:expense_list :project="project"/>
+				</div>
+
+				{# CONTENU DE L'ONGLET 3 : Équipe (client + collaborateurs) #}
+				<div id="tab-team" class="tab-content hidden space-y-6">
+					<div>
+						<h3 class="heading text-xl mb-3">Client</h3>
+						{% if project.client %}
+							<div class="flex items-center gap-3 soft-card p-4 mb-3">
+								<div class="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center font-bold text-brand-dark">
+									{{ project.client.fullName|slice(0, 1)|upper }}
+								</div>
+								<div>
+									<div class="font-semibold text-brand-dark">{{ project.client.fullName }}</div>
+									<div class="text-sm text-gray-500">{{ project.client.email }}</div>
+								</div>
+							</div>
+						{% else %}
+							<p class="text-gray-500 text-sm mb-3">Aucun client rattaché à ce projet.</p>
+						{% endif %}
+
+						{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
+							<form method="POST" action="{{ path('admin_project_assign_client', {id: project.id}) }}" class="flex gap-2">
+								<input type="hidden" name="_token" value="{{ csrf_token('assign_client_' ~ project.id) }}">
+								<input id="assign-client-email" type="email" name="email" required class="input text-sm py-2 flex-1" placeholder="Email du client à assigner">
+								<button type="submit" class="btn btn-primary text-sm py-2 px-4">
+									{{ project.client ? 'Changer' : 'Assigner' }}
+								</button>
+							</form>
+							<p class="text-xs text-gray-400 mt-1">Seul un compte client (ni administrateur, ni collaborateur) peut être assigné.</p>
+						{% endif %}
+					</div>
+
+					<div>
+						<div class="flex justify-between items-center mb-3">
+							<h3 class="heading text-xl">Collaborateurs ({{ project.collaborators|length }})</h3>
+							{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
+								<a href="{{ path('admin_project_add_collaborator', {id: project.id}) }}" class="btn btn-primary gap-2 text-sm py-2">
+									<span class="material-icons text-sm">person_add</span>
+									Ajouter un collaborateur
+								</a>
+							{% endif %}
+						</div>
+
+						{% if project.collaborators is empty %}
+							<p class="text-gray-500 text-sm">Aucun collaborateur sur ce projet pour le moment.</p>
+						{% else %}
+							<div class="space-y-2">
+								{% for collaborator in project.collaborators %}
+									<div class="flex items-center justify-between soft-card p-4">
+										<div class="flex items-center gap-3">
+											<div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-brand-dark">
+												{{ collaborator.fullName|slice(0, 1)|upper }}
+											</div>
+											<div>
+												<div class="font-semibold text-brand-dark">{{ collaborator.fullName }}</div>
+												<div class="text-sm text-gray-500">{{ collaborator.email }}</div>
+											</div>
+										</div>
+										{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
+											<form method="POST" action="{{ path('admin_project_remove_collaborator', {id: project.id, collaboratorId: collaborator.id}) }}" onsubmit="return confirm('Retirer {{ collaborator.fullName }} de ce projet ?');">
+												<input type="hidden" name="_token" value="{{ csrf_token('remove_collaborator_' ~ collaborator.id) }}">
+												<button type="submit" class="text-danger hover:underline text-sm font-medium bg-transparent border-0 cursor-pointer">
+													Retirer
+												</button>
+											</form>
+										{% endif %}
+									</div>
+								{% endfor %}
+							</div>
+						{% endif %}
+					</div>
+				</div>
+
+				{# CONTENU DE L'ONGLET 4 : Historique — réservé à l'admin #}
+				{% if is_granted('ROLE_ADMIN') %}
+					<div
+						id="tab-history" class="tab-content hidden">
+						{# ✅ APPEL STANDARD #}
+						<twig:project:history_timeline :project="project"/>
+					</div>
+				{% endif %}
+
+			</div>
+		</div>
+	</div>
+{% endblock %}
+

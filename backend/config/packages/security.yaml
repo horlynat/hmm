@@ -10,10 +10,9 @@ security:
     password_hashers:
         App\Entity\User:
             algorithm: auto
-            cost: 12
-            memory_cost: 1024
+            cost: 12        # coût pour bcrypt/argon2
+            memory_cost: 1024 # mémoire utilisée pour argon2
 
-    # enable_authenticator_manager: true
     firewalls:
         # 🔒 Firewall principal (site web)
         main:
@@ -39,14 +38,16 @@ security:
 
     # 🔒 Hiérarchie des rôles
     role_hierarchy:
-        ROLE_ADMIN: [ROLE_USER]
-        ROLE_SUPER_ADMIN: [ROLE_ADMIN, ROLE_ALLOWED_TO_SWITCH]
+        ROLE_COLLABORATOR: [ROLE_USER]                # Collaborateur hérite des droits de base
+        ROLE_ADMIN: [ROLE_USER, ROLE_COLLABORATOR] # Admin hérite de tout
 
     # 🔒 Contrôle d'accès par rôle
     access_control:
-        - { path: ^/dashboard, roles: ROLE_ADMIN }
-        - { path: ^/profile, roles: ROLE_USER }
-        - { path: ^/login, roles: PUBLIC_ACCESS }
-        - { path: ^/register, roles: PUBLIC_ACCESS }
-        - { path: ^/verify/email, roles: PUBLIC_ACCESS }
-        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/admin, roles: ROLE_ADMIN }              # Dashboard réservé aux admins
+        - { path: ^/projects, roles: ROLE_USER }            # Projets accessibles aux utilisateurs connectés
+        - { path: ^/profile, roles: ROLE_USER }             # Profil accessible aux utilisateurs connectés
+        - { path: ^/login, roles: PUBLIC_ACCESS }           # Login public
+        - { path: ^/register, roles: PUBLIC_ACCESS }        # Inscription publique
+        - { path: ^/verify/email, roles: PUBLIC_ACCESS }    # Vérification email publique
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }    # API protégée (auth obligatoire)
+   

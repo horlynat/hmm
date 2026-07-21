@@ -15,6 +15,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[UniqueEntity(fields: ['email'], message: "Il existe déjà un compte avec cet email.")]
+#[ORM\HasLifecycleCallbacks] // ✅ Active les callbacks Doctrine
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -95,6 +96,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(["api_admin"])]
     private bool $isTwoFactorEnabled = false;
 
+    // ✅ Typage corrigé : Collection au lieu de ArrayCollection
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: LoginHistory::class, cascade: ['persist'], orphanRemoval: true)]
     private Collection $loginHistory;
 
@@ -109,14 +111,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: QuoteRequest::class)]
     private Collection $quoteRequest;
 
+    #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Project::class)]
+    private Collection $ownedProjects;
+
+    #[ORM\ManyToMany(targetEntity: Project::class, mappedBy: 'collaborators')]
+    private Collection $collaboratingProjects;
+
     public function __construct()
     {
         $this->loginHistory = new ArrayCollection();
         $this->experience = new ArrayCollection();
         $this->course = new ArrayCollection();
         $this->quoteRequest = new ArrayCollection();
-        $this->createdAt = new \DateTimeImmutable();
-        $this->updatedAt = new \DateTimeImmutable();
+        // $this->createdAt = new \DateTimeImmutable(); // ✅ Utilisation de \DateTimeImmutable
+        // $this->updatedAt = new \DateTimeImmutable(); // ✅ Utilisation de \DateTimeImmutable
+        $this->ownedProjects = new ArrayCollection();
+        $this->collaboratingProjects = new ArrayCollection();
     }
 
     // ===== Getters et Setters =====
@@ -253,28 +263,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(?\DateTimeImmutable $createdAt): self
-    {
-        $this->createdAt = $createdAt;
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?\DateTimeImmutable
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(?\DateTimeImmutable $updatedAt): self
-    {
-        $this->updatedAt = $updatedAt;
-        return $this;
-    }
-
     public function getPasswordChangedAt(): ?\DateTimeImmutable
     {
         return $this->passwordChangedAt;
@@ -308,6 +296,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /**
+     * @return Collection<int, LoginHistory>
+     */
     public function getLoginHistory(): Collection
     {
         return $this->loginHistory;
@@ -409,6 +400,58 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             if ($quoteRequest->getUser() === $this) {
                 $quoteRequest->setUser(null);
             }
+        }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Project>
+     */
+    public function getOwnedProjects(): Collection
+    {
+        return $this->ownedProjects;
+    }
+
+    public function addOwnedProject(Project $project): self
+    {
+        if (!$this->ownedProjects->contains($project)) {
+            $this->ownedProjects->add($project);
+            $project->setOwner($this);
+        }
+        return $this;
+    }
+
+    public function removeOwnedProject(Project $project): self
+    {
+        if ($this->ownedProjects->removeElement($project)) {
+            if ($project->getOwner() === $this) {
+                $project->setOwner(null);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Project>
+     */
+    public function getCollaboratingProjects(): Collection
+    {
+        return $this->collaboratingProjects;
+    }
+
+    public function addCollaboratingProject(Project $project): self
+    {
+        if (!$this->collaboratingProjects->contains($project)) {
+            $this->collaboratingProjects->add($project);
+            $project->addCollaborator($this);
+        }
+        return $this;
+    }
+
+    public function removeCollaboratingProject(Project $project): self
+    {
+        if ($this->collaboratingProjects->removeElement($project)) {
+            $project->removeCollaborator($this);
         }
         return $this;
     }

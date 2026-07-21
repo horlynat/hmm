@@ -1,0 +1,36 @@
+{# templates/admin/experience/update.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier :
+	{{ experience.role }}
+{% endblock %}
+
+{% block body %}
+	<main
+		class="container mx-auto px-4 py-8">
+
+		<!-- 🏷️ FIL D'ARIANE / HEADER -->
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+			<div>
+				<div class="flex items-center gap-2 text-xs font-bold text-brand-dark opacity-40 uppercase tracking-wider">
+					<a href="{{ path('admin_experience_index') }}" class="hover:text-brand-primary transition-colors">Expériences</a>
+					<span class="material-icons text-xs">chevron_right</span>
+					<span>Édition</span>
+				</div>
+				<h1 class="text-3xl font-heading font-bold mt-1 flex items-center gap-2 text-brand-dark">
+					<span class="material-icons text-brand-primary">edit</span>
+					<span>Modifier l'expérience</span>
+				</h1>
+			</div>
+
+			<a href="{{ path('admin_experience_index') }}" class="btn btn-secondary gap-2 px-4 py-2">
+				<span class="material-icons text-base">arrow_back</span>
+				<span>Retour à la liste</span>
+			</a>
+		</div>
+
+		<!-- ⚡ FORMULAIRE -->
+		{{ include('admin/experience/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
+
+	</main>
+{% endblock %}

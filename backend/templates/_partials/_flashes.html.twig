@@ -1,28 +1,33 @@
-{% for label, messages in app.flashes %}
-	{% for message in messages %}
-		<div
-			class="alert alert-{{ label }} flex items-center mb-4 transition-all duration-300">
+<div class="w-full space-y-2.5 z-50">
+	{% for label, messages in app.flashes %}
+		{% for message in messages %}
+			{# Configuration dynamique des styles d'alertes selon le type #}
+			{% set config = {
+				'success': {'icon': 'check_circle', 'bg': 'bg-emerald-50 border-emerald-200 text-emerald-800'},
+				'danger':  {'icon': 'dangerous', 'bg': 'bg-rose-50 border-rose-200 text-rose-800'},
+				'error':   {'icon': 'error', 'bg': 'bg-rose-50 border-rose-200 text-rose-800'},
+				'warning': {'icon': 'warning', 'bg': 'bg-amber-50 border-amber-200 text-amber-800'},
+				'info':    {'icon': 'info', 'bg': 'bg-sky-50 border-sky-200 text-sky-800'}
+			} %}
+			{% set current = config[label] ?? config['info'] %}
 
-			<!-- Icône -->
-			{% set icons = {
-          'success': 'check_circle',
-          'danger':  'dangerous',
-          'error':   'error',
-          'warning': 'warning',
-          'info':    'info'
-      } %}
-			<span class="material-icons mr-3 text-xl opacity-80">
-				{{ icons[label] ?? icons['info'] }}
-			</span>
+			<div
+				x-data="{ isVisible: true }" x-show="isVisible" x-transition:leave="transition ease-in duration-300 transform translate-x-4 opacity-0" class="alert border rounded-xl p-3.5 flex items-start md:items-center shadow-sm {{ current.bg }} transition-all duration-300">
+				<!-- Icône Métier -->
+				<span class="material-icons mr-3 text-xl opacity-90 shrink-0 select-none">
+					{{ current.icon }}
+				</span>
 
-			<!-- Message -->
-			<span class="text-sm font-medium flex-1">{{ message }}</span>
+				<!-- Message descriptif -->
+				<div class="text-xs md:text-sm font-medium flex-1 leading-normal">
+					{{ message }}
+				</div>
 
-			<!-- Bouton de fermeture -->
-			<button onclick="this.parentElement.remove();" class="ml-4 opacity-60 hover:opacity-100 transition-opacity">
-				<span class="material-icons text-lg">close</span>
-			</button>
-		</div>
+				<!-- Bouton Fermeture avec zone de clic élargie (Mobile Friendly) -->
+				<button @click="isVisible = false" class="ml-3 p-1 rounded-lg opacity-40 hover:opacity-100 hover:bg-black/5 transition shrink-0 focus:outline-none" aria-label="Fermer la notification">
+					<span class="material-icons text-base flex items-center">close</span>
+				</button>
+			</div>
+		{% endfor %}
 	{% endfor %}
-{% endfor %}
-
+</div>
