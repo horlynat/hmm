@@ -1,0 +1,60 @@
+{# templates/admin/skill/read.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Détails :
+	{{ skill.name }}
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<div class="mb-6">
+			<a href="{{ path('admin_skill_index') }}" class="btn btn-secondary gap-2 px-3 py-2 text-sm w-fit">
+				<span class="material-icons text-base">arrow_back</span>
+				<span>Retour à la liste</span>
+			</a>
+		</div>
+
+		<div
+			class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+			<!-- 📖 CONTENU (70%) -->
+			<div class="lg:col-span-2 card">
+				<span class="badge bg-brand-light text-brand-primary">ID : #{{ skill.id }}</span>
+				<h1 class="text-3xl font-heading font-bold tracking-tight mt-3 text-brand-dark mb-6">
+					{{ skill.name }}
+				</h1>
+
+				<div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-6">
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Niveau</p>
+						<p class="text-brand-dark font-bold">{{ skill.level }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Catégorie</p>
+						<p class="text-brand-dark font-bold">{{ skill.skillCategory ? skill.skillCategory.name : 'Non définie' }}</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- ⚙️ INFOS LATÉRALES (30%) -->
+			<div class="space-y-6">
+				<div class="card space-y-4">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">
+						Fiche Technique
+					</h3>
+					<div class="pt-4 flex flex-col gap-3">
+						<a href="{{ path('admin_skill_update', {'id': skill.id}) }}" class="btn btn-primary w-full text-sm gap-2">
+							<span class="material-icons text-sm">edit</span>
+							<span>Modifier</span>
+						</a>
+						<div class="w-full [&>form]:w-full text-center">
+							{{ include('admin/skill/_delete_form.html.twig', {'skill': skill}) }}
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</main>
+{% endblock %}

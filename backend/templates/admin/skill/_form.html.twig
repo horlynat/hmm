@@ -1,0 +1,61 @@
+{# templates/admin/skill/_form.html.twig #}
+{{ form_start(form, {
+    'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}
+}) }}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+	<!-- 📄 COLONNE PRINCIPALE (70%) -->
+	<div class="lg:col-span-2 space-y-6 card">
+		<div
+			class="grid grid-cols-1 md:grid-cols-2 gap-6">
+			<!-- Nom -->
+			<div class="md:col-span-2">
+				{{ form_label(form.name, 'Nom de la compétence', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.name, {'attr': {'class': 'input w-full', 'placeholder': 'Ex: Symfony, UX Design...'}}) }}
+				{{ form_errors(form.name, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<!-- Niveau -->
+			<div>
+				{{ form_label(form.level, 'Niveau de maîtrise', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.level, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.level, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<!-- Catégorie -->
+			<div>
+				{{ form_label(form.skillCategory, 'Catégorie', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.skillCategory, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.skillCategory, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+		</div>
+
+		<!-- Projets associés -->
+		<div>
+			{{ form_label(form.projects, 'Projets associés', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+			{{ form_widget(form.projects, {'attr': {'class': 'input w-full'}}) }}
+			{{ form_errors(form.projects, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+		</div>
+	</div>
+	<!-- ⚙️ COLONNE LATÉRALE (30%) -->
+	<div class="space-y-6">
+		<div class="card space-y-4">
+			<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 flex items-center gap-2">
+				<span class="material-icons text-sm">bolt</span>
+				Actions
+			</h3>
+			<div class="text-xs opacity-80 bg-brand-light/30 p-3 rounded-sm flex items-center gap-2 text-brand-dark border border-brand-light">
+				<span class="inline-block w-2 h-2 bg-warning rounded-full animate-pulse-danger"></span>
+				<span>Prêt pour l'enregistrement</span>
+			</div>
+			<div class="pt-2">
+				<button type="submit" class="btn btn-primary w-full gap-2">
+					<span class="material-icons text-sm">save</span>
+					<span>{{ button_label|default('Enregistrer') }}</span>
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+{{ form_end(form) }}

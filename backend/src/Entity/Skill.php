@@ -33,7 +33,7 @@ class Skill
     #[Groups(['api_public', 'api_admin'])]
     private ?int $level = null;
 
-    #[ORM\ManyToMany(targetEntity: Project::class, mappedBy: 'skill')]
+    #[ORM\ManyToMany(targetEntity: Project::class, mappedBy: 'skills')]
     #[Groups(['api_admin'])] // exposé seulement côté admin
     private Collection $projects;
 

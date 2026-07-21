@@ -1,0 +1,31 @@
+{# templates/admin/skill_category/read.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Détails :
+	{{ skill_category.name }}
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+		<a href="{{ path('admin_skill_category_index') }}" class="btn btn-secondary gap-2 mb-6 w-fit">
+			<span class="material-icons text-base">arrow_back</span>
+			<span>Retour</span>
+		</a>
+
+		<div class="card max-w-2xl">
+			<h1 class="text-2xl font-bold text-brand-dark mb-6 border-b pb-4">{{ skill_category.name }}</h1>
+
+			<div class="grid grid-cols-2 gap-4">
+				<div>
+					<p class="text-xs opacity-60 uppercase font-bold">ID</p>
+					<p class="font-mono">{{ skill_category.id }}</p>
+				</div>
+			</div>
+
+			<div class="flex gap-3 mt-8">
+				<a href="{{ path('admin_skill_category_update', {'id': skill_category.id}) }}" class="btn btn-primary">Modifier</a>
+				{{ include('admin/skill_category/_delete_form.html.twig', {'skill_category': skill_category}) }}
+			</div>
+		</div>
+	</main>
+{% endblock %}

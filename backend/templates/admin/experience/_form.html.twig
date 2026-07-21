@@ -1,0 +1,80 @@
+{# templates/admin/experience/_form.html.twig #}
+{{ form_start(form, {
+    'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}
+}) }}
+
+<div
+	class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+	<!-- 📄 COLONNE PRINCIPALE (70%) -->
+	<div class="lg:col-span-2 space-y-6 card">
+
+		<div
+			class="grid grid-cols-1 md:grid-cols-2 gap-6">
+			<!-- Rôle -->
+			<div class="md:col-span-2">
+				{{ form_label(form.role, 'Poste Occupé | Responsabilité', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.role, {'attr': {'class': 'input w-full font-bold text-brand-dark', 'placeholder': 'Ex: Développeur Full-Stack, Chef de projet...'}}) }}
+				{{ form_errors(form.role, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<!-- Entreprise -->
+			<div class="md:col-span-2">
+				{{ form_label(form.company, 'Entreprise', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.company, {'attr': {'class': 'input w-full', 'placeholder': 'Ex: Google, Agence Web...'}}) }}
+				{{ form_errors(form.company, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<!-- Dates -->
+			<div>
+				{{ form_label(form.startDate, 'Date de début', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.startDate, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.startDate, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+			<div>
+				{{ form_label(form.endDate, 'Date de fin', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.endDate, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.endDate, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+		</div>
+
+		<!-- Description -->
+		<div>
+			{{ form_label(form.description, 'Description de la mission', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+			{{ form_widget(form.description, {'attr': {'class': 'input textarea w-full', 'placeholder': 'Décrivez vos accomplissements, les technologies utilisées...'}}) }}
+			{{ form_errors(form.description, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+		</div>
+
+	</div>
+
+	<!-- ⚙️ COLONNE LATÉRALE (30%) -->
+	<div class="space-y-6">
+		<div class="card space-y-4">
+			<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 flex items-center gap-2">
+				<span class="material-icons text-sm">settings</span>
+				Paramètres
+			</h3>
+
+			{% if form.user is defined %}
+				<div class="mb-4">
+					{{ form_label(form.user, 'Utilisateur lié', {'label_attr': {'class': 'block text-xs font-bold mb-1 opacity-70'}}) }}
+					{{ form_widget(form.user, {'attr': {'class': 'input input-select w-full text-sm'}}) }}
+					{{ form_errors(form.user, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+			{% endif %}
+
+			<div class="text-xs opacity-80 bg-brand-light/30 p-3 rounded-sm flex items-center gap-2 text-brand-dark border border-brand-light">
+				<span class="inline-block w-2 h-2 bg-warning rounded-full animate-pulse-danger"></span>
+				<span>Prêt pour l'enregistrement</span>
+			</div>
+
+			<div class="pt-2">
+				<button type="submit" class="btn btn-primary w-full gap-2">
+					<span class="material-icons text-sm">save</span>
+					<span>{{ button_label|default('Enregistrer') }}</span>
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+{{ form_end(form) }}

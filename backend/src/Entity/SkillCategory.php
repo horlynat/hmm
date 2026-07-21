@@ -28,7 +28,7 @@ class SkillCategory
 
     #[ORM\OneToMany(targetEntity: Skill::class, mappedBy: 'skillCategory')]
     #[Groups(['api_admin'])] // exposé seulement côté admin
-    private Collection $skill;
+    private ?Collection $skill;
 
     public function __construct()
     {

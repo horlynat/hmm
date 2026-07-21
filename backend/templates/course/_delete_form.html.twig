@@ -1,9 +1,0 @@
-<form method="post" action="{{ path('course_delete', {'id': course.id}) }}" onsubmit="return confirm('Voulez-vous vraiment supprimer ce cours ? Cette action est irréversible.');" class="inline-block">
-
-	<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ course.id) }}">
-
-	<button type="submit" onclick="this.disabled=true; this.form.submit();" class="px-5 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg shadow hover:scale-105 transform transition flex items-center space-x-2">
-		<span class="material-icons">delete_forever</span>
-		<span>Supprimer</span>
-	</button>
-</form>

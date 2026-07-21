@@ -1,0 +1,107 @@
+{# templates/admin/article/_form.html.twig #}
+{{ form_start(form, {
+    'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'},
+    'enctype': 'multipart/form-data'
+}) }}
+
+<div
+	class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+	<!-- 📄 COLONNE PRINCIPALE : ÉCRITURE -->
+	<div
+		class="lg:col-span-2 space-y-6 card">
+
+		<!-- Champ Titre -->
+		<div>
+			{{ form_label(form.title, 'Titre de l\'article', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+            {{ form_widget(form.title, {'attr': {'class': 'input w-full text-lg font-semibold', 'placeholder': 'Ex: 10 astuces indispensables...'}}) }}
+            {% if form_errors(form.title) %}
+                <p class="text-danger text-xs mt-1.5 flex items-center gap-1 font-medium">
+                    <i class="ti ti-alert-circle"></i>
+                    {{ form_errors(form.title)|striptags }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Champ Contenu -->
+        <div>
+            {{ form_label(form.content, 'Corps de l\'article', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+			{{ form_widget(form.content, {'attr': {'class': 'input textarea w-full h-[420px] text-base leading-relaxed', 'placeholder': 'Rédigez votre histoire ici...'}}) }}
+			{% if form_errors(form.content) %}
+				<p class="text-danger text-xs mt-1.5 flex items-center gap-1 font-medium">
+					<i class="ti ti-alert-circle"></i>
+					{{ form_errors(form.content)|striptags }}
+				</p>
+			{% endif %}
+		</div>
+
+	</div>
+
+	<!-- ⚙️ COLONNE LATÉRALE : CONFIGURATION -->
+	<div
+		class="space-y-6">
+
+		<!-- Bloc Actions & Publication -->
+		<div class="card space-y-4">
+			<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 flex items-center gap-2">
+				<i class="ti ti-settings text-sm"></i>
+				Statut & Sauvegarde
+			</h3>
+
+			<div class="text-xs opacity-60 bg-brand-light/20 p-2.5 rounded-sm flex items-center gap-2">
+				<span class="inline-block w-2 h-2 bg-warning rounded-full animate-pulse"></span>
+				<span>Modifications locales en attente</span>
+			</div>
+
+			<div class="pt-2">
+				<button type="submit" class="btn btn-primary w-full gap-2 cursor-pointer group">
+					<i class="ti ti-device-floppy transition-transform group-hover:scale-110"></i>
+					<span>{{ button_label|default('Enregistrer l\'article') }}</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bloc Catégories / Tags -->
+        <div class="card">
+            <div class="flex items-center justify-between mb-2">
+                {{ form_label(form.tags, 'Catégories / Tags', {'label_attr': {'class': 'block text-sm font-bold'}}) }}
+                <span class="text-[10px] text-brand-primary font-semibold uppercase">Optionnel</span>
+            </div>
+            
+            {{ form_widget(form.tags, {'attr': {'class': 'input w-full text-sm'}}) }}
+            <p class="text-[11px] opacity-40 mt-2 leading-normal">
+                Maintenez <kbd class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-[10px]">Ctrl</kbd> pour sélectionner plusieurs options.
+            </p>
+            {% if form_errors(form.tags) %}
+                <p class="text-danger text-xs mt-1.5 flex items-center gap-1 font-medium">
+                    <i class="ti ti-alert-circle"></i>
+                    {{ form_errors(form.tags)|striptags }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Bloc Couverture / Média -->
+        <div class="card">
+            {{ form_label(form.media, 'Image de couverture', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+            
+            {% if article is defined and article.media is not empty %}
+                {% set uploadedMedia = article.media|first %}
+                <div class="mb-4 rounded-md overflow-hidden border border-gray-100 max-h-36 flex items-center justify-center group relative">
+                    {# ✅ Correction directe basée sur ta propriété 'filePath' du Media.php #}
+                    <img src="{{ asset('uploads/articles/' ~ uploadedMedia.filePath) }}" alt="{{ uploadedMedia.altText|default('Couverture') }}" class="object-cover h-full w-full transition group-hover:scale-105">
+                </div>
+            {% endif %}
+
+            {{ form_widget(form.media, {'attr': {'class': 'w-full text-xs opacity-70 file:mr-3 file:py-2 file:px-3 file:rounded-sm file:border-0 file:text-xs file:font-bold file:bg-brand-light file:text-brand-primary hover:file:opacity-80 cursor-pointer'}}) }}
+            <p class="text-[11px] opacity-40 mt-2">Formats acceptés : JPG, PNG, WEBP (Max : 5 Mo).</p>
+            {% if form_errors(form.media) %}
+                <p class="text-danger text-xs mt-1.5 flex items-center gap-1 font-medium">
+                    <i class="ti ti-alert-circle"></i>
+                    {{ form_errors(form.media)|striptags }}
+                </p>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{{ form_end(form) }}

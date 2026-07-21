@@ -31,7 +31,7 @@ class ProjectType extends AbstractType
                 'required' => false,
             ])
             
-            ->add('skill', EntityType::class, [
+            ->add('skills', EntityType::class, [
                 'class' => Skill::class,
                 'choice_label' => 'name',
                 'multiple' => true,
