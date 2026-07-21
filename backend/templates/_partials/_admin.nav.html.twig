@@ -1,100 +1,220 @@
-<aside
-	class="w-64 h-screen bg-(--bg-default) text-(--brand-dark) flex flex-col">
+{# 📌 Détection automatique de la route actuelle pour ouvrir le bon accordéon au chargement #}
+{% set currentRoute = app.request.attributes.get('_route') %}
+{% set isContenuActive = currentRoute starts with 'admin_project' or currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_tag' or currentRoute starts with 'admin_article' or currentRoute starts with 'admin_course' or currentRoute starts with 'admin_experience' %}
+{% set isUtilisateursActive = currentRoute starts with 'user_index' or currentRoute starts with 'admin_user' or currentRoute starts with 'admin_contact' or currentRoute starts with 'admin_request' or currentRoute starts with 'admin_testimonial' %}
+{% set isSecuriteActive = currentRoute starts with 'admin_log' or currentRoute starts with 'admin_session' or currentRoute starts with 'admin_role' or currentRoute starts with 'admin_audit' %}
+{% set isParametresActive = currentRoute starts with 'admin_config' or currentRoute starts with 'admin_notification' or currentRoute starts with 'admin_integration' or currentRoute starts with 'admin_backup' %}
 
-	<!-- Logo / Titre -->
-	<div class="p-6 border-b border-gray-200">
-		<h1 class="text-xl font-heading font-bold">Soft UI Dashboard</h1>
-		<p class="text-sm text-gray-500">Portfolio Admin</p>
+<aside class="fixed inset-y-0 left-0 z-50 w-64 h-full bg-(--bg-default) border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out
+			       md:translate-x-0 md:static md:h-screen shadow-xl md:shadow-none" :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+	<!-- 🏢 LOGO & ENTÊTE -->
+	<div class="p-6 border-b border-gray-200 flex items-center justify-between shrink-0">
+		<div>
+			<h1 class="text-xl font-heading font-bold text-(--brand-dark)">Soft UI Admin</h1>
+			<p class="text-sm text-(--brand-dark)">Portfolio Admin</p>
+		</div>
+		<button @click="mobileSidebarOpen = false" class="md:hidden p-1 rounded-lg text-(--brand-dark) hover:bg-gray-100" aria-label="Fermer le menu">
+			<span class="material-icons">close</span>
+		</button>
 	</div>
 
-	<!-- Navigation -->
-	<nav
-		class="flex-1 p-4 space-y-8 overflow-y-auto">
+	<!-- 🧭 NAVIGATION SCROLLABLE -->
+	<nav class="flex-1 p-4 space-y-3 overflow-y-auto text-sm scrollbar-none">
 
-		<!-- Principal -->
+		<!-- ==========================================
+				     📌 PRINCIPAL
+				     ========================================== -->
 		<div>
-			<p class="text-[10px] uppercase text-gray-400 font-bold mb-2 ml-4">Principal</p>
-			<a href="{{ path('dashboard_index') }}" class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-50 transition">
-				<i class="ti ti-home mr-3"></i>
-				Dashboard
+			<p class="text-[10px] uppercase text-(--brand-dark) font-bold mb-1.5 ml-3 tracking-wider">Principal</p>
+			<a href="{{ path('admin_dashboard_index') }}" class="flex items-center px-3 py-2 rounded-xl transition gap-3 font-medium text-(--brand-dark) hover:bg-brand-light/20 hover:text-(--brand-primary) {% if currentRoute == 'admin_dashboard_index' %}bg-brand-light/30 text-(--brand-primary) font-semibold{% endif %}">
+				<i class="ti ti-layout-dashboard text-lg"></i>
+				<span>Dashboard</span>
 			</a>
 		</div>
 
-		<!-- Gestion du contenu -->
-		<div>
-			<p class="text-[10px] uppercase text-gray-400 font-bold mb-2 ml-4">Contenu</p>
-			<a href="{{ path('project_index') }}" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-briefcase mr-3"></i>
-				Projets</a>
-			<a href="{{ path('skill_index') }}" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-code mr-3"></i>
-				Compétences</a>
-			<a href="{{ path('article_index') }}" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-notebook mr-3"></i>
-				Articles</a>
-			<a href="{{ path('course_index') }}" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-school mr-3"></i>
-				Formations</a>
-			<a href="{{ path('experience_index') }}" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-history mr-3"></i>
-				Expériences</a>
+		<!-- ==========================================
+				     📁 CONTENU (ACCORDÉON)
+				     ========================================== -->
+		<div x-data="{ open: {{ isContenuActive ? 'true' : 'false' }} }">
+			<button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 transition font-medium focus:outline-none">
+				<div class="flex items-center gap-3">
+					<i class="ti ti-folders text-lg text-(--brand-dark)"></i>
+					<span>Contenu</span>
+				</div>
+				<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+			</button>
+
+			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
+				<a href="{{ path('admin_project_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_project' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+					<i class="ti ti-briefcase text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Projets
+				</a>
+				<a href="{{ path('admin_skill_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_skill_category' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+					<i class="ti ti-code text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Compétences
+				</a>
+				<a href="{{ path('admin_article_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_article' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+					<i class="ti ti-news text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Articles
+				</a>
+
+				<!-- 🏷️ NOUVEAU : AJOUT DES TAGS -->
+				<a href="{{ path('admin_tag_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_tag' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+					<i class="ti ti-tag text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Tags
+				</a>
+
+				<a href="{{ path('admin_course_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_course' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+					<i class="ti ti-school text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Formations
+				</a>
+				<a href="{{ path('admin_experience_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_experience' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+					<i class="ti ti-history text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Expériences
+				</a>
+			</div>
 		</div>
 
-		<!-- Utilisateurs -->
-		<div>
-			<p class="text-[10px] uppercase text-gray-400 font-bold mb-2 ml-4">Utilisateurs</p>
-			<a href="{{ path('user_index') }}" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-users mr-3"></i>
-				Clients</a>
-			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-shield mr-3"></i>
-				Admin</a>
-			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-mail mr-3"></i>
-				Contacts</a>
-			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-inbox mr-3"></i>
-				Requests</a>
-			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-chat mr-3"></i>
-				Témoignages</a>
+		<!-- ==========================================
+				     👥 UTILISATEURS (ACCORDÉON)
+				     ========================================== -->
+		<div x-data="{ open: {{ isUtilisateursActive ? 'true' : 'false' }} }">
+			<button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 transition font-medium focus:outline-none">
+				<div class="flex items-center gap-3">
+					<i class="ti ti-users text-lg text-(--brand-dark)"></i>
+					<span>Utilisateurs</span>
+				</div>
+				<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+			</button>
+
+			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-user-shield text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Admins
+				</a>
+				<a href="{{ path('user_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'user_index' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+					<i class="ti ti-user-dollar text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Clients
+				</a>
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-mail text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Contacts
+				</a>
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-git-pull-request text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Requests
+				</a>
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-message-star text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Témoignages
+				</a>
+			</div>
 		</div>
 
-		<!-- Sécurité -->
-		<div>
-			<p class="text-[10px] uppercase text-gray-400 font-bold mb-2 ml-4">Sécurité</p>
-			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-lock mr-3"></i>
-				Logs</a>
-			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-shield-check mr-3"></i>
-				Sessions</a>
-			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-key mr-3"></i>
-				Rôles & Permissions</a>
-			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-eye mr-3"></i>
-				Audit & Monitoring</a>
+		<!-- ==========================================
+				     🛡️ SÉCURITÉ (ACCORDÉON)
+				     ========================================== -->
+		<div x-data="{ open: {{ isSecuriteActive ? 'true' : 'false' }} }">
+			<button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 transition font-medium focus:outline-none">
+				<div class="flex items-center gap-3">
+					<i class="ti ti-shield-lock text-lg text-(--brand-dark)"></i>
+					<span>Sécurité</span>
+				</div>
+				<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+			</button>
+
+			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-file-text text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Logs système
+				</a>
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-device-desktop-analytics text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Sessions actives
+				</a>
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-key text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Rôles & Perms
+				</a>
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-eye text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Audit & Monitor
+				</a>
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-shield-check text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Double Facteur (2FA)
+				</a>
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-lock-square-rounded text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Politiques sécu
+				</a>
+			</div>
 		</div>
 
-		<!-- Paramètres -->
-		<div>
-			<p class="text-[10px] uppercase text-gray-400 font-bold mb-2 ml-4">Paramètres</p>
-			<a href="~" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-settings mr-3"></i>
-				Configuration</a>
-			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-bell mr-3"></i>
-				Notifications</a>
-			<a href="#" class="flex items-center px-4 py-2 hover:bg-gray-50">
-				<i class="ti ti-plug mr-3"></i>
-				Intégrations</a>
+		<!-- ==========================================
+				     ⚙️ PARAMÈTRES (ACCORDÉON)
+				     ========================================== -->
+		<div x-data="{ open: {{ isParametresActive ? 'true' : 'false' }} }">
+			<button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 transition font-medium focus:outline-none">
+				<div class="flex items-center gap-3">
+					<i class="ti ti-settings text-lg text-(--brand-dark)"></i>
+					<span>Paramètres</span>
+				</div>
+				<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+			</button>
+
+			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-adjustments text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Configuration
+				</a>
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-bell text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Notifications
+				</a>
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-plug text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Intégrations API
+				</a>
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-database-export text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Sauvegardes
+				</a>
+			</div>
 		</div>
+
+		<!-- ==========================================
+				     ❓ SUPPORT (ACCORDÉON)
+				     ========================================== -->
+		<div x-data="{ open: false }">
+			<button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 transition font-medium focus:outline-none">
+				<div class="flex items-center gap-3">
+					<i class="ti ti-help-circle text-lg text-(--brand-dark)"></i>
+					<span>Support</span>
+				</div>
+				<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+			</button>
+
+			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-book text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Documentation
+				</a>
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-message-question text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					FAQ
+				</a>
+				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+					<i class="ti ti-lifebuoy text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Support Client
+				</a>
+			</div>
+		</div>
+
 	</nav>
 
-	<!-- Footer -->
-	<div class="p-4 border-t border-gray-200 bg-(--bg-default)">
-		<p class="text-xs text-gray-400 mb-2 text-center">Soft UI Dashboard v1.0</p>
+	<!-- 🛟 PIED DE PAGE -->
+	<div class="p-4 border-t border-gray-200 bg-gray-50/50 shrink-0 text-center">
+		<p class="text-[11px] text-(--brand-dark) tracking-wide font-medium">Soft UI Dashboard v1.2</p>
 	</div>
 </aside>
-

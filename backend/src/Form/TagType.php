@@ -2,9 +2,7 @@
 
 namespace App\Form;
 
-use App\Entity\Article;
 use App\Entity\Tag;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -21,13 +19,14 @@ class TagType extends AbstractType
                     'placeholder' => 'Ex: Symfony, Sécurité, DevOps...',
                 ],
             ])
-            ->add('article', EntityType::class, [
-                'class' => Article::class,
-                'choice_label' => 'title', // plus lisible que l’ID
-                'multiple' => true,
-                'required' => false, // facultatif
-                'label' => 'Articles associés',
-            ])
+            // ✅ Correction ici : "articles" avec un "s"
+            // ->add('articles', EntityType::class, [
+            //     'class' => Article::class,
+            //     'choice_label' => 'title',
+            //     'multiple' => true,
+            //     'required' => false,
+            //     'label' => 'Articles associés',
+            // ])
         ;
     }
 

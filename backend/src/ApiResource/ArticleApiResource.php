@@ -11,7 +11,7 @@ use ApiPlatform\Metadata\Delete;
 use App\Entity\Article;
 
 #[ApiResource(
-    description: "Ressource API pour gérer les articles du site. 
+    description: "Ressource API pour gérer les articles du site.
     Permet de lister, consulter, créer, mettre à jour et supprimer des articles.",
     operations: [
         // 📌 Liste des articles (public)

@@ -1,0 +1,29 @@
+{# templates/admin/article/create.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Créer un nouvel article
+{% endblock %}
+
+{% block body %}
+<main class="container mx-auto px-4 py-8">
+
+	<div class="mb-6">
+		<a href="{{ path('admin_article_index') }}" class="inline-flex items-center gap-2 text-sm font-semibold opacity-60 hover:text-brand-primary transition">
+			<i class="ti ti-arrow-left"></i>
+			<span>Retour à la liste</span>
+		</a>
+	</div>
+
+	<!-- Titre de section -->
+	<div class="mb-8">
+		<h1 class="text-2xl font-bold tracking-tight flex items-center gap-2">
+			<i class="ti ti-news text-brand-primary"></i>
+			<span>Rédiger un nouvel article</span>
+		</h1>
+		<p class="text-sm opacity-60 mt-1">Créez votre contenu, associez des tags et ajoutez une image de couverture.</p>
+	</div>
+
+	{{ include('admin/article/_form.html.twig', {'button_label': 'Publier l\'article'}) }}
+
+</main>
+{% endblock %}

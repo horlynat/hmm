@@ -47,11 +47,31 @@
     "**/node_modules": true,
     "**/vendor": true,
     "**/dist": true,
-    "**/.cache": true
+    "**/.cache": true,
+    "**/assets/vendor": true,
+    "**/var": true
   },
-  "typescript.updateImportsOnFileMove.enabled": "never",
-  "javascript.updateImportsOnFileMove.enabled": "never",
   "python.analysis.autoImportCompletions": false,
   "python.analysis.autoSearchPaths": false,
-  "python.analysis.fixAll": []
+  "python.analysis.fixAll": [],
+
+  "phpstorm.lsp.excludePaths": ["vendor", "assets/vendor", "var"],
+
+  "phpstrom.completion.fullyQualifyGlobalSymbols": true,
+  "phpstrom.diagnostics.strictTypes": true,
+  "phpstrom.diagnostics.workspaceScanOnStart": true,
+  "phpstrom.environment.phpVersion": "8.4",
+  "phpstrom.phpdoc.useFullyQualifiedNames": true,
+  "js/ts.preferences.autoImportFileExcludePatterns": [
+    "/vendor/",
+    "/assets/vendor/",
+    "/var/"
+  ],
+  "phpstorm.diagnostics.exclude": {
+    "/vendor/": true,
+    "/assets/vendor/": true,
+    "/var/": true
+  },
+  "typescript.updateImportsOnFileMove.enabled": "never",
+  "javascript.updateImportsOnFileMove.enabled": "never"
 }

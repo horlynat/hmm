@@ -20,3 +20,13 @@
 /node_modules/
 /public/build/
 ###< pentatrion/vite-bundle ###
+/_cycle_vie_project.md
+/_config.backend.md
+###> friendsofphp/php-cs-fixer ###
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+###< friendsofphp/php-cs-fixer ###
+
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###

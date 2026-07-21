@@ -1,0 +1,164 @@
+templates/
+└── admin/
+    └── project/
+        ├── components/                   # Composants réutilisables ou Symfony UX
+        │   ├── _badge_status.html.twig   # Utilisé par projects.html.twig et read.html.twig
+        │   ├── _budget_summary.html.twig # Utilisé par read.html.twig et statistics.html.twig
+        │   ├── _expense_list.html.twig   # Inclus dans l'onglet "Dépenses" de la fiche projet
+        │   ├── _history_timeline.html.twig # Inclus dans l'onglet "Historique" de la fiche projet
+        │   └── _media_grid.html.twig     # Inclus dans l'onglet "Détails & Médias" de la fiche projet
+        │
+        ├── collaborator/                 # 🆕 Géré par addCollaborator()
+        │   └── add.html.twig             # Formulaire d'invitation d'un collaborateur
+        │
+        ├── expense/                      # 🆕 Géré par addExpense()
+        │   └── new.html.twig             # Formulaire de création d'une dépense
+        │
+        ├── projects.html.twig            # 🔄 Corrigé (au lieu d'index.html.twig) - Reçu par index()
+        ├── read.html.twig                # Reçu par read() - Gère l'affichage complet par onglets
+        ├── create.html.twig              # Reçu par create() - Formulaire de création globale
+        ├── update.html.twig              # Reçu par update() - Formulaire de mise à jour globale
+        └── statistics.html.twig          # Reçu par statistics() - Dashboard financier complet
+
+        
+
+📂 Arborescence Admin (vue hiérarchique)
+Principal
+Dashboard (vue globale, KPIs, graphiques)
+
+Contenu
+Projets (CRUD, statuts, timeline)
+
+Compétences (skills, catégories, tags)
+
+Articles (blog, publication, brouillons)
+
+Formations (courses, progression, certification)
+
+Expériences (portfolio, historique pro)
+
+Utilisateurs
+Admin (gestion des comptes, rôles, permissions)
+
+Clients (liste, activité, sessions)
+
+Contacts (messages reçus, formulaires)
+
+Requests (devis, support, partenariats)
+
+Témoignages (validation, publication, suppression)
+
+Sécurité
+Logs (connexions, tentatives échouées)
+
+Sessions (actives, expirées, terminées)
+
+Rôles & Permissions (ROLE_ADMIN, ROLE_USER, etc.)
+
+Audit & Monitoring (qui a fait quoi, quand)
+
+2FA & Authentification (activation, gestion)
+
+Paramètres de sécurité (politiques de mot de passe, verrouillage)
+
+Paramètres
+Configuration système (branding, thèmes, langues)
+
+Notifications (emails, push, alertes)
+
+Intégrations externes (API, CRM, Slack, GitHub)
+
+Sauvegardes & restauration (backup, export)
+
+Support
+Documentation
+FAQ
+Contact support
+
+
+Étape 1 — Suppression de Webpack Encore
+
+# Supprimer Encore et tout l'écosystème Babel/Webpack
+npm remove @symfony/webpack-encore webpack webpack-cli \
+  babel-loader @babel/core @babel/preset-env \
+  babel-plugin-polyfill-corejs3 \
+  compression-webpack-plugin \
+  webpack-bundle-analyzer \
+  dotenv-webpack
+
+# Supprimer le fichier de config Webpack
+rm webpack.config.js
+
+
+Étape 2 — Installation de Vite et ses plugins
+
+# Bundle Symfony pour Vite (côté PHP)
+composer require pentatrion/vite-bundle
+
+# Packages npm
+npm install --save-dev \
+  vite \
+  vite-plugin-symfony
+
+npm install \
+  @tailwindcss/vite
+
+
+Étape 3 — Création de vite.config.js
+
+// vite.config.js
+import { defineConfig } from "vite";
+import symfonyPlugin from "vite-plugin-symfony";
+import tailwindcss from "@tailwindcss/vite";
+
+export default defineConfig({
+    plugins: [
+        tailwindcss(),          // ← Tailwind v4 via plugin Vite natif
+        symfonyPlugin({
+            stimulus: "./assets/controllers.json",
+        }),
+    ],
+    build: {
+        rollupOptions: {
+            input: {
+                app:       "./assets/app.js",
+                login:     "./assets/js/login.js",
+                register:  "./assets/js/register.js",
+                dashboard: "./assets/js/dashboard.js",
+                profile:   "./assets/js/profile.js",
+            },
+        },
+        manifest:    true,
+        outDir:      "public/build",
+        emptyOutDir: true,
+    },
+    server: {
+        watch: {},
+    },
+});
+
+
+
+Étape 4 — Création de config/packages/pentatrion_vite.yaml
+
+# config/packages/pentatrion_vite.yaml
+pentatrion_vite:
+    build_directory: build
+    proxy_url: http://localhost:5173
+
+
+
+Étape 5 — Mise à jour des scripts package.json
+
+npm pkg set scripts.dev="vite"
+npm pkg set scripts.watch="vite"
+npm pkg set scripts.build="vite build"
+npm pkg set scripts.preview="vite preview"
+
+
+
+Étape 6 — Suppression de postcss.config.cjs
+Avec Vite + @tailwindcss/vite, PostCSS n'est plus nécessaire comme fichier séparé — le plugin Vite le gère en interne.
+
+postcss.config.cjs 2>/dev/null
+rm postcss.config.mjs 2>/dev/null

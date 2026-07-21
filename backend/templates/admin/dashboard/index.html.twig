@@ -1,0 +1,352 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tableau de Bord Administration
+{% endblock %}
+
+{% block body %}
+	<div class="container mx-auto px-4 py-8 text-brand-dark">
+
+		<!-- 👑 EN-TÊTE DU DASHBOARD -->
+		<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+			<div>
+				<h1 class="text-3xl font-heading font-bold tracking-tight">Vue Globale</h1>
+				<p class="text-sm text-brand-dark/60">Pilotez votre activité, vos projets et la santé du système.</p>
+			</div>
+			<div class="flex items-center gap-3 bg-white border border-gray-100 p-1.5 rounded-xl text-xs font-medium shadow-sm">
+				<span class="px-3 py-1.5 bg-brand-light/20 text-brand-primary rounded-lg font-semibold">Année
+					{{ "now"|date("Y") }}</span>
+				<span class="text-gray-400 pr-2">Mis à jour à l'instant</span>
+			</div>
+		</div>
+
+		<!-- ⚡ 1. ACTIONS RAPIDES (QUICK ACTIONS) -->
+		<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+			<a href="{{ path('admin_project_create') }}" class="flex items-center gap-3 p-3.5 bg-brand-primary/5 hover:bg-brand-primary/10 text-brand-primary rounded-xl font-semibold transition text-sm group">
+				<i class="ti ti-plus text-lg transition-transform group-hover:scale-110"></i>
+				<span>Nouveau Projet</span>
+			</a>
+			<a href="{{ path('admin_article_create') }}" class="flex items-center gap-3 p-3.5 bg-brand-dark/5 hover:bg-brand-dark/10 text-brand-dark rounded-xl font-semibold transition text-sm group">
+				<i class="ti ti-file-plus text-lg transition-transform group-hover:scale-110"></i>
+				<span>Rédiger un Article</span>
+			</a>
+			<a href="#" class="flex items-center gap-3 p-3.5 bg-amber-500/5 hover:bg-amber-500/10 text-amber-700 rounded-xl font-semibold transition text-sm group">
+				<i class="ti ti-mail-forward text-lg transition-transform group-hover:scale-110"></i>
+				<span>Traiter les Devis</span>
+			</a>
+			<a href="#" class="flex items-center gap-3 p-3.5 bg-purple-500/5 hover:bg-purple-500/10 text-purple-700 rounded-xl font-semibold transition text-sm group">
+				<i class="ti ti-adjustments text-lg transition-transform group-hover:scale-110"></i>
+				<span>Paramètres Serveur</span>
+			</a>
+		</div>
+
+		<!-- ==========================================
+				     🛑 ZONE D'ALERTE SYSTEME / DANGER (Si incident existant)
+				     ========================================== -->
+		{% if stats.criticalIncidentsCount is defined and stats.criticalIncidentsCount > 0 %}
+			<div class="mb-8 border border-red-200 bg-red-50/50 rounded-2xl p-4 flex items-start gap-4 animate-pulse-danger">
+				<div class="p-3 bg-danger text-white rounded-xl shadow-sm">
+					<i class="ti ti-alert-triangle text-xl"></i>
+				</div>
+				<div class="flex-1">
+					<h3 class="font-heading font-bold text-red-900 text-base">Alerte critique système en cours</h3>
+					<p class="text-sm text-red-700/90 mt-0.5">Il y a
+						{{ stats.criticalIncidentsCount }}
+						problème(s) nécessitant une intervention immédiate (projets bloqués ou erreurs serveurs).</p>
+				</div>
+				<a href="#" class="px-4 py-2 bg-danger hover:bg-red-700 text-white text-xs font-semibold rounded-xl transition shadow-sm">
+					Résoudre l'incident
+				</a>
+			</div>
+		{% endif %}
+
+		<!-- ==========================================
+				     📊 INDICATEURS CLÉS (KPIs)
+				     ========================================== -->
+		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+			<div class="soft-card p-6">
+				<div class="flex items-center justify-between mb-4">
+					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">CA Encaissé (Livré)</span>
+					<div class="p-2 bg-emerald-50 text-success rounded-xl">
+						<i class="ti ti-coin text-xl"></i>
+					</div>
+				</div>
+				<div class="text-2xl font-bold tracking-tight">{{ stats.totalBudget|default(0)|format_currency(app_currency) }}</div>
+				<p class="text-xs text-success font-medium mt-2 flex items-center gap-1">
+					<i class="ti ti-arrow-up-right"></i>
+					Projets finalisés cette année
+				</p>
+			</div>
+
+			<div class="soft-card p-6">
+				<div class="flex items-center justify-between mb-4">
+					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">CA En Développement</span>
+					<div class="p-2 bg-blue-50 text-info rounded-xl">
+						<i class="ti ti-browser-code text-xl"></i>
+					</div>
+				</div>
+				<div class="text-2xl font-bold tracking-tight">{{ stats.remainingBudget|default(0)|format_currency(app_currency) }}</div>
+				<p class="text-xs text-info font-medium mt-2 flex items-center gap-1">
+					<i class="ti ti-clock-hour-4"></i>
+					Production active en cours
+				</p>
+			</div>
+
+			<div class="soft-card p-6">
+				<div class="flex items-center justify-between mb-4">
+					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">Demandes Actives</span>
+					<div class="p-2 bg-amber-50 text-warning rounded-xl">
+						<i class="ti ti-git-pull-request text-xl"></i>
+					</div>
+				</div>
+				<div class="text-2xl font-bold tracking-tight">{{ stats.overBudgetCount|default(0) }}</div>
+				<p class="text-xs text-brand-dark/60 mt-2">
+					Devis & partenariats en attente
+				</p>
+			</div>
+
+			<div class="soft-card p-6">
+				<div class="flex items-center justify-between mb-4">
+					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">Messages reçus</span>
+					<div class="p-2 bg-purple-50 text-purple-600 rounded-xl">
+						<i class="ti ti-message-code text-xl"></i>
+					</div>
+				</div>
+				<div class="text-2xl font-bold tracking-tight">{{ stats.lowBudgetCount|default(0) }}</div>
+				<p class="text-xs text-brand-dark/60 mt-2">
+					Formulaires de contact récents
+				</p>
+			</div>
+		</div>
+
+		<!-- ==========================================
+				     📁 RÉPARTITION PAR STATUTS DES PROJETS
+				     ========================================== -->
+		<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+			{% for status, data in projectsByStatus %}
+				<div class="bg-gray-50/60 border border-gray-100 rounded-xl p-4 text-center transition hover:bg-white hover:border-gray-200">
+					<div class="text-xs font-semibold text-brand-dark/50 mb-1">{{ data.label }}</div>
+					<div class="text-2xl font-bold {{ data.badgeClass|default('text-brand-dark') }}">
+						{{ data.count }}
+					</div>
+					<div class="text-[10px] text-gray-400 mt-1">
+						{{ stats.totalProjects|default(0) > 0 ? (data.count / stats.totalProjects * 100)|round(1) : 0 }}% du volume
+					</div>
+				</div>
+			{% endfor %}
+		</div>
+
+		<!-- ==========================================
+				     📅 2 & 3. CHRONOLOGIE DES ÉCHÉANCES & SANTÉ TECHNIQUE
+				     ========================================== -->
+		<div
+			class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+			<!-- Prochaines Deadlines (2/3) -->
+			<div class="soft-card p-6 lg:col-span-2">
+				<div class="flex justify-between items-center mb-4">
+					<h2 class="text-lg font-heading font-bold">Jalons & Deadlines Imminentes</h2>
+					<span class="text-xs text-brand-dark/40">15 prochains jours</span>
+				</div>
+				<div class="divide-y divide-gray-100">
+					<div class="flex items-center justify-between py-3 first:pt-0">
+						<div class="flex items-center gap-3">
+							<div class="p-2 bg-amber-50 text-amber-700 rounded-xl text-xs font-bold text-center w-12 shrink-0">
+								<span class="block text-base">18</span>
+								Juil.
+							</div>
+							<div>
+								<h4 class="font-medium text-sm">Livrable Maquettes UI — Digital Business Group</h4>
+								<p class="text-xs text-brand-dark/50">Sprint de validation intermédiaire</p>
+							</div>
+						</div>
+						<span class="text-xs font-semibold px-2.5 py-1 bg-amber-50 text-amber-800 rounded-lg">J-5 avant rendu</span>
+					</div>
+					<div class="flex items-center justify-between py-3">
+						<div class="flex items-center gap-3">
+							<div class="p-2 bg-blue-50 text-brand-primary rounded-xl text-xs font-bold text-center w-12 shrink-0">
+								<span class="block text-base">24</span>
+								Juil.
+							</div>
+							<div>
+								<h4 class="font-medium text-sm">Livraison finale — Module Cart</h4>
+								<p class="text-xs text-brand-dark/50">Recette technique finale avec le client</p>
+							</div>
+						</div>
+						<span class="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-brand-primary rounded-lg">J-11</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Santé Serveur & Taux Support (1/3) -->
+			<div class="soft-card p-6 flex flex-col justify-between">
+				<div>
+					<h2 class="text-lg font-heading font-bold mb-4">Santé Technique & Performance</h2>
+					<div class="space-y-4">
+						<div class="flex items-center justify-between text-sm">
+							<span class="text-brand-dark/70 flex items-center gap-2">
+								<i class="ti ti-shield-lock text-success text-base"></i>
+								Certificats SSL
+							</span>
+							<span class="text-xs font-bold text-success">Sécurisé (J-45)</span>
+						</div>
+						<div class="flex items-center justify-between text-sm">
+							<span class="text-brand-dark/70 flex items-center gap-2">
+								<i class="ti ti-cloud-download text-success text-base"></i>
+								Sauvegardes Auto
+							</span>
+							<span class="text-xs font-bold text-success">Opérationnelles</span>
+						</div>
+						<div>
+							<div class="flex items-center justify-between text-sm mb-1">
+								<span class="text-brand-dark/70 flex items-center gap-2">
+									<i class="ti ti-server text-brand-primary text-base"></i>
+									Espace Disque Serveur
+								</span>
+								<span class="text-xs font-bold text-brand-dark/70">64% utilisé</span>
+							</div>
+							<div class="w-full bg-gray-100 rounded-full h-1.5">
+								<div class="bg-brand-primary h-1.5 rounded-full" style="width: 64%"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- 4. SUPPORT ET PERFORMANCE (En bas du bloc technique) -->
+				<div class="mt-4 pt-4 border-t border-gray-100 space-y-2">
+					<div class="flex items-center justify-between text-xs">
+						<span class="text-brand-dark/50">Réactivité de réponse moyenne :</span>
+						<span class="font-semibold text-brand-dark">~14 heures</span>
+					</div>
+					<div class="flex items-center justify-between text-xs">
+						<span class="text-brand-dark/50">Conversion des Devis :</span>
+						<span class="font-bold text-success">45.2%</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- ==========================================
+				     📈 ZONE GRAPHIQUES & TENDANCES
+				     ========================================= -->
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+			<div class="soft-card p-6 lg:col-span-2">
+				<div class="flex items-center justify-between mb-6">
+					<h2 class="text-lg font-heading font-bold">Évolution Financière Mensuelle</h2>
+					<span class="text-xs text-brand-dark/40">CA vs Dépenses</span>
+				</div>
+				<div class="chart-container">
+					<canvas id="expensesByMonthChart"></canvas>
+				</div>
+			</div>
+
+			<div class="soft-card p-6">
+				<div class="flex items-center justify-between mb-6">
+					<h2 class="text-lg font-heading font-bold">Volume Projets</h2>
+					<i class="ti ti-chart-pie text-gray-400 text-lg"></i>
+				</div>
+				<div class="chart-container">
+					<canvas id="projectsByStatusChart"></canvas>
+				</div>
+			</div>
+		</div>
+
+		<!-- ==========================================
+				     📬 FLUX CONTACTS & DEMANDES RECENTES
+				     ========================================== -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+			<div class="soft-card p-6">
+				<div class="flex justify-between items-center mb-4">
+					<h2 class="text-lg font-heading font-bold">Demandes Commerciales & Devis</h2>
+					<a href="#" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
+				</div>
+				<div class="divide-y divide-gray-100 max-h-[360px] overflow-y-auto scrollbar-none">
+					{% if recentRequests is defined and recentRequests|length > 0 %}
+						{% for request in recentRequests %}
+							<div class="flex justify-between items-center py-3.5 first:pt-0 last:pb-0">
+								<div>
+									<h4 class="font-medium text-sm">{{ request.companyName|default(request.clientName) }}</h4>
+									<p class="text-xs text-brand-dark/50 mt-0.5 flex items-center gap-1.5">
+										<span class="inline-block w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
+										{{ request.type|default('Partenariat') }}
+										—
+										{{ request.createdAt|date('d/m/Y') }}
+									</p>
+								</div>
+								<div class="text-right">
+									<span class="text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg">En attente</span>
+								</div>
+							</div>
+						{% endfor %}
+					{% else %}
+						<div class="text-center py-8 text-sm text-brand-dark/40">
+							<i class="ti ti-mailbox text-2xl block mb-2 text-gray-300"></i>
+							Aucune proposition commerciale en attente.
+						</div>
+					{% endif %}
+				</div>
+			</div>
+
+			<div class="soft-card p-6">
+				<div class="flex justify-between items-center mb-4">
+					<h2 class="text-lg font-heading font-bold">Derniers Contacts Reçus</h2>
+					<a href="#" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
+				</div>
+				<div class="divide-y divide-gray-100 max-h-[360px] overflow-y-auto scrollbar-none">
+					{% if recentContacts is defined and recentContacts|length > 0 %}
+						{% for contact in recentContacts %}
+							<div class="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0">
+								<img class="h-9 w-9 rounded-xl border border-gray-100 shadow-sm" src="https://ui-avatars.com/api/?background=eaeaea&color=333&name={{ contact.fullName|url_encode }}" alt="{{ contact.fullName }}">
+								<div class="flex-1 min-w-0">
+									<h4 class="font-medium text-sm truncate">{{ contact.fullName }}</h4>
+									<p class="text-xs text-brand-dark/50 truncate mt-0.5">{{ contact.subject|default(contact.message|slice(0, 50) ~ '...') }}</p>
+								</div>
+								<span class="text-[11px] text-gray-400 shrink-0 font-medium">{{ contact.createdAt|date('H:i') }}</span>
+							</div>
+						{% endfor %}
+					{% else %}
+						<div class="text-center py-8 text-sm text-brand-dark/40">
+							<i class="ti ti-message-off text-2xl block mb-2 text-gray-300"></i>
+							Aucun message de contact récent.
+						</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+
+		<!-- ==========================================
+				     💎 TOP PROJETS EN COURS DE VALORISATION
+				     ========================================== -->
+		<div class="soft-card p-6">
+			<h2 class="text-lg font-heading font-bold mb-4">Top Projets Stratégiques (Finances & Délais)</h2>
+			<div class="overflow-x-auto">
+				<table class="w-full text-left text-sm border-collapse">
+					<thead>
+						<tr class="border-b border-gray-100 text-brand-dark/40 text-xs font-bold uppercase tracking-wider">
+							<th class="pb-3 font-semibold">Projet</th>
+							<th class="pb-3 font-semibold">Client / Pilote</th>
+							<th class="pb-3 font-semibold">Budget Total</th>
+							<th class="pb-3 font-semibold">Progression Production</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-50">
+						{% for project in topBudgetProjects|slice(0, 4) %}
+							<tr>
+								<td class="py-4 font-medium text-gray-900">{{ project.title }}</td>
+								<td class="py-4 text-brand-dark/70">{{ project.owner.fullName ?? project.owner.email }}</td>
+								<td class="py-4 font-semibold">{{ project.getFormattedBudget() }}</td>
+								<td class="py-4">
+									<div class="flex items-center gap-3 max-w-xs">
+										<div class="w-full bg-gray-100 rounded-full h-2">
+											<div class="bg-brand-primary h-2 rounded-full transition-all" style="width: {{ project.getBudgetPercentageUsed()|default(0) }}%"></div>
+										</div>
+										<span class="text-xs font-bold text-brand-dark/60">{{ project.getBudgetPercentageUsed()|default(0) }}%</span>
+									</div>
+								</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+	</div>
+{% endblock %}

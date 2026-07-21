@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\TagRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -25,11 +26,18 @@ class Tag
 
     #[ORM\ManyToMany(targetEntity: Article::class, mappedBy: 'tags')]
     #[Groups(['api_admin'])] // exposé seulement côté admin
-    private Collection $articles;
+    private ?Collection $articles;
+
+    /**
+     * @var Collection<int, Project>
+     */
+    #[ORM\ManyToMany(targetEntity: Project::class, mappedBy: 'tags')]
+    private Collection $projects;
 
     public function __construct()
     {
         $this->articles = new \Doctrine\Common\Collections\ArrayCollection();
+        $this->projects = new ArrayCollection();
     }
     public function getId(): ?int
     {
@@ -68,6 +76,33 @@ class Tag
     public function removeArticle(Article $articles): static
     {
         $this->articles->removeElement($articles);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Project>
+     */
+    public function getProjects(): Collection
+    {
+        return $this->projects;
+    }
+
+    public function addProject(Project $project): static
+    {
+        if (!$this->projects->contains($project)) {
+            $this->projects->add($project);
+            $project->addTag($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProject(Project $project): static
+    {
+        if ($this->projects->removeElement($project)) {
+            $project->removeTag($this);
+        }
 
         return $this;
     }

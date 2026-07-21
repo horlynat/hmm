@@ -4,11 +4,10 @@
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>
-			{% block title %}Dashboard {% endblock %}
+			{% block title %}Dashboard{% endblock %}
 		</title>
 
 		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 		<link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Round|Material+Icons+Sharp" rel="stylesheet">
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -17,28 +16,32 @@
 			{{ vite_entry_link_tags('app') }}
 		{% endblock %}
 
+		{# Alpine.js utilisé pour la gestion réactive du menu mobile et des dropdowns #}
 		<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
 		{% block javascripts %}
 			{{ vite_entry_script_tags('app') }}
 		{% endblock %}
 	</head>
+	<body class="flex h-screen bg-(--bg-default) text-(--brand-dark) overflow-hidden relative" x-data="{ mobileSidebarOpen: false }">
+		{# 🟦 OVERLAY MOBILE : Assombrit l'écran quand le menu est ouvert sur mobile #}
+		<div x-show="mobileSidebarOpen" @click="mobileSidebarOpen = false" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/40 z-40 md:hidden backdrop-blur-sm"></div>
 
-	<body class="flex h-screen bg-(--bg-default)"></body>
-
-
+		{# 🏢 BARRE LATÉRALE DYNAMIQUE #}
 		{% include '_partials/_admin.nav.html.twig' %}
 
-		<div class="flex-1 flex flex-col overflow-y-auto">
+		{# 💻 ZONE DE CONTENU PRINCIPALE #}
+		<div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 			{% include '_partials/_header.html.twig' %}
-			{% include '_partials/_flashes.html.twig' %}
 
-			<main class="flex-1 p-6"> 
-				{% block body %}{% endblock %}
-			</main>
+			{# Zone de défilement isolée pour éviter que toute la page ne bouge #}
+			<div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+				{% include '_partials/_flashes.html.twig' %}
 
+				<main class="animate-fade-in"> 
+					{% block body %}{% endblock %}
+				</main>
+			</div>
 		</div>
-			
 	</body>
 </html>
-
