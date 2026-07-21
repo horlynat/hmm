@@ -1,0 +1,48 @@
+{# templates/admin/article/_delete_form.html.twig #}
+<div
+	class="inline-block">
+
+	<!-- 🗑️ BOUTON DÉCLENCHEUR (Appelle le modal) -->
+	<button type="button" onclick="document.getElementById('delete-modal-{{ article.id }}').showModal()" class="p-2 bg-red-50 hover:bg-red-100 text-danger border border-red-200/30 rounded-sm transition flex items-center justify-center gap-1.5 text-xs font-bold cursor-pointer" title="Supprimer l'article">
+		<i class="ti ti-trash text-sm"></i>
+		<span>Supprimer</span>
+	</button>
+
+	<!-- 🖼️ MODAL DIALOG NATIF -->
+	<dialog id="delete-modal-{{ article.id }}" class="rounded-lg p-6 border border-gray-100 shadow-2xl max-w-md w-full bg-white backdrop:bg-brand-dark/40 backdrop:backdrop-blur-xs open:animate-scale-up">
+
+		<div
+			class="text-center">
+			<!-- Icône d'alerte en orange/rouge -->
+			<div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-50 text-danger mb-4">
+				<i class="ti ti-alert-triangle text-2xl"></i>
+			</div>
+
+			<!-- Message -->
+			<h3 class="text-lg font-bold text-brand-dark">Confirmer la suppression ?</h3>
+			<p class="text-sm opacity-60 mt-2 px-2">
+				Êtes-vous sûr de vouloir supprimer l'article
+				<span class="font-bold text-brand-dark">"{{ article.title }}"</span>
+				? Cette opération est instantanée et irréversible.
+			</p>
+
+			<!-- Actions -->
+			<div
+				class="mt-6 flex flex-col sm:flex-row-reverse gap-3">
+				<!-- Formulaire Réel de Soumission -->
+				<form method="post" action="{{ path('admin_article_delete', {'slug': article.slug}) }}" class="w-full sm:w-auto flex-1">
+					<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ article.id) }}">
+					<button type="submit" onclick="this.disabled=true; this.form.submit();" class="btn btn-primary !bg-danger hover:!bg-red-700 w-full text-sm cursor-pointer">
+						Confirmer
+					</button>
+				</form>
+
+				<!-- Annuler -->
+				<button type="button" onclick="document.getElementById('delete-modal-{{ article.id }}').close()" class="btn btn-secondary w-full text-sm cursor-pointer">
+					Annuler
+				</button>
+			</div>
+		</div>
+
+	</dialog>
+</div>

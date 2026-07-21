@@ -83,10 +83,10 @@ class SecurityAuthenticator extends AbstractLoginFormAuthenticator
 
         // ✅ CORRECTION 7 — ROLE_USER redirigé vers dashboard (pas vers login)
         if (in_array('ROLE_ADMIN', $token->getRoleNames(), true)) {
-            return new RedirectResponse($this->urlGenerator->generate('dashboard_index'));
+            return new RedirectResponse($this->urlGenerator->generate('admin_dashboard_index'));
         }
 
-        return new RedirectResponse($this->urlGenerator->generate('dashboard_index'));
+        return new RedirectResponse($this->urlGenerator->generate('admin_dashboard_index'));
     }
 
     protected function getLoginUrl(Request $request): string

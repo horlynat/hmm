@@ -1,0 +1,47 @@
+{# templates/admin/project/_delete_form.html.twig #}
+<div
+	class="inline-block">
+
+	<!-- 🗑️ BOUTON DÉCLENCHEUR (Affiche le modal) -->
+	<button type="button" onclick="document.getElementById('delete-modal-{{ project.id }}').showModal()" class="p-2 bg-gray-50 hover:bg-red-500/10 text-brand-dark/70 hover:text-danger rounded-xl transition-all cursor-pointer flex items-center justify-center" title="Supprimer le projet">
+		<span class="material-icons text-lg block">delete_forever</span>
+	</button>
+
+	<!-- 🖼️ MODAL NATIF (DIALOG) -->
+	<dialog id="delete-modal-{{ project.id }}" class="rounded-2xl p-6 border border-gray-100 shadow-2xl max-w-md w-full bg-white backdrop:bg-brand-dark/40 backdrop:backdrop-blur-xs open:animate-scale-up">
+
+		<div
+			class="text-center">
+			<!-- Icône d'avertissement -->
+			<div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-50 text-danger mb-4">
+				<span class="material-icons text-2xl">warning</span>
+			</div>
+
+			<!-- Message de confirmation -->
+			<h3 class="text-lg font-heading font-bold text-brand-dark">Supprimer ce projet ?</h3>
+			<p class="text-sm text-brand-dark/60 mt-2 px-2">
+				Êtes-vous sûr de vouloir supprimer définitivement le projet
+				<span class="font-semibold text-brand-dark">"{{ project.title }}"</span>
+				? Cette action est irréversible et effacera tous les médias et historiques associés.
+			</p>
+
+			<!-- Actions du Modal -->
+			<div
+				class="mt-6 flex flex-col sm:flex-row-reverse gap-3">
+				<!-- Formulaire Réel de Soumission -->
+				<form method="post" action="{{ path('admin_project_delete', {'id': project.id}) }}" class="w-full sm:w-auto flex-1">
+					<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ project.id) }}">
+					<button type="submit" onclick="this.disabled=true; this.form.submit();" class="w-full inline-flex justify-center items-center px-4 py-2.5 bg-danger hover:bg-red-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-all cursor-pointer">
+						Confirmer la suppression
+					</button>
+				</form>
+
+				<!-- Bouton Annuler -->
+				<button type="button" onclick="document.getElementById('delete-modal-{{ project.id }}').close()" class="w-full sm:w-auto flex-1 inline-flex justify-center items-center px-4 py-2.5 bg-white border border-gray-200 text-brand-dark/70 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-all cursor-pointer">
+					Annuler
+				</button>
+			</div>
+		</div>
+
+	</dialog>
+</div>

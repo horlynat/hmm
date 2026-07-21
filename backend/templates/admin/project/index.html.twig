@@ -1,0 +1,105 @@
+{# templates/admin/article/index.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des articles
+{% endblock %}
+
+{% block body %}
+	<main
+		class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+			<div>
+				<h1 class="text-3xl font-bold tracking-tight flex items-center gap-2">
+					<span class="material-icons text-brand-primary">article</span>
+					<span>Gestion des articles</span>
+				</h1>
+				<p class="text-sm opacity-60 mt-1">Publiez, éditez et organisez les contenus de votre blog.</p>
+			</div>
+			<a href="{{ path('admin_article_create') }}" class="btn btn-primary gap-2 group cursor-pointer">
+				<span class="material-icons text-sm transition-transform group-hover:scale-110">add_circle</span>
+				<span>Créer un nouvel article</span>
+			</a>
+		</div>
+
+		<!-- 🔔 NOTIFICATIONS VIA TES CLASSES .ALERT -->
+		{% for message in app.flashes('success') %}
+			<div class="alert alert-success mb-6 flex items-center gap-2">
+				<span class="material-icons text-base">check_circle</span>
+				<span>{{ message }}</span>
+			</div>
+		{% endfor %}
+		{% for message in app.flashes('error') %}
+			<div class="alert alert-error mb-6 flex items-center gap-2">
+				<span class="material-icons text-base">error</span>
+				<span>{{ message }}</span>
+			</div>
+		{% endfor %}
+
+		<!-- 📑 SYSTEME DE TABS (DÉFINI DANS TON CSS) -->
+		<div class="tabs mb-6">
+			<button class="tab tab-active">Tous ({|length|default(articles|length)})</button>
+			<button class="tab">Publiés</button>
+			<button class="tab">Brouillons</button>
+		</div>
+
+		<!-- 📊 TABLEAU DU COMPOSANT STRUCTURÉ .TABLE -->
+		<div class="soft-card overflow-hidden">
+			<table class="table">
+				<thead>
+					<tr>
+						<th class="w-16">Id</th>
+						<th>Détails de l'article</th>
+						<th>Date</th>
+						<th class="w-32">Statut</th>
+						<th class="w-40 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for article in articles %}
+						<tr>
+							<td class="font-mono text-xs opacity-50">{{ article.id }}</td>
+							<td class="max-w-md">
+								<div class="font-semibold text-base truncate">{{ article.title }}</div>
+								<div class="text-xs opacity-40 text-truncate mt-0.5">{{ article.content|striptags }}</div>
+							</td>
+							<td class="text-xs opacity-70">
+								{% if article.publishedAt %}
+									<div>{{ article.publishedAt|date('d/m/Y') }}</div>
+								{% else %}
+									<span class="opacity-40">—</span>
+								{% endif %}
+							</td>
+							<td>
+								{% if article.publishedAt %}
+									<span class="badge bg-emerald-50 text-success text-xs font-bold">Publié</span>
+								{% else %}
+									<span class="badge bg-amber-50 text-warning text-xs font-bold">Brouillon</span>
+								{% endif %}
+							</td>
+							<td>
+								<div class="flex items-center justify-end gap-2">
+									<a href="{{ path('admin_article_read', {'slug': article.slug}) }}" class="p-2 hover:bg-brand-light rounded-sm transition" title="Voir">
+										<span class="material-icons text-lg block">visibility</span>
+									</a>
+									<a href="{{ path('admin_article_update', {'slug': article.slug}) }}" class="p-2 hover:bg-warning/20 text-amber-700 rounded-sm transition" title="Modifier">
+										<span class="material-icons text-lg block">edit</span>
+									</a>
+									{% include 'admin/article/_delete_form.html.twig' with {'article': article} %}
+								</div>
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="5" class="text-center py-12 opacity-40">
+								<span class="material-icons text-4xl block mb-2">layers_clear</span>
+								<span>Aucun article trouvé pour le moment.</span>
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</main>
+{% endblock %}

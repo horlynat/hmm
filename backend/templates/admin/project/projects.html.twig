@@ -1,0 +1,361 @@
+{# templates/admin/project/projects.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des Projets - Administration
+{% endblock %}
+
+{% block body %}
+	<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+		{# ========================================================================= #}
+		{# 📊 ZONE PRINCIPALE (9/12) - Plus d'espace pour la table                  #}
+		{# ========================================================================= #}
+			<main
+			class="lg:col-span-9 space-y-6"> {# En-tête de page #}
+			<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+				<div>
+					<h1 class="heading text-2xl mb-1">Tableau de bord des Projets</h1>
+					<p class="text-gray-500 mb-0">Gestion centralisée, suivi budgétaire et planification des livrables.</p>
+				</div>
+				<a href="{{ path('admin_project_create') }}" class="btn btn-primary gap-2">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewbox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+					Nouveau Projet
+				</a>
+			</div>
+
+			{# Cartes de statistiques rapides par Statut #}
+			<div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+				{% for statusKey, data in projectsByStatus %}
+					<div class="card p-4 text-center">
+						<span class="badge {{ data.badgeClass|default('bg-gray-400 text-white') }} mb-2">{{ data.label }}</span>
+						<h3 class="mb-0 text-2xl font-bold text-brand-dark">{{ data.count }}</h3>
+					</div>
+				{% endfor %}
+			</div>
+
+			{# Synthèse financière globale #}
+			<div class="card">
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+					<div class="md:border-r border-gray-100">
+						<span class="block text-gray-500 text-xs uppercase font-semibold tracking-wide mb-1">Budget Global Alloué</span>
+						<span class="text-xl font-bold text-brand-dark">{{ stats.totalBudget|number_format(2, ',', ' ') }}
+							€</span>
+					</div>
+					<div class="md:border-r border-gray-100">
+						<span class="block text-gray-500 text-xs uppercase font-semibold tracking-wide mb-1">Total des Dépenses</span>
+						<span class="text-xl font-bold text-danger">{{ stats.totalSpent|number_format(2, ',', ' ') }}
+							€</span>
+					</div>
+					<div>
+						<span class="block text-gray-500 text-xs uppercase font-semibold tracking-wide mb-1">Marge Restante Globale</span>
+						<span class="text-xl font-bold {{ stats.remainingBudget >= 0 ? 'text-success' : 'text-danger' }}">
+							{{ stats.remainingBudget|number_format(2, ',', ' ') }}
+							€
+						</span>
+					</div>
+				</div>
+			</div>
+
+			{# Liste / Grille des projets #}
+			<div class="card p-0 overflow-hidden">
+				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-b border-gray-100">
+					<h5 class="heading text-base mb-0">Résultats ({{ totalItems }})</h5>
+
+					{# Tri rapide synchrone #}
+					<div class="flex items-center gap-2">
+						<span class="text-gray-500 text-sm whitespace-nowrap">Trier par :</span>
+						<select class="input input-select text-sm py-1.5 auto-submit-trigger" name="sort" form="filter-sidebar-form" style="max-width: 150px;">
+							<option value="createdAt" {{ filters.sort == 'createdAt' ? 'selected' }}>Date de création</option>
+							<option value="title" {{ filters.sort == 'title' ? 'selected' }}>Nom du projet</option>
+							<option value="budget" {{ filters.sort == 'budget' ? 'selected' }}>Budget</option>
+							<option value="progress" {{ filters.sort == 'progress' ? 'selected' }}>Avancement</option>
+							<option value="deadline" {{ filters.sort == 'deadline' ? 'selected' }}>Échéance</option>
+						</select>
+						<select class="input input-select text-sm py-1.5 auto-submit-trigger" name="direction" form="filter-sidebar-form" style="max-width: 120px;">
+							<option value="desc" {{ filters.direction == 'desc' ? 'selected' }}>Décroissant</option>
+							<option value="asc" {{ filters.direction == 'asc' ? 'selected' }}>Croissant</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="overflow-x-auto">
+					<table class="table mb-0">
+						<thead>
+							<tr>
+								<th style="min-width: 240px; padding-left: 1.5rem;">Projet / Client</th>
+								<th>Statut & Priorité</th>
+								<th>Facturation</th>
+								<th>Budget & Santé</th>
+								<th>Avancement</th>
+								<th>Échéance</th>
+								<th class="text-right" style="min-width: 120px; padding-right: 1.5rem;">Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for project in projects %}
+								<tr>
+									<td style="padding-left: 1.5rem;">
+										<div class="font-bold text-brand-dark mb-1">{{ project.title }}</div>
+										<div class="text-sm text-gray-500 flex items-center gap-1">
+											<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewbox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+											{{ project.client ? project.client.fullName : 'Aucun client associé' }}
+										</div>
+									</td>
+									<td>
+										<span class="badge {{ project.status.badgeClass|default('bg-gray-400 text-white') }} mb-1">{{ project.status.label }}</span>
+										{% if project.priority %}
+											<div class="text-sm mt-1">
+												<span class="badge border border-gray-300 text-gray-600 font-normal">{{ project.priority.label }}</span>
+											</div>
+										{% endif %}
+									</td>
+									<td>
+										<span class="text-brand-dark text-sm font-medium">{{ project.billingType ? project.billingType.label : 'Non défini' }}</span>
+									</td>
+									<td>
+										<div class="text-sm">
+											<span class="text-gray-500">Budget :</span>
+											<span class="font-semibold text-brand-dark">{{ project.budget|number_format(2, ',', ' ') }}
+												€</span>
+										</div>
+										<div class="text-sm">
+											<span class="text-gray-500">Dépensé :</span>
+											<span class="{{ project.spent > project.budget ? 'text-danger font-bold' : 'text-gray-500' }}">{{ project.spent|number_format(2, ',', ' ') }}
+												€</span>
+										</div>
+									</td>
+									<td>
+										<div class="flex items-center gap-2" style="min-width: 120px;">
+											<div class="w-full rounded-full bg-gray-200" style="height: 6px;">
+												<div class="rounded-full bg-success" style="height: 6px; width: {{ project.progress }}%;" role="progressbar" aria-valuenow="{{ project.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+											</div>
+											<span class="text-sm font-bold text-brand-dark">{{ project.progress }}%</span>
+										</div>
+									</td>
+									<td>
+										{% if project.deadline %}
+											<span class="badge font-mono {{ project.deadline < date() and project.status.value != 'completed' ? 'bg-danger/10 text-danger' : 'bg-gray-100 text-brand-dark' }}">
+												{{ project.deadline|date('d/m/Y') }}
+											</span>
+										{% else %}
+											<span class="text-gray-500 text-sm italic">Aucune</span>
+										{% endif %}
+									</td>
+									<td class="text-right" style="padding-right: 1.5rem;">
+										<div class="flex items-center justify-end gap-2">
+											<a href="{{ path('admin_project_read', { id: project.id }) }}" class="btn btn-secondary text-sm py-1.5 px-2.5" title="Consulter">
+												Voir
+											</a>
+											{% if project.status.value != 'completed' and project.status.value != 'suspended' %}
+												<a href="{{ path('admin_project_update', { id: project.id }) }}" class="btn btn-primary text-sm py-1.5 px-2.5" title="Modifier">
+													Éditer
+												</a>
+											{% endif %}
+										</div>
+									</td>
+								</tr>
+							{% else %}
+								<tr>
+									<td colspan="7" class="text-center py-10 text-gray-500">
+										<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewbox="0 0 24 24" stroke="currentColor" class="mb-3 mx-auto opacity-50"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+										<p class="mb-0 font-medium">Aucun projet ne correspond aux critères de filtrage actuels.</p>
+									</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			{# Bloc de Pagination Synchrone #}
+			{% if totalPages > 1 %}
+				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+					<span class="text-sm text-gray-500">Page
+						<strong>{{ page }}</strong>
+						sur
+						<strong>{{ totalPages }}</strong>
+					</span>
+					<nav aria-label="Navigation des projets">
+						<ul class="flex items-center gap-1">
+							<li>
+								<a class="btn btn-secondary text-sm py-1.5 px-3 {{ page == 1 ? 'pointer-events-none opacity-40' }}" href="{{ path('admin_project_index', filters|merge({ page: page - 1 })) }}">Précédent</a>
+							</li>
+							{% for p in 1..totalPages %}
+								<li>
+									<a class="btn text-sm py-1.5 px-3 {{ p == page ? 'btn-primary' : 'btn-secondary' }}" href="{{ path('admin_project_index', filters|merge({ page: p })) }}">{{ p }}</a>
+								</li>
+							{% endfor %}
+							<li>
+								<a class="btn btn-secondary text-sm py-1.5 px-3 {{ page == totalPages ? 'pointer-events-none opacity-40' }}" href="{{ path('admin_project_index', filters|merge({ page: page + 1 })) }}">Suivant</a>
+							</li>
+						</ul>
+					</nav>
+				</div>
+			{% endif %}
+		</main>
+
+		{# ========================================================================= #}
+		{# 🔍 BARRE LATÉRALE DE FILTRAGE (3/12) - Mieux proportionnée et structurée #}
+		{# ========================================================================= #}
+			<aside class="lg:col-span-3" x-data="{
+								advancedOpen: {{ (filters.priority or filters.billing_type or filters.budget_status or filters.collaborator or filters.tag or filters.budget_min or filters.budget_max or filters.progress_min or filters.progress_max or filters.date_start or filters.date_end or filters.time_urgency or filters.inactive_days or filters.team_size or filters.orphan) ? 'true' : 'false' }}
+							}"> <div class="card sticky top-4">
+				<div class="flex items-center justify-between pb-2 mb-3 border-b border-gray-100">
+					<h6 class="text-gray-500 font-bold uppercase tracking-wide text-xs mb-0">Filtres de recherche</h6>
+					<a href="{{ path('admin_project_index') }}" class="text-sm text-danger font-medium" title="Réinitialiser tous les critères">Effacer tout</a>
+				</div>
+
+				<form
+					id="filter-sidebar-form" method="GET" action="{{ path('admin_project_index') }}">
+
+					{# --- FILTRES PRIMAIRES (Toujours visibles) --- #}
+					<div class="mb-3">
+						<label class="block text-sm font-semibold text-brand-dark mb-1">Recherche globale</label>
+						<input type="text" name="search" class="input text-sm py-1.5 w-full" placeholder="Titre, description..." value="{{ filters.search }}">
+					</div>
+
+					<div class="mb-3">
+						<label class="block text-sm font-semibold text-brand-dark mb-1">Statut du projet</label>
+						<select name="status" class="input input-select text-sm py-1.5 w-full">
+							<option value="">Tous les statuts</option>
+							{% for status in statuses %}
+								<option value="{{ status.value }}" {{ filters.status == status.value ? 'selected' }}>{{ status.label }}</option>
+							{% endfor %}
+						</select>
+					</div>
+
+					<div class="mb-3">
+						<label class="block text-sm font-semibold text-brand-dark mb-1">Client responsable</label>
+						<select name="client" class="input input-select text-sm py-1.5 w-full">
+							<option value="">Tous les clients</option>
+							{% for u in users %}
+								<option value="{{ u.id }}" {{ filters.client == u.id ? 'selected' }}>{{ u.fullName }}</option>
+							{% endfor %}
+						</select>
+					</div>
+
+					{# --- FILTRES AVANCÉS (Repliables pour éviter le désordre) --- #}
+					<div x-show="advancedOpen" x-transition class="mb-3" style="display: none;">
+						<hr class="border-gray-100 my-3">
+
+						<div class="mb-3">
+							<label class="block text-sm font-semibold text-brand-dark mb-1">Priorité</label>
+							<select name="priority" class="input input-select text-sm py-1.5 w-full">
+								<option value="">Toutes</option>
+								{% for priority in priorities %}
+									<option value="{{ priority.value }}" {{ filters.priority == priority.value ? 'selected' }}>{{ priority.label }}</option>
+								{% endfor %}
+							</select>
+						</div>
+
+						<div class="mb-3">
+							<label class="block text-sm font-semibold text-brand-dark mb-1">Type de facturation</label>
+							<select name="billing_type" class="input input-select text-sm py-1.5 w-full">
+								<option value="">Tous types</option>
+								{% for type in billingTypes %}
+									<option value="{{ type.value }}" {{ filters.billing_type == type.value ? 'selected' }}>{{ type.label }}</option>
+								{% endfor %}
+							</select>
+						</div>
+
+						<div class="mb-3">
+							<label class="block text-sm font-semibold text-brand-dark mb-1">Santé budgétaire</label>
+							<select name="budget_status" class="input input-select text-sm py-1.5 w-full">
+								<option value="">Toutes les situations</option>
+								<option value="ok" {{ filters.budget_status == 'ok' ? 'selected' }}>Équilibré / Sain</option>
+								<option value="low" {{ filters.budget_status == 'low' ? 'selected' }}>Alerte budget restant (&lt;10%)</option>
+								<option value="over" {{ filters.budget_status == 'over' ? 'selected' }}>En dépassement</option>
+							</select>
+						</div>
+
+						<div class="mb-3">
+							<label class="block text-sm font-semibold text-brand-dark mb-1">Membre du staff</label>
+							<select name="collaborator" class="input input-select text-sm py-1.5 w-full">
+								<option value="">Tout le staff</option>
+								{% for u in users %}
+									<option value="{{ u.id }}" {{ filters.collaborator == u.id ? 'selected' }}>{{ u.fullName }}</option>
+								{% endfor %}
+							</select>
+						</div>
+
+						<div class="mb-3">
+							<label class="block text-sm font-semibold text-brand-dark mb-1">Technologie / Tag</label>
+							<select name="tag" class="input input-select text-sm py-1.5 w-full">
+								<option value="">Tous les tags</option>
+								{% for t in tags %}
+									<option value="{{ t.id }}" {{ filters.tag == t.id ? 'selected' }}>{{ t.name }}</option>
+								{% endfor %}
+							</select>
+						</div>
+
+						<div class="mb-3">
+							<label class="block text-sm font-semibold text-brand-dark mb-1">Tranche de Budget (€)</label>
+							<div class="grid grid-cols-2 gap-1">
+								<input type="number" step="any" name="budget_min" class="input text-sm py-1.5 w-full" placeholder="Min" value="{{ filters.budget_min }}">
+								<input type="number" step="any" name="budget_max" class="input text-sm py-1.5 w-full" placeholder="Max" value="{{ filters.budget_max }}">
+							</div>
+						</div>
+
+						<div class="mb-3">
+							<label class="block text-sm font-semibold text-brand-dark mb-1">Avancement (%)</label>
+							<div class="grid grid-cols-2 gap-1">
+								<input type="number" min="0" max="100" name="progress_min" class="input text-sm py-1.5 w-full" placeholder="Min" value="{{ filters.progress_min }}">
+								<input type="number" min="0" max="100" name="progress_max" class="input text-sm py-1.5 w-full" placeholder="Max" value="{{ filters.progress_max }}">
+							</div>
+						</div>
+
+						<div class="mb-3">
+							<label class="block text-sm font-semibold text-brand-dark mb-1">Date de création</label>
+							<input type="date" name="date_start" class="input text-sm py-1.5 w-full mb-1" value="{{ filters.date_start }}">
+							<input type="date" name="date_end" class="input text-sm py-1.5 w-full" value="{{ filters.date_end }}">
+						</div>
+
+						<div class="mb-3">
+							<label class="block text-sm font-semibold text-brand-dark mb-1">Proximité Échéance</label>
+							<select name="time_urgency" class="input input-select text-sm py-1.5 w-full">
+								<option value="">Aucun critère</option>
+								<option value="imminent" {{ filters.time_urgency == 'imminent' ? 'selected' }}>Imminent (&lt; 7 jours)</option>
+								<option value="overdue" {{ filters.time_urgency == 'overdue' ? 'selected' }}>En retard</option>
+							</select>
+						</div>
+
+						<div class="mb-3">
+							<label class="block text-sm font-semibold text-brand-dark mb-1">Inactivité (Jours)</label>
+							<input type="number" name="inactive_days" class="input text-sm py-1.5 w-full" placeholder="Ex: 30" value="{{ filters.inactive_days }}">
+						</div>
+
+						<div class="mb-3">
+							<label class="block text-sm font-semibold text-brand-dark mb-1">Taille d'équipe</label>
+							<select name="team_size" class="input input-select text-sm py-1.5 w-full">
+								<option value="">Tous</option>
+								<option value="solo" {{ filters.team_size == 'solo' ? 'selected' }}>Seul (Aucun staff)</option>
+								<option value="small" {{ filters.team_size == 'small' ? 'selected' }}>Petite (1 - 3)</option>
+								<option value="large" {{ filters.team_size == 'large' ? 'selected' }}>Grande (&gt; 3)</option>
+							</select>
+						</div>
+
+						<div class="mb-3">
+							<label class="block text-sm font-semibold text-brand-dark mb-1">Anomalies / Alertes</label>
+							<select name="orphan" class="input input-select text-sm py-1.5 w-full">
+								<option value="">Aucune anomalie</option>
+								<option value="no_client" {{ filters.orphan == 'no_client' ? 'selected' }}>Sans client</option>
+								<option value="no_team" {{ filters.orphan == 'no_team' ? 'selected' }}>Sans staff</option>
+							</select>
+						</div>
+					</div>
+
+					{# Boutons de contrôle #}
+					<button type="button" class="text-sm text-gray-500 w-full text-center my-2 hover:text-brand-primary cursor-pointer bg-transparent border-0" @click="advancedOpen = !advancedOpen">
+						<span x-text="advancedOpen ? 'Masquer les filtres avancés' : 'Voir plus de filtres...'"></span>
+					</button>
+
+					<button type="submit" class="btn btn-primary w-full gap-2">
+						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewbox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+						Filtrer la liste
+					</button>
+				</form>
+			</div>
+		</aside>
+
+	</div>
+{% endblock %}

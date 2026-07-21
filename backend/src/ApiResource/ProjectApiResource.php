@@ -11,7 +11,7 @@ use ApiPlatform\Metadata\Delete;
 use App\Entity\Project;
 
 #[ApiResource(
-    description: "Ressource API pour gérer les projets du portfolio. 
+    description: "Ressource API pour gérer les projets du portfolio.
     Permet de lister, consulter, créer, mettre à jour et supprimer des projets.",
     operations: [
         // 📌 Liste des projets (public)

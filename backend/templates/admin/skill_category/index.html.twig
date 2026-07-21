@@ -1,0 +1,65 @@
+{# templates/admin/skill_category/index.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des catégories
+{% endblock %}
+
+{% block body %}
+	<main
+		class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+			<div>
+				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+					<span class="material-icons text-brand-primary">category</span>
+					<span>Gestion des catégories</span>
+				</h1>
+				<p class="text-sm opacity-60 mt-1">Organisez vos compétences par groupes.</p>
+			</div>
+			<a href="{{ path('admin_skill_category_create') }}" class="btn btn-primary gap-2">
+				<span class="material-icons text-sm">add_circle</span>
+				<span>Créer une catégorie</span>
+			</a>
+		</div>
+
+		<!-- 📊 TABLEAU -->
+		<div class="soft-card">
+			<table class="table">
+				<thead>
+					<tr>
+						<th class="w-16">Id</th>
+						<th>Nom de la catégorie</th>
+						<th class="w-40 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for skill_category in skill_categories %}
+						<tr>
+							<td class="font-mono text-xs opacity-50">{{ skill_category.id }}</td>
+							<td class="font-bold text-brand-dark">{{ skill_category.name }}</td>
+							<td>
+								<div class="flex items-center justify-end gap-2">
+									<a href="{{ path('admin_skill_category_read', {'id': skill_category.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir">
+										<span class="material-icons text-lg block">visibility</span>
+									</a>
+									<a href="{{ path('admin_skill_category_update', {'id': skill_category.id}) }}" class="p-2 hover:bg-warning/20 rounded-sm transition-colors text-warning" title="Modifier">
+										<span class="material-icons text-lg block">edit</span>
+									</a>
+									{{ include('admin/skill_category/_delete_form.html.twig', {'skill_category': skill_category}) }}
+								</div>
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="3" class="text-center py-12 opacity-40">
+								<span class="material-icons text-4xl block mb-2">category</span>
+								<span>Aucune catégorie trouvée.</span>
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</main>
+{% endblock %}
