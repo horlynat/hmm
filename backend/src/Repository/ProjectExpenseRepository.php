@@ -9,6 +9,8 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * Repository pour gérer les dépenses liées aux projets.
+ *
+ * @extends ServiceEntityRepository<ProjectExpense>
  */
 class ProjectExpenseRepository extends ServiceEntityRepository
 {
@@ -19,6 +21,8 @@ class ProjectExpenseRepository extends ServiceEntityRepository
 
     /**
      * 📌 Récupère les dépenses d'un projet triées par date (du plus récent au plus ancien).
+     *
+     * @return ProjectExpense[]
      */
     public function findByProjectOrderedByDate(Project $project): array
     {
@@ -27,11 +31,13 @@ class ProjectExpenseRepository extends ServiceEntityRepository
             ->setParameter('project', $project)
             ->orderBy('e.createdAt', 'DESC')
             ->getQuery()
-            ->getResult() ?? [];
+            ->getResult();
     }
 
     /**
      * 📌 Récupère les dépenses d'un projet pour une période donnée.
+     *
+     * @return ProjectExpense[]
      */
     public function findByProjectAndDateRange(Project $project, \DateTimeInterface $startDate, \DateTimeInterface $endDate): array
     {
@@ -43,7 +49,7 @@ class ProjectExpenseRepository extends ServiceEntityRepository
             ->setParameter('endDate', $endDate)
             ->orderBy('e.createdAt', 'DESC')
             ->getQuery()
-            ->getResult() ?? [];
+            ->getResult();
     }
 
     /**
@@ -63,43 +69,48 @@ class ProjectExpenseRepository extends ServiceEntityRepository
 
     /**
      * 📌 Récupère les projets qui dépassent leur budget.
+     *
+     * @return array<int, array{id: int, title: string, budget: string, totalSpent: string}>
      */
     public function findOverBudgetProjects(): array
     {
         return $this->createQueryBuilder('e')
-            ->select('p.id, p.name, p.budget, SUM(e.amount) AS totalSpent')
+            ->select('p.id, p.title, p.budget, SUM(e.amount) AS totalSpent')
             ->join('e.project', 'p')
             ->groupBy('p.id')
             ->having('SUM(e.amount) > p.budget')
             ->getQuery()
-            ->getResult() ?? [];
+            ->getResult();
     }
 
     /**
      * 📌 Récupère les projets avec un budget restant faible (< seuil).
+     *
+     * @return array<int, array{id: int, title: string, budget: string, totalSpent: string}>
      */
     public function findLowBudgetRemainingProjects(float $threshold = 0.1): array
     {
         return $this->createQueryBuilder('e')
-            ->select('p.id, p.name, p.budget, SUM(e.amount) AS totalSpent')
+            ->select('p.id, p.title, p.budget, SUM(e.amount) AS totalSpent')
             ->join('e.project', 'p')
             ->groupBy('p.id')
             ->having('(p.budget - SUM(e.amount)) / p.budget < :threshold')
             ->andHaving('p.budget > 0')
             ->setParameter('threshold', $threshold)
             ->getQuery()
-            ->getResult() ?? [];
+            ->getResult();
     }
 
     /**
      * 🔎 Recherche de dépenses avec filtres dynamiques.
      *
-     * @param array $filters
+     * @param array<string, mixed> $filters
      *   - project : filtre par projet (Project)
      *   - min     : montant minimum
      *   - max     : montant maximum
      *   - start   : date de début
      *   - end     : date de fin
+     * @return ProjectExpense[]
      */
     public function findByFilters(array $filters = []): array
     {
@@ -130,6 +141,6 @@ class ProjectExpenseRepository extends ServiceEntityRepository
 
         return $qb->orderBy('e.createdAt', 'DESC')
                   ->getQuery()
-                  ->getResult() ?? [];
+                  ->getResult();
     }
 }

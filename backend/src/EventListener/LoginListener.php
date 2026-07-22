@@ -3,24 +3,38 @@
 // src/EventListener/LoginListener.php
 namespace App\EventListener;
 
+use App\Entity\FailedLoginAttempt;
 use App\Entity\LoginHistory;
 use App\Entity\User;
+use App\Entity\UserSession;
+use App\Enum\NotificationPriorityEnum;
 use App\Message\LoginNotification;
+use App\Repository\FailedLoginAttemptRepository;
+use App\Service\AdminAlertNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Http\Event\InteractiveLoginEvent;
+use Symfony\Component\Security\Http\Event\LoginFailureEvent;
 use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
 
 #[AsEventListener(event: LoginSuccessEvent::class)]
 #[AsEventListener(event: InteractiveLoginEvent::class, method: 'onLogin')]
+#[AsEventListener(event: LoginFailureEvent::class, method: 'onLoginFailure')]
 class LoginListener
 {
+    /** Fenêtre et seuil identiques à ceux du rapport "IPs suspectes" (AdminSecurityPolicyController). */
+    private const SUSPICIOUS_WINDOW_HOURS = 1;
+    private const SUSPICIOUS_MIN_ATTEMPTS = 3;
+
     public function __construct(
         private MessageBusInterface    $bus,
         private RequestStack           $requestStack,
         private EntityManagerInterface $entityManager,
+        private FailedLoginAttemptRepository $failedLoginAttemptRepository,
+        private AdminAlertNotifier     $adminAlertNotifier,
     ) {}
 
     public function __invoke(LoginSuccessEvent $event): void
@@ -60,13 +74,89 @@ class LoginListener
             return;
         }
 
+        $request = $event->getRequest();
+
         $loginHistory = new LoginHistory();
         $loginHistory->setUser($user);
-        $loginHistory->setIp($event->getRequest()->getClientIp());
-        $loginHistory->setDevice($event->getRequest()->headers->get('User-Agent'));
+        $loginHistory->setIp($request->getClientIp());
+        $loginHistory->setDevice($request->headers->get('User-Agent'));
         $loginHistory->setLoginAt(new \DateTimeImmutable());
 
+        $userSession = new UserSession(
+            user: $user,
+            sessionId: $request->getSession()->getId(),
+            ip: $request->getClientIp(),
+            userAgent: $request->headers->get('User-Agent'),
+        );
+
         $this->entityManager->persist($loginHistory);
+        $this->entityManager->persist($userSession);
         $this->entityManager->flush();
+    }
+
+    public function onLoginFailure(LoginFailureEvent $event): void
+    {
+        $request = $event->getRequest();
+        $email = trim((string) $request->getPayload()->getString('email'));
+        if ('' === $email) {
+            return;
+        }
+
+        $exception = $event->getException();
+        $reason = match (true) {
+            $exception instanceof CustomUserMessageAuthenticationException => match (true) {
+                str_contains($exception->getMessage(), 'introuvable') => 'unknown_user',
+                str_contains($exception->getMessage(), 'vérifié') => 'unverified_account',
+                str_contains($exception->getMessage(), 'désactivé') => 'inactive_account',
+                str_contains($exception->getMessage(), 'tentatives') => 'rate_limited',
+                default => 'bad_credentials',
+            },
+            default => 'bad_credentials',
+        };
+
+        $attempt = new FailedLoginAttempt(
+            email: $email,
+            reason: $reason,
+            ip: $request->getClientIp(),
+            userAgent: $request->headers->get('User-Agent'),
+        );
+
+        $this->entityManager->persist($attempt);
+        $this->entityManager->flush();
+
+        $this->alertIfSuspicious($attempt);
+    }
+
+    /**
+     * Alerte une seule fois, au moment précis où le seuil est franchi (pas à
+     * chaque tentative suivante) pour éviter de noyer l'admin sous les alertes
+     * tant que l'IP continue d'échouer.
+     */
+    private function alertIfSuspicious(FailedLoginAttempt $attempt): void
+    {
+        $ip = $attempt->getIp();
+        if (null === $ip) {
+            return;
+        }
+
+        $count = $this->failedLoginAttemptRepository->countRecentByIp(
+            $ip,
+            new \DateInterval(sprintf('PT%dH', self::SUSPICIOUS_WINDOW_HOURS)),
+        );
+
+        if ($count !== self::SUSPICIOUS_MIN_ATTEMPTS) {
+            return;
+        }
+
+        $this->adminAlertNotifier->alert(
+            NotificationPriorityEnum::URGENT,
+            'Activité de connexion suspecte',
+            sprintf(
+                "%d tentatives de connexion échouées depuis l'IP %s au cours de la dernière heure (dernier email tenté : %s).",
+                $count,
+                $ip,
+                $attempt->getEmail(),
+            ),
+        );
     }
 }

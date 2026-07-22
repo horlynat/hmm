@@ -21,10 +21,13 @@ class BudgetSummary
 
     public function getPercentageSpent(): float
     {
-        if ($this->project->getBudget() <= 0) {
+        $budget = (float) $this->project->getBudget();
+        $spent = (float) $this->project->getSpent();
+
+        if ($budget <= 0) {
             return 0.0;
         }
-        return ($this->project->getSpent() / $this->project->getBudget()) * 100;
+        return ($spent / $budget) * 100;
     }
 
     public function isBudgetCritical(): bool

@@ -2,6 +2,9 @@
 
 namespace App\Twig\Components\Project;
 
+use App\Entity\Project;
+use App\Entity\Tag;
+use App\Entity\User;
 use App\Enum\ProjectPriorityEnum;
 use App\Enum\BillingTypeEnum;
 use App\Enum\BudgetStatusEnum;
@@ -57,6 +60,7 @@ class ProjectTable
     ) {
     }
 
+    /** @return array<string, mixed> */
     private function getFilterArray(): array
     {
         return [
@@ -83,6 +87,7 @@ class ProjectTable
         ];
     }
 
+    /** @return Project[] */
     public function getProjects(): array
     {
         return $this->projectRepository->findByFilters(array_merge($this->getFilterArray(), [
@@ -108,31 +113,37 @@ class ProjectTable
     /**
      * Alimente les boutons de statuts horizontaux et le select latéral
      */
+    /** @return ProjectStatusEnum[] */
     public function getStatuses(): array
     {
         return ProjectStatusEnum::cases(); // Renvoie UPCOMING, IN_PROGRESS, etc.[cite: 6, 9]
     }
 
+    /** @return ProjectPriorityEnum[] */
     public function getPriorities(): array
     {
         return ProjectPriorityEnum::cases();
     }
 
+    /** @return BillingTypeEnum[] */
     public function getBillingTypes(): array
     {
         return BillingTypeEnum::cases();
     }
 
+    /** @return BudgetStatusEnum[] */
     public function getBudgetStatuses(): array
     {
         return BudgetStatusEnum::cases();
     }
 
+    /** @return User[] */
     public function getUsers(): array
     {
         return $this->userRepository->findAll(); // Récupère tous les utilisateurs en base[cite: 9]
     }
 
+    /** @return Tag[] */
     public function getTags(): array
     {
         return $this->tagRepository->findAll(); // Récupère tous les tags en base[cite: 9]
@@ -140,6 +151,8 @@ class ProjectTable
 
     /**
      * Alimente les compteurs par statut en haut de ton tableau
+     *
+     * @return array<string, array{count: int}>
      */
     public function getProjectsByStatus(): array
     {

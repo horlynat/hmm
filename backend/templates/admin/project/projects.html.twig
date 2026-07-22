@@ -56,6 +56,35 @@
 				</div>
 			</div>
 
+			{# Activité récente, tous projets confondus #}
+			{% if recentHistory is defined and recentHistory|length > 0 %}
+				<div class="card p-0 overflow-hidden">
+					<div class="px-6 py-4 border-b border-gray-100">
+						<h5 class="heading text-base mb-0">Activité récente</h5>
+					</div>
+					<div class="divide-y divide-gray-100 max-h-72 overflow-y-auto">
+						{% for history in recentHistory %}
+							<a href="{{ path('admin_project_history_index', {id: history.project.id}) }}" class="flex items-start gap-3 px-6 py-3 hover:bg-gray-50 transition">
+								<span class="text-lg shrink-0" aria-hidden="true">{{ history.getActionIcon() }}</span>
+								<div class="min-w-0 flex-1">
+									<p class="text-sm text-brand-dark mb-0 truncate">
+										<strong>{{ history.user.fullName ?? history.user.email }}</strong>
+										—
+										{{ history.getActionLabel() }}
+										<span class="text-gray-500">sur</span>
+										<strong>{{ history.project.title }}</strong>
+									</p>
+									{% if history.details %}
+										<p class="text-xs text-gray-500 truncate mb-0">{{ history.details }}</p>
+									{% endif %}
+								</div>
+								<span class="text-[11px] text-gray-400 shrink-0 font-mono">{{ history.createdAt|date('d/m H:i') }}</span>
+							</a>
+						{% endfor %}
+					</div>
+				</div>
+			{% endif %}
+
 			{# Liste / Grille des projets #}
 			<div class="card p-0 overflow-hidden">
 				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-b border-gray-100">
@@ -146,6 +175,11 @@
 											<a href="{{ path('admin_project_read', { id: project.id }) }}" class="btn btn-secondary text-sm py-1.5 px-2.5" title="Consulter">
 												Voir
 											</a>
+											{% if is_granted('ROLE_ADMIN') %}
+												<a href="{{ path('admin_project_history_index', { id: project.id }) }}" class="btn btn-secondary text-sm py-1.5 px-2.5" title="Historique">
+													<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewbox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+												</a>
+											{% endif %}
 											{% if project.status.value != 'completed' and project.status.value != 'suspended' %}
 												<a href="{{ path('admin_project_update', { id: project.id }) }}" class="btn btn-primary text-sm py-1.5 px-2.5" title="Modifier">
 													Éditer

@@ -24,7 +24,7 @@ class ProjectExpense
     #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'expenses')]
     #[ORM\JoinColumn(name: 'project_id', nullable: false, onDelete: 'CASCADE')]
     #[Groups(['api_admin'])]
-    private ?Project $project = null;
+    private Project $project;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2)]
     #[Assert\NotBlank(message: "Le montant est obligatoire.")]
@@ -40,7 +40,7 @@ class ProjectExpense
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'user_id', nullable: false)]
     #[Groups(['api_admin'])]
-    private ?User $user = null;
+    private User $user;
 
     #[ORM\Column(type: 'datetime_immutable')]
     #[Groups(['api_admin'])]
@@ -58,12 +58,12 @@ class ProjectExpense
         return $this->id;
     }
 
-    public function getProject(): ?Project
+    public function getProject(): Project
     {
         return $this->project;
     }
 
-    public function setProject(?Project $project): static
+    public function setProject(Project $project): static
     {
         $this->project = $project;
         return $this;
@@ -91,12 +91,12 @@ class ProjectExpense
         return $this;
     }
 
-    public function getUser(): ?User
+    public function getUser(): User
     {
         return $this->user;
     }
 
-    public function setUser(?User $user): static
+    public function setUser(User $user): static
     {
         $this->user = $user;
         return $this;

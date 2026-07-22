@@ -1,6 +1,24 @@
 {% extends 'base.html.twig' %}
 
+{% macro tile(route, routeParams, icon, count, label, warn) %}
+	<a href="{{ path(route, routeParams) }}" class="flex items-center gap-3 bg-gray-50/60 border border-gray-100 rounded-xl p-4 transition hover:bg-white hover:border-gray-200 {{ warn and count > 0 ? 'ring-1 ring-warning/40' : '' }}">
+		<div class="p-2 rounded-lg shrink-0 {{ warn and count > 0 ? 'bg-warning/10 text-warning' : 'bg-brand-light/20 text-brand-primary' }}">
+			<i class="ti {{ icon }} text-lg"></i>
+		</div>
+		<div class="min-w-0">
+			<div class="text-xl font-bold {{ warn and count > 0 ? 'text-warning' : 'text-brand-dark' }}">{{ count }}</div>
+			<div class="text-xs text-brand-dark/50 truncate">{{ label }}</div>
+		</div>
+	</a>
+{% endmacro %}
+
 {% block title %}Tableau de Bord Administration
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+	<script>window.dashboardData = {{ chartData|json_encode|raw }};</script>
+	{{ vite_entry_script_tags('dashboard') }}
 {% endblock %}
 
 {% block body %}
@@ -29,7 +47,7 @@
 				<i class="ti ti-file-plus text-lg transition-transform group-hover:scale-110"></i>
 				<span>Rédiger un Article</span>
 			</a>
-			<a href="#" class="flex items-center gap-3 p-3.5 bg-amber-500/5 hover:bg-amber-500/10 text-amber-700 rounded-xl font-semibold transition text-sm group">
+			<a href="{{ path('admin_request_index') }}" class="flex items-center gap-3 p-3.5 bg-amber-500/5 hover:bg-amber-500/10 text-amber-700 rounded-xl font-semibold transition text-sm group">
 				<i class="ti ti-mail-forward text-lg transition-transform group-hover:scale-110"></i>
 				<span>Traiter les Devis</span>
 			</a>
@@ -98,9 +116,9 @@
 						<i class="ti ti-git-pull-request text-xl"></i>
 					</div>
 				</div>
-				<div class="text-2xl font-bold tracking-tight">{{ stats.overBudgetCount|default(0) }}</div>
+				<div class="text-2xl font-bold tracking-tight">{{ pendingQuoteRequestsCount|default(0) }}</div>
 				<p class="text-xs text-brand-dark/60 mt-2">
-					Devis & partenariats en attente
+					Devis en attente
 				</p>
 			</div>
 
@@ -111,10 +129,44 @@
 						<i class="ti ti-message-code text-xl"></i>
 					</div>
 				</div>
-				<div class="text-2xl font-bold tracking-tight">{{ stats.lowBudgetCount|default(0) }}</div>
+				<div class="text-2xl font-bold tracking-tight">{{ unreadContactsCount|default(0) }}</div>
 				<p class="text-xs text-brand-dark/60 mt-2">
-					Formulaires de contact récents
+					Non lus, formulaire de contact
 				</p>
+			</div>
+		</div>
+
+		<!-- ==========================================
+				     🎛️ VUE D'ENSEMBLE DE LA PLATEFORME
+				     ========================================== -->
+		<div class="soft-card p-6 mb-8">
+			<h2 class="text-lg font-heading font-bold mb-4">Vue d'ensemble de la plateforme</h2>
+
+			<p class="text-xs uppercase text-brand-dark/40 font-bold tracking-wider mb-2">Sécurité</p>
+			<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+				{{ _self.tile('admin_security_two_factor_index', {}, 'ti-shield-off', usersWithoutTwoFactorCount|default(0), 'Comptes sans 2FA', true) }}
+				{{ _self.tile('admin_security_log_index', {tab: 'failed'}, 'ti-alert-triangle', recentFailedLoginAttemptsCount|default(0), 'Connexions échouées (24h)', true) }}
+				{{ _self.tile('admin_security_session_index', {}, 'ti-device-desktop-analytics', activeSessionsCount|default(0), 'Sessions actives', false) }}
+			</div>
+
+			<p class="text-xs uppercase text-brand-dark/40 font-bold tracking-wider mb-2">Équipe & utilisateurs</p>
+			<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+				{{ _self.tile('admin_user_index', {}, 'ti-user-shield', adminsCount|default(0), 'Admins', false) }}
+				{{ _self.tile('admin_collaborator_index', {}, 'ti-users-group', collaboratorsCount|default(0), 'Collaborateurs', false) }}
+				{{ _self.tile('user_index', {}, 'ti-user-dollar', clientsCount|default(0), 'Clients', false) }}
+			</div>
+
+			<p class="text-xs uppercase text-brand-dark/40 font-bold tracking-wider mb-2">Contenu</p>
+			<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+				{{ _self.tile('admin_article_index', {}, 'ti-news', articlesCount|default(0), 'Articles', false) }}
+				{{ _self.tile('admin_skill_index', {}, 'ti-code', skillsCount|default(0), 'Compétences', false) }}
+				{{ _self.tile('admin_course_index', {}, 'ti-school', coursesCount|default(0), 'Formations', false) }}
+				{{ _self.tile('admin_experience_index', {}, 'ti-history', experiencesCount|default(0), 'Expériences', false) }}
+			</div>
+
+			<p class="text-xs uppercase text-brand-dark/40 font-bold tracking-wider mb-2">Modération</p>
+			<div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+				{{ _self.tile('admin_testimonial_index', {}, 'ti-message-star', pendingTestimonialsCount|default(0), 'Témoignages en attente', true) }}
 			</div>
 		</div>
 
@@ -147,32 +199,29 @@
 					<span class="text-xs text-brand-dark/40">15 prochains jours</span>
 				</div>
 				<div class="divide-y divide-gray-100">
-					<div class="flex items-center justify-between py-3 first:pt-0">
-						<div class="flex items-center gap-3">
-							<div class="p-2 bg-amber-50 text-amber-700 rounded-xl text-xs font-bold text-center w-12 shrink-0">
-								<span class="block text-base">18</span>
-								Juil.
+					{% for entry in upcomingDeadlines %}
+						{% set project = entry.project %}
+						<div class="flex items-center justify-between py-3 first:pt-0">
+							<div class="flex items-center gap-3">
+								<div class="p-2 {{ entry.daysRemaining <= 3 ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-brand-primary' }} rounded-xl text-xs font-bold text-center w-12 shrink-0">
+									<span class="block text-base">{{ project.deadline|date('d') }}</span>
+									{{ project.deadline|format_datetime(pattern: 'MMM', locale: 'fr')|capitalize }}
+								</div>
+								<div>
+									<h4 class="font-medium text-sm">{{ project.title }}</h4>
+									<p class="text-xs text-brand-dark/50">{{ project.owner.fullName ?? project.owner.email }} — {{ project.status.label }}</p>
+								</div>
 							</div>
-							<div>
-								<h4 class="font-medium text-sm">Livrable Maquettes UI — Digital Business Group</h4>
-								<p class="text-xs text-brand-dark/50">Sprint de validation intermédiaire</p>
-							</div>
+							<span class="text-xs font-semibold px-2.5 py-1 {{ entry.daysRemaining <= 3 ? 'bg-amber-50 text-amber-800' : 'bg-blue-50 text-brand-primary' }} rounded-lg">
+								{{ entry.daysRemaining == 0 ? 'Aujourd\'hui' : 'J-' ~ entry.daysRemaining }}
+							</span>
 						</div>
-						<span class="text-xs font-semibold px-2.5 py-1 bg-amber-50 text-amber-800 rounded-lg">J-5 avant rendu</span>
-					</div>
-					<div class="flex items-center justify-between py-3">
-						<div class="flex items-center gap-3">
-							<div class="p-2 bg-blue-50 text-brand-primary rounded-xl text-xs font-bold text-center w-12 shrink-0">
-								<span class="block text-base">24</span>
-								Juil.
-							</div>
-							<div>
-								<h4 class="font-medium text-sm">Livraison finale — Module Cart</h4>
-								<p class="text-xs text-brand-dark/50">Recette technique finale avec le client</p>
-							</div>
+					{% else %}
+						<div class="text-center py-8 text-sm text-brand-dark/40">
+							<i class="ti ti-calendar-off text-2xl block mb-2 text-gray-300"></i>
+							Aucune échéance dans les 15 prochains jours.
 						</div>
-						<span class="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-brand-primary rounded-lg">J-11</span>
-					</div>
+					{% endfor %}
 				</div>
 			</div>
 
@@ -181,31 +230,28 @@
 				<div>
 					<h2 class="text-lg font-heading font-bold mb-4">Santé Technique & Performance</h2>
 					<div class="space-y-4">
-						<div class="flex items-center justify-between text-sm">
-							<span class="text-brand-dark/70 flex items-center gap-2">
-								<i class="ti ti-shield-lock text-success text-base"></i>
-								Certificats SSL
-							</span>
-							<span class="text-xs font-bold text-success">Sécurisé (J-45)</span>
-						</div>
-						<div class="flex items-center justify-between text-sm">
-							<span class="text-brand-dark/70 flex items-center gap-2">
-								<i class="ti ti-cloud-download text-success text-base"></i>
-								Sauvegardes Auto
-							</span>
-							<span class="text-xs font-bold text-success">Opérationnelles</span>
-						</div>
 						<div>
 							<div class="flex items-center justify-between text-sm mb-1">
 								<span class="text-brand-dark/70 flex items-center gap-2">
 									<i class="ti ti-server text-brand-primary text-base"></i>
 									Espace Disque Serveur
 								</span>
-								<span class="text-xs font-bold text-brand-dark/70">64% utilisé</span>
+								<span class="text-xs font-bold text-brand-dark/70">
+									{{ diskUsedPercent is not null ? diskUsedPercent ~ '% utilisé' : 'Indisponible' }}
+								</span>
 							</div>
-							<div class="w-full bg-gray-100 rounded-full h-1.5">
-								<div class="bg-brand-primary h-1.5 rounded-full" style="width: 64%"></div>
-							</div>
+							{% if diskUsedPercent is not null %}
+								<div class="w-full bg-gray-100 rounded-full h-1.5">
+									<div class="{{ diskUsedPercent >= 90 ? 'bg-danger' : 'bg-brand-primary' }} h-1.5 rounded-full" style="width: {{ diskUsedPercent }}%"></div>
+								</div>
+							{% endif %}
+						</div>
+						<div class="flex items-center justify-between text-sm">
+							<span class="text-brand-dark/70 flex items-center gap-2">
+								<i class="ti ti-briefcase text-brand-primary text-base"></i>
+								Projets en cours
+							</span>
+							<span class="text-xs font-bold text-brand-dark/70">{{ projectsByStatus['en_cours'].count|default(0) }}</span>
 						</div>
 					</div>
 				</div>
@@ -213,12 +259,8 @@
 				<!-- 4. SUPPORT ET PERFORMANCE (En bas du bloc technique) -->
 				<div class="mt-4 pt-4 border-t border-gray-100 space-y-2">
 					<div class="flex items-center justify-between text-xs">
-						<span class="text-brand-dark/50">Réactivité de réponse moyenne :</span>
-						<span class="font-semibold text-brand-dark">~14 heures</span>
-					</div>
-					<div class="flex items-center justify-between text-xs">
-						<span class="text-brand-dark/50">Conversion des Devis :</span>
-						<span class="font-bold text-success">45.2%</span>
+						<span class="text-brand-dark/50">Conversion des Devis (acceptés / total) :</span>
+						<span class="font-bold text-success">{{ quoteConversionRate }}%</span>
 					</div>
 				</div>
 			</div>
@@ -256,58 +298,52 @@
 			<div class="soft-card p-6">
 				<div class="flex justify-between items-center mb-4">
 					<h2 class="text-lg font-heading font-bold">Demandes Commerciales & Devis</h2>
-					<a href="#" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
+					<a href="{{ path('admin_request_index') }}" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
 				</div>
 				<div class="divide-y divide-gray-100 max-h-[360px] overflow-y-auto scrollbar-none">
-					{% if recentRequests is defined and recentRequests|length > 0 %}
-						{% for request in recentRequests %}
-							<div class="flex justify-between items-center py-3.5 first:pt-0 last:pb-0">
-								<div>
-									<h4 class="font-medium text-sm">{{ request.companyName|default(request.clientName) }}</h4>
-									<p class="text-xs text-brand-dark/50 mt-0.5 flex items-center gap-1.5">
-										<span class="inline-block w-1.5 h-1.5 bg-amber-400 rounded-full"></span>
-										{{ request.type|default('Partenariat') }}
-										—
-										{{ request.createdAt|date('d/m/Y') }}
-									</p>
-								</div>
-								<div class="text-right">
-									<span class="text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg">En attente</span>
-								</div>
+					{% for quoteRequest in recentQuoteRequests %}
+						<a href="{{ path('admin_request_read', {id: quoteRequest.id}) }}" class="flex justify-between items-center py-3.5 first:pt-0 last:pb-0 hover:opacity-70 transition">
+							<div class="min-w-0">
+								<h4 class="font-medium text-sm truncate">{{ quoteRequest.name }}</h4>
+								<p class="text-xs text-brand-dark/50 mt-0.5 flex items-center gap-1.5 truncate">
+									<span class="inline-block w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0"></span>
+									{{ quoteRequest.message|slice(0, 60) }}{{ quoteRequest.message|length > 60 ? '…' }}
+								</p>
 							</div>
-						{% endfor %}
+							<div class="text-right shrink-0 pl-3">
+								<span class="text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg">En attente</span>
+							</div>
+						</a>
 					{% else %}
 						<div class="text-center py-8 text-sm text-brand-dark/40">
 							<i class="ti ti-mailbox text-2xl block mb-2 text-gray-300"></i>
 							Aucune proposition commerciale en attente.
 						</div>
-					{% endif %}
+					{% endfor %}
 				</div>
 			</div>
 
 			<div class="soft-card p-6">
 				<div class="flex justify-between items-center mb-4">
 					<h2 class="text-lg font-heading font-bold">Derniers Contacts Reçus</h2>
-					<a href="#" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
+					<a href="{{ path('admin_contact_index') }}" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
 				</div>
 				<div class="divide-y divide-gray-100 max-h-[360px] overflow-y-auto scrollbar-none">
-					{% if recentContacts is defined and recentContacts|length > 0 %}
-						{% for contact in recentContacts %}
-							<div class="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0">
-								<img class="h-9 w-9 rounded-xl border border-gray-100 shadow-sm" src="https://ui-avatars.com/api/?background=eaeaea&color=333&name={{ contact.fullName|url_encode }}" alt="{{ contact.fullName }}">
-								<div class="flex-1 min-w-0">
-									<h4 class="font-medium text-sm truncate">{{ contact.fullName }}</h4>
-									<p class="text-xs text-brand-dark/50 truncate mt-0.5">{{ contact.subject|default(contact.message|slice(0, 50) ~ '...') }}</p>
-								</div>
-								<span class="text-[11px] text-gray-400 shrink-0 font-medium">{{ contact.createdAt|date('H:i') }}</span>
+					{% for contact in recentContacts %}
+						<a href="{{ path('admin_contact_read', {id: contact.id}) }}" class="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0 hover:opacity-70 transition">
+							<img class="h-9 w-9 rounded-xl border border-gray-100 shadow-sm" src="https://ui-avatars.com/api/?background=eaeaea&color=333&name={{ contact.name|url_encode }}" alt="{{ contact.name }}">
+							<div class="flex-1 min-w-0">
+								<h4 class="font-medium text-sm truncate">{{ contact.name }}</h4>
+								<p class="text-xs text-brand-dark/50 truncate mt-0.5">{{ contact.subject }}</p>
 							</div>
-						{% endfor %}
+							<span class="text-[11px] text-gray-400 shrink-0 font-medium">{{ contact.createdAt|date('d/m H:i') }}</span>
+						</a>
 					{% else %}
 						<div class="text-center py-8 text-sm text-brand-dark/40">
 							<i class="ti ti-message-off text-2xl block mb-2 text-gray-300"></i>
 							Aucun message de contact récent.
 						</div>
-					{% endif %}
+					{% endfor %}
 				</div>
 			</div>
 		</div>
@@ -316,7 +352,10 @@
 				     💎 TOP PROJETS EN COURS DE VALORISATION
 				     ========================================== -->
 		<div class="soft-card p-6">
-			<h2 class="text-lg font-heading font-bold mb-4">Top Projets Stratégiques (Finances & Délais)</h2>
+			<div class="flex justify-between items-center mb-4">
+				<h2 class="text-lg font-heading font-bold">Top Projets Stratégiques (Finances & Délais)</h2>
+				<a href="{{ path('admin_dashboard_projects') }}" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
+			</div>
 			<div class="overflow-x-auto">
 				<table class="w-full text-left text-sm border-collapse">
 					<thead>

@@ -7,6 +7,8 @@ use App\Entity\Media;
 use App\Entity\Tag;
 use App\Form\ArticleType;
 use App\Repository\ArticleRepository;
+use App\Security\Voter\ArticleVoter;
+use App\Service\AuditLogger;
 use App\Service\MediaUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -35,7 +37,7 @@ final class AdminArticleController extends AbstractController
     #[Route('/index', name: 'index', methods: ['GET'])]
     public function index(ArticleRepository $articleRepository): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(ArticleVoter::VIEW);
 
         return $this->render('admin/article/index.html.twig', [
             'articles' => $articleRepository->findAll(),
@@ -51,9 +53,10 @@ final class AdminArticleController extends AbstractController
         Request $request,
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
-        MediaUploader $uploader
+        MediaUploader $uploader,
+        AuditLogger $auditLogger
     ): Response {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(ArticleVoter::CREATE);
 
         $article = new Article();
         $form = $this->createForm(ArticleType::class, $article);
@@ -76,6 +79,9 @@ final class AdminArticleController extends AbstractController
             $entityManager->persist($article);
             $entityManager->flush();
 
+            $auditLogger->log(Article::class, $article->getId(), $article->getTitle(), 'created');
+            $entityManager->flush();
+
             $this->addFlash('success', 'L\'article a été créé avec succès.');
             return $this->redirectToRoute('admin_article_index');
         }
@@ -95,7 +101,7 @@ final class AdminArticleController extends AbstractController
     #[Route('/{slug}', name: 'read', methods: ['GET'])]
     public function read(#[MapEntity(mapping: ['slug' => 'slug'])] Article $article): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(ArticleVoter::VIEW, $article);
 
         return $this->render('admin/article/read.html.twig', [
             'article' => $article,
@@ -103,7 +109,7 @@ final class AdminArticleController extends AbstractController
     }
 
     // =========================================================================
-    // 📌 MISE À ZONE D'UN ARTICLE
+    // 📌 MISE À JOUR D'UN ARTICLE
     // =========================================================================
 
     #[Route('/{slug}/update', name: 'update', methods: ['GET', 'POST'])]
@@ -112,9 +118,10 @@ final class AdminArticleController extends AbstractController
         #[MapEntity(mapping: ['slug' => 'slug'])] Article $article,
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
-        MediaUploader $uploader
+        MediaUploader $uploader,
+        AuditLogger $auditLogger
     ): Response {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(ArticleVoter::EDIT, $article);
 
         $form = $this->createForm(ArticleType::class, $article);
         $form->handleRequest($request);
@@ -125,6 +132,7 @@ final class AdminArticleController extends AbstractController
             // Traitement de l'image (réutilisable sans duplication !)
             $this->handleImageUpload($form, $article, $uploader, $entityManager);
 
+            $auditLogger->log(Article::class, $article->getId(), $article->getTitle(), 'updated');
             $entityManager->flush();
 
             $this->addFlash('success', 'L\'article a été mis à jour avec succès.');
@@ -147,11 +155,13 @@ final class AdminArticleController extends AbstractController
     public function delete(
         Request $request,
         #[MapEntity(mapping: ['slug' => 'slug'])] Article $article,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
+        AuditLogger $auditLogger
     ): Response {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(ArticleVoter::DELETE, $article);
 
         if ($this->isCsrfTokenValid('admin_article_delete_' . $article->getId(), $request->request->get('_token'))) {
+            $auditLogger->log(Article::class, $article->getId(), $article->getTitle(), 'deleted');
             $entityManager->remove($article);
             $entityManager->flush();
             

@@ -37,6 +37,20 @@ class QuoteRequestRepository extends ServiceEntityRepository
         ;
     }
 
+    public function countByStatus(?bool $status): int
+    {
+        $queryBuilder = $this->createQueryBuilder('q')->select('COUNT(q.id)');
+
+        if (null === $status) {
+            $queryBuilder->andWhere('q.status IS NULL');
+        } else {
+            $queryBuilder->andWhere('q.status = :status')
+                ->setParameter('status', $status);
+        }
+
+        return (int) $queryBuilder->getQuery()->getSingleScalarResult();
+    }
+
     //    /**
     //     * @return QuoteRequest[] Returns an array of QuoteRequest objects
     //     */

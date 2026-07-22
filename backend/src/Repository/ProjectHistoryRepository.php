@@ -9,6 +9,8 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * Repository pour gérer l'historique des projets.
+ *
+ * @extends ServiceEntityRepository<ProjectHistory>
  */
 class ProjectHistoryRepository extends ServiceEntityRepository
 {
@@ -18,7 +20,27 @@ class ProjectHistoryRepository extends ServiceEntityRepository
     }
 
     /**
+     * 📌 Récupère les dernières actions tous projets confondus (page Audit & Monitoring).
+     *
+     * @return ProjectHistory[]
+     */
+    public function findRecent(int $limit = 50): array
+    {
+        return $this->createQueryBuilder('h')
+            ->leftJoin('h.project', 'p')
+            ->addSelect('p')
+            ->leftJoin('h.user', 'u')
+            ->addSelect('u')
+            ->orderBy('h.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * 📌 Récupère l'historique complet d'un projet trié par date (du plus récent au plus ancien).
+     *
+     * @return ProjectHistory[]
      */
     public function findByProjectOrderedByDate(Project $project): array
     {
@@ -27,11 +49,13 @@ class ProjectHistoryRepository extends ServiceEntityRepository
             ->setParameter('project', $project)
             ->orderBy('h.createdAt', 'DESC')
             ->getQuery()
-            ->getResult() ?? [];
+            ->getResult();
     }
 
     /**
      * 📌 Récupère les dernières actions pour un projet (limité).
+     *
+     * @return ProjectHistory[]
      */
     public function findRecentByProject(Project $project, int $limit = 10): array
     {
@@ -41,11 +65,13 @@ class ProjectHistoryRepository extends ServiceEntityRepository
             ->orderBy('h.createdAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
-            ->getResult() ?? [];
+            ->getResult();
     }
 
     /**
      * 📌 Récupère l'historique d'un projet pour une action spécifique.
+     *
+     * @return ProjectHistory[]
      */
     public function findByProjectAndAction(Project $project, string $action): array
     {
@@ -56,12 +82,14 @@ class ProjectHistoryRepository extends ServiceEntityRepository
             ->setParameter('action', $action)
             ->orderBy('h.createdAt', 'DESC')
             ->getQuery()
-            ->getResult() ?? [];
+            ->getResult();
     }
 
     /**
      * 📌 Compte le nombre d'actions par type pour un projet.
      * Retourne un tableau associatif : [action => count].
+     *
+     * @return array<string, int>
      */
     public function countByAction(Project $project): array
     {

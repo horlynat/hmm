@@ -1,0 +1,44 @@
+{# templates/profile/two_factor/disable.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Désactiver la 2FA{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8 max-w-md">
+
+		<div class="mb-8">
+			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+				<span class="material-icons text-danger">lock_open</span>
+				<span>Désactiver la 2FA</span>
+			</h1>
+			<p class="text-sm opacity-60 mt-1">Confirmez votre mot de passe pour désactiver la double authentification sur ce compte.</p>
+		</div>
+
+		{% if error %}
+			<div class="mb-6 p-3 bg-danger/10 text-danger rounded-lg border border-danger/30 text-sm">
+				{{ error }}
+			</div>
+		{% endif %}
+
+		<div class="soft-card p-6">
+			<form method="post" class="space-y-4">
+				<input type="hidden" name="_token" value="{{ csrf_token('profile_two_factor_disable') }}">
+
+				<div>
+					<label for="password" class="label block text-sm mb-1">Mot de passe</label>
+					<input type="password" id="password" name="password" required autofocus autocomplete="current-password" class="input input-primary w-full">
+				</div>
+
+				<button type="submit" class="btn w-full bg-danger text-white hover:opacity-90">
+					<span class="material-icons text-base mr-1.5">warning</span>
+					Désactiver la double authentification
+				</button>
+			</form>
+		</div>
+
+		<a href="{{ path('profile_two_factor_index') }}" class="inline-flex items-center gap-1.5 text-sm text-brand-dark opacity-60 hover:opacity-100 mt-4">
+			<span class="material-icons text-base">arrow_back</span>
+			Annuler
+		</a>
+	</main>
+{% endblock %}

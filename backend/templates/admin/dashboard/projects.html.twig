@@ -1,0 +1,139 @@
+{# templates/admin/dashboard/projects.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Explorateur de projets{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="mb-8">
+			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+				<span class="material-icons text-brand-primary">travel_explore</span>
+				<span>Explorateur de projets</span>
+			</h1>
+			<p class="text-sm opacity-60 mt-1">Recherche et filtrage libre, tous statuts et budgets confondus.</p>
+		</div>
+
+		<!-- 🔍 FILTRES -->
+		<form method="get" class="soft-card p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+			<input type="text" name="search" value="{{ filters.search }}" placeholder="Titre, description, email…" class="input text-sm lg:col-span-2">
+
+			<select name="status" class="input input-select text-sm">
+				<option value="">Tous les statuts</option>
+				{% for status in statuses %}
+					<option value="{{ status.value }}" {{ filters.status == status.value ? 'selected' }}>{{ status.label }}</option>
+				{% endfor %}
+			</select>
+
+			<select name="budget_status" class="input input-select text-sm">
+				<option value="">Santé budgétaire</option>
+				<option value="ok" {{ filters.budget_status == 'ok' ? 'selected' }}>Équilibré</option>
+				<option value="low" {{ filters.budget_status == 'low' ? 'selected' }}>Alerte (&lt;10%)</option>
+				<option value="over" {{ filters.budget_status == 'over' ? 'selected' }}>Dépassement</option>
+			</select>
+
+			<select name="owner" class="input input-select text-sm">
+				<option value="">Tous les propriétaires</option>
+				{% for u in users %}
+					<option value="{{ u.id }}" {{ filters.owner == u.id ? 'selected' }}>{{ u.fullName ?? u.email }}</option>
+				{% endfor %}
+			</select>
+
+			<select name="collaborator" class="input input-select text-sm">
+				<option value="">Tous les collaborateurs</option>
+				{% for u in users %}
+					<option value="{{ u.id }}" {{ filters.collaborator == u.id ? 'selected' }}>{{ u.fullName ?? u.email }}</option>
+				{% endfor %}
+			</select>
+
+			<select name="sort" class="input input-select text-sm">
+				<option value="createdAt" {{ filters.sort == 'createdAt' ? 'selected' }}>Trier : date de création</option>
+				<option value="title" {{ filters.sort == 'title' ? 'selected' }}>Trier : titre</option>
+				<option value="budget" {{ filters.sort == 'budget' ? 'selected' }}>Trier : budget</option>
+				<option value="spent" {{ filters.sort == 'spent' ? 'selected' }}>Trier : dépensé</option>
+				<option value="status" {{ filters.sort == 'status' ? 'selected' }}>Trier : statut</option>
+			</select>
+
+			<select name="direction" class="input input-select text-sm">
+				<option value="desc" {{ filters.direction == 'desc' ? 'selected' }}>Décroissant</option>
+				<option value="asc" {{ filters.direction == 'asc' ? 'selected' }}>Croissant</option>
+			</select>
+
+			<div class="flex gap-2 lg:col-span-1">
+				<button type="submit" class="btn btn-primary text-sm flex-1">Filtrer</button>
+				<a href="{{ path('admin_dashboard_projects') }}" class="btn btn-secondary text-sm" title="Réinitialiser">
+					<span class="material-icons text-base">close</span>
+				</a>
+			</div>
+		</form>
+
+		<!-- 📊 TABLEAU -->
+		<div class="soft-card overflow-hidden">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Projet</th>
+						<th>Propriétaire</th>
+						<th>Statut</th>
+						<th>Budget</th>
+						<th>Avancement</th>
+						<th class="w-24 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for project in projects %}
+						<tr>
+							<td class="font-semibold text-brand-dark">{{ project.title }}</td>
+							<td class="text-sm opacity-70">{{ project.owner.fullName ?? project.owner.email }}</td>
+							<td><span class="badge {{ project.status.badgeClass|default('bg-gray-400 text-white') }}">{{ project.status.label }}</span></td>
+							<td class="text-sm">
+								<span class="font-semibold text-brand-dark">{{ project.getFormattedBudget() }}</span>
+								<span class="{{ project.spent > project.budget ? 'text-danger' : 'opacity-50' }}"> ({{ project.getBudgetPercentageUsed()|default(0) }}% utilisé)</span>
+							</td>
+							<td>
+								<div class="flex items-center gap-2 max-w-32">
+									<div class="w-full bg-gray-100 rounded-full h-2">
+										<div class="bg-brand-primary h-2 rounded-full" style="width: {{ project.progress }}%;"></div>
+									</div>
+									<span class="text-xs font-bold opacity-60">{{ project.progress }}%</span>
+								</div>
+							</td>
+							<td class="text-right">
+								<a href="{{ path('admin_project_read', {id: project.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir">
+									<span class="material-icons text-lg block">visibility</span>
+								</a>
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="6" class="text-center py-12 opacity-40">Aucun projet ne correspond aux critères.</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+		<!-- 📄 PAGINATION -->
+		{% if totalPages > 1 %}
+			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+				<span class="text-sm text-gray-500">Page <strong>{{ page }}</strong> sur <strong>{{ totalPages }}</strong></span>
+				<nav aria-label="Navigation des projets">
+					<ul class="flex items-center gap-1">
+						<li>
+							<a class="btn btn-secondary text-sm py-1.5 px-3 {{ page == 1 ? 'pointer-events-none opacity-40' }}" href="{{ path('admin_dashboard_projects', filters|merge({page: page - 1})) }}">Précédent</a>
+						</li>
+						{% for p in 1..totalPages %}
+							<li>
+								<a class="btn text-sm py-1.5 px-3 {{ p == page ? 'btn-primary' : 'btn-secondary' }}" href="{{ path('admin_dashboard_projects', filters|merge({page: p})) }}">{{ p }}</a>
+							</li>
+						{% endfor %}
+						<li>
+							<a class="btn btn-secondary text-sm py-1.5 px-3 {{ page == totalPages ? 'pointer-events-none opacity-40' }}" href="{{ path('admin_dashboard_projects', filters|merge({page: page + 1})) }}">Suivant</a>
+						</li>
+					</ul>
+				</nav>
+			</div>
+		{% endif %}
+	</main>
+{% endblock %}

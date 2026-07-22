@@ -4,6 +4,8 @@ namespace App\Controller\Admin;
 
 use App\Entity\QuoteRequest;
 use App\Repository\QuoteRequestRepository;
+use App\Security\Voter\QuoteVoter;
+use App\Service\AuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -31,7 +33,7 @@ final class AdminQuoteRequestController extends AbstractController
     #[Route('/index', name: 'index', methods: ['GET'])]
     public function index(Request $request, QuoteRequestRepository $quoteRequestRepository): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(QuoteVoter::VIEW);
 
         $statusFilter = $request->query->get('status', '');
         $search = trim((string) $request->query->get('search', ''));
@@ -69,7 +71,7 @@ final class AdminQuoteRequestController extends AbstractController
     #[Route('/{id}/read', name: 'read', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function read(QuoteRequest $quoteRequest): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(QuoteVoter::VIEW, $quoteRequest);
 
         return $this->render('admin/request/read.html.twig', [
             'quoteRequest' => $quoteRequest,
@@ -81,12 +83,13 @@ final class AdminQuoteRequestController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/accept', name: 'accept', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function accept(QuoteRequest $quoteRequest, EntityManagerInterface $entityManager, Request $request): Response
+    public function accept(QuoteRequest $quoteRequest, EntityManagerInterface $entityManager, Request $request, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(QuoteVoter::APPROVE, $quoteRequest);
 
         if ($this->isCsrfTokenValid('request_status_'.$quoteRequest->getId(), $request->request->get('_token'))) {
             $quoteRequest->setStatus(true);
+            $auditLogger->log(QuoteRequest::class, $quoteRequest->getId(), $quoteRequest->getName(), 'accepted');
             $entityManager->flush();
 
             $this->addFlash('success', 'La demande a été acceptée.');
@@ -102,12 +105,13 @@ final class AdminQuoteRequestController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/reject', name: 'reject', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function reject(QuoteRequest $quoteRequest, EntityManagerInterface $entityManager, Request $request): Response
+    public function reject(QuoteRequest $quoteRequest, EntityManagerInterface $entityManager, Request $request, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(QuoteVoter::REJECT, $quoteRequest);
 
         if ($this->isCsrfTokenValid('request_status_'.$quoteRequest->getId(), $request->request->get('_token'))) {
             $quoteRequest->setStatus(false);
+            $auditLogger->log(QuoteRequest::class, $quoteRequest->getId(), $quoteRequest->getName(), 'rejected');
             $entityManager->flush();
 
             $this->addFlash('success', 'La demande a été refusée.');
@@ -123,12 +127,13 @@ final class AdminQuoteRequestController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/reset', name: 'reset', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function reset(QuoteRequest $quoteRequest, EntityManagerInterface $entityManager, Request $request): Response
+    public function reset(QuoteRequest $quoteRequest, EntityManagerInterface $entityManager, Request $request, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(QuoteVoter::EDIT, $quoteRequest);
 
         if ($this->isCsrfTokenValid('request_status_'.$quoteRequest->getId(), $request->request->get('_token'))) {
             $quoteRequest->setStatus(null);
+            $auditLogger->log(QuoteRequest::class, $quoteRequest->getId(), $quoteRequest->getName(), 'reset');
             $entityManager->flush();
 
             $this->addFlash('success', 'La demande a été remise en attente.');
@@ -144,11 +149,12 @@ final class AdminQuoteRequestController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function delete(QuoteRequest $quoteRequest, EntityManagerInterface $entityManager, Request $request): Response
+    public function delete(QuoteRequest $quoteRequest, EntityManagerInterface $entityManager, Request $request, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(QuoteVoter::DELETE, $quoteRequest);
 
         if ($this->isCsrfTokenValid('admin_request_delete_'.$quoteRequest->getId(), $request->request->get('_token'))) {
+            $auditLogger->log(QuoteRequest::class, $quoteRequest->getId(), $quoteRequest->getName(), 'deleted');
             $entityManager->remove($quoteRequest);
             $entityManager->flush();
 

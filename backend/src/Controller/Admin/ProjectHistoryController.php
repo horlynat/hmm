@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Project;
 use App\Repository\ProjectHistoryRepository;
+use App\Security\Voter\ProjectVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route; // ✅ Correction : Importation du bon namespace d'Attribut
@@ -25,14 +26,15 @@ class ProjectHistoryController extends AbstractController
     #[Route('/', name: 'index', methods: ['GET'])]
     public function index(Project $project, ProjectHistoryRepository $historyRepo): Response
     {
-        // 🛡️ Protection de l'accès au niveau applicatif
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        // 🛡️ Protection de l'accès au niveau applicatif : mêmes règles que la consultation du projet.
+        $this->denyAccessUnlessGranted(ProjectVoter::VIEW, $project);
 
-        $histories = $historyRepo->findByProjectOrderedByDate($project->getId());
+        $histories = $historyRepo->findByProjectOrderedByDate($project);
 
         return $this->render('admin/project/history.html.twig', [ // ✅ Harmonisé avec le dossier admin/
             'project' => $project,
             'histories' => $histories,
+            'actionCounts' => $historyRepo->countByAction($project),
         ]);
     }
 
@@ -43,10 +45,10 @@ class ProjectHistoryController extends AbstractController
     #[Route('/recent', name: 'recent', methods: ['GET'])]
     public function recent(Project $project, ProjectHistoryRepository $historyRepo): Response
     {
-        // 🛡️ Protection de l'accès au niveau applicatif
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        // 🛡️ Protection de l'accès au niveau applicatif : mêmes règles que la consultation du projet.
+        $this->denyAccessUnlessGranted(ProjectVoter::VIEW, $project);
 
-        $histories = $historyRepo->findRecentByProject($project->getId(), 5);
+        $histories = $historyRepo->findRecentByProject($project, 5);
 
         return $this->render('admin/project/_history_list.html.twig', [ // ✅ Harmonisé avec le dossier admin/
             'project' => $project,

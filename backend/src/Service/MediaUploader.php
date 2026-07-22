@@ -22,9 +22,13 @@ class MediaUploader
     private string $targetDirectory;
     private SluggerInterface $slugger;
     private LoggerInterface $logger;
+    /** @var array<int, string> */
     private array $allowedMimeTypes;
     private int $maxFileSize;
 
+    /**
+     * @param array<int, string> $allowedMimeTypes
+     */
     public function __construct(
         string $targetDirectory,
         SluggerInterface $slugger,
@@ -45,16 +49,12 @@ class MediaUploader
      * @param UploadedFile $file Fichier uploadé
      * @param string|null $subDirectory Sous-répertoire optionnel
      *
-     * @return array Métadonnées du fichier (nom, chemin, type MIME, taille, hash, date, type déduit)
+     * @return array{filename: string, path: string, mimeType: string, size: int, uploadedAt: \DateTimeImmutable, hash: string, type: string}
      *
      * @throws \RuntimeException Si le fichier est invalide ou l’upload échoue
      */
     public function upload(UploadedFile $file, ?string $subDirectory = null): array
     {
-        if (!$file instanceof UploadedFile) {
-            throw new \RuntimeException("Aucun fichier valide fourni.");
-        }
-
         $mimeType = $file->getMimeType();
         $size = $file->getSize();
 
@@ -121,15 +121,13 @@ class MediaUploader
      * @param UploadedFile[] $files Tableau de fichiers
      * @param string|null $subDirectory Sous-répertoire optionnel
      *
-     * @return array[] Liste des métadonnées pour chaque fichier
+     * @return array<int, array{filename: string, path: string, mimeType: string, size: int, uploadedAt: \DateTimeImmutable, hash: string, type: string}>
      */
     public function uploadMultiple(array $files, ?string $subDirectory = null): array
     {
         $results = [];
         foreach ($files as $file) {
-            if ($file instanceof UploadedFile) {
-                $results[] = $this->upload($file, $subDirectory);
-            }
+            $results[] = $this->upload($file, $subDirectory);
         }
         return $results;
     }

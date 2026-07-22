@@ -1,0 +1,99 @@
+{# templates/admin/security/sessions.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Sessions actives
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="mb-8">
+			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+				<span class="material-icons text-brand-primary">devices</span>
+				<span>Sessions actives</span>
+			</h1>
+			<p class="text-sm opacity-60 mt-1">Sessions ouvertes depuis la dernière connexion de chaque compte.</p>
+		</div>
+
+		<!-- 📊 TABLEAU -->
+		<div class="soft-card">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Compte</th>
+						<th>IP</th>
+						<th>Appareil</th>
+						<th>Ouverte le</th>
+						<th>Statut</th>
+						<th class="w-32 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for entry in sessions %}
+						{% set userSession = entry.session %}
+						<tr>
+							<td class="font-medium text-brand-dark">{{ userSession.user.fullName ?? userSession.user.email }}</td>
+							<td class="font-mono text-xs">{{ userSession.ip ?? '—' }}</td>
+							<td class="text-sm opacity-70 truncate max-w-xs">{{ userSession.userAgent ?? '—' }}</td>
+							<td class="text-sm opacity-70">{{ userSession.createdAt|date('d/m/Y H:i') }}</td>
+							<td>
+								{% if userSession.sessionId == currentSessionId %}
+									<span class="badge bg-brand-light text-brand-primary">Vous</span>
+								{% elseif entry.state == 'active' %}
+									<span class="badge bg-success/10 text-success">Active</span>
+								{% elseif entry.state == 'expired' %}
+									<span class="badge bg-warning/10 text-warning">Expirée</span>
+								{% else %}
+									<span class="badge bg-gray-200 text-gray-500">Terminée</span>
+								{% endif %}
+							</td>
+							<td class="text-right">
+								{% if entry.state in ['active', 'expired'] and userSession.sessionId != currentSessionId %}
+									<form method="post" action="{{ path('admin_security_session_revoke', {id: userSession.id}) }}" onsubmit="return confirm('Forcer la déconnexion de {{ userSession.user.email }} ?');">
+										<input type="hidden" name="_token" value="{{ csrf_token('admin_security_session_revoke_' ~ userSession.id) }}">
+										<button type="submit" class="p-2 hover:bg-danger/20 rounded-sm transition-colors text-danger" title="Forcer la déconnexion">
+											<span class="material-icons text-lg block">logout</span>
+										</button>
+									</form>
+								{% endif %}
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="6" class="text-center py-12 opacity-40">Aucune session enregistrée.</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+		<!-- 💤 COMPTES INACTIFS -->
+		<div class="soft-card mt-6">
+			<div class="p-4 border-b border-gray-100">
+				<h3 class="font-heading font-bold text-brand-dark">Comptes qui ne se connectent plus ({{ inactiveUsers|length }})</h3>
+				<p class="text-xs opacity-50">Aucune connexion depuis plus de {{ inactiveAccountDays }} jours (ou jamais).</p>
+			</div>
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Compte</th>
+						<th>Dernière connexion</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for user in inactiveUsers %}
+						<tr>
+							<td class="font-medium text-brand-dark">{{ user.fullName ?? user.email }}</td>
+							<td class="text-sm opacity-70">{{ user.lastLoginAt ? user.lastLoginAt|date('d/m/Y H:i') : 'Jamais connecté' }}</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="2" class="text-center py-8 opacity-40">Aucun compte inactif.</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</main>
+{% endblock %}

@@ -8,6 +8,9 @@ class GeolocationService
 {
     public function __construct(private HttpClientInterface $httpClient) {}
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getLocationFromIp(string $ip): ?array
     {
         try {

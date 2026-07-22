@@ -1,13 +1,34 @@
+{# templates/user/update.html.twig #}
 {% extends 'base.html.twig' %}
-
-{% block title %}Edit User{% endblock %}
+{% block title %}Modifier :
+	{{ user.fullName ?? user.email }}
+{% endblock %}
 
 {% block body %}
-    <h1>Edit User</h1>
+	<main class="container mx-auto px-4 py-8">
 
-    {{ include('user/_form.html.twig', {'button_label': 'Update'}) }}
+		<!-- 🏷️ FIL D'ARIANE / HEADER -->
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+			<div>
+				<div class="flex items-center gap-2 text-xs font-bold text-brand-dark opacity-40 uppercase tracking-wider">
+					<a href="{{ path('user_index') }}" class="hover:text-brand-primary transition-colors">Clients</a>
+					<span class="material-icons text-xs">chevron_right</span>
+					<span>Édition</span>
+				</div>
+				<h1 class="text-3xl font-heading font-bold mt-1 flex items-center gap-2 text-brand-dark">
+					<span class="material-icons text-brand-primary">edit</span>
+					<span>Modifier le client</span>
+				</h1>
+			</div>
 
-    <a href="{{ path('app_user_index') }}">back to list</a>
+			<a href="{{ path('user_index') }}" class="btn btn-secondary gap-2 px-4 py-2">
+				<span class="material-icons text-base">arrow_back</span>
+				<span>Retour à la liste</span>
+			</a>
+		</div>
 
-    {{ include('user/_delete_form.html.twig') }}
+		<!-- ⚡ FORMULAIRE -->
+		{{ include('admin/user/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
+
+	</main>
 {% endblock %}

@@ -22,7 +22,7 @@ class ProjectHistory
     #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'histories')]
     #[ORM\JoinColumn(name: 'project_id', nullable: false, onDelete: 'CASCADE')]
     #[Groups(['api_admin'])]
-    private ?Project $project = null;
+    private Project $project;
 
     #[ORM\Column(type: 'string', length: 50)]
     #[Groups(['api_admin'])]
@@ -35,7 +35,7 @@ class ProjectHistory
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'user_id', nullable: false)]
     #[Groups(['api_admin'])]
-    private ?User $user = null;
+    private User $user;
 
     #[ORM\Column(type: 'datetime_immutable')]
     #[Groups(['api_admin'])]
@@ -52,12 +52,12 @@ class ProjectHistory
         return $this->id;
     }
 
-    public function getProject(): ?Project
+    public function getProject(): Project
     {
         return $this->project;
     }
 
-    public function setProject(?Project $project): self
+    public function setProject(Project $project): self
     {
         $this->project = $project;
         return $this;
@@ -85,12 +85,12 @@ class ProjectHistory
         return $this;
     }
 
-    public function getUser(): ?User
+    public function getUser(): User
     {
         return $this->user;
     }
 
-    public function setUser(?User $user): self
+    public function setUser(User $user): self
     {
         $this->user = $user;
         return $this;
@@ -115,8 +115,12 @@ class ProjectHistory
             'updated' => 'Mise à jour du projet',
             'status_changed' => 'Changement de statut',
             'expense_added' => 'Ajout d\'une dépense',
+            'expense_removed' => 'Suppression d\'une dépense',
             'collaborator_added' => 'Ajout d\'un collaborateur',
             'collaborator_removed' => 'Retrait d\'un collaborateur',
+            'client_assigned' => 'Client assigné',
+            'media_removed' => 'Suppression d\'un média',
+            'project_deleted' => 'Suppression du projet',
             default => ucfirst($this->action),
         };
     }
@@ -128,8 +132,12 @@ class ProjectHistory
             'updated' => '✏️',
             'status_changed' => '🔄',
             'expense_added' => '💰',
+            'expense_removed' => '💸',
             'collaborator_added' => '👥',
             'collaborator_removed' => '👤',
+            'client_assigned' => '🤝',
+            'media_removed' => '🖼️',
+            'project_deleted' => '🗑️',
             default => '📝',
         };
     }
@@ -141,7 +149,11 @@ class ProjectHistory
             'updated' => 'bg-blue-500 text-white',
             'status_changed' => 'bg-purple-500 text-white',
             'expense_added' => 'bg-red-500 text-white',
+            'expense_removed' => 'bg-red-700 text-white',
             'collaborator_added', 'collaborator_removed' => 'bg-yellow-500 text-black',
+            'client_assigned' => 'bg-indigo-500 text-white',
+            'media_removed' => 'bg-orange-500 text-white',
+            'project_deleted' => 'bg-gray-900 text-white',
             default => 'bg-gray-500 text-white',
         };
     }

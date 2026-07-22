@@ -21,26 +21,26 @@ class QuoteRequest
     #[Assert\NotBlank(message: "Le nom est obligatoire.")]
     #[Assert\Length(min: 2, max: 255)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $name = null;
+    private string $name = '';
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: "L'email est obligatoire.")]
     #[Assert\Email]
     #[Assert\Length(max: 100)]
     #[Groups(['api_admin'])] // email visible côté admin uniquement
-    private ?string $email = null;
+    private string $email = '';
 
     #[ORM\Column(type: Types::STRING, length: 20)]
     #[Assert\NotBlank(message: "Le numéro de téléphone est obligatoire.")]
     #[Assert\Regex(pattern: "/^\+?[0-9\s\-]{7,20}$/")]
     #[Groups(['api_admin'])] // téléphone visible côté admin uniquement
-    private ?string $phone = null;
+    private string $phone = '';
 
     #[ORM\Column(type: Types::TEXT)]
     #[Assert\NotBlank(message: "Le message est obligatoire.")]
     #[Assert\Length(min: 10)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $message = null;
+    private string $message = '';
 
     #[ORM\Column(nullable: true)]
     #[Groups(['api_admin'])]
@@ -50,13 +50,13 @@ class QuoteRequest
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(message: "Un utilisateur doit être associé à la demande.")]
     #[Groups(['api_admin'])]
-    private ?User $user = null;
+    private User $user;
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getName(): ?string
+    public function getName(): string
     {
         return $this->name;
     }
@@ -68,7 +68,7 @@ class QuoteRequest
         return $this;
     }
 
-    public function getEmail(): ?string
+    public function getEmail(): string
     {
         return $this->email;
     }
@@ -80,7 +80,7 @@ class QuoteRequest
         return $this;
     }
 
-    public function getPhone(): ?string
+    public function getPhone(): string
     {
         return $this->phone;
     }
@@ -90,7 +90,7 @@ class QuoteRequest
         $this->phone = $phone;
         return $this;
     }
-    public function getMessage(): ?string
+    public function getMessage(): string
     {
         return $this->message;
     }
@@ -114,12 +114,12 @@ class QuoteRequest
         return $this;
     }
 
-    public function getUser(): ?User
+    public function getUser(): User
     {
         return $this->user;
     }
 
-    public function setUser(?User $user): static
+    public function setUser(User $user): static
     {
         $this->user = $user;
 

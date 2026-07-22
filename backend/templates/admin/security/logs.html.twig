@@ -1,0 +1,111 @@
+{# templates/admin/security/logs.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Logs de connexion
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="mb-8">
+			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+				<span class="material-icons text-brand-primary">description</span>
+				<span>Logs de connexion</span>
+			</h1>
+			<p class="text-sm opacity-60 mt-1">Historique des connexions réussies et des tentatives échouées.</p>
+		</div>
+
+		<!-- 🔀 ONGLETS -->
+		<div class="flex items-center gap-2 mb-4">
+			<a href="{{ path('admin_security_log_index', {tab: 'success', search: search}) }}" class="btn text-sm py-1.5 px-3 {{ tab == 'success' ? 'btn-primary' : 'btn-secondary' }}">Connexions réussies</a>
+			<a href="{{ path('admin_security_log_index', {tab: 'failed', search: search}) }}" class="btn text-sm py-1.5 px-3 {{ tab == 'failed' ? 'btn-primary' : 'btn-secondary' }}">Tentatives échouées</a>
+		</div>
+
+		<!-- 🔍 RECHERCHE -->
+		<form method="get" class="mb-4 flex gap-2">
+			<input type="hidden" name="tab" value="{{ tab }}">
+			<input type="text" name="search" value="{{ search }}" placeholder="Rechercher par email ou IP…" class="input input-bordered w-full max-w-xs">
+			<button type="submit" class="btn btn-secondary">Filtrer</button>
+		</form>
+
+		<!-- 📊 TABLEAU -->
+		<div class="soft-card">
+			<table class="table">
+				{% if tab == 'success' %}
+					<thead>
+						<tr>
+							<th>Compte</th>
+							<th>IP</th>
+							<th>Appareil</th>
+							<th>Date</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for entry in entries %}
+							<tr>
+								<td class="font-medium text-brand-dark">{{ entry.user.email }}</td>
+								<td class="font-mono text-xs">{{ entry.ip ?? '—' }}</td>
+								<td class="text-sm opacity-70 truncate max-w-xs">{{ entry.device ?? '—' }}</td>
+								<td class="text-sm opacity-70">{{ entry.loginAt|date('d/m/Y H:i') }}</td>
+							</tr>
+						{% else %}
+							<tr>
+								<td colspan="4" class="text-center py-12 opacity-40">Aucune connexion trouvée.</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				{% else %}
+					<thead>
+						<tr>
+							<th>Email tenté</th>
+							<th>Motif</th>
+							<th>IP</th>
+							<th>Date</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for entry in entries %}
+							<tr>
+								<td class="font-medium text-brand-dark">{{ entry.email }}</td>
+								<td><span class="badge bg-danger/10 text-danger">{{ entry.reasonLabel }}</span></td>
+								<td class="font-mono text-xs">{{ entry.ip ?? '—' }}</td>
+								<td class="text-sm opacity-70">{{ entry.createdAt|date('d/m/Y H:i') }}</td>
+							</tr>
+						{% else %}
+							<tr>
+								<td colspan="4" class="text-center py-12 opacity-40">Aucune tentative échouée trouvée.</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				{% endif %}
+			</table>
+		</div>
+
+		<!-- 📄 PAGINATION -->
+		{% if totalPages > 1 %}
+			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+				<span class="text-sm text-gray-500">Page
+					<strong>{{ page }}</strong>
+					sur
+					<strong>{{ totalPages }}</strong>
+				</span>
+				<nav aria-label="Navigation des logs">
+					<ul class="flex items-center gap-1">
+						<li>
+							<a class="btn btn-secondary text-sm py-1.5 px-3 {{ page == 1 ? 'pointer-events-none opacity-40' }}" href="{{ path('admin_security_log_index', {tab: tab, search: search, page: page - 1}) }}">Précédent</a>
+						</li>
+						{% for p in 1..totalPages %}
+							<li>
+								<a class="btn text-sm py-1.5 px-3 {{ p == page ? 'btn-primary' : 'btn-secondary' }}" href="{{ path('admin_security_log_index', {tab: tab, search: search, page: p}) }}">{{ p }}</a>
+							</li>
+						{% endfor %}
+						<li>
+							<a class="btn btn-secondary text-sm py-1.5 px-3 {{ page == totalPages ? 'pointer-events-none opacity-40' }}" href="{{ path('admin_security_log_index', {tab: tab, search: search, page: page + 1}) }}">Suivant</a>
+						</li>
+					</ul>
+				</nav>
+			</div>
+		{% endif %}
+	</main>
+{% endblock %}

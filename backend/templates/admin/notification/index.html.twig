@@ -1,0 +1,76 @@
+{# templates/admin/notification/index.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Notifications
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+			<div>
+				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+					<span class="material-icons text-brand-primary">notifications</span>
+					<span>Notifications</span>
+				</h1>
+				<p class="text-sm opacity-60 mt-1">Canaux activés par niveau d'importance des envois du back-office.</p>
+			</div>
+		</div>
+
+		<div class="text-xs opacity-80 bg-brand-light/30 p-3 rounded-sm flex items-center gap-2 text-brand-dark border border-brand-light mb-6">
+			<span class="material-icons text-sm">info</span>
+			<span>Canal push via <a href="https://ntfy.sh" target="_blank" rel="noopener" class="underline font-bold">ntfy</a> — abonnez-vous au topic défini par <code class="font-mono">NTFY_DSN</code> (fichier .env) avec l'app ntfy ou un navigateur pour recevoir les alertes.</span>
+		</div>
+
+		<div class="soft-card">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Niveau d'importance</th>
+						<th class="text-center">E-mail</th>
+						<th class="text-center">Push</th>
+						<th class="w-32 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for priority, preference in preferences %}
+						<tr>
+							<td class="font-medium text-brand-dark">{{ preference.priority.label }}</td>
+							<td class="text-center">
+								{% if preference.emailEnabled %}
+									<span class="badge bg-success/10 text-success font-bold">Activé</span>
+								{% else %}
+									<span class="badge bg-gray-200 text-gray-500 font-bold">Désactivé</span>
+								{% endif %}
+							</td>
+							<td class="text-center">
+								{% if preference.pushEnabled %}
+									<span class="badge bg-success/10 text-success font-bold">Activé</span>
+								{% else %}
+									<span class="badge bg-gray-200 text-gray-500 font-bold">Désactivé</span>
+								{% endif %}
+							</td>
+							<td>
+								<div class="flex items-center justify-end gap-2">
+									<form method="post" action="{{ path('admin_notification_toggle', {'priority': priority, 'channel': 'email'}) }}">
+										<input type="hidden" name="_token" value="{{ csrf_token('admin_notification_toggle_' ~ priority ~ '_email') }}">
+										<button type="submit" class="btn btn-secondary text-xs px-3 py-1.5">
+											{{ preference.emailEnabled ? 'Désactiver e-mail' : 'Activer e-mail' }}
+										</button>
+									</form>
+									<form method="post" action="{{ path('admin_notification_toggle', {'priority': priority, 'channel': 'push'}) }}">
+										<input type="hidden" name="_token" value="{{ csrf_token('admin_notification_toggle_' ~ priority ~ '_push') }}">
+										<button type="submit" class="btn btn-secondary text-xs px-3 py-1.5">
+											{{ preference.pushEnabled ? 'Désactiver push' : 'Activer push' }}
+										</button>
+									</form>
+								</div>
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+	</main>
+{% endblock %}

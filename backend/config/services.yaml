@@ -5,6 +5,16 @@ parameters:
     # ✅ CORRECTION 1 : utiliser %kernel.project_dir% ici (paramètre Symfony)
     #    et non dans .env où cette syntaxe n'est pas supportée
     app.upload_dir: '%kernel.project_dir%/public/uploads'
+    app.backup_dir: '%kernel.project_dir%/var/backups'
+
+    # Policy statique de secours pour App\Notifier\DatabaseChannelPolicy, utilisée
+    # tant que les préférences ne sont pas en base (ou si la base est indisponible).
+    # Garder alignée avec ce que décrivait notifier.yaml avant la bascule en base.
+    app.notifier.fallback_policy:
+        urgent: ['email']
+        high: ['email']
+        medium: ['email']
+        low: ['email']
 
 services:
     # ✅ CORRECTION 2 : _defaults TOUJOURS en premier
@@ -31,6 +41,42 @@ services:
     App\Service\ProfileCompletionService: ~
     App\Service\GeolocationService: ~
 
-    # ✅ CORRECTION 4 : LoginListener déjà géré par #[AsEventListener]
-    #    La déclaration manuelle via tags est redondante et peut créer des doublons.
-    #    Supprimée — autoconfigure: true s'en charge automatiquement.
+    App\Service\SecretEncryptor:
+        arguments:
+            $appSecret: '%kernel.secret%'
+
+    # ⚠️ doctrine-bundle (3.x) + symfony/doctrine-bridge n'auto-tagguent PAS les classes
+    #    qui implémentent Doctrine\Common\EventSubscriber (contrairement aux anciennes
+    #    versions) : seul le tag "doctrine.event_listener" est reconnu par
+    #    RegisterEventListenersAndSubscribersPass. Sans ce tag explicite, la classe est
+    #    instanciée mais jamais appelée par l'EventManager.
+    App\EventSubscriber\AlertNotificationSubscriber:
+        tags:
+            - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: postFlush }
+
+    App\Service\DatabaseBackupService:
+        arguments:
+            $backupDir: '%app.backup_dir%'
+
+    # ⚙️ Remplace le "notifier.channel_policy" statique (framework-bundle, config
+    #    notifier.yaml) par une version pilotée depuis l'admin (Paramètres > Notifications).
+    notifier.channel_policy:
+        class: App\Notifier\DatabaseChannelPolicy
+        arguments:
+            $fallbackPolicy: '%app.notifier.fallback_policy%'
+
+    # ✅ Sessions stockées en base (voir admin/security/sessions) : PdoSessionHandler a
+    #    besoin d'un PDO natif, on le récupère depuis la connexion Doctrine existante.
+    app.pdo_native_connection:
+        class: PDO
+        factory: ['@doctrine.dbal.default_connection', 'getNativeConnection']
+
+    Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler:
+        arguments:
+            - '@app.pdo_native_connection'
+            # lock_mode LOCK_ADVISORY (1) : la connexion PDO est partagée avec l'ORM,
+            # le mode par défaut LOCK_TRANSACTIONAL ouvre une transaction PDO qui entre
+            # en conflit avec celles de Doctrine ("There is already an active
+            # transaction"). LOCK_ADVISORY verrouille sans transaction.
+            - lock_mode: 1

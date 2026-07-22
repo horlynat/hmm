@@ -9,11 +9,10 @@ use Symfony\Component\Serializer\Attribute\Groups;
 trait SlugTrait
 {
     #[ORM\Column(length: 255, unique: true)]
-    #[Gedmo\Slug(fields: ['title'])]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $slug = null;
+    private string $slug = '';
 
-    public function getSlug(): ?string
+    public function getSlug(): string
     {
         return $this->slug;
     }

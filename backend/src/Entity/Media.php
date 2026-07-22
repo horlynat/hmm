@@ -20,7 +20,7 @@ class Media
     #[Assert\NotBlank(message: "Le chemin du fichier est obligatoire.")]
     #[Assert\Length(max: 255)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $filePath = null;
+    private string $filePath = '';
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255)]
@@ -71,7 +71,7 @@ class Media
 
     public function getId(): ?int { return $this->id; }
 
-    public function getFilePath(): ?string { return $this->filePath; }
+    public function getFilePath(): string { return $this->filePath; }
     public function setFilePath(string $filePath): static { $this->filePath = $filePath; return $this; }
 
     public function getAltText(): ?string { return $this->altText; }

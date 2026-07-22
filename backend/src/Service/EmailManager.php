@@ -29,6 +29,8 @@ class EmailManager
     /**
      * Dispatch dans la file Messenger pour traitement en arrière-plan.
      * À utiliser pour tous les emails non-urgents (bienvenue, alertes, notifications).
+     *
+     * @param array<string, mixed> $context
      */
     public function sendAsync(
         string $to,
@@ -45,6 +47,8 @@ class EmailManager
      *   - Token JWT avec expiration courte
      *   - Lien de réinitialisation de mot de passe
      *   - Confirmation critique en temps réel
+     *
+     * @param array<string, mixed> $context
      */
     public function sendNow(
         string $to,

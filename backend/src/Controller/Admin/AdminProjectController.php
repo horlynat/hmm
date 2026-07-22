@@ -13,6 +13,7 @@ use App\Enum\ProjectStatusEnum;
 use App\Form\ProjectExpenseType;
 use App\Form\ProjectType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use App\Repository\ProjectHistoryRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\TagRepository;
 use App\Repository\UserRepository;
@@ -25,7 +26,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Attribute\MapEntity;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
@@ -58,6 +59,7 @@ final class AdminProjectController extends AbstractController
         ProjectRepository $projectRepository,
         UserRepository $userRepository,
         TagRepository $tagRepository,
+        ProjectHistoryRepository $projectHistoryRepository,
         EntityManagerInterface $entityManager,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
@@ -143,21 +145,9 @@ final class AdminProjectController extends AbstractController
             ];
         }
 
-        // 📌 Historique récent (pour le dashboard)
-        $recentHistory = $projectRepository->createQueryBuilder('p')
-            ->join('p.histories', 'h')
-            ->orderBy('h.createdAt', 'DESC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult();
-
-        // 📌 Dépenses récentes (pour le dashboard)
-        $recentExpenses = $projectRepository->createQueryBuilder('p')
-            ->join('p.expenses', 'e')
-            ->orderBy('e.createdAt', 'DESC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult();
+        // 📌 Activité récente tous projets confondus (couvre déjà les dépenses via
+        // l'action 'expense_added', pas besoin d'une requête séparée sur ProjectExpense)
+        $recentHistory = $projectHistoryRepository->findRecent(10);
 
         return $this->render('admin/project/projects.html.twig', [
             'projects' => $projects,
@@ -170,7 +160,6 @@ final class AdminProjectController extends AbstractController
             'budgetStatuses' => BudgetStatusEnum::cases(),
             'projectsByStatus' => $projectsByStatus,
             'recentHistory' => $recentHistory,
-            'recentExpenses' => $recentExpenses,
             'filters' => $defaultFilters,
             'page' => $page,
             'totalPages' => $totalPages,
@@ -185,6 +174,8 @@ final class AdminProjectController extends AbstractController
 
     /**
      * Applique les filtres à la requête Doctrine.
+     *
+     * @param array<string, mixed> $filters
      */
     private function applyFilters(QueryBuilder $queryBuilder, array $filters): void
     {
@@ -366,7 +357,7 @@ final class AdminProjectController extends AbstractController
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
         $project = new Project();
-        $project->setOwner($this->getUser());
+        $project->setOwner($this->getAuthenticatedUser());
 
         $form = $this->createForm(ProjectType::class, $project);
         $form->handleRequest($request);
@@ -380,7 +371,7 @@ final class AdminProjectController extends AbstractController
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
 
             // Journaliser la création
-            $project->logCreation($this->getUser());
+            $project->logCreation($this->getAuthenticatedUser());
 
             $entityManager->persist($project);
             $entityManager->flush();
@@ -479,9 +470,14 @@ final class AdminProjectController extends AbstractController
 
         if ($this->isCsrfTokenValid('admin_project_delete_media_'.$media->getId(), $request->request->get('_token'))) {
             // Supprimer le fichier physique
-            $mediaUploader->deleteFile($media->getFilePath(), 'projects');
+            $mediaUploader->delete(basename($media->getFilePath()), 'projects');
 
             $project->removeMedia($media);
+            $project->addToHistory(
+                'media_removed',
+                $this->getAuthenticatedUser(),
+                sprintf('Média supprimé : %s', basename($media->getFilePath())),
+            );
             $entityManager->remove($media);
             $entityManager->flush();
 
@@ -507,7 +503,7 @@ final class AdminProjectController extends AbstractController
 
         if ($this->isCsrfTokenValid('admin_project_delete_'.$project->getId(), $request->request->get('_token'))) {
             // Journaliser la suppression (avant la suppression pour conserver l'accès)
-            $project->addToHistory('project_deleted', $this->getUser(), 'Projet supprimé');
+            $project->addToHistory('project_deleted', $this->getAuthenticatedUser(), 'Projet supprimé');
 
             $entityManager->remove($project);
             $entityManager->flush();
@@ -531,7 +527,7 @@ final class AdminProjectController extends AbstractController
         EntityManagerInterface $entityManager,
         Request $request,
     ): Response {
-        $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
+        $this->denyAccessUnlessGranted(ProjectVoter::CHANGE_STATUS, $project);
 
         if (!$this->isCsrfTokenValid('change_status_'.$project->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
@@ -556,7 +552,7 @@ final class AdminProjectController extends AbstractController
 
             // Journaliser le changement de statut
             $project->logStatusChange(
-                $this->getUser(),
+                $this->getAuthenticatedUser(),
                 $oldStatus->getLabel(),
                 $newStatus->getLabel()
             );
@@ -586,7 +582,7 @@ final class AdminProjectController extends AbstractController
         Request $request,
         EntityManagerInterface $entityManager,
     ): Response {
-        $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
+        $this->denyAccessUnlessGranted(ProjectVoter::ADD_EXPENSE, $project);
 
         // Double sécurité : empêche l'ajout de dépenses aux projets terminés ou suspendus
         if ($this->isProjectLocked($project)) {
@@ -604,7 +600,7 @@ final class AdminProjectController extends AbstractController
             $project->addProjectExpense(
                 $expense->getAmount(),
                 $expense->getDescription() ?? '',
-                $this->getUser()
+                $this->getAuthenticatedUser()
             );
 
             $entityManager->flush();
@@ -630,7 +626,7 @@ final class AdminProjectController extends AbstractController
         EntityManagerInterface $entityManager,
         Request $request,
     ): Response {
-        $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
+        $this->denyAccessUnlessGranted(ProjectVoter::ADD_EXPENSE, $project);
 
         // Vérifier que la dépense appartient bien au projet
         if ($expense->getProject() !== $project) {
@@ -688,7 +684,7 @@ final class AdminProjectController extends AbstractController
 
         // Règle métier : seul un compte "client pur" (ni admin, ni collaborateur) peut être assigné.
         $roles = $user->getRoles();
-        if (in_array('ROLE_ADMIN', $roles, true) || in_array('ROLE_COLLABORATOR', $roles, true)) {
+        if (in_array('ROLE_ADMIN', $roles, true) || in_array('ROLE_EDITOR', $roles, true)) {
             $this->addFlash('error', 'Seul un compte client (ni administrateur, ni collaborateur) peut être assigné comme client.');
 
             return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
@@ -704,7 +700,7 @@ final class AdminProjectController extends AbstractController
         $project->setClient($user);
         $project->addToHistory(
             'client_assigned',
-            $this->getUser(),
+            $this->getAuthenticatedUser(),
             sprintf(
                 'Client %s : "%s" → "%s".',
                 $oldClient ? 'remplacé' : 'assigné',
@@ -730,7 +726,7 @@ final class AdminProjectController extends AbstractController
         EntityManagerInterface $entityManager,
         UserRepository $userRepository,
     ): Response {
-        $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
+        $this->denyAccessUnlessGranted(ProjectVoter::ADD_COLLABORATOR, $project);
 
         $form = $this->createFormBuilder()
             ->add('fullName', EntityType::class, [
@@ -771,7 +767,7 @@ final class AdminProjectController extends AbstractController
             }
 
             $project->addCollaborator($user);
-            $project->logCollaboratorAdded($this->getUser(), $user);
+            $project->logCollaboratorAdded($this->getAuthenticatedUser(), $user);
 
             $entityManager->flush();
             $this->addFlash('success', 'Collaborateur ajouté avec succès.');
@@ -796,11 +792,11 @@ final class AdminProjectController extends AbstractController
         EntityManagerInterface $entityManager,
         Request $request,
     ): Response {
-        $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
+        $this->denyAccessUnlessGranted(ProjectVoter::ADD_COLLABORATOR, $project);
 
         if ($this->isCsrfTokenValid('remove_collaborator_'.$collaborator->getId(), $request->request->get('_token'))) {
             $project->removeCollaborator($collaborator);
-            $project->logCollaboratorRemoved($this->getUser(), $collaborator);
+            $project->logCollaboratorRemoved($this->getAuthenticatedUser(), $collaborator);
 
             $entityManager->flush();
             $this->addFlash('success', 'Collaborateur retiré avec succès.');
@@ -814,6 +810,21 @@ final class AdminProjectController extends AbstractController
     // =========================================================================
     // 🔧 MÉTHODES UTILITAIRES PRIVÉES
     // =========================================================================
+
+    /**
+     * Récupère l'utilisateur authentifié en tant qu'App\Entity\User.
+     * Ces routes sont toutes protégées en amont (ROLE_ADMIN via le firewall
+     * et/ou ProjectVoter), donc un utilisateur non-User ne peut pas les atteindre.
+     */
+    private function getAuthenticatedUser(): User
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            throw new \LogicException('Un utilisateur App\Entity\User authentifié est requis ici.');
+        }
+
+        return $user;
+    }
 
     /**
      * Vérifie si un projet est verrouillé (terminé ou suspendu).
@@ -844,7 +855,7 @@ final class AdminProjectController extends AbstractController
                 $media = new Media();
                 $media
                     ->setFilePath($result['path'])
-                    ->setAltText($project->getTitle() ?? 'Project Media')
+                    ->setAltText($project->getTitle())
                     ->setMimeType($result['mimeType'])
                     ->setSize($result['size'])
                     ->setType($result['type'])
@@ -896,7 +907,7 @@ final class AdminProjectController extends AbstractController
 
         // Journaliser les modifications
         if (!empty($changes)) {
-            $project->logUpdate($this->getUser(), $changes);
+            $project->logUpdate($this->getAuthenticatedUser(), $changes);
         }
     }
 }

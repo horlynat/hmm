@@ -23,13 +23,13 @@ class Testimonial
     #[Assert\NotBlank(message: "L'auteur est obligatoire.")]
     #[Assert\Length(max: 255)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $author = null;
+    private string $author = '';
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le contenu est obligatoire.")]
     #[Assert\Length(min: 10, max: 255)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $content = null;
+    private string $content = '';
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 0, nullable: true)]
     #[Assert\PositiveOrZero]
@@ -43,6 +43,7 @@ class Testimonial
     #[Groups(['api_admin'])] // exposé seulement côté admin
     private ?\DateTimeImmutable $publishedAt = null;
 
+    /** @var Collection<int, Media> */
     #[ORM\OneToMany(targetEntity: Media::class, mappedBy: 'testimonial')]
     #[Groups(['api_public', 'api_admin'])]
     private Collection $media;
@@ -56,7 +57,7 @@ class Testimonial
         return $this->id;
     }
 
-    public function getAuthor(): ?string
+    public function getAuthor(): string
     {
         return $this->author;
     }
@@ -68,7 +69,7 @@ class Testimonial
         return $this;
     }
 
-    public function getContent(): ?string
+    public function getContent(): string
     {
         return $this->content;
     }
