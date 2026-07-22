@@ -1,0 +1,118 @@
+{# templates/admin/dashboard/users.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Explorateur d'utilisateurs{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="mb-8">
+			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+				<span class="material-icons text-brand-primary">manage_accounts</span>
+				<span>Explorateur d'utilisateurs</span>
+			</h1>
+			<p class="text-sm opacity-60 mt-1">Recherche et tri libre sur l'ensemble des comptes.</p>
+		</div>
+
+		<!-- 🔍 FILTRES -->
+		<form method="get" class="soft-card p-4 mb-6 flex flex-wrap gap-3">
+			<input type="text" name="search" value="{{ filters.search }}" placeholder="Nom ou email…" class="input text-sm flex-1 min-w-48">
+
+			<select name="sort" class="input input-select text-sm">
+				<option value="createdAt" {{ filters.sort == 'createdAt' ? 'selected' }}>Trier : date de création</option>
+				<option value="email" {{ filters.sort == 'email' ? 'selected' }}>Trier : email</option>
+				<option value="fullName" {{ filters.sort == 'fullName' ? 'selected' }}>Trier : nom</option>
+			</select>
+
+			<select name="direction" class="input input-select text-sm">
+				<option value="desc" {{ filters.direction == 'desc' ? 'selected' }}>Décroissant</option>
+				<option value="asc" {{ filters.direction == 'asc' ? 'selected' }}>Croissant</option>
+			</select>
+
+			<button type="submit" class="btn btn-primary text-sm">Filtrer</button>
+			<a href="{{ path('admin_dashboard_users') }}" class="btn btn-secondary text-sm" title="Réinitialiser">
+				<span class="material-icons text-base">close</span>
+			</a>
+		</form>
+
+		<!-- 📊 TABLEAU -->
+		<div class="soft-card overflow-hidden">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Compte</th>
+						<th>Rôles</th>
+						<th>Statut</th>
+						<th>Dernière connexion</th>
+						<th class="w-24 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for user in users %}
+						<tr>
+							<td>
+								<div class="flex items-center gap-3">
+									<img class="h-9 w-9 rounded-full" src="{{ user.profileImage ?? 'https://ui-avatars.com/api/?name=' ~ (user.fullName ?? user.email)|url_encode }}" alt="{{ user.fullName ?? user.email }}">
+									<div>
+										<div class="font-bold text-brand-dark">{{ user.fullName ?? 'Non spécifié' }}</div>
+										<div class="text-xs opacity-60">{{ user.email }}</div>
+									</div>
+								</div>
+							</td>
+							<td>
+								<div class="flex flex-wrap gap-1">
+									{% for role in user.roles %}
+										<span class="badge bg-brand-light text-brand-primary">{{ role|replace({'ROLE_': ''})|capitalize }}</span>
+									{% endfor %}
+								</div>
+							</td>
+							<td>
+								{% if user.isActive %}
+									<span class="badge bg-success/10 text-success">Actif</span>
+								{% else %}
+									<span class="badge bg-danger/10 text-danger">Désactivé</span>
+								{% endif %}
+								{% if user.isTotpAuthenticationEnabled %}
+									<span class="badge bg-brand-light text-brand-primary" title="2FA activée">2FA</span>
+								{% endif %}
+							</td>
+							<td class="text-sm opacity-70">{{ user.lastLoginAt ? user.lastLoginAt|date('d/m/Y H:i') : 'Jamais' }}</td>
+							<td class="text-right">
+								<a href="{{ path('user_read', {id: user.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir">
+									<span class="material-icons text-lg block">visibility</span>
+								</a>
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="5" class="text-center py-12 opacity-40">Aucun utilisateur ne correspond aux critères.</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+		<!-- 📄 PAGINATION -->
+		{% if totalPages > 1 %}
+			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+				<span class="text-sm text-gray-500">Page <strong>{{ page }}</strong> sur <strong>{{ totalPages }}</strong></span>
+				<nav aria-label="Navigation des utilisateurs">
+					<ul class="flex items-center gap-1">
+						<li>
+							<a class="btn btn-secondary text-sm py-1.5 px-3 {{ page == 1 ? 'pointer-events-none opacity-40' }}" href="{{ path('admin_dashboard_users', filters|merge({page: page - 1})) }}">Précédent</a>
+						</li>
+						{% for p in 1..totalPages %}
+							<li>
+								<a class="btn text-sm py-1.5 px-3 {{ p == page ? 'btn-primary' : 'btn-secondary' }}" href="{{ path('admin_dashboard_users', filters|merge({page: p})) }}">{{ p }}</a>
+							</li>
+						{% endfor %}
+						<li>
+							<a class="btn btn-secondary text-sm py-1.5 px-3 {{ page == totalPages ? 'pointer-events-none opacity-40' }}" href="{{ path('admin_dashboard_users', filters|merge({page: page + 1})) }}">Suivant</a>
+						</li>
+					</ul>
+				</nav>
+			</div>
+		{% endif %}
+	</main>
+{% endblock %}

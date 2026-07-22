@@ -5,7 +5,6 @@ namespace App\Form;
 use App\Entity\User;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -15,6 +14,15 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\PasswordStrength;
 
+/**
+ * Formulaire d'auto-édition du profil (ProfileController, accessible dès ROLE_USER).
+ *
+ * Volontairement sans les champs roles / isVerified / isActive : les exposer ici
+ * permettrait à n'importe quel utilisateur connecté de se les auto-attribuer
+ * (élévation de privilèges, contournement d'un bannissement...). Ces champs
+ * restent gérés exclusivement via UserType, dans les contrôleurs Admin*
+ * (réservés ROLE_ADMIN, avec les garde-fous UserVoter appropriés).
+ */
 class ProfileType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -75,35 +83,14 @@ class ProfileType extends AbstractType
                     'class' => 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500',
                 ],
             ])
-            ->add('roles', ChoiceType::class, [
-                'label' => 'Rôles',
-                'choices' => [
-                    'Administrateur' => 'ROLE_ADMIN',
-                    'Utilisateur' => 'ROLE_USER',
-                ],
-                'multiple' => true,
-                'expanded' => true,
-                'attr' => [
-                    'class' => 'flex items-center gap-4 text-gray-800 dark:text-gray-200',
-                ],
-            ])
-            ->add('isVerified', CheckboxType::class, [
-                'label' => 'Email vérifié',
-                'required' => false,
-                'attr' => [
-                    'class' => 'h-4 w-4 text-indigo-600 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500 bg-white dark:bg-gray-700',
-                ],
-            ])
-            ->add('isActive', CheckboxType::class, [
-                'label' => 'Compte actif',
-                'required' => false,
-                'attr' => [
-                    'class' => 'h-4 w-4 text-indigo-600 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500 bg-white dark:bg-gray-700',
-                ],
-            ])
             ->add('isTwoFactorEnabled', CheckboxType::class, [
                 'label' => '2FA activé',
                 'required' => false,
+                // Lecture seule : l'activation/désactivation passe par le flow
+                // dédié (TwoFactorController), qui vérifie un vrai code TOTP
+                // avant d'écrire ce champ. Cocher cette case directement ici
+                // ne configure aucun secret et n'active donc rien.
+                'disabled' => true,
                 'attr' => [
                     'class' => 'h-4 w-4 text-indigo-600 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500 bg-white dark:bg-gray-700',
                 ],

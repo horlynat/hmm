@@ -1,0 +1,107 @@
+{# templates/admin/backup/index.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Sauvegardes
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+			<div>
+				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+					<span class="material-icons text-brand-primary">backup</span>
+					<span>Sauvegardes & restauration</span>
+				</h1>
+				<p class="text-sm opacity-60 mt-1">Sauvegardes complètes de la base de données (mysqldump).</p>
+			</div>
+			{% if is_granted('SETTINGS_CREATE_BACKUP') %}
+				<form method="post" action="{{ path('admin_backup_create') }}">
+					<input type="hidden" name="_token" value="{{ csrf_token('admin_backup_create') }}">
+					<button type="submit" class="btn btn-primary gap-2">
+						<span class="material-icons text-sm">add_circle</span>
+						<span>Créer une sauvegarde</span>
+					</button>
+				</form>
+			{% endif %}
+		</div>
+
+		<div class="soft-card">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Fichier</th>
+						<th>Taille</th>
+						<th>Créée le</th>
+						<th class="w-56 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for backup in backups %}
+						<tr>
+							<td class="font-mono text-xs">{{ backup.filename }}</td>
+							<td class="text-xs opacity-70">{{ (backup.size / 1024 / 1024)|number_format(2) }} Mo</td>
+							<td class="text-xs opacity-70">{{ backup.createdAt|date('d/m/Y H:i:s') }}</td>
+							<td>
+								<div class="flex items-center justify-end gap-2">
+									<a href="{{ path('admin_backup_download', {'filename': backup.filename}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Télécharger">
+										<span class="material-icons text-lg block">download</span>
+									</a>
+									{% if is_granted('SETTINGS_RESTORE_BACKUP') %}
+										<button type="button" onclick="document.getElementById('restore-modal-{{ loop.index }}').showModal()" class="p-2 hover:bg-warning/20 rounded-sm transition-colors text-warning" title="Restaurer">
+											<span class="material-icons text-lg block">restore</span>
+										</button>
+									{% endif %}
+									{% if is_granted('SETTINGS_DELETE_BACKUP') %}
+										{% include 'admin/backup/_delete_form.html.twig' with {'filename': backup.filename, 'index': loop.index} %}
+									{% endif %}
+								</div>
+							</td>
+						</tr>
+
+						{% if is_granted('SETTINGS_RESTORE_BACKUP') %}
+							<!-- 🖼️ MODAL DE RESTAURATION (confirmation forte : saisie du nom de fichier) -->
+							<dialog id="restore-modal-{{ loop.index }}" class="card p-6 max-w-lg w-full bg-bg-card backdrop:bg-brand-dark/40 backdrop:backdrop-blur-sm shadow-2xl border-0">
+								<div class="text-center">
+									<div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-danger/10 text-danger mb-4">
+										<span class="material-icons text-2xl">warning</span>
+									</div>
+									<h3 class="text-lg font-heading font-bold text-brand-dark">Restaurer la base de données ?</h3>
+									<p class="text-sm opacity-80 mt-2 px-2">
+										Cette action va <span class="font-bold text-danger">écraser toutes les données actuelles</span>
+										avec le contenu de <span class="font-bold text-brand-dark">"{{ backup.filename }}"</span>. Cette action est irréversible.
+									</p>
+
+									<form method="post" action="{{ path('admin_backup_restore', {'filename': backup.filename}) }}" class="mt-4 text-left">
+										<input type="hidden" name="_token" value="{{ csrf_token('admin_backup_restore_' ~ backup.filename) }}">
+										<label class="block text-xs font-bold mb-1 text-brand-dark">
+											Tapez le nom exact du fichier pour confirmer :
+										</label>
+										<input type="text" name="confirm_filename" class="input w-full font-mono text-xs" placeholder="{{ backup.filename }}" required>
+
+										<div class="mt-6 flex flex-col sm:flex-row-reverse gap-3">
+											<button type="submit" onclick="this.disabled=true; this.form.submit();" class="btn bg-danger text-white w-full gap-2 px-4 py-2 border-0">
+												Confirmer la restauration
+											</button>
+											<button type="button" onclick="document.getElementById('restore-modal-{{ loop.index }}').close()" class="btn btn-secondary w-full sm:w-auto flex-1 px-4 py-2">
+												Annuler
+											</button>
+										</div>
+									</form>
+								</div>
+							</dialog>
+						{% endif %}
+					{% else %}
+						<tr>
+							<td colspan="4" class="text-center py-12 opacity-40">
+								<span class="material-icons text-4xl block mb-2">backup_table</span>
+								Aucune sauvegarde disponible.
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+	</main>
+{% endblock %}

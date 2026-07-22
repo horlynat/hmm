@@ -1,0 +1,99 @@
+{# templates/admin/user/read.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Détails :
+	{{ user.fullName ?? user.email }}
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<div class="mb-6">
+			<a href="{{ path('admin_user_index') }}" class="btn btn-secondary gap-2 px-3 py-2 text-sm w-fit">
+				<span class="material-icons text-base">arrow_back</span>
+				<span>Retour à la liste</span>
+			</a>
+		</div>
+
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+			<!-- 📖 CONTENU (70%) -->
+			<div class="lg:col-span-2 card">
+				<div class="flex items-center gap-4">
+					<img class="h-16 w-16 rounded-full" src="{{ user.profileImage ?? 'https://ui-avatars.com/api/?name=' ~ (user.fullName ?? user.email)|url_encode }}" alt="{{ user.fullName ?? user.email }}">
+					<div>
+						<span class="badge bg-brand-light text-brand-primary">ID : #{{ user.id }}</span>
+						<h1 class="text-2xl font-heading font-bold mt-1 text-brand-dark">
+							{{ user.fullName ?? 'Non spécifié' }}
+						</h1>
+						<p class="text-sm opacity-60">{{ user.email }}</p>
+					</div>
+				</div>
+
+				<div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-6 mt-6">
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Téléphone</p>
+						<p class="text-brand-dark font-bold">{{ user.phone ?? 'Non renseigné' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Rôles</p>
+						<div class="flex flex-wrap gap-1 mt-1">
+							{% for role in user.roles %}
+								<span class="badge bg-brand-light text-brand-primary">{{ role|replace({'ROLE_': ''})|capitalize }}</span>
+							{% endfor %}
+						</div>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Statut</p>
+						<p class="text-brand-dark font-bold">{{ user.isActive ? 'Actif' : 'Désactivé' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Email vérifié</p>
+						<p class="text-brand-dark font-bold">{{ user.isVerified ? 'Oui' : 'Non' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">2FA</p>
+						<p class="text-brand-dark font-bold">{{ user.isTwoFactorEnabled ? 'Activé' : 'Désactivé' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Dernière connexion</p>
+						<p class="text-brand-dark font-bold">{{ user.lastLoginAt ? user.lastLoginAt|date('d/m/Y H:i') : 'Jamais' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Dernière IP</p>
+						<p class="text-brand-dark font-bold">{{ user.lastIp ?? '—' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Inscrit le</p>
+						<p class="text-brand-dark font-bold">{{ user.createdAt ? user.createdAt|date('d/m/Y H:i') : '—' }}</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- ⚙️ INFOS LATÉRALES (30%) -->
+			<div class="space-y-6">
+				<div class="card space-y-4">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">
+						Fiche compte
+					</h3>
+					<div class="pt-4 flex flex-col gap-3">
+						<a href="{{ path('profile_read', {'id': user.id}) }}" class="btn btn-secondary w-full text-sm gap-2">
+							<span class="material-icons text-sm">badge</span>
+							<span>Voir le profil complet</span>
+						</a>
+						<a href="{{ path('admin_user_update', {'id': user.id}) }}" class="btn btn-primary w-full text-sm gap-2">
+							<span class="material-icons text-sm">edit</span>
+							<span>Modifier</span>
+						</a>
+						{% if user.id != app.user.id %}
+							<div class="w-full [&>form]:w-full text-center">
+								{{ include('admin/user/_delete_form.html.twig', {'user': user}) }}
+							</div>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</main>
+{% endblock %}

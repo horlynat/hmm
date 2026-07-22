@@ -10,9 +10,9 @@ trait CreatedAtTrait
 {
     #[ORM\Column(type: 'datetime_immutable')]
     #[Groups(['api_admin'])]
-    private ?\DateTimeImmutable $createdAt = null;
+    private \DateTimeImmutable $createdAt;
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
     }

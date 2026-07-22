@@ -27,19 +27,19 @@ class Article
     #[Assert\NotBlank(message: "Le titre est obligatoire")]
     #[Assert\Length(max: 255, maxMessage: "Le titre ne peut pas dépasser {{ limit }} caractères")]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $title = null;
+    private string $title = '';
 
     #[ORM\Column(type: Types::TEXT)]
     #[Assert\NotBlank(message: "Le contenu est obligatoire")]
     #[Assert\Length(min: 20, minMessage: "Le contenu doit contenir au moins {{ limit }} caractères")]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $content = null;
+    private string $content = '';
 
     #[ORM\Column]
     #[Assert\NotNull(message: "La date de publication est obligatoire")]
     #[Assert\Type(\DateTimeImmutable::class)]
     #[Groups(['api_admin'])]
-    private ?\DateTimeImmutable $publishedAt = null;
+    private \DateTimeImmutable $publishedAt;
 
     /**
      * @var Collection<int, Tag>
@@ -79,7 +79,7 @@ class Article
 
     public function getId(): ?int { return $this->id; }
 
-    public function getTitle(): ?string { return $this->title; }
+    public function getTitle(): string { return $this->title; }
     public function setTitle(string $title): static
     {
         $this->title = $title;
@@ -87,10 +87,10 @@ class Article
         return $this;
     }
 
-    public function getContent(): ?string { return $this->content; }
+    public function getContent(): string { return $this->content; }
     public function setContent(string $content): static { $this->content = $content; return $this; }
 
-    public function getPublishedAt(): ?\DateTimeImmutable { return $this->publishedAt; }
+    public function getPublishedAt(): \DateTimeImmutable { return $this->publishedAt; }
     public function setPublishedAt(\DateTimeImmutable $publishedAt): static { $this->publishedAt = $publishedAt; return $this; }
 
     /** @return Collection<int, Tag> */

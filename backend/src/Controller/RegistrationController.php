@@ -3,8 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Enum\NotificationPriorityEnum;
 use App\Form\RegistrationFormType;
 use App\Repository\UserRepository;
+use App\Service\AdminAlertNotifier;
 use App\Service\EmailManager;
 use App\Service\JWTService;
 use App\Exception\JWTExpiredException;
@@ -27,7 +29,7 @@ class RegistrationController extends AbstractController
     ) {}
 
     #[Route('/register', name: 'register')]
-    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher): Response
+    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, AdminAlertNotifier $adminAlertNotifier): Response
     {
         $user = new User();
         $form = $this->createForm(RegistrationFormType::class, $user);
@@ -44,6 +46,12 @@ class RegistrationController extends AbstractController
 
             $this->entityManager->persist($user);
             $this->entityManager->flush();
+
+            $adminAlertNotifier->alert(
+                NotificationPriorityEnum::LOW,
+                'Nouvelle inscription',
+                sprintf('%s <%s> vient de créer un compte.', $user->getFullName() ?? $user->getEmail(), $user->getEmail()),
+            );
 
             $token = $this->jwt->generateEmailVerificationToken($user->getId());
 

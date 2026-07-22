@@ -1,0 +1,93 @@
+{# templates/admin/collaborator/read.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Détails :
+	{{ user.fullName ?? user.email }}
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<div class="mb-6">
+			<a href="{{ path('admin_collaborator_index') }}" class="btn btn-secondary gap-2 px-3 py-2 text-sm w-fit">
+				<span class="material-icons text-base">arrow_back</span>
+				<span>Retour à la liste</span>
+			</a>
+		</div>
+
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+			<!-- 📖 CONTENU (70%) -->
+			<div class="lg:col-span-2 space-y-6">
+				<div class="card">
+					<div class="flex items-center gap-4">
+						<img class="h-16 w-16 rounded-full" src="{{ user.profileImage ?? 'https://ui-avatars.com/api/?name=' ~ (user.fullName ?? user.email)|url_encode }}" alt="{{ user.fullName ?? user.email }}">
+						<div>
+							<span class="badge bg-brand-light text-brand-primary">ID : #{{ user.id }}</span>
+							<h1 class="text-2xl font-heading font-bold mt-1 text-brand-dark">
+								{{ user.fullName ?? 'Non spécifié' }}
+							</h1>
+							<p class="text-sm opacity-60">{{ user.email }}</p>
+						</div>
+					</div>
+
+					<div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-6 mt-6">
+						<div>
+							<p class="text-xs opacity-60 uppercase font-bold">Téléphone</p>
+							<p class="text-brand-dark font-bold">{{ user.phone ?? 'Non renseigné' }}</p>
+						</div>
+						<div>
+							<p class="text-xs opacity-60 uppercase font-bold">Statut</p>
+							<p class="text-brand-dark font-bold">{{ user.isActive ? 'Actif' : 'Désactivé' }}</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- 📁 PROJETS ASSOCIÉS -->
+				<div class="card">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 mb-4 flex items-center gap-2">
+						<span class="material-icons text-sm">folder_shared</span>
+						Projets associés
+					</h3>
+					{% if user.collaboratingProjects|length > 0 %}
+						<ul class="divide-y divide-gray-100">
+							{% for project in user.collaboratingProjects %}
+								<li class="py-3 flex items-center justify-between">
+									<a href="{{ path('admin_project_read', {'id': project.id}) }}" class="font-bold text-brand-dark hover:text-brand-primary transition-colors">
+										{{ project.title }}
+									</a>
+									<span class="badge bg-brand-light text-brand-primary">{{ project.status.value }}</span>
+								</li>
+							{% endfor %}
+						</ul>
+					{% else %}
+						<p class="text-sm opacity-40 py-4 text-center">Aucun projet associé pour le moment.</p>
+					{% endif %}
+				</div>
+			</div>
+
+			<!-- ⚙️ INFOS LATÉRALES (30%) -->
+			<div class="space-y-6">
+				<div class="card space-y-4">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">
+						Fiche compte
+					</h3>
+					<div class="pt-4 flex flex-col gap-3">
+						<a href="{{ path('profile_read', {'id': user.id}) }}" class="btn btn-secondary w-full text-sm gap-2">
+							<span class="material-icons text-sm">badge</span>
+							<span>Voir le profil complet</span>
+						</a>
+						<a href="{{ path('admin_collaborator_update', {'id': user.id}) }}" class="btn btn-primary w-full text-sm gap-2">
+							<span class="material-icons text-sm">edit</span>
+							<span>Modifier</span>
+						</a>
+						<div class="w-full [&>form]:w-full text-center">
+							{{ include('admin/collaborator/_delete_form.html.twig', {'user': user}) }}
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</main>
+{% endblock %}

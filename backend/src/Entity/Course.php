@@ -21,45 +21,51 @@ class Course
     #[Assert\NotBlank(message: "Le titre est obligatoire")]
     #[Assert\Length(max: 255, maxMessage: "Le titre ne peut pas dépasser {{ limit }} caractères")]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $title = null;
+    private string $title = '';
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: "L'institution est obligatoire")]
     #[Assert\Length(max: 100, maxMessage: "Le nom de l'institution ne peut pas dépasser {{ limit }} caractères")]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $institution = null;
+    private string $institution = '';
 
     #[ORM\Column]
     #[Assert\NotNull(message: "La date de début est obligatoire")]
     #[Assert\Type(\DateTimeImmutable::class)]
     #[Groups(['api_admin'])]
-    private ?\DateTimeImmutable $startDate = null;
+    private \DateTimeImmutable $startDate;
 
     #[ORM\Column]
     #[Assert\NotNull(message: "La date de fin est obligatoire")]
     #[Assert\Type(\DateTimeImmutable::class)]
     #[Assert\GreaterThan(propertyPath: "startDate", message: "La date de fin doit être postérieure à la date de début")]
     #[Groups(['api_admin'])]
-    private ?\DateTimeImmutable $endDate = null;
+    private \DateTimeImmutable $endDate;
 
     #[ORM\Column(type: Types::TEXT)]
     #[Assert\NotBlank(message: "La description est obligatoire")]
     #[Assert\Length(min: 10, minMessage: "La description doit contenir au moins {{ limit }} caractères")]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $description = null;
+    private string $description = '';
 
     #[ORM\ManyToOne(inversedBy: 'course')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(message: "Le cours doit être lié à un utilisateur")]
     #[Groups(['api_admin'])] // exposé seulement côté admin
-    private ?User $user = null;
+    private User $user;
+
+    public function __construct()
+    {
+        $this->startDate = new \DateTimeImmutable();
+        $this->endDate = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getTitle(): ?string
+    public function getTitle(): string
     {
         return $this->title;
     }
@@ -71,7 +77,7 @@ class Course
         return $this;
     }
 
-    public function getInstitution(): ?string
+    public function getInstitution(): string
     {
         return $this->institution;
     }
@@ -83,7 +89,7 @@ class Course
         return $this;
     }
 
-    public function getStartDate(): ?\DateTimeImmutable
+    public function getStartDate(): \DateTimeImmutable
     {
         return $this->startDate;
     }
@@ -95,7 +101,7 @@ class Course
         return $this;
     }
 
-    public function getEndDate(): ?\DateTimeImmutable
+    public function getEndDate(): \DateTimeImmutable
     {
         return $this->endDate;
     }
@@ -107,7 +113,7 @@ class Course
         return $this;
     }
 
-    public function getDescription(): ?string
+    public function getDescription(): string
     {
         return $this->description;
     }
@@ -119,12 +125,12 @@ class Course
         return $this;
     }
 
-    public function getUser(): ?User
+    public function getUser(): User
     {
         return $this->user;
     }
 
-    public function setUser(?User $user): static
+    public function setUser(User $user): static
     {
         $this->user = $user;
 

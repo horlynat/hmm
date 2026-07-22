@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\Tag;
 use App\Form\TagType;
 use App\Repository\TagRepository;
+use App\Service\AuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,7 +41,7 @@ final class AdminTagController extends AbstractController
     // =========================================================================
 
     #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
-    public function create(Request $request, EntityManagerInterface $entityManager): Response
+    public function create(Request $request, EntityManagerInterface $entityManager, AuditLogger $auditLogger): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
@@ -50,6 +51,9 @@ final class AdminTagController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($tag);
+            $entityManager->flush();
+
+            $auditLogger->log(Tag::class, $tag->getId(), $tag->getName(), 'created');
             $entityManager->flush();
 
             $this->addFlash('success', 'Le mot-clé a été créé avec succès.');
@@ -81,7 +85,7 @@ final class AdminTagController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/update', name: 'update', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
-    public function update(Request $request, Tag $tag, EntityManagerInterface $entityManager): Response
+    public function update(Request $request, Tag $tag, EntityManagerInterface $entityManager, AuditLogger $auditLogger): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
@@ -89,6 +93,7 @@ final class AdminTagController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $auditLogger->log(Tag::class, $tag->getId(), $tag->getName(), 'updated');
             $entityManager->flush();
 
             $this->addFlash('success', 'Le mot-clé a été mis à jour avec succès.');
@@ -106,12 +111,13 @@ final class AdminTagController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function delete(Request $request, Tag $tag, EntityManagerInterface $entityManager): Response
+    public function delete(Request $request, Tag $tag, EntityManagerInterface $entityManager, AuditLogger $auditLogger): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
         // Uniformisation de la clé de hachage et de la capture du paramètre de requête
         if ($this->isCsrfTokenValid('admin_tag_delete_' . $tag->getId(), $request->request->get('_token'))) {
+            $auditLogger->log(Tag::class, $tag->getId(), $tag->getName(), 'deleted');
             $entityManager->remove($tag);
             $entityManager->flush();
             

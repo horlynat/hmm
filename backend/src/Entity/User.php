@@ -6,6 +6,9 @@ use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
+use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
+use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface as TotpTwoFactorInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -16,7 +19,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[UniqueEntity(fields: ['email'], message: "Il existe déjà un compte avec cet email.")]
 #[ORM\HasLifecycleCallbacks] // ✅ Active les callbacks Doctrine
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwoFactorInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -28,19 +31,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(["api_user", "api_admin"])]
     #[Assert\NotBlank(message: "L'email est obligatoire.")]
     #[Assert\Email(message: "Veuillez entrer un email valide.")]
-    private ?string $email = null;
+    private string $email = '';
 
+    /** @var array<int, string> */
     #[ORM\Column]
     #[Groups(["api_admin"])]
     private array $roles = [];
 
+    // Stocke le hash, jamais le mot de passe en clair : la complexité (longueur,
+    // regex) se valide sur le champ de saisie non mappé "plainPassword" de chaque
+    // formulaire (RegistrationFormType, ProfileType, UserType), pas ici — un hash
+    // bcrypt/argon2 n'a aucune raison de satisfaire "au moins une majuscule".
     #[ORM\Column]
-    #[Assert\Length(min: 8, minMessage: "Le mot de passe doit contenir au moins {{ limit }} caractères.")]
-    #[Assert\Regex(
-        pattern: "/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).+$/",
-        message: "Le mot de passe doit contenir une majuscule, une minuscule, un chiffre et un caractère spécial."
-    )]
-    private ?string $password = null;
+    private string $password = '';
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(["api_user", "api_admin"])]
@@ -96,24 +99,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(["api_admin"])]
     private bool $isTwoFactorEnabled = false;
 
+    // ✅ Secret TOTP (base32) — non exposé via l'API, rempli seulement une fois
+    // le code confirmé par l'utilisateur (voir TwoFactorController::setup).
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $totpSecret = null;
+
     // ✅ Typage corrigé : Collection au lieu de ArrayCollection
+    /** @var Collection<int, LoginHistory> */
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: LoginHistory::class, cascade: ['persist'], orphanRemoval: true)]
     private Collection $loginHistory;
 
+    /** @var Collection<int, Experience> */
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Experience::class)]
     #[Groups(["api_user"])]
     private Collection $experience;
 
+    /** @var Collection<int, Course> */
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Course::class)]
     #[Groups(["api_user"])]
     private Collection $course;
 
+    /** @var Collection<int, QuoteRequest> */
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: QuoteRequest::class)]
     private Collection $quoteRequest;
 
+    /** @var Collection<int, Project> */
     #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Project::class)]
     private Collection $ownedProjects;
 
+    /** @var Collection<int, Project> */
     #[ORM\ManyToMany(targetEntity: Project::class, mappedBy: 'collaborators')]
     private Collection $collaboratingProjects;
 
@@ -135,7 +149,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->id;
     }
 
-    public function getEmail(): ?string
+    public function getEmail(): string
     {
         return $this->email;
     }
@@ -148,9 +162,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getUserIdentifier(): string
     {
-        return (string) $this->email;
+        return $this->email;
     }
 
+    /** @return array<int, string> */
     public function getRoles(): array
     {
         $roles = $this->roles;
@@ -158,13 +173,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return array_unique($roles);
     }
 
+    /** @param array<int, string> $roles */
     public function setRoles(array $roles): self
     {
         $this->roles = $roles;
         return $this;
     }
 
-    public function getPassword(): ?string
+    public function getPassword(): string
     {
         return $this->password;
     }
@@ -263,6 +279,28 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(?\DateTimeImmutable $createdAt): self
+    {
+        $this->createdAt = $createdAt;
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(?\DateTimeImmutable $updatedAt): self
+    {
+        $this->updatedAt = $updatedAt;
+        return $this;
+    }
+
     public function getPasswordChangedAt(): ?\DateTimeImmutable
     {
         return $this->passwordChangedAt;
@@ -296,6 +334,38 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getTotpSecret(): ?string
+    {
+        return $this->totpSecret;
+    }
+
+    public function setTotpSecret(?string $totpSecret): self
+    {
+        $this->totpSecret = $totpSecret;
+        return $this;
+    }
+
+    // ===== Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface =====
+
+    public function isTotpAuthenticationEnabled(): bool
+    {
+        return $this->isTwoFactorEnabled && null !== $this->totpSecret;
+    }
+
+    public function getTotpAuthenticationUsername(): ?string
+    {
+        return $this->email;
+    }
+
+    public function getTotpAuthenticationConfiguration(): ?TotpConfigurationInterface
+    {
+        if (null === $this->totpSecret) {
+            return null;
+        }
+
+        return new TotpConfiguration($this->totpSecret, TotpConfiguration::ALGORITHM_SHA1, 30, 6);
+    }
+
     /**
      * @return Collection<int, LoginHistory>
      */
@@ -315,11 +385,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function removeLoginHistory(LoginHistory $loginHistory): self
     {
-        if ($this->loginHistory->removeElement($loginHistory)) {
-            if ($loginHistory->getUser() === $this) {
-                $loginHistory->setUser(null);
-            }
-        }
+        $this->loginHistory->removeElement($loginHistory);
         return $this;
     }
 
@@ -342,11 +408,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function removeExperience(Experience $experience): self
     {
-        if ($this->experience->removeElement($experience)) {
-            if ($experience->getUser() === $this) {
-                $experience->setUser(null);
-            }
-        }
+        $this->experience->removeElement($experience);
         return $this;
     }
 
@@ -369,11 +431,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function removeCourse(Course $course): self
     {
-        if ($this->course->removeElement($course)) {
-            if ($course->getUser() === $this) {
-                $course->setUser(null);
-            }
-        }
+        $this->course->removeElement($course);
         return $this;
     }
 
@@ -396,11 +454,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function removeQuoteRequest(QuoteRequest $quoteRequest): self
     {
-        if ($this->quoteRequest->removeElement($quoteRequest)) {
-            if ($quoteRequest->getUser() === $this) {
-                $quoteRequest->setUser(null);
-            }
-        }
+        $this->quoteRequest->removeElement($quoteRequest);
         return $this;
     }
 
@@ -423,11 +477,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function removeOwnedProject(Project $project): self
     {
-        if ($this->ownedProjects->removeElement($project)) {
-            if ($project->getOwner() === $this) {
-                $project->setOwner(null);
-            }
-        }
+        $this->ownedProjects->removeElement($project);
         return $this;
     }
 
@@ -444,6 +494,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if (!$this->collaboratingProjects->contains($project)) {
             $this->collaboratingProjects->add($project);
             $project->addCollaborator($this);
+
+            // Un pro/freelance associé à un projet devient automatiquement collaborateur,
+            // sauf s'il détient déjà un rôle d'administration.
+            if (!in_array('ROLE_ADMIN', $this->roles, true) && !in_array('ROLE_EDITOR', $this->roles, true)) {
+                $this->roles[] = 'ROLE_EDITOR';
+            }
         }
         return $this;
     }
@@ -452,6 +508,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if ($this->collaboratingProjects->removeElement($project)) {
             $project->removeCollaborator($this);
+
+            // Retire le rôle collaborateur si l'utilisateur ne participe plus à aucun projet.
+            if ($this->collaboratingProjects->isEmpty()) {
+                $this->roles = array_values(array_diff($this->roles, ['ROLE_EDITOR']));
+            }
         }
         return $this;
     }

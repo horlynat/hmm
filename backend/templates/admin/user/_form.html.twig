@@ -1,0 +1,88 @@
+{# templates/admin/user/_form.html.twig #}
+{{ form_start(form, {
+    'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}
+}) }}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+	<!-- 📄 COLONNE PRINCIPALE (70%) -->
+	<div class="lg:col-span-2 space-y-6 card">
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+			<!-- Email -->
+			<div>
+				{{ form_label(form.email, 'Adresse email', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.email, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.email, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<!-- Nom complet -->
+			<div>
+				{{ form_label(form.fullName, 'Nom complet', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.fullName, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.fullName, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<!-- Téléphone -->
+			<div>
+				{{ form_label(form.phone, 'Téléphone', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.phone, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.phone, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<!-- Mot de passe -->
+			<div>
+				{{ form_label(form.plainPassword, 'Mot de passe', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.plainPassword, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.plainPassword, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<!-- Photo de profil -->
+			<div class="md:col-span-2">
+				{{ form_label(form.profileImageFile, 'Photo de profil', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.profileImageFile, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.profileImageFile, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+		</div>
+	</div>
+
+	<!-- ⚙️ COLONNE LATÉRALE (30%) -->
+	<div class="space-y-6">
+		<div class="card space-y-4">
+			<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 flex items-center gap-2">
+				<span class="material-icons text-sm">shield</span>
+				Rôles & permissions
+			</h3>
+			{{ form_widget(form.roles, {'attr': {'class': 'space-y-2'}}) }}
+			{{ form_errors(form.roles, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+		</div>
+
+		<div class="card space-y-4">
+			<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 flex items-center gap-2">
+				<span class="material-icons text-sm">tune</span>
+				Options du compte
+			</h3>
+			<div class="flex items-center justify-between">
+				{{ form_label(form.isActive, 'Compte actif') }}
+				{{ form_widget(form.isActive) }}
+			</div>
+			<div class="flex items-center justify-between">
+				{{ form_label(form.isVerified, 'Email vérifié') }}
+				{{ form_widget(form.isVerified) }}
+			</div>
+			<div class="flex items-center justify-between">
+				{{ form_label(form.isTwoFactorEnabled, '2FA activé') }}
+				{{ form_widget(form.isTwoFactorEnabled) }}
+			</div>
+		</div>
+
+		<div class="card space-y-4">
+			<div class="pt-2">
+				<button type="submit" class="btn btn-primary w-full gap-2">
+					<span class="material-icons text-sm">save</span>
+					<span>{{ button_label|default('Enregistrer') }}</span>
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+{{ form_end(form) }}

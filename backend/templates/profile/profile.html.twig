@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Profil{% endblock %}
+
+{% block stylesheets %}
+	{{ parent() }}
+	{{ vite_entry_link_tags('profile') }}
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+	{{ vite_entry_script_tags('profile') }}
+{% endblock %}
+
+{% block body %}
+
+	<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+		<div class="lg:col-span-1">
+			{% include 'profile/_profile_sidebar.html.twig' %}
+		</div>
+		<div class="lg:col-span-2 flex flex-col gap-4">
+			{% include 'profile/_profile_info.html.twig' %}
+			{% include 'profile/_profile_security.html.twig' %}
+			{% include 'profile/_profile_activity.html.twig' %}
+		</div>
+	</div>
+
+{% endblock %}

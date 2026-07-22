@@ -9,6 +9,7 @@ enum BudgetStatusEnum: string
     case OVER = 'over';
     case PROFITABLE = 'profitable';
 
+    /** @return array<int, string> */
     public static function all(): array
     {
         return array_column(self::cases(), 'value');

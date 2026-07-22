@@ -1,0 +1,91 @@
+{# templates/admin/integration/index.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Intégrations externes
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+			<div>
+				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+					<span class="material-icons text-brand-primary">extension</span>
+					<span>Intégrations externes</span>
+				</h1>
+				<p class="text-sm opacity-60 mt-1">API, CRM, Slack, GitHub — les secrets sont chiffrés en base.</p>
+			</div>
+			<a href="{{ path('admin_integration_create') }}" class="btn btn-primary gap-2">
+				<span class="material-icons text-sm">add_circle</span>
+				<span>Ajouter une intégration</span>
+			</a>
+		</div>
+
+		<div class="soft-card">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Nom</th>
+						<th>Type</th>
+						<th class="text-center">Statut</th>
+						<th class="text-center">Dernier test</th>
+						<th class="w-56 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for integration in integrations %}
+						<tr>
+							<td class="font-medium text-brand-dark">{{ integration.name }}</td>
+							<td>
+								<span class="badge bg-brand-light text-brand-primary font-bold">
+									<i class="ti {{ integration.type.icon }} text-xs mr-1"></i>{{ integration.type.label }}
+								</span>
+							</td>
+							<td class="text-center">
+								{% if integration.active %}
+									<span class="badge bg-success/10 text-success font-bold">Active</span>
+								{% else %}
+									<span class="badge bg-gray-200 text-gray-500 font-bold">Inactive</span>
+								{% endif %}
+							</td>
+							<td class="text-center text-xs">
+								{% if integration.lastTestedAt %}
+									<span class="{{ integration.lastTestSuccess ? 'text-success' : 'text-danger' }} font-bold">
+										{{ integration.lastTestSuccess ? 'OK' : 'Échec' }}
+									</span>
+									<span class="opacity-50 block">{{ integration.lastTestedAt|date('d/m/Y H:i') }}</span>
+								{% else %}
+									<span class="opacity-40">Jamais testé</span>
+								{% endif %}
+							</td>
+							<td>
+								<div class="flex items-center justify-end gap-2">
+									{% if integration.type.usesWebhook and integration.webhookUrl %}
+										<form method="post" action="{{ path('admin_integration_test', {'id': integration.id}) }}">
+											<input type="hidden" name="_token" value="{{ csrf_token('admin_integration_test_' ~ integration.id) }}">
+											<button type="submit" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Tester la connexion">
+												<span class="material-icons text-lg block">wifi_tethering</span>
+											</button>
+										</form>
+									{% endif %}
+									<a href="{{ path('admin_integration_update', {'id': integration.id}) }}" class="p-2 hover:bg-warning/20 rounded-sm transition-colors text-warning" title="Modifier">
+										<span class="material-icons text-lg block">edit</span>
+									</a>
+									{% include 'admin/integration/_delete_form.html.twig' with {'integration': integration} %}
+								</div>
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="5" class="text-center py-12 opacity-40">
+								<span class="material-icons text-4xl block mb-2">extension_off</span>
+								Aucune intégration configurée.
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+	</main>
+{% endblock %}

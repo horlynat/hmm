@@ -1,3 +1,9 @@
 framework:
     mailer:
         dsn: '%env(MAILER_DSN)%'
+        # Expéditeur par défaut du Mailer : utilisé par le Notifier (canal email des
+        # alertes admin, cf. App\Service\AdminAlertNotifier) qui n'a pas d'autre moyen
+        # de connaître le "from" à employer. EmailManager continue de définir le sien
+        # explicitement par e-mail (mêmes adresse et libellé, cf. services.yaml).
+        envelope:
+            sender: '%app.default_sender%'

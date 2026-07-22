@@ -6,13 +6,15 @@ use App\Entity\Media;
 use App\Entity\Testimonial;
 use App\Form\TestimonialType;
 use App\Repository\TestimonialRepository;
+use App\Security\Voter\TestimonialVoter;
+use App\Service\AuditLogger;
 use App\Service\MediaUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Attribute\MapEntity;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -36,7 +38,7 @@ final class AdminTestimonialController extends AbstractController
     #[Route('/index', name: 'index', methods: ['GET'])]
     public function index(Request $request, TestimonialRepository $testimonialRepository): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(TestimonialVoter::VIEW);
 
         $statusFilter = $request->query->get('status', '');
         $search = trim((string) $request->query->get('search', ''));
@@ -69,9 +71,9 @@ final class AdminTestimonialController extends AbstractController
     // =========================================================================
 
     #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
-    public function create(Request $request, EntityManagerInterface $entityManager, MediaUploader $mediaUploader): Response
+    public function create(Request $request, EntityManagerInterface $entityManager, MediaUploader $mediaUploader, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(TestimonialVoter::CREATE);
 
         $testimonial = new Testimonial();
         $form = $this->createForm(TestimonialType::class, $testimonial);
@@ -81,6 +83,9 @@ final class AdminTestimonialController extends AbstractController
             $this->handleMediaUpload($testimonial, $form, $entityManager, $mediaUploader);
 
             $entityManager->persist($testimonial);
+            $entityManager->flush();
+
+            $auditLogger->log(Testimonial::class, $testimonial->getId(), $testimonial->getAuthor(), 'created');
             $entityManager->flush();
 
             $this->addFlash('success', 'Le témoignage a été créé avec succès (en attente de publication).');
@@ -101,7 +106,7 @@ final class AdminTestimonialController extends AbstractController
     #[Route('/{id}/read', name: 'read', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function read(Testimonial $testimonial): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(TestimonialVoter::VIEW, $testimonial);
 
         return $this->render('admin/testimonial/read.html.twig', [
             'testimonial' => $testimonial,
@@ -113,9 +118,9 @@ final class AdminTestimonialController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/update', name: 'update', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
-    public function update(Testimonial $testimonial, Request $request, EntityManagerInterface $entityManager, MediaUploader $mediaUploader): Response
+    public function update(Testimonial $testimonial, Request $request, EntityManagerInterface $entityManager, MediaUploader $mediaUploader, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(TestimonialVoter::EDIT, $testimonial);
 
         $form = $this->createForm(TestimonialType::class, $testimonial);
         $form->handleRequest($request);
@@ -123,6 +128,7 @@ final class AdminTestimonialController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $this->handleMediaUpload($testimonial, $form, $entityManager, $mediaUploader);
 
+            $auditLogger->log(Testimonial::class, $testimonial->getId(), $testimonial->getAuthor(), 'updated');
             $entityManager->flush();
             $this->addFlash('success', 'Le témoignage a été mis à jour avec succès.');
 
@@ -140,12 +146,13 @@ final class AdminTestimonialController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/publish', name: 'publish', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function publish(Testimonial $testimonial, EntityManagerInterface $entityManager, Request $request): Response
+    public function publish(Testimonial $testimonial, EntityManagerInterface $entityManager, Request $request, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(TestimonialVoter::APPROVE, $testimonial);
 
         if ($this->isCsrfTokenValid('testimonial_publish_'.$testimonial->getId(), $request->request->get('_token'))) {
             $testimonial->setPublishedAt(new \DateTimeImmutable());
+            $auditLogger->log(Testimonial::class, $testimonial->getId(), $testimonial->getAuthor(), 'published');
             $entityManager->flush();
 
             $this->addFlash('success', 'Le témoignage a été publié.');
@@ -161,12 +168,13 @@ final class AdminTestimonialController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/unpublish', name: 'unpublish', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function unpublish(Testimonial $testimonial, EntityManagerInterface $entityManager, Request $request): Response
+    public function unpublish(Testimonial $testimonial, EntityManagerInterface $entityManager, Request $request, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(TestimonialVoter::REJECT, $testimonial);
 
         if ($this->isCsrfTokenValid('testimonial_publish_'.$testimonial->getId(), $request->request->get('_token'))) {
             $testimonial->setPublishedAt(null);
+            $auditLogger->log(Testimonial::class, $testimonial->getId(), $testimonial->getAuthor(), 'unpublished');
             $entityManager->flush();
 
             $this->addFlash('success', 'Le témoignage a été dépublié.');
@@ -189,7 +197,7 @@ final class AdminTestimonialController extends AbstractController
         Request $request,
         MediaUploader $mediaUploader,
     ): Response {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(TestimonialVoter::DELETE, $testimonial);
 
         if ($this->isCsrfTokenValid('admin_testimonial_delete_media_'.$media->getId(), $request->request->get('_token'))) {
             $mediaUploader->delete(basename($media->getFilePath()), 'testimonials');
@@ -211,15 +219,16 @@ final class AdminTestimonialController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function delete(Testimonial $testimonial, EntityManagerInterface $entityManager, Request $request, MediaUploader $mediaUploader): Response
+    public function delete(Testimonial $testimonial, EntityManagerInterface $entityManager, Request $request, MediaUploader $mediaUploader, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(TestimonialVoter::DELETE, $testimonial);
 
         if ($this->isCsrfTokenValid('admin_testimonial_delete_'.$testimonial->getId(), $request->request->get('_token'))) {
             foreach ($testimonial->getMedia() as $media) {
                 $mediaUploader->delete(basename($media->getFilePath()), 'testimonials');
             }
 
+            $auditLogger->log(Testimonial::class, $testimonial->getId(), $testimonial->getAuthor(), 'deleted');
             $entityManager->remove($testimonial);
             $entityManager->flush();
 
@@ -250,7 +259,7 @@ final class AdminTestimonialController extends AbstractController
                 $media = new Media();
                 $media
                     ->setFilePath($result['path'])
-                    ->setAltText($testimonial->getAuthor() ?? 'Testimonial Media')
+                    ->setAltText($testimonial->getAuthor())
                     ->setMimeType($result['mimeType'])
                     ->setSize($result['size'])
                     ->setType($result['type'])

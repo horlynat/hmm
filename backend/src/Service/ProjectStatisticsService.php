@@ -24,6 +24,8 @@ class ProjectStatisticsService
 
     /**
      * 📊 Statistiques globales pour un utilisateur
+     *
+     * @return array{totalBudget: float, totalSpent: float, totalProjects: int, overBudgetCount: int, lowBudgetCount: int, remainingBudget: float}
      */
     public function getUserProjectStatistics(User $user): array
     {
@@ -57,6 +59,8 @@ class ProjectStatisticsService
 
     /**
      * 📊 Statistiques détaillées pour un projet
+     *
+     * @return array{totalBudget: float, totalSpent: float, remainingBudget: float, percentageUsed: float, expenseCount: int, historyCount: int, collaboratorCount: int}
      */
     public function getProjectStatistics(Project $project): array
     {
@@ -88,6 +92,8 @@ class ProjectStatisticsService
 
     /**
      * 📊 Données pour les graphiques du dashboard
+     *
+     * @return array{projectsByStatus: array<string, int>, budgetByStatus: array<string, float>, expensesByMonth: array<string, float>}
      */
     public function getChartData(): array
     {

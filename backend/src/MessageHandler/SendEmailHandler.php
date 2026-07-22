@@ -7,7 +7,6 @@ use App\Message\SendEmail;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Mime\Address;
@@ -35,7 +34,7 @@ class SendEmailHandler
 
             $this->logger->info('Email envoyé', ['to' => $message->to, 'subject' => $message->subject]);
 
-        } catch (TransportExceptionInterface|\Throwable $e) {
+        } catch (\Throwable $e) {
             $this->logger->error('Échec envoi email : ' . $e->getMessage(), ['to' => $message->to]);
             throw $e;
         }

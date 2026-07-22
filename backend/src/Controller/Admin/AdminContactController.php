@@ -5,6 +5,8 @@ namespace App\Controller\Admin;
 use App\Entity\ContactMessage;
 use App\Enum\ContactMessageStatusEnum;
 use App\Repository\ContactMessageRepository;
+use App\Security\Voter\ContactVoter;
+use App\Service\AuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,7 +34,7 @@ final class AdminContactController extends AbstractController
     #[Route('/index', name: 'index', methods: ['GET'])]
     public function index(Request $request, ContactMessageRepository $contactMessageRepository): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(ContactVoter::VIEW);
 
         $statusFilter = $request->query->get('status', '');
         $search = trim((string) $request->query->get('search', ''));
@@ -74,7 +76,7 @@ final class AdminContactController extends AbstractController
     #[Route('/{id}/read', name: 'read', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function read(ContactMessage $contactMessage, EntityManagerInterface $entityManager): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(ContactVoter::VIEW, $contactMessage);
 
         if (ContactMessageStatusEnum::NEW === $contactMessage->getStatus()) {
             $contactMessage->markAsRead();
@@ -91,12 +93,13 @@ final class AdminContactController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/archive', name: 'archive', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function archive(ContactMessage $contactMessage, EntityManagerInterface $entityManager, Request $request): Response
+    public function archive(ContactMessage $contactMessage, EntityManagerInterface $entityManager, Request $request, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(ContactVoter::ARCHIVE, $contactMessage);
 
         if ($this->isCsrfTokenValid('archive_'.$contactMessage->getId(), $request->request->get('_token'))) {
             $contactMessage->archive();
+            $auditLogger->log(ContactMessage::class, $contactMessage->getId(), $contactMessage->getSubject(), 'archived');
             $entityManager->flush();
 
             $this->addFlash('success', 'Le message a été archivé avec succès.');
@@ -112,11 +115,12 @@ final class AdminContactController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function delete(ContactMessage $contactMessage, EntityManagerInterface $entityManager, Request $request): Response
+    public function delete(ContactMessage $contactMessage, EntityManagerInterface $entityManager, Request $request, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(ContactVoter::DELETE, $contactMessage);
 
         if ($this->isCsrfTokenValid('admin_contact_delete_'.$contactMessage->getId(), $request->request->get('_token'))) {
+            $auditLogger->log(ContactMessage::class, $contactMessage->getId(), $contactMessage->getSubject(), 'deleted');
             $entityManager->remove($contactMessage);
             $entityManager->flush();
 

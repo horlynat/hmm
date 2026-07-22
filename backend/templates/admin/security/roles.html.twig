@@ -1,0 +1,70 @@
+{# templates/admin/security/roles.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Rôles & Permissions
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="mb-8">
+			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+				<span class="material-icons text-brand-primary">key</span>
+				<span>Rôles & Permissions</span>
+			</h1>
+			<p class="text-sm opacity-60 mt-1">Hiérarchie des rôles et matrice des permissions appliquées par les Voters.</p>
+		</div>
+
+		<!-- 🪜 HIÉRARCHIE -->
+		<div class="soft-card p-6 mb-8">
+			<h2 class="font-heading font-bold text-lg mb-4 text-brand-dark">Hiérarchie des rôles</h2>
+			<div class="flex flex-wrap items-center gap-2">
+				{% for role in roles %}
+					<span class="badge bg-brand-light text-brand-primary">{{ role }}
+						<span class="opacity-60">({{ roleCounts[role] }})</span>
+					</span>
+					{% if not loop.last %}
+						<span class="material-icons text-sm opacity-40">chevron_right</span>
+					{% endif %}
+				{% endfor %}
+			</div>
+			<p class="text-xs opacity-50 mt-3">Chaque rôle hérite de tous les droits du rôle précédent (cf. <code>security.yaml</code> → <code>role_hierarchy</code>).</p>
+		</div>
+
+		<!-- 📊 MATRICE DES PERMISSIONS -->
+		{% for group, permissions in permissionGroups %}
+			<div class="soft-card mb-6">
+				<div class="p-4 border-b border-gray-100">
+					<h3 class="font-heading font-bold text-brand-dark">{{ group }}</h3>
+				</div>
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Permission</th>
+							{% for role in roles %}
+								<th class="text-center">{{ role }}</th>
+							{% endfor %}
+						</tr>
+					</thead>
+					<tbody>
+						{% for permission, minRoleIndex in permissions %}
+							<tr>
+								<td class="font-mono text-xs">{{ permission }}</td>
+								{% for role in roles %}
+									<td class="text-center">
+										{% if loop.index0 >= minRoleIndex %}
+											<span class="material-icons text-success text-base">check_circle</span>
+										{% else %}
+											<span class="material-icons text-gray-300 text-base">cancel</span>
+										{% endif %}
+									</td>
+								{% endfor %}
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		{% endfor %}
+	</main>
+{% endblock %}

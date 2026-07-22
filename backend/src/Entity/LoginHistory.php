@@ -20,11 +20,11 @@ class LoginHistory
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'loginHistory')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(["api_admin"])] // visible uniquement côté admin
-    private ?User $user = null;
+    private User $user;
 
     #[ORM\Column(type: 'datetime_immutable')]
     #[Groups(["api_admin"])]
-    private ?\DateTimeImmutable $loginAt = null;
+    private \DateTimeImmutable $loginAt;
 
     #[ORM\Column(length: 45, nullable: true)]
     #[Groups(["api_admin"])]
@@ -47,19 +47,19 @@ class LoginHistory
         return $this->id;
     }
 
-    public function getUser(): ?User
+    public function getUser(): User
     {
         return $this->user;
     }
 
-    public function setUser(?User $user): self
+    public function setUser(User $user): self
     {
         $this->user = $user;
 
         return $this;
     }
 
-    public function getLoginAt(): ?\DateTimeImmutable
+    public function getLoginAt(): \DateTimeImmutable
     {
         return $this->loginAt;
     }

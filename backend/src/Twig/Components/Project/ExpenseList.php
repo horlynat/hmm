@@ -4,6 +4,8 @@ namespace App\Twig\Components\Project;
 
 use App\Entity\Project;
 use App\Entity\ProjectExpense;
+use App\Enum\ProjectStatusEnum;
+use App\Security\Voter\ProjectVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -27,7 +29,7 @@ class ExpenseList extends AbstractController
     #[LiveAction]
     public function removeExpense(#[LiveArg] int $expenseId, EntityManagerInterface $entityManager): void
     {
-        $this->denyAccessUnlessGranted('EDIT', $this->project);
+        $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $this->project);
 
         if ($this->isProjectLocked()) {
             throw new \LogicException("Le projet est verrouillé.");
@@ -46,6 +48,6 @@ class ExpenseList extends AbstractController
 
     public function isProjectLocked(): bool
     {
-        return in_array($this->project->getStatus()->value, ['COMPLETED', 'SUSPENDED'], true);
+        return in_array($this->project->getStatus(), [ProjectStatusEnum::COMPLETED, ProjectStatusEnum::SUSPENDED], true);
     }
 }

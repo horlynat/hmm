@@ -5,17 +5,16 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Form\UserType;
 use App\Repository\UserRepository;
+use App\Security\Voter\UserVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Component\Form\FormInterface;
 
 #[Route('/admin/users', name: 'user_')]
-#[Security("is_granted('ROLE_ADMIN')")] 
 final class UserController extends AbstractController
 {
     /**
@@ -36,7 +35,9 @@ final class UserController extends AbstractController
     #[Route(name: 'index', methods: ['GET'])]
     public function index(): Response
     {
-        $users = $this->userRepository->findAll();
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        $users = $this->userRepository->findClients();
 
         return $this->render('user/index.html.twig', [
             'users' => $users,
@@ -52,6 +53,8 @@ final class UserController extends AbstractController
     #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
     public function create(Request $request): Response
     {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
         $user = new User();
         $form = $this->createForm(UserType::class, $user);
         $form->handleRequest($request);
@@ -86,6 +89,8 @@ final class UserController extends AbstractController
             throw $this->createNotFoundException("Utilisateur #$id introuvable.");
         }
 
+        $this->denyAccessUnlessGranted(UserVoter::VIEW, $user);
+
         return $this->render('user/read.html.twig', [
             'user' => $user,
         ]);
@@ -106,6 +111,8 @@ final class UserController extends AbstractController
         if (!$user) {
             throw $this->createNotFoundException("Utilisateur #$id introuvable.");
         }
+
+        $this->denyAccessUnlessGranted(UserVoter::EDIT, $user);
 
         $form = $this->createForm(UserType::class, $user);
         $form->handleRequest($request);
@@ -139,6 +146,8 @@ final class UserController extends AbstractController
         if (!$user) {
             throw $this->createNotFoundException("Utilisateur #$id introuvable.");
         }
+
+        $this->denyAccessUnlessGranted(UserVoter::DELETE, $user);
 
         if ($this->isCsrfTokenValid('delete'.$user->getId(), $request->request->get('_token'))) {
             $this->entityManager->remove($user);

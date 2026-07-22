@@ -18,6 +18,7 @@ enum ProjectStatusEnum: string
         self::COMPLETED->value => [],
     ];
 
+    /** @return array<int, string> */
     public static function all(): array
     {
         return array_column(self::cases(), 'value');
@@ -47,6 +48,6 @@ enum ProjectStatusEnum: string
 
     public function canTransitionTo(self $newStatus): bool
     {
-        return in_array($newStatus->value, self::VALID_TRANSITIONS[$this->value] ?? []);
+        return in_array($newStatus->value, self::VALID_TRANSITIONS[$this->value]);
     }
 }

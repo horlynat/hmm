@@ -1,0 +1,39 @@
+{% import 'profile/macros.html.twig' as macros %}
+
+<div class="bg-var(--surface-2) border-[0.5px] border-var(--border) rounded-xl py-4 px-4 card-hover">
+	<p class="flex items-center gap-2 text-xs font-medium text-var(--text-muted) uppercase tracking-wider mb-4">
+		<span class="material-icons">shield</span>
+		Sécurité
+	</p>
+
+	<div class="space-y-5">
+		<div class="flex items-center justify-between">
+			<p class="text-sm text-var(--text-secondary)">Email vérifié</p>
+			{{ macros.badge(user.isVerified ? 'Oui' : 'Non', user.isVerified ? 'green' : 'red', user.isVerified ? 'check_circle' : 'cancel') }}
+		</div>
+
+		<div class="flex items-center justify-between">
+			<p class="text-sm text-var(--text-secondary)">2FA activé</p>
+			{{ macros.badge(user.isTwoFactorEnabled ? 'Oui' : 'Non', user.isTwoFactorEnabled ? 'green' : 'red', user.isTwoFactorEnabled ? 'check_circle' : 'cancel') }}
+		</div>
+
+		<div>
+			<p class="text-sm text-var(--text-secondary) mb-1">Dernier changement de mot de passe</p>
+			<p class="text-sm font-medium text-var(--text-primary)">
+				{{ user.passwordChangedAt ? user.passwordChangedAt|date('d/m/Y à H:i') : 'Jamais' }}
+			</p>
+		</div>
+
+		<div class="pt-2 border-t border-var(--border) flex flex-wrap gap-2">
+			<a href="{{ path('profile_change_password', {'id': user.id}) }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white dark:bg-var(--surface-2) text-slate-600 dark:text-var(--text-secondary) text-sm font-medium hover:bg-slate-50 dark:hover:bg-var(--surface-1) transition-colors shadow-sm">
+				<span class="material-icons-outlined text-[16px]">lock_reset</span>
+				Changer le mot de passe
+			</a>
+			<a href="{{ path('profile_two_factor_index') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white dark:bg-var(--surface-2) text-slate-600 dark:text-var(--text-secondary) text-sm font-medium hover:bg-slate-50 dark:hover:bg-var(--surface-1) transition-colors shadow-sm">
+				<span class="material-icons-outlined text-[16px]">shield_moon</span>
+				Gérer la 2FA
+			</a>
+		</div>
+	</div>
+</div>
+

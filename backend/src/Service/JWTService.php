@@ -63,7 +63,7 @@ class JWTService
      * Génère un JWT pour l'authentification (login).
      *
      * @param int $userId ID de l'utilisateur
-     * @param array $roles Rôles de l'utilisateur (doit être un tableau de strings)
+     * @param array<int, mixed> $roles Rôles de l'utilisateur (validés comme strings à l'exécution)
      * @return string Token JWT
      * @throws InvalidArgumentException Si les rôles ne sont pas valides
      */
@@ -97,8 +97,8 @@ class JWTService
     /**
      * Génère un JWT avec les paramètres donnés.
      *
-     * @param array $header En-tête du JWT
-     * @param array $payload Charge utile du JWT
+     * @param array<string, mixed> $header En-tête du JWT
+     * @param array<string, mixed> $payload Charge utile du JWT
      * @param int $validity Durée de validité en secondes
      * @return string Token JWT
      * @throws InvalidArgumentException Si les paramètres sont invalides
@@ -180,7 +180,7 @@ class JWTService
      *
      * @param string $token Token JWT à valider
      * @param string|null $expectedPurpose Purpose attendu (ex: 'email_verification' ou 'authentication')
-     * @return array Payload du token
+     * @return array<string, mixed> Payload du token
      * @throws InvalidArgumentException Si le token est invalide
      */
     public function validate(string $token, ?string $expectedPurpose = null): array
@@ -212,7 +212,9 @@ class JWTService
             )
         );
 
-        if ($parts[2] !== $expectedSignature) {
+        // hash_equals() : comparaison en temps constant, pour ne pas exposer la
+        // signature attendue à une attaque temporelle via un simple !==.
+        if (!hash_equals($expectedSignature, $parts[2])) {
             throw new InvalidArgumentException('Signature JWT invalide.');
         }
 
@@ -241,7 +243,7 @@ class JWTService
      * Récupère le payload d'un token (sans validation).
      *
      * @param string $token Token JWT
-     * @return array Payload décodé
+     * @return array<string, mixed> Payload décodé
      * @throws InvalidArgumentException Si le token est mal formé
      */
     public function getPayload(string $token): array
@@ -258,6 +260,7 @@ class JWTService
             }
             return $payload;
         } catch (JsonException $e) {
+            $this->logError('Échec du décodage JSON du payload JWT', ['error' => $e->getMessage()]);
             throw new InvalidArgumentException('Échec du décodage JSON du payload JWT : ' . $e->getMessage());
         }
     }
@@ -266,7 +269,7 @@ class JWTService
      * Récupère le header d'un token (sans validation).
      *
      * @param string $token Token JWT
-     * @return array Header décodé
+     * @return array<string, mixed> Header décodé
      * @throws InvalidArgumentException Si le token est mal formé
      */
     public function getHeader(string $token): array
@@ -283,6 +286,7 @@ class JWTService
             }
             return $header;
         } catch (JsonException $e) {
+            $this->logError('Échec du décodage JSON du header JWT', ['error' => $e->getMessage()]);
             throw new InvalidArgumentException('Échec du décodage JSON du header JWT : ' . $e->getMessage());
         }
     }
@@ -375,7 +379,7 @@ class JWTService
      * Journalise une erreur.
      *
      * @param string $message Message d'erreur
-     * @param array $context Contexte supplémentaire
+     * @param array<string, mixed> $context Contexte supplémentaire
      */
     private function logError(string $message, array $context = []): void
     {

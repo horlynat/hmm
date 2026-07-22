@@ -8,6 +8,7 @@ enum ContactMessageStatusEnum: string
     case READ = 'lu';
     case ARCHIVED = 'archive';
 
+    /** @return array<int, string> */
     public static function all(): array
     {
         return array_column(self::cases(), 'value');
