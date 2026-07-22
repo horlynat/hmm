@@ -15,7 +15,7 @@ class AppExtension extends AbstractExtension
         ];
     }
 
-    public function formatPercentage($value, int $decimals = 0): string
+    public function formatPercentage(mixed $value, int $decimals = 0): string
     {
         if (!is_numeric($value)) {
             return '0 %';
@@ -25,7 +25,7 @@ class AppExtension extends AbstractExtension
     }
 
     // Méthode de conversion pour le filtre float
-    public function toFloat($value): float
+    public function toFloat(mixed $value): float
     {
         return (float) $value;
     }

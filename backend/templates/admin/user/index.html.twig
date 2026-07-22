@@ -1,0 +1,97 @@
+{# templates/admin/user/index.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des administrateurs
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+			<div>
+				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+					<span class="material-icons text-brand-primary">admin_panel_settings</span>
+					<span>Administrateurs</span>
+				</h1>
+				<p class="text-sm opacity-60 mt-1">Gérez les comptes, rôles et permissions des administrateurs.</p>
+			</div>
+			<a href="{{ path('admin_user_create') }}" class="btn btn-primary gap-2">
+				<span class="material-icons text-sm">add_circle</span>
+				<span>Ajouter un administrateur</span>
+			</a>
+		</div>
+
+		<!-- 📊 TABLEAU -->
+		<div class="soft-card">
+			<table class="table">
+				<thead>
+					<tr>
+						<th class="w-16">Id</th>
+						<th>Compte</th>
+						<th>Rôles</th>
+						<th>Statut</th>
+						<th>Dernière connexion</th>
+						<th class="w-40 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for admin in admins %}
+						<tr>
+							<td class="font-mono text-xs opacity-50">{{ admin.id }}</td>
+							<td>
+								<div class="flex items-center gap-3">
+									<img class="h-9 w-9 rounded-full" src="{{ admin.profileImage ?? 'https://ui-avatars.com/api/?name=' ~ (admin.fullName ?? admin.email)|url_encode }}" alt="{{ admin.fullName ?? admin.email }}">
+									<div>
+										<div class="font-bold text-brand-dark">{{ admin.fullName ?? 'Non spécifié' }}</div>
+										<div class="text-xs opacity-60">{{ admin.email }}</div>
+									</div>
+								</div>
+							</td>
+							<td>
+								<div class="flex flex-wrap gap-1">
+									{% for role in admin.roles %}
+										<span class="badge bg-brand-light text-brand-primary">{{ role|replace({'ROLE_': ''})|capitalize }}</span>
+									{% endfor %}
+								</div>
+							</td>
+							<td>
+								{% if admin.isActive %}
+									<span class="badge bg-success/10 text-success">Actif</span>
+								{% else %}
+									<span class="badge bg-danger/10 text-danger">Désactivé</span>
+								{% endif %}
+								{% if admin.isTwoFactorEnabled %}
+									<span class="badge bg-brand-light text-brand-primary" title="2FA activé">2FA</span>
+								{% endif %}
+							</td>
+							<td class="text-sm opacity-70">
+								{{ admin.lastLoginAt ? admin.lastLoginAt|date('d/m/Y H:i') : 'Jamais' }}
+							</td>
+							<td>
+								<div class="flex items-center justify-end gap-2">
+									<a href="{{ path('admin_user_read', {'id': admin.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir">
+										<span class="material-icons text-lg block">visibility</span>
+									</a>
+									<a href="{{ path('admin_user_update', {'id': admin.id}) }}" class="p-2 hover:bg-warning/20 rounded-sm transition-colors text-warning" title="Modifier">
+										<span class="material-icons text-lg block">edit</span>
+									</a>
+									{% if admin.id != app.user.id %}
+										{{ include('admin/user/_delete_form.html.twig', {'user': admin}) }}
+									{% endif %}
+								</div>
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="6" class="text-center py-12 opacity-40">
+								<span class="material-icons text-4xl block mb-2">admin_panel_settings</span>
+								<span>Aucun administrateur trouvé.</span>
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</main>
+{% endblock %}

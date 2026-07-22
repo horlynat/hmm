@@ -1,0 +1,58 @@
+{# templates/admin/integration/_form.html.twig #}
+{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+	<div class="lg:col-span-2 space-y-6 card">
+		<div>
+			{{ form_label(form.type, 'Type', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+			{{ form_widget(form.type, {'attr': {'class': 'input w-full'}}) }}
+			{{ form_errors(form.type, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+		</div>
+
+		<div>
+			{{ form_label(form.name, 'Nom', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+			{{ form_widget(form.name, {'attr': {'class': 'input w-full'}}) }}
+			{{ form_errors(form.name, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+		</div>
+
+		<div>
+			{{ form_label(form.webhookUrl, 'URL du webhook (Slack)', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+			{{ form_widget(form.webhookUrl, {'attr': {'class': 'input w-full'}}) }}
+			{{ form_errors(form.webhookUrl, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+		</div>
+
+		<div>
+			{{ form_label(form.apiKey, 'Clé API / Token', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+			{{ form_widget(form.apiKey, {'attr': {'class': 'input w-full'}}) }}
+			{{ form_errors(form.apiKey, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			{% if integration.hasApiKey %}
+				<p class="text-xs opacity-50 mt-1">Un secret est déjà enregistré pour cette intégration.</p>
+			{% endif %}
+		</div>
+
+		<div class="flex items-center gap-2">
+			{{ form_widget(form.isActive, {'attr': {'class': 'checkbox'}}) }}
+			{{ form_label(form.isActive, null, {'label_attr': {'class': 'text-sm font-bold text-brand-dark'}}) }}
+		</div>
+	</div>
+
+	<div class="space-y-6">
+		<div class="card space-y-4">
+			<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 flex items-center gap-2">
+				<span class="material-icons text-sm">bolt</span>
+				Actions
+			</h3>
+			<div class="text-xs opacity-80 bg-brand-light/30 p-3 rounded-sm flex items-center gap-2 text-brand-dark border border-brand-light">
+				<span class="material-icons text-sm">lock</span>
+				<span>La clé API est chiffrée avant stockage et n'est jamais réaffichée.</span>
+			</div>
+			<div class="pt-2">
+				<button type="submit" class="btn btn-primary w-full gap-2">
+					<span class="material-icons text-sm">save</span>
+					<span>{{ button_label|default('Enregistrer') }}</span>
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+{{ form_end(form) }}

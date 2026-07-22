@@ -1,26 +1,3 @@
-templates/
-└── admin/
-    └── project/
-        ├── components/                   # Composants réutilisables ou Symfony UX
-        │   ├── _badge_status.html.twig   # Utilisé par projects.html.twig et read.html.twig
-        │   ├── _budget_summary.html.twig # Utilisé par read.html.twig et statistics.html.twig
-        │   ├── _expense_list.html.twig   # Inclus dans l'onglet "Dépenses" de la fiche projet
-        │   ├── _history_timeline.html.twig # Inclus dans l'onglet "Historique" de la fiche projet
-        │   └── _media_grid.html.twig     # Inclus dans l'onglet "Détails & Médias" de la fiche projet
-        │
-        ├── collaborator/                 # 🆕 Géré par addCollaborator()
-        │   └── add.html.twig             # Formulaire d'invitation d'un collaborateur
-        │
-        ├── expense/                      # 🆕 Géré par addExpense()
-        │   └── new.html.twig             # Formulaire de création d'une dépense
-        │
-        ├── projects.html.twig            # 🔄 Corrigé (au lieu d'index.html.twig) - Reçu par index()
-        ├── read.html.twig                # Reçu par read() - Gère l'affichage complet par onglets
-        ├── create.html.twig              # Reçu par create() - Formulaire de création globale
-        ├── update.html.twig              # Reçu par update() - Formulaire de mise à jour globale
-        └── statistics.html.twig          # Reçu par statistics() - Dashboard financier complet
-
-        
 
 📂 Arborescence Admin (vue hiérarchique)
 Principal
@@ -76,89 +53,160 @@ FAQ
 Contact support
 
 
-Étape 1 — Suppression de Webpack Encore
+## Matrice complète rôles × permissions
 
-# Supprimer Encore et tout l'écosystème Babel/Webpack
-npm remove @symfony/webpack-encore webpack webpack-cli \
-  babel-loader @babel/core @babel/preset-env \
-  babel-plugin-polyfill-corejs3 \
-  compression-webpack-plugin \
-  webpack-bundle-analyzer \
-  dotenv-webpack
-
-# Supprimer le fichier de config Webpack
-rm webpack.config.js
-
-
-Étape 2 — Installation de Vite et ses plugins
-
-# Bundle Symfony pour Vite (côté PHP)
-composer require pentatrion/vite-bundle
-
-# Packages npm
-npm install --save-dev \
-  vite \
-  vite-plugin-symfony
-
-npm install \
-  @tailwindcss/vite
-
-
-Étape 3 — Création de vite.config.js
-
-// vite.config.js
-import { defineConfig } from "vite";
-import symfonyPlugin from "vite-plugin-symfony";
-import tailwindcss from "@tailwindcss/vite";
-
-export default defineConfig({
-    plugins: [
-        tailwindcss(),          // ← Tailwind v4 via plugin Vite natif
-        symfonyPlugin({
-            stimulus: "./assets/controllers.json",
-        }),
-    ],
-    build: {
-        rollupOptions: {
-            input: {
-                app:       "./assets/app.js",
-                login:     "./assets/js/login.js",
-                register:  "./assets/js/register.js",
-                dashboard: "./assets/js/dashboard.js",
-                profile:   "./assets/js/profile.js",
-            },
-        },
-        manifest:    true,
-        outDir:      "public/build",
-        emptyOutDir: true,
-    },
-    server: {
-        watch: {},
-    },
-});
+Permission               USER  EDITOR  MODERATOR  MANAGER  ADMIN  SUPER_ADMIN
+─────────────────────────────────────────────────────────────────────────────
+PROJECT_VIEW              ✅     ✅       ✅         ✅       ✅       ✅
+PROJECT_EDIT              ❌     ✅       ✅         ✅       ✅       ✅
+PROJECT_DELETE            ❌     ❌       ❌         ✅       ✅       ✅
+PROJECT_MANAGE_BUDGET     ❌     ❌       ❌         ✅       ✅       ✅
+PROJECT_CHANGE_STATUS     ❌     ✅       ✅         ✅       ✅       ✅
+─────────────────────────────────────────────────────────────────────────────
+ARTICLE_VIEW              ✅     ✅       ✅         ✅       ✅       ✅
+ARTICLE_CREATE            ❌     ✅       ✅         ✅       ✅       ✅
+ARTICLE_EDIT              ❌     ✅       ✅         ✅       ✅       ✅
+ARTICLE_DELETE            ❌     ❌       ✅         ✅       ✅       ✅
+ARTICLE_PUBLISH           ❌     ❌       ✅         ✅       ✅       ✅
+─────────────────────────────────────────────────────────────────────────────
+USER_VIEW                 ❌     ❌       ✅         ✅       ✅       ✅
+USER_EDIT                 ❌     ❌       ❌         ✅       ✅       ✅
+USER_DELETE               ❌     ❌       ❌         ❌       ✅       ✅
+USER_BAN                  ❌     ❌       ✅         ✅       ✅       ✅
+USER_IMPERSONATE          ❌     ❌       ❌         ❌       ❌       ✅
+USER_CHANGE_ROLE          ❌     ❌       ❌         ❌       ✅       ✅
+─────────────────────────────────────────────────────────────────────────────
+CONTACT_VIEW              ❌     ❌       ✅         ✅       ✅       ✅
+CONTACT_REPLY             ❌     ❌       ✅         ✅       ✅       ✅
+CONTACT_DELETE            ❌     ❌       ❌         ✅       ✅       ✅
+─────────────────────────────────────────────────────────────────────────────
+QUOTE_VIEW                ❌     ❌       ❌         ✅       ✅       ✅
+QUOTE_APPROVE             ❌     ❌       ❌         ✅       ✅       ✅
+QUOTE_CONVERT             ❌     ❌       ❌         ❌       ✅       ✅
+─────────────────────────────────────────────────────────────────────────────
+TESTIMONIAL_APPROVE       ❌     ❌       ✅         ✅       ✅       ✅
+TESTIMONIAL_FEATURE       ❌     ❌       ❌         ✅       ✅       ✅
+─────────────────────────────────────────────────────────────────────────────
+SECURITY_VIEW_LOGS        ❌     ❌       ❌         ❌       ✅       ✅
+SECURITY_FORCE_LOGOUT     ❌     ❌       ❌         ❌       ✅       ✅
+USER_IMPERSONATE          ❌     ❌       ❌         ❌       ❌       ✅
+DASHBOARD_EXPORT          ❌     ❌       ❌         ✅       ✅       ✅
+─────────────────────────────────────────────────────────────────────────────
+SETTINGS_VIEW_CONFIG      ❌     ❌       ❌         ❌       ✅       ✅
+SETTINGS_MANAGE_CONFIG    ❌     ❌       ❌         ❌       ✅       ✅
+SETTINGS_VIEW_NOTIFICATIONS   ❌ ❌       ❌         ❌       ✅       ✅
+SETTINGS_MANAGE_NOTIFICATIONS ❌ ❌       ❌         ❌       ✅       ✅
+SETTINGS_VIEW_INTEGRATIONS    ❌ ❌       ❌         ❌       ✅       ✅
+SETTINGS_MANAGE_INTEGRATIONS  ❌ ❌       ❌         ❌       ✅       ✅
+SETTINGS_VIEW_BACKUPS     ❌     ❌       ❌         ❌       ✅       ✅
+SETTINGS_CREATE_BACKUP    ❌     ❌       ❌         ❌       ✅       ✅
+SETTINGS_DOWNLOAD_BACKUP  ❌     ❌       ❌         ❌       ✅       ✅
+SETTINGS_DELETE_BACKUP    ❌     ❌       ❌         ❌       ❌       ✅
+SETTINGS_RESTORE_BACKUP   ❌     ❌       ❌         ❌       ❌       ✅
 
 
 
-Étape 4 — Création de config/packages/pentatrion_vite.yaml
+## Voters (permissions par objet/ressource)
 
-# config/packages/pentatrion_vite.yaml
-pentatrion_vite:
-    build_directory: build
-    proxy_url: http://localhost:5173
+// ── Project ──────────────────────────────────────────────────────
+PROJECT_VIEW             // Voir un projet
+PROJECT_EDIT             // Modifier un projet
+PROJECT_DELETE           // Supprimer un projet
+PROJECT_MANAGE_BUDGET    // Gérer le budget
+PROJECT_ADD_EXPENSE      // Ajouter une dépense
+PROJECT_ADD_COLLABORATOR // Ajouter un collaborateur
+PROJECT_CHANGE_STATUS    // Changer le statut
+PROJECT_ARCHIVE          // Archiver un projet
 
+// ── Article / Blog ───────────────────────────────────────────────
+ARTICLE_VIEW             // Voir un article (même non publié)
+ARTICLE_CREATE           // Créer un article
+ARTICLE_EDIT             // Modifier un article
+ARTICLE_DELETE           // Supprimer un article
+ARTICLE_PUBLISH          // Publier/dépublier un article
+ARTICLE_MANAGE_TAGS      // Gérer les tags
 
+// ── Skill ────────────────────────────────────────────────────────
+SKILL_CREATE
+SKILL_EDIT
+SKILL_DELETE
+SKILL_REORDER            // Changer l'ordre d'affichage
 
-Étape 5 — Mise à jour des scripts package.json
+// ── Course / Formation ───────────────────────────────────────────
+COURSE_CREATE
+COURSE_EDIT
+COURSE_DELETE
+COURSE_VALIDATE          // Valider/certifier une formation
 
-npm pkg set scripts.dev="vite"
-npm pkg set scripts.watch="vite"
-npm pkg set scripts.build="vite build"
-npm pkg set scripts.preview="vite preview"
+// ── User / Compte ────────────────────────────────────────────────
+USER_VIEW                // Voir le profil d'un user
+USER_EDIT                // Modifier un user
+USER_DELETE              // Supprimer un user
+USER_BAN                 // Bannir/désactiver un user
+USER_IMPERSONATE         // Usurper l'identité
+USER_CHANGE_ROLE         // Changer les rôles
+USER_RESET_PASSWORD      // Forcer la réinitialisation du mot de passe
+USER_VERIFY              // Vérifier manuellement un compte
 
+// ── Contact / Message ────────────────────────────────────────────
+CONTACT_VIEW             // Voir les messages de contact
+CONTACT_REPLY            // Répondre à un message
+CONTACT_DELETE           // Supprimer un message
+CONTACT_ARCHIVE          // Archiver un message
+CONTACT_MARK_SPAM        // Marquer comme spam
 
+// ── QuoteRequest / Devis ─────────────────────────────────────────
+QUOTE_VIEW
+QUOTE_EDIT
+QUOTE_DELETE
+QUOTE_APPROVE            // Accepter un devis
+QUOTE_REJECT             // Refuser un devis
+QUOTE_CONVERT            // Convertir en projet
 
-Étape 6 — Suppression de postcss.config.cjs
-Avec Vite + @tailwindcss/vite, PostCSS n'est plus nécessaire comme fichier séparé — le plugin Vite le gère en interne.
+// ── Testimonial / Témoignage ─────────────────────────────────────
+TESTIMONIAL_VIEW
+TESTIMONIAL_APPROVE      // Approuver (rendre public)
+TESTIMONIAL_REJECT       // Refuser
+TESTIMONIAL_DELETE
+TESTIMONIAL_FEATURE      // Mettre en avant
 
-postcss.config.cjs 2>/dev/null
-rm postcss.config.mjs 2>/dev/null
+// ── Media / Fichiers ─────────────────────────────────────────────
+MEDIA_UPLOAD
+MEDIA_DELETE
+MEDIA_VIEW_PRIVATE       // Voir les médias non publics
+
+// ── Dashboard / Statistiques ─────────────────────────────────────
+DASHBOARD_VIEW
+DASHBOARD_VIEW_STATS     // Voir les statistiques
+DASHBOARD_EXPORT         // Exporter les données (CSV, PDF)
+DASHBOARD_VIEW_LOGS      // Voir les logs de sécurité
+
+// ── Sécurité / Audit ─────────────────────────────────────────────
+SECURITY_VIEW_LOGS       // Voir l'historique des connexions
+SECURITY_MANAGE_2FA      // Gérer la 2FA
+SECURITY_FORCE_LOGOUT    // Déconnecter un user de force
+SECURITY_VIEW_IPS        // Voir les IPs des users
+SECURITY_MANAGE_SESSIONS // Gérer les sessions actives
+
+// ── Paramètres (Configuration / Notifications / Intégrations / Sauvegardes) ──
+SETTINGS_VIEW_CONFIG          // Voir la configuration système (branding, thème, langues)
+SETTINGS_MANAGE_CONFIG        // Modifier la configuration système
+SETTINGS_VIEW_NOTIFICATIONS   // Voir les préférences de notification par importance
+SETTINGS_MANAGE_NOTIFICATIONS // Activer/désactiver un canal de notification
+SETTINGS_VIEW_INTEGRATIONS    // Voir les intégrations externes
+SETTINGS_MANAGE_INTEGRATIONS  // Créer/modifier/supprimer/tester une intégration
+SETTINGS_VIEW_BACKUPS         // Voir la liste des sauvegardes
+SETTINGS_CREATE_BACKUP        // Déclencher une sauvegarde
+SETTINGS_DOWNLOAD_BACKUP      // Télécharger une sauvegarde
+SETTINGS_DELETE_BACKUP        // Supprimer une sauvegarde (SUPER_ADMIN uniquement)
+SETTINGS_RESTORE_BACKUP       // Restaurer la base depuis une sauvegarde (SUPER_ADMIN uniquement, action irréversible)
+
+## Attributs Symfony natifs (non personnalisables)
+
+IS_AUTHENTICATED_FULLY        // Connecté sans "remember me"
+IS_AUTHENTICATED_REMEMBERED   // Connecté via "remember me"
+IS_AUTHENTICATED              // Connecté d'une façon ou d'une autre
+IS_ANONYMOUS                  // Non connecté
+PUBLIC_ACCESS                 // Toujours autorisé (même anonyme)
+IS_IMPERSONATOR               // Est en train d'usurper une identité
+

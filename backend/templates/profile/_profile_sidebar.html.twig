@@ -1,0 +1,107 @@
+{# templates/profile/_profile_header.html.twig #}
+{% import 'profile/macros.html.twig' as macros %}
+
+<div
+	class="flex flex-col gap-4">
+	{# Carte identité premium #}
+	<div class="bg-var(--surface-2) border-[0.5px] border-var(--border) rounded-xl overflow-hidden card-hover">
+		<div class="relative h-24 bg-linear-to-br from-indigo-600 to-purple-700 overflow-hidden">
+			<div class="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1px)] bg-length:18px_18px"></div>
+			<div class="absolute -bottom-12 left-1/2 -translate-x-1/2">
+				<div class="w-24 h-24 rounded-full border-4 border-var(--surface-2) overflow-hidden shadow-lg">
+					{% if user.profileImage %}
+						<img src="{{ user.profileImage }}" alt="Photo de profil" class="w-full h-full object-cover">
+					{% else %}
+						<div class="w-full h-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
+							{{ (user.fullName ?? user.email)|slice(0, 1)|upper }}
+						</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+		<div class="pt-16 pb-4 text-center border-b-[0.5px] border-var(--border)">
+			<p class="text-lg font-semibold text-var(--text-primary)">{{ user.fullName ?? 'Utilisateur' }}</p>
+			<p class="text-sm text-var(--text-muted) mt-1 break-all">{{ user.email }}</p>
+			<div class="flex justify-center gap-2 flex-wrap mt-3">
+				{% for role in user.roles %}
+					{{ macros.badge(role|replace({'ROLE_': ''})|upper, role == 'ROLE_ADMIN' ? 'blue' : 'slate', role == 'ROLE_ADMIN' ? 'admin_panel_settings' : 'person') }}
+				{% else %}
+					<span class="text-xs text-var(--text-muted)">Aucun rôle</span>
+				{% endfor %}
+			</div>
+		</div>
+		<div class="py-3 px-4 flex items-center justify-between">
+			<span class="text-sm text-var(--text-muted)">ID Utilisateur</span>
+			<code class="font-mono text-sm text-var(--text-secondary) bg-var(--surface-1) border-[0.5px] border-var(--border) py-0.5 px-2 rounded">#{{ user.id }}</code>
+		</div>
+		{# Barre de progression #}
+		<div class="px-4 pb-4">
+			<div class="flex justify-between text-xs text-var(--text-muted) mb-1">
+				<span>Profil complété à</span>
+				<span>{{ completionPercentage|default(0) }}%</span>
+			</div>
+			<div class="h-1.5 bg-var(--surface-1) rounded-full overflow-hidden">
+				<div class="progress-bar" style="width: {{ completionPercentage|default(0) }}%;"></div>
+			</div>
+		</div>
+	</div>
+
+	{# Statuts #}
+	<div class="bg-var(--surface-2) border-[0.5px] border-var(--border) rounded-xl py-4 px-4 card-hover">
+		<p class="text-xs font-medium text-var(--text-muted) uppercase tracking-wider mb-4">Statuts du compte</p>
+		<div class="space-y-3">
+			<div class="flex items-center justify-between py-2 border-b-[0.5px] border-var(--border) last:border-0">
+				<div class="flex items-center gap-3">
+					<span class="material-icons text-var(--text-muted)">mail</span>
+					<span class="text-sm text-var(--text-secondary)">Email vérifié</span>
+				</div>
+				{{ macros.badge(user.isVerified ? 'Vérifié' : 'Non vérifié', user.isVerified ? 'green' : 'red', user.isVerified ? 'check_circle' : 'cancel') }}
+			</div>
+			<div class="flex items-center justify-between py-2 border-b-[0.5px] border-var(--border) last:border-0">
+				<div class="flex items-center gap-3">
+					<span class="material-icons text-var(--text-muted)">check_circle</span>
+					<span class="text-sm text-var(--text-secondary)">Compte actif</span>
+				</div>
+				{{ macros.badge(user.isActive ? 'Actif' : 'Inactif', user.isActive ? 'green' : 'red', user.isActive ? 'check_circle' : 'cancel') }}
+			</div>
+			<div class="flex items-center justify-between py-2">
+				<div class="flex items-center gap-3">
+					<span class="material-icons text-var(--text-muted)">security</span>
+					<span class="text-sm text-var(--text-secondary)">2FA activé</span>
+				</div>
+				{{ macros.badge(user.isTwoFactorEnabled ? 'Oui' : 'Non', user.isTwoFactorEnabled ? 'green' : 'red', user.isTwoFactorEnabled ? 'check_circle' : 'cancel') }}
+			</div>
+		</div>
+	</div>
+
+	{# Actions #}
+	<div class="bg-var(--surface-2) border-[0.5px] border-var(--border) rounded-xl py-4 px-4 card-hover">
+		<p class="text-xs font-medium text-var(--text-muted) uppercase tracking-wider mb-4">Actions rapides</p>
+		<div class="space-y-2">
+			<a href="{{ path('profile_update', {'id': user.id}) }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-var(--radius) text-sm font-medium border-[0.5px] border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700 transition">
+				<span class="material-icons">edit</span>
+				<span>Modifier le profil</span>
+			</a>
+			<a href="{{ path('profile_change_password', {'id': user.id}) }}" class="flex items-center justify-center gap-2 w-full py-2.5 rounded-var(--radius) text-sm font-medium border-[0.5px] border-amber-600 bg-amber-50 text-amber-700 hover:bg-amber-100 transition">
+				<span class="material-icons">lock_reset</span>
+				<span>Changer le mot de passe</span>
+			</a>
+		</div>
+	</div>
+
+	{# Informations système #}
+	<div class="bg-var(--surface-2) border-[0.5px] border-var(--border) rounded-xl py-4 px-4 card-hover">
+		<p class="text-xs font-medium text-var(--text-muted) uppercase tracking-wider mb-4">Informations système</p>
+		<div class="space-y-3">
+			<div class="flex justify-between text-sm">
+				<span class="text-var(--text-muted)">Date de création</span>
+				<span class="font-medium text-var(--text-primary)">{{ user.createdAt|date('d/m/Y') }}</span>
+			</div>
+			<div class="flex justify-between text-sm">
+				<span class="text-var(--text-muted)">Dernière mise à jour</span>
+				<span class="font-medium text-var(--text-primary)">{{ user.updatedAt|date('d/m/Y H:i') }}</span>
+			</div>
+		</div>
+	</div>
+</div>
+

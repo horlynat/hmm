@@ -33,6 +33,101 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
+    /**
+     * @return User[] Comptes ayant un rôle d'administration (ROLE_ADMIN ou ROLE_SUPER_ADMIN)
+     */
+    public function findAdmins(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.roles LIKE :roleAdmin OR u.roles LIKE :roleSuperAdmin')
+            ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
+            ->setParameter('roleSuperAdmin', '%"ROLE_SUPER_ADMIN"%')
+            ->orderBy('u.fullName', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return User[] Comptes ayant le rôle collaborateur (pros/freelances associés à des projets)
+     */
+    public function findCollaborators(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.roles LIKE :roleEditor')
+            ->andWhere('u.roles NOT LIKE :roleAdmin')
+            ->andWhere('u.roles NOT LIKE :roleSuperAdmin')
+            ->setParameter('roleEditor', '%"ROLE_EDITOR"%')
+            ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
+            ->setParameter('roleSuperAdmin', '%"ROLE_SUPER_ADMIN"%')
+            ->orderBy('u.fullName', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return User[] Comptes clients "purs" (ni admin, ni collaborateur)
+     */
+    public function findClients(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.roles NOT LIKE :roleAdmin')
+            ->andWhere('u.roles NOT LIKE :roleSuperAdmin')
+            ->andWhere('u.roles NOT LIKE :roleEditor')
+            ->andWhere('u.roles NOT LIKE :roleModerator')
+            ->andWhere('u.roles NOT LIKE :roleManager')
+            ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
+            ->setParameter('roleSuperAdmin', '%"ROLE_SUPER_ADMIN"%')
+            ->setParameter('roleEditor', '%"ROLE_EDITOR"%')
+            ->setParameter('roleModerator', '%"ROLE_MODERATOR"%')
+            ->setParameter('roleManager', '%"ROLE_MANAGER"%')
+            ->orderBy('u.fullName', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return User[] Comptes dont le mot de passe n'a pas été renouvelé depuis $days jours
+     */
+    public function findWithStalePassword(int $days = 90): array
+    {
+        $threshold = new \DateTimeImmutable(sprintf('-%d days', $days));
+
+        return $this->createQueryBuilder('u')
+            ->andWhere('COALESCE(u.passwordChangedAt, u.createdAt) < :threshold')
+            ->setParameter('threshold', $threshold)
+            ->orderBy('u.fullName', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Comptes n'ayant pas la 2FA opérationnelle (case non cochée, ou cochée sans secret
+     * TOTP confirmé — voir User::isTotpAuthenticationEnabled()).
+     */
+    public function countWithoutTwoFactor(): int
+    {
+        return (int) $this->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->andWhere('u.isTwoFactorEnabled = false OR u.totpSecret IS NULL')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * @return User[] Comptes qui ne se sont pas connectés depuis $days jours (ou jamais)
+     */
+    public function findInactiveSince(int $days = 30): array
+    {
+        $threshold = new \DateTimeImmutable(sprintf('-%d days', $days));
+
+        return $this->createQueryBuilder('u')
+            ->andWhere('COALESCE(u.lastLoginAt, u.createdAt) < :threshold')
+            ->setParameter('threshold', $threshold)
+            ->orderBy('u.lastLoginAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     //    /**
     //     * @return User[] Returns an array of User objects
     //     */

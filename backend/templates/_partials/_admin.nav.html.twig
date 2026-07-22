@@ -1,17 +1,22 @@
 {# 📌 Détection automatique de la route actuelle pour ouvrir le bon accordéon au chargement #}
 {% set currentRoute = app.request.attributes.get('_route') %}
 {% set isContenuActive = currentRoute starts with 'admin_project' or currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_tag' or currentRoute starts with 'admin_article' or currentRoute starts with 'admin_course' or currentRoute starts with 'admin_experience' %}
-{% set isUtilisateursActive = currentRoute starts with 'user_index' or currentRoute starts with 'admin_user' or currentRoute starts with 'admin_contact' or currentRoute starts with 'admin_request' or currentRoute starts with 'admin_testimonial' %}
-{% set isSecuriteActive = currentRoute starts with 'admin_log' or currentRoute starts with 'admin_session' or currentRoute starts with 'admin_role' or currentRoute starts with 'admin_audit' %}
+{% set isUtilisateursActive = currentRoute starts with 'user_' or currentRoute starts with 'admin_user' or currentRoute starts with 'admin_collaborator' or currentRoute starts with 'admin_contact' or currentRoute starts with 'admin_request' or currentRoute starts with 'admin_testimonial' %}
+{% set isSecuriteActive = currentRoute starts with 'admin_security_' %}
 {% set isParametresActive = currentRoute starts with 'admin_config' or currentRoute starts with 'admin_notification' or currentRoute starts with 'admin_integration' or currentRoute starts with 'admin_backup' %}
 
 <aside class="fixed inset-y-0 left-0 z-50 w-64 h-full bg-(--bg-default) border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out
 			       md:translate-x-0 md:static md:h-screen shadow-xl md:shadow-none" :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'">
-	<!-- 🏢 LOGO & ENTÊTE -->
-	<div class="p-6 border-b border-gray-200 flex items-center justify-between shrink-0">
-		<div>
-			<h1 class="text-xl font-heading font-bold text-(--brand-dark)">Soft UI Admin</h1>
-			<p class="text-sm text-(--brand-dark)">Portfolio Admin</p>
+	<!-- 🏢 LOGO & ENTÊTE (configurable : Paramètres > Configuration) -->
+	<div class="p-6 border-b border-gray-200 flex items-center gap-3 justify-between shrink-0">
+		<div class="flex items-center gap-3 min-w-0">
+			{% if settings.logoPath %}
+				<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-9 w-9 rounded-lg object-cover shrink-0">
+			{% endif %}
+			<div class="min-w-0">
+				<h1 class="text-xl font-heading font-bold text-(--brand-dark) truncate">{{ settings.siteName }}</h1>
+				<p class="text-sm text-(--brand-dark) truncate">Portfolio Admin</p>
+			</div>
 		</div>
 		<button @click="mobileSidebarOpen = false" class="md:hidden p-1 rounded-lg text-(--brand-dark) hover:bg-gray-100" aria-label="Fermer le menu">
 			<span class="material-icons">close</span>
@@ -88,11 +93,15 @@
 			</button>
 
 			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_user_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_user' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-user-shield text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Admins
 				</a>
-				<a href="{{ path('user_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'user_index' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+				<a href="{{ path('admin_collaborator_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_collaborator' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+					<i class="ti ti-users-group text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Collaborateurs
+				</a>
+				<a href="{{ path('user_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'user_' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-user-dollar text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Clients
 				</a>
@@ -124,27 +133,27 @@
 			</button>
 
 			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_security_log_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_log' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-file-text text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Logs système
 				</a>
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_security_session_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_session' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-device-desktop-analytics text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Sessions actives
 				</a>
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_security_role_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_role' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-key text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Rôles & Perms
 				</a>
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_security_audit_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_audit' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-eye text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Audit & Monitor
 				</a>
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_security_two_factor_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_two_factor' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-shield-check text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Double Facteur (2FA)
 				</a>
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_security_policy_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_policy' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-lock-square-rounded text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Politiques sécu
 				</a>
@@ -164,19 +173,19 @@
 			</button>
 
 			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_config_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_config' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-adjustments text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Configuration
 				</a>
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_notification_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_notification' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-bell text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Notifications
 				</a>
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_integration_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_integration' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-plug text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Intégrations API
 				</a>
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+				<a href="{{ path('admin_backup_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_backup' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-database-export text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Sauvegardes
 				</a>

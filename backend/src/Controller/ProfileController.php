@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\ProfileType;
+use App\Security\Voter\UserVoter;
 use App\Service\GeolocationService;
 use App\Service\ProfileCompletionService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,6 +15,12 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+/**
+ * Page de profil (self-service) : accessible dès ROLE_USER, mais uniquement pour
+ * soi-même. Un administrateur peut consulter/modifier le profil d'un autre
+ * utilisateur (UserVoter::VIEW / EDIT / RESET_PASSWORD, mêmes règles que les
+ * contrôleurs Admin*), un simple client ne le peut jamais.
+ */
 #[Route('/profile', name: 'profile_', methods: ['GET', 'POST'])]
 #[IsGranted('ROLE_USER')]
 class ProfileController extends AbstractController
@@ -24,6 +31,8 @@ class ProfileController extends AbstractController
         ProfileCompletionService $completionService,
         GeolocationService $geolocationService
     ): Response {
+        $this->denyAccessUnlessSelfOrGranted(UserVoter::VIEW, $user);
+
         $completionPercentage = $completionService->calculateCompletionPercentage($user);
 
         // Récupérer la localisation basée sur l'IP
@@ -46,6 +55,8 @@ class ProfileController extends AbstractController
         EntityManagerInterface $entityManager,
         UserPasswordHasherInterface $passwordHasher
     ): Response {
+        $this->denyAccessUnlessSelfOrGranted(UserVoter::EDIT, $user);
+
         $form = $this->createForm(ProfileType::class, $user);
         $form->handleRequest($request);
 
@@ -87,6 +98,8 @@ class ProfileController extends AbstractController
         EntityManagerInterface $entityManager,
         UserPasswordHasherInterface $passwordHasher
     ): Response {
+        $this->denyAccessUnlessSelfOrGranted(UserVoter::RESET_PASSWORD, $user);
+
         $form = $this->createForm(ProfileType::class, $user, [
             'validation_groups' => ['change_password'],
         ]);
@@ -113,5 +126,21 @@ class ProfileController extends AbstractController
             'user' => $user,
             'form' => $form->createView(),
         ]);
+    }
+
+    /**
+     * Autorise l'action si $user est le compte connecté, sinon retombe sur
+     * $attribute (UserVoter), qui gère les règles admin (self-service exclu :
+     * un simple ROLE_USER ne passe jamais ce second cas, seul un admin le peut).
+     */
+    private function denyAccessUnlessSelfOrGranted(string $attribute, User $user): void
+    {
+        $currentUser = $this->getUser();
+
+        if ($currentUser instanceof User && $user->getId() === $currentUser->getId()) {
+            return;
+        }
+
+        $this->denyAccessUnlessGranted($attribute, $user);
     }
 }

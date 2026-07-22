@@ -2,6 +2,9 @@ twig:
     default_path: '%kernel.project_dir%/templates'
     globals:
         app_currency: 'EUR' # ou 'XAF' selon ton besoin
+        # Utilisé par base.html.twig pour appliquer réellement la configuration système
+        # (branding, thème, langue — Paramètres > Configuration) sur chaque page admin.
+        systemSettingRepository: '@App\Repository\SystemSettingRepository'
 
     file_name_pattern: '*.twig'
 

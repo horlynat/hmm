@@ -3,13 +3,25 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Project;
+use App\Enum\ContactMessageStatusEnum;
 use App\Enum\ProjectStatusEnum;
+use App\Repository\ArticleRepository;
+use App\Repository\ContactMessageRepository;
+use App\Repository\CourseRepository;
+use App\Repository\ExperienceRepository;
+use App\Repository\FailedLoginAttemptRepository;
 use App\Repository\ProjectRepository;
+use App\Repository\QuoteRequestRepository;
+use App\Repository\SkillRepository;
+use App\Repository\TestimonialRepository;
 use App\Repository\UserRepository;
+use App\Security\Voter\DashboardVoter;
 use App\Service\ProjectStatisticsService;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -32,10 +44,22 @@ class AdminDashboardController extends AbstractController
     public function index(
         ProjectRepository $projectRepository,
         UserRepository $userRepository,
+        QuoteRequestRepository $quoteRequestRepository,
+        ContactMessageRepository $contactMessageRepository,
+        ArticleRepository $articleRepository,
+        SkillRepository $skillRepository,
+        CourseRepository $courseRepository,
+        ExperienceRepository $experienceRepository,
+        TestimonialRepository $testimonialRepository,
+        FailedLoginAttemptRepository $failedLoginAttemptRepository,
         ProjectStatisticsService $statisticsService,
-        EntityManagerInterface $entityManager 
+        EntityManagerInterface $entityManager,
+        Connection $connection,
+        #[Autowire('%kernel.project_dir%')]
+        string $projectDir,
     ): Response {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        // Vue d'ensemble avec figures financières agrégées : réservée à Modérateur et plus.
+        $this->denyAccessUnlessGranted(DashboardVoter::VIEW_STATS);
 
         // Récupération des statistiques budgétaires globales
         $stats = Project::getBudgetStatistics($entityManager);
@@ -75,6 +99,74 @@ class AdminDashboardController extends AbstractController
             ->getQuery()
             ->getResult();
 
+        // Projets dont l'échéance tombe dans les 15 prochains jours (hors projets déjà terminés)
+        $now = new \DateTimeImmutable();
+        $deadlineProjects = $projectRepository->createQueryBuilder('p')
+            ->where('p.deadline IS NOT NULL')
+            ->andWhere('p.deadline BETWEEN :now AND :horizon')
+            ->andWhere('p.status != :completed')
+            ->setParameter('now', $now)
+            ->setParameter('horizon', $now->modify('+15 days'))
+            ->setParameter('completed', ProjectStatusEnum::COMPLETED)
+            ->orderBy('p.deadline', 'ASC')
+            ->setMaxResults(5)
+            ->getQuery()
+            ->getResult();
+
+        $upcomingDeadlines = array_map(
+            static fn (Project $project) => [
+                'project' => $project,
+                'daysRemaining' => $now->diff($project->getDeadline())->days,
+            ],
+            $deadlineProjects,
+        );
+
+        // Demandes de devis en attente (statut = null) : compteur pour le KPI + aperçu pour le flux d'activité
+        $pendingQuoteRequestsCount = $quoteRequestRepository->countByStatus(null);
+        $recentQuoteRequests = array_slice($quoteRequestRepository->findByStatus(null), 0, 5);
+
+        // Taux de conversion des devis (acceptés / total)
+        $totalQuoteRequests = $quoteRequestRepository->count([]);
+        $quoteConversionRate = $totalQuoteRequests > 0
+            ? round($quoteRequestRepository->countByStatus(true) / $totalQuoteRequests * 100, 1)
+            : 0.0;
+
+        // Messages de contact non lus : compteur pour le KPI + aperçu pour le flux d'activité
+        $unreadContactsCount = $contactMessageRepository->countUnread();
+        $recentContacts = array_slice($contactMessageRepository->findByStatus(ContactMessageStatusEnum::NEW), 0, 5);
+
+        // Espace disque du serveur applicatif (mesure réelle, pas de service de monitoring externe disponible)
+        $diskTotal = disk_total_space($projectDir);
+        $diskFree = disk_free_space($projectDir);
+        $diskUsedPercent = ($diskTotal !== false && $diskFree !== false && $diskTotal > 0)
+            ? round((($diskTotal - $diskFree) / $diskTotal) * 100, 1)
+            : null;
+
+        // ── Sécurité ────────────────────────────────────────────────────────
+        $usersWithoutTwoFactorCount = $userRepository->countWithoutTwoFactor();
+        $recentFailedLoginAttemptsCount = $failedLoginAttemptRepository->countSince(
+            new \DateTimeImmutable('-24 hours'),
+        );
+        // Même définition de "session active" que AdminSecuritySessionController::index()
+        $activeSessionsCount = (int) $connection->fetchOne(
+            'SELECT COUNT(*) FROM sessions WHERE sess_time + sess_lifetime >= :now',
+            ['now' => time()],
+        );
+
+        // ── Équipe & utilisateurs ───────────────────────────────────────────
+        $adminsCount = count($userRepository->findAdmins());
+        $collaboratorsCount = count($userRepository->findCollaborators());
+        $clientsCount = count($userRepository->findClients());
+
+        // ── Contenu ─────────────────────────────────────────────────────────
+        $articlesCount = $articleRepository->count([]);
+        $skillsCount = $skillRepository->count([]);
+        $coursesCount = $courseRepository->count([]);
+        $experiencesCount = $experienceRepository->count([]);
+
+        // ── Modération ──────────────────────────────────────────────────────
+        $pendingTestimonialsCount = count($testimonialRepository->findPending());
+
         return $this->render('admin/dashboard/index.html.twig', [
             'stats' => $stats,
             'projectsByStatus' => $projectsByStatus,
@@ -83,7 +175,25 @@ class AdminDashboardController extends AbstractController
             'overBudgetProjects' => $overBudgetProjects,
             'lowBudgetProjects' => $lowBudgetProjects,
             'activeUsers' => $activeUsers,
+            'upcomingDeadlines' => $upcomingDeadlines,
+            'pendingQuoteRequestsCount' => $pendingQuoteRequestsCount,
+            'recentQuoteRequests' => $recentQuoteRequests,
+            'quoteConversionRate' => $quoteConversionRate,
+            'unreadContactsCount' => $unreadContactsCount,
+            'recentContacts' => $recentContacts,
+            'diskUsedPercent' => $diskUsedPercent,
             'chartData' => $statisticsService->getChartData(),
+            'usersWithoutTwoFactorCount' => $usersWithoutTwoFactorCount,
+            'recentFailedLoginAttemptsCount' => $recentFailedLoginAttemptsCount,
+            'activeSessionsCount' => $activeSessionsCount,
+            'adminsCount' => $adminsCount,
+            'collaboratorsCount' => $collaboratorsCount,
+            'clientsCount' => $clientsCount,
+            'articlesCount' => $articlesCount,
+            'skillsCount' => $skillsCount,
+            'coursesCount' => $coursesCount,
+            'experiencesCount' => $experiencesCount,
+            'pendingTestimonialsCount' => $pendingTestimonialsCount,
         ]);
     }
 
@@ -97,7 +207,7 @@ class AdminDashboardController extends AbstractController
         UserRepository $userRepository,
         Request $request
     ): Response {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(DashboardVoter::VIEW);
 
         // Récupération des filtres et paramètres
         $status = $request->query->get('status');
@@ -178,7 +288,18 @@ class AdminDashboardController extends AbstractController
             'statuses' => ProjectStatusEnum::cases(),
             'page' => $page,
             'totalPages' => $totalPages,
-            'filters' => $request->query->all(),
+            // Toujours une clé par filtre connu du template, même sans aucun paramètre
+            // en query string : un tableau PHP [] vide fait planter `filters.search`
+            // en Twig strict_variables (ambiguïté séquence/mapping sur un tableau vide).
+            'filters' => [
+                'status' => $status,
+                'budget_status' => $budgetStatus,
+                'owner' => $ownerId,
+                'collaborator' => $collaboratorId,
+                'search' => $search,
+                'sort' => $sort,
+                'direction' => strtolower($direction),
+            ],
         ]);
     }
 
@@ -229,7 +350,13 @@ class AdminDashboardController extends AbstractController
             'users' => $users,
             'page' => $page,
             'totalPages' => $totalPages,
-            'filters' => $request->query->all(),
+            // Toujours une clé par filtre connu du template : voir le commentaire
+            // équivalent dans projects() pour l'ambiguïté séquence/mapping Twig.
+            'filters' => [
+                'search' => $search,
+                'sort' => $sort,
+                'direction' => strtolower($direction),
+            ],
         ]);
     }
 }

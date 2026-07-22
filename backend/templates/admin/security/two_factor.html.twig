@@ -1,0 +1,61 @@
+{# templates/admin/security/two_factor.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Double Facteur (2FA){% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="mb-8">
+			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+				<span class="material-icons text-brand-primary">shield_moon</span>
+				<span>Double Facteur (2FA)</span>
+			</h1>
+			<p class="text-sm opacity-60 mt-1">Statut de la double authentification par compte. L'activation reste en libre-service ; seule la désactivation forcée (perte d'accès à l'application d'authentification) se fait ici.</p>
+		</div>
+
+		<!-- 📊 TABLEAU -->
+		<div class="soft-card">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Compte</th>
+						<th>Rôles</th>
+						<th>2FA</th>
+						<th class="w-40 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for user in users %}
+						<tr>
+							<td class="font-medium text-brand-dark">{{ user.fullName ?? user.email }}</td>
+							<td class="text-sm opacity-70">{{ user.roles|join(', ') }}</td>
+							<td>
+								{% if user.isTotpAuthenticationEnabled %}
+									<span class="badge bg-success/10 text-success">Activée</span>
+								{% else %}
+									<span class="badge bg-gray-200 text-gray-500">Désactivée</span>
+								{% endif %}
+							</td>
+							<td class="text-right">
+								{% if user.isTotpAuthenticationEnabled %}
+									<form method="post" action="{{ path('admin_security_two_factor_disable', {id: user.id}) }}" onsubmit="return confirm('Forcer la désactivation de la 2FA pour {{ user.email }} ?');">
+										<input type="hidden" name="_token" value="{{ csrf_token('admin_security_two_factor_disable_' ~ user.id) }}">
+										<button type="submit" class="p-2 hover:bg-danger/20 rounded-sm transition-colors text-danger" title="Forcer la désactivation">
+											<span class="material-icons text-lg block">lock_open</span>
+										</button>
+									</form>
+								{% endif %}
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="4" class="text-center py-12 opacity-40">Aucun compte.</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</main>
+{% endblock %}

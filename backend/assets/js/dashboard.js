@@ -37,14 +37,14 @@ function cssVar(name, fallback = "#9CA3AF") {
 }
 
 /**
- * Normalise `projectsByStatus` (objet clé => { label, count, badgeClass })
- * en tableau exploitable par Chart.js.
+ * Normalise `projectsByStatus` (objet label => count, tel que produit par
+ * ProjectStatisticsService::getChartData()) en tableau exploitable par Chart.js.
  */
 function normalizeProjectsByStatus(raw) {
     if (!raw) return [];
-    return Object.values(raw).map((entry) => ({
-        label: entry.label ?? "—",
-        count: Number(entry.count ?? 0),
+    return Object.entries(raw).map(([label, count]) => ({
+        label,
+        count: Number(count ?? 0),
     }));
 }
 

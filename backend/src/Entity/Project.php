@@ -43,19 +43,19 @@ class Project
     #[Assert\NotBlank(message: "Le titre est obligatoire.")]
     #[Assert\Length(min: 3, max: 255)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $title = null;
+    private string $title = '';
 
     #[ORM\Column(type: Types::TEXT)]
     #[Assert\NotBlank(message: "La description est obligatoire.")]
     #[Assert\Length(min: 20)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $description = null;
+    private string $description = '';
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le lien est obligatoire.")]
     #[Assert\Url(message: "Le lien doit être une URL valide.")]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $link = null;
+    private string $link = '';
 
     #[ORM\Column(type: 'string', enumType: ProjectStatusEnum::class)]
     #[Groups(['api_public', 'api_admin'])]
@@ -94,23 +94,28 @@ class Project
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'ownedProjects')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['api_admin'])]
-    private ?User $owner = null;
+    private User $owner;
 
+    /** @var Collection<int, User> */
     #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'collaboratingProjects')]
     #[Groups(['api_admin'])]
     private Collection $collaborators;
 
+    /** @var Collection<int, ProjectHistory> */
     #[ORM\OneToMany(mappedBy: 'project', targetEntity: ProjectHistory::class, cascade: ['persist'], orphanRemoval: true)]
     private Collection $histories;
 
+    /** @var Collection<int, ProjectExpense> */
     #[ORM\OneToMany(mappedBy: 'project', targetEntity: ProjectExpense::class, cascade: ['persist'], orphanRemoval: true)]
     #[Groups(['api_admin'])]
     private Collection $expenses;
 
+    /** @var Collection<int, Skill> */
     #[ORM\ManyToMany(targetEntity: Skill::class, inversedBy: 'projects')]
     #[Groups(['api_admin'])]
     private Collection $skills;
 
+    /** @var Collection<int, Media> */
     #[ORM\OneToMany(mappedBy: 'project', targetEntity: Media::class, cascade: ['persist'], orphanRemoval: true)]
     #[Groups(["api_detailed"])]
     private Collection $media;
@@ -149,7 +154,7 @@ class Project
         return $this->id;
     }
 
-    public function getTitle(): ?string
+    public function getTitle(): string
     {
         return $this->title;
     }
@@ -160,7 +165,7 @@ class Project
         return $this;
     }
 
-    public function getDescription(): ?string
+    public function getDescription(): string
     {
         return $this->description;
     }
@@ -171,7 +176,7 @@ class Project
         return $this;
     }
 
-    public function getLink(): ?string
+    public function getLink(): string
     {
         return $this->link;
     }
@@ -297,7 +302,7 @@ class Project
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
     }
@@ -341,12 +346,12 @@ class Project
         return $this;
     }
 
-    public function getOwner(): ?User
+    public function getOwner(): User
     {
         return $this->owner;
     }
 
-    public function setOwner(?User $owner): static
+    public function setOwner(User $owner): static
     {
         $this->owner = $owner;
         return $this;
@@ -396,11 +401,7 @@ class Project
 
     public function removeHistory(ProjectHistory $history): static
     {
-        if ($this->histories->removeElement($history)) {
-            if ($history->getProject() === $this) {
-                $history->setProject(null);
-            }
-        }
+        $this->histories->removeElement($history);
         return $this;
     }
 
@@ -423,11 +424,7 @@ class Project
 
     public function removeExpense(ProjectExpense $expense): static
     {
-        if ($this->expenses->removeElement($expense)) {
-            if ($expense->getProject() === $this) {
-                $expense->setProject(null);
-            }
-        }
+        $this->expenses->removeElement($expense);
         return $this;
     }
 
@@ -513,6 +510,7 @@ class Project
         return $this->addToHistory('created', $user, 'Projet créé');
     }
 
+    /** @param array<string, mixed> $changes */
     public function logUpdate(User $user, array $changes = []): static
     {
         $details = !empty($changes)
@@ -562,10 +560,6 @@ class Project
                 number_format((float) $expense->getAmount(), 2, ',', ' ') . ' €',
                 $expense->getDescription() ?? 'Sans description'
             ));
-
-            if ($expense->getProject() === $this) {
-                $expense->setProject(null);
-            }
         }
         return $this;
     }
@@ -626,6 +620,9 @@ class Project
         }
     }
 
+    /**
+     * @return array{totalBudget: string, totalSpent: string, totalProjects: int, overBudgetCount: int, lowBudgetCount: int, remainingBudget: string}
+     */
     public static function getBudgetStatistics(EntityManagerInterface $entityManager): array
     {
         $query = $entityManager->createQuery(

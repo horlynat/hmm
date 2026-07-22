@@ -1,0 +1,88 @@
+{# templates/admin/security/policies.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Politiques de sécurité
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="mb-8">
+			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+				<span class="material-icons text-brand-primary">lock</span>
+				<span>Politiques de sécurité</span>
+			</h1>
+			<p class="text-sm opacity-60 mt-1">Rapport de conformité en lecture — règles déjà appliquées par l'application.</p>
+		</div>
+
+		<!-- ⚙️ RÈGLES EN VIGUEUR -->
+		<div class="soft-card p-6 mb-8">
+			<h2 class="font-heading font-bold text-lg mb-4 text-brand-dark">Règles en vigueur</h2>
+			<ul class="space-y-2 text-sm">
+				<li><span class="font-medium">Mot de passe :</span> au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.</li>
+				<li><span class="font-medium">Renouvellement du mot de passe :</span> recommandé tous les {{ passwordMaxAgeDays }} jours.</li>
+				<li><span class="font-medium">Tentatives de connexion :</span> 5 par minute et par IP (rate-limiter <code>login</code>).</li>
+				<li><span class="font-medium">Session "Se souvenir de moi" :</span> 7 jours.</li>
+			</ul>
+		</div>
+
+		<!-- ⏳ MOTS DE PASSE À RENOUVELER -->
+		<div class="soft-card mb-6">
+			<div class="p-4 border-b border-gray-100">
+				<h3 class="font-heading font-bold text-brand-dark">Mots de passe à renouveler ({{ staleUsers|length }})</h3>
+				<p class="text-xs opacity-50">Comptes dont le mot de passe n'a pas été changé depuis plus de {{ passwordMaxAgeDays }} jours.</p>
+			</div>
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Compte</th>
+						<th>Dernier changement</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for user in staleUsers %}
+						<tr>
+							<td class="font-medium text-brand-dark">{{ user.fullName ?? user.email }}</td>
+							<td class="text-sm opacity-70">{{ (user.passwordChangedAt ?? user.createdAt)|date('d/m/Y') }}</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="2" class="text-center py-8 opacity-40">Aucun mot de passe à renouveler.</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+		<!-- 🚨 IPs SUSPECTES -->
+		<div class="soft-card">
+			<div class="p-4 border-b border-gray-100">
+				<h3 class="font-heading font-bold text-brand-dark">IPs suspectes ({{ suspiciousIps|length }})</h3>
+				<p class="text-xs opacity-50">Au moins {{ suspiciousIpMinAttempts }} échecs de connexion sur la dernière {{ suspiciousIpWindowHours }}h.</p>
+			</div>
+			<table class="table">
+				<thead>
+					<tr>
+						<th>IP</th>
+						<th>Tentatives</th>
+						<th>Dernière tentative</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for entry in suspiciousIps %}
+						<tr>
+							<td class="font-mono text-xs">{{ entry.ip }}</td>
+							<td><span class="badge bg-danger/10 text-danger">{{ entry.count }}</span></td>
+							<td class="text-sm opacity-70">{{ entry.lastAttempt|date('d/m/Y H:i') }}</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="3" class="text-center py-8 opacity-40">Aucune IP suspecte détectée.</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</main>
+{% endblock %}

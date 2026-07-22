@@ -2,7 +2,6 @@
 
 namespace App\Security;
 
-use App\Entity\User;
 use App\Repository\UserRepository;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -61,7 +60,7 @@ class SecurityAuthenticator extends AbstractLoginFormAuthenticator
                 if (!$user->isVerified()) {
                     throw new CustomUserMessageAuthenticationException('Votre compte n\'est pas encore vérifié.');
                 }
-                if ($user instanceof User && !$user->isActive()) {
+                if (!$user->isActive()) {
                     throw new CustomUserMessageAuthenticationException('Votre compte a été désactivé.');
                 }
 

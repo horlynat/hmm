@@ -22,11 +22,12 @@ class Tag
     #[Assert\NotBlank(message: "Le nom du tag est obligatoire.")]
     #[Assert\Length(min: 2, max: 100)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $name = null;
+    private string $name = '';
 
+    /** @var Collection<int, Article> */
     #[ORM\ManyToMany(targetEntity: Article::class, mappedBy: 'tags')]
     #[Groups(['api_admin'])] // exposé seulement côté admin
-    private ?Collection $articles;
+    private Collection $articles;
 
     /**
      * @var Collection<int, Project>
@@ -44,7 +45,7 @@ class Tag
         return $this->id;
     }
 
-    public function getName(): ?string
+    public function getName(): string
     {
         return $this->name;
     }

@@ -9,29 +9,49 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
+use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 
 /**
  * Class ProjectVoter
  *
  * Contrôle centralisé des accès et des actions sensibles sur l'entité Project.
  * Ce voter garantit que les règles métiers de sécurité sont appliquées uniformément.
- * 
+ *
  * Règles implémentées :
- * - VIEW   : Le client à qui le projet est confié, les collaborateurs (équipe de réalisation) et toi (admin) pouvez consulter le projet.
- * - EDIT   : Réservé à toi (admin), à condition que le projet soit actif (non terminé/suspendu).
- * - DELETE : Réservé à toi (admin) — action critique.
+ * - VIEW              : Le client à qui le projet est confié, les collaborateurs (équipe de réalisation) et toi (admin) pouvez consulter le projet.
+ * - EDIT               : Réservé à toi (admin), à condition que le projet soit actif (non terminé/suspendu).
+ * - DELETE             : Réservé à toi (admin) — action critique.
+ * - MANAGE_BUDGET      : Manager et plus, ET affecté au projet (ou admin), projet actif uniquement.
+ * - ADD_EXPENSE        : Manager et plus, ET affecté au projet (ou admin), projet actif uniquement.
+ * - ADD_COLLABORATOR   : Modérateur et plus, ET affecté au projet (ou admin).
+ * - CHANGE_STATUS      : Éditeur et plus, ET affecté au projet (ou admin).
+ * - ARCHIVE            : Manager et plus, ET affecté au projet (ou admin).
+ *
+ * Le seuil de rôle donne le niveau d'autorité requis ; l'affectation au projet
+ * (client ou collaborateur) donne le périmètre — un Manager n'a pas autorité sur
+ * le budget de tous les projets de l'entreprise, seulement ceux où il intervient.
+ *
+ * @extends Voter<string, Project>
  */
 class ProjectVoter extends Voter
 {
+    use RoleHierarchyAwareTrait;
+
     public const VIEW   = 'PROJECT_VIEW';
     public const EDIT   = 'PROJECT_EDIT';
     public const DELETE = 'PROJECT_DELETE';
+    public const MANAGE_BUDGET = 'PROJECT_MANAGE_BUDGET';
+    public const ADD_EXPENSE = 'PROJECT_ADD_EXPENSE';
+    public const ADD_COLLABORATOR = 'PROJECT_ADD_COLLABORATOR';
+    public const CHANGE_STATUS = 'PROJECT_CHANGE_STATUS';
+    public const ARCHIVE = 'PROJECT_ARCHIVE';
 
     /**
      * @param LoggerInterface $logger Service de journalisation (déclaré en readonly pour la sécurité d'exécution)
      */
     public function __construct(
-        private readonly LoggerInterface $logger
+        private readonly RoleHierarchyInterface $roleHierarchy,
+        private readonly LoggerInterface $logger,
     ) {}
 
     /**
@@ -45,7 +65,11 @@ class ProjectVoter extends Voter
     protected function supports(string $attribute, mixed $subject): bool
     {
         // Utilisation du mode strict (true) pour in_array afin d'éviter les fausses correspondances de type
-        return in_array($attribute, [self::VIEW, self::EDIT, self::DELETE], true)
+        return in_array($attribute, [
+            self::VIEW, self::EDIT, self::DELETE,
+            self::MANAGE_BUDGET, self::ADD_EXPENSE, self::ADD_COLLABORATOR,
+            self::CHANGE_STATUS, self::ARCHIVE,
+        ], true)
             && $subject instanceof Project;
     }
 
@@ -77,9 +101,14 @@ class ProjectVoter extends Voter
 
         // Aiguillage vers les méthodes métiers spécifiques[cite: 1]
         $decision = match ($attribute) {
-            self::VIEW   => $this->canView($project, $user),
-            self::EDIT   => $this->canEdit($project, $user),
-            self::DELETE => $this->canDelete($project, $user),
+            self::VIEW              => $this->canView($project, $user),
+            self::EDIT              => $this->canEdit($project, $user),
+            self::DELETE            => $this->canDelete($project, $user),
+            self::MANAGE_BUDGET     => $this->isProjectActive($project) && $this->hasRole($user, 'ROLE_MANAGER') && $this->isAssignedOrAdmin($project, $user),
+            self::ADD_EXPENSE       => $this->isProjectActive($project) && $this->hasRole($user, 'ROLE_MANAGER') && $this->isAssignedOrAdmin($project, $user),
+            self::ADD_COLLABORATOR  => $this->hasRole($user, 'ROLE_MODERATOR') && $this->isAssignedOrAdmin($project, $user),
+            self::CHANGE_STATUS     => $this->hasRole($user, 'ROLE_EDITOR') && $this->isAssignedOrAdmin($project, $user),
+            self::ARCHIVE           => $this->hasRole($user, 'ROLE_MANAGER') && $this->isAssignedOrAdmin($project, $user),
             default      => false,
         };
 
@@ -152,5 +181,27 @@ class ProjectVoter extends Voter
     private function canDelete(Project $project, User $user): bool
     {
         return in_array('ROLE_ADMIN', $user->getRoles(), true);
+    }
+
+    /**
+     * Un projet terminé ou suspendu ne doit plus recevoir de mouvement
+     * budgétaire (dépense, ajustement de budget).
+     */
+    private function isProjectActive(Project $project): bool
+    {
+        return !in_array($project->getStatus(), [ProjectStatusEnum::COMPLETED, ProjectStatusEnum::SUSPENDED], true);
+    }
+
+    /**
+     * Périmètre des actions "staff" (budget, dépenses, collaborateurs, statut,
+     * archivage) : un admin peut toujours agir ; sinon il faut être un
+     * collaborateur affecté à CE projet précis (pas juste avoir le rôle requis
+     * quelque part dans l'entreprise). Le client est volontairement exclu : ce
+     * sont des actions de pilotage interne, pas des actions client.
+     */
+    private function isAssignedOrAdmin(Project $project, User $user): bool
+    {
+        return in_array('ROLE_ADMIN', $user->getRoles(), true)
+            || $project->getCollaborators()->contains($user);
     }
 }

@@ -24,11 +24,12 @@ class SkillCategory
     #[Assert\NotBlank(message: "Le nom de la catégorie est obligatoire.")]
     #[Assert\Length(min: 3, max: 100)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $name = null;
+    private string $name = '';
 
+    /** @var Collection<int, Skill> */
     #[ORM\OneToMany(targetEntity: Skill::class, mappedBy: 'skillCategory')]
     #[Groups(['api_admin'])] // exposé seulement côté admin
-    private ?Collection $skill;
+    private Collection $skill;
 
     public function __construct()
     {
@@ -40,7 +41,7 @@ class SkillCategory
         return $this->id;
     }
 
-    public function getName(): ?string
+    public function getName(): string
     {
         return $this->name;
     }
@@ -72,11 +73,7 @@ class SkillCategory
 
     public function removeSkill(Skill $skill): static
     {
-        if ($this->skill->removeElement($skill)) {
-            if ($skill->getSkillCategory() === $this) {
-                $skill->setSkillCategory(null);
-            }
-        }
+        $this->skill->removeElement($skill);
 
         return $this;
     }

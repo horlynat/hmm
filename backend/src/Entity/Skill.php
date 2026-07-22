@@ -25,14 +25,15 @@ class Skill
     #[Assert\NotBlank(message: "Le nom de la compétence est obligatoire.")]
     #[Assert\Length(min: 2, max: 255)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $name = null;
+    private string $name = '';
 
     #[ORM\Column(type: Types::INTEGER)]
     #[Assert\NotNull(message: "Le niveau est obligatoire.")]
     #[Assert\Range(min: 1, max: 10)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?int $level = null;
+    private int $level = 1;
 
+    /** @var Collection<int, Project> */
     #[ORM\ManyToMany(targetEntity: Project::class, mappedBy: 'skills')]
     #[Groups(['api_admin'])] // exposé seulement côté admin
     private Collection $projects;
@@ -41,7 +42,7 @@ class Skill
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(message: "La catégorie de compétence est obligatoire.")]
     #[Groups(['api_admin'])] // exposé seulement côté admin
-    private ?SkillCategory $skillCategory = null;
+    private SkillCategory $skillCategory;
 
     public function __construct()
     {
@@ -53,7 +54,7 @@ class Skill
         return $this->id;
     }
 
-    public function getName(): ?string
+    public function getName(): string
     {
         return $this->name;
     }
@@ -64,7 +65,7 @@ class Skill
         return $this;
     }
 
-    public function getLevel(): ?int
+    public function getLevel(): int
     {
         return $this->level;
     }
@@ -100,12 +101,12 @@ class Skill
         return $this;
     }
 
-    public function getSkillCategory(): ?SkillCategory
+    public function getSkillCategory(): SkillCategory
     {
         return $this->skillCategory;
     }
 
-    public function setSkillCategory(?SkillCategory $skillCategory): static
+    public function setSkillCategory(SkillCategory $skillCategory): static
     {
         $this->skillCategory = $skillCategory;
         return $this;

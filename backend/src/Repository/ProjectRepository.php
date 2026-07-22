@@ -9,6 +9,8 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * Repository pour gérer les projets et leurs statistiques.
+ *
+ * @extends ServiceEntityRepository<Project>
  */
 class ProjectRepository extends ServiceEntityRepository
 {
@@ -19,6 +21,9 @@ class ProjectRepository extends ServiceEntityRepository
 
     /**
      * 🔎 Recherche ultra-avancée globale de projets avec filtres dynamiques, tri et pagination.
+     *
+     * @param array<string, mixed> $filters
+     * @return Project[]
      */
     public function findByFilters(array $filters = []): array
     {
@@ -66,7 +71,7 @@ class ProjectRepository extends ServiceEntityRepository
                     $qb->andWhere('p.deadline < :now')
                        ->andWhere('p.status != :statusDone')
                        ->setParameter('now', $now)
-                       ->setParameter('statusDone', ProjectStatusEnum::DONE); // cite: 7
+                       ->setParameter('statusDone', ProjectStatusEnum::COMPLETED); // cite: 7
                     break;
                 case 'imminent': // Échéance sous 7 jours
                     $limit = (clone $now)->modify('+7 days');
@@ -74,7 +79,7 @@ class ProjectRepository extends ServiceEntityRepository
                        ->andWhere('p.status != :statusDone')
                        ->setParameter('now', $now)
                        ->setParameter('limit', $limit)
-                       ->setParameter('statusDone', ProjectStatusEnum::DONE); // cite: 7
+                       ->setParameter('statusDone', ProjectStatusEnum::COMPLETED); // cite: 7
                     break;
             }
         }
@@ -117,7 +122,7 @@ class ProjectRepository extends ServiceEntityRepository
                 case 'profitable': // Rentable & Terminé
                     $qb->andWhere('p.status = :statusDone')
                        ->andWhere('p.spent < p.budget')
-                       ->setParameter('statusDone', ProjectStatusEnum::DONE); // cite: 7
+                       ->setParameter('statusDone', ProjectStatusEnum::COMPLETED); // cite: 7
                     break;
             }
         }
@@ -192,6 +197,8 @@ class ProjectRepository extends ServiceEntityRepository
 
     /**
      * 📌 Récupère les projets par statut.
+     *
+     * @return Project[]
      */
     public function findByStatus(ProjectStatusEnum $status): array
     {
@@ -200,12 +207,14 @@ class ProjectRepository extends ServiceEntityRepository
             ->setParameter('status', $status)
             ->orderBy('p.createdAt', 'DESC')
             ->getQuery()
-            ->getResult() ?? []; // cite: 6
+            ->getResult(); // cite: 6
     }
 
     /**
      * 📌 Compte les projets par statut.
      * Retourne un tableau associatif : [status => count].
+     *
+     * @return array<string, int>
      */
     public function countByStatus(): array
     {
@@ -217,7 +226,7 @@ class ProjectRepository extends ServiceEntityRepository
 
         $counts = []; // cite: 6
         foreach ($result as $row) {
-            $counts[$row['status']] = (int) $row['count']; // cite: 6
+            $counts[$row['status']->value] = (int) $row['count']; // cite: 6
         }
 
         // Initialiser tous les statuts à 0
@@ -232,6 +241,8 @@ class ProjectRepository extends ServiceEntityRepository
 
     /**
      * 📌 Récupère les projets dont le budget est dépassé.
+     *
+     * @return Project[]
      */
     public function findOverBudget(): array
     {
@@ -239,11 +250,13 @@ class ProjectRepository extends ServiceEntityRepository
             ->andWhere('p.spent > p.budget')
             ->orderBy('p.spent', 'DESC')
             ->getQuery()
-            ->getResult() ?? []; // cite: 6
+            ->getResult(); // cite: 6
     }
 
     /**
      * 📌 Récupère les projets en cours avec un budget restant faible.
+     *
+     * @return Project[]
      */
     public function findLowBudgetRemaining(float $threshold = 100.00): array
     {
@@ -254,11 +267,13 @@ class ProjectRepository extends ServiceEntityRepository
             ->setParameter('threshold', $threshold)
             ->orderBy('p.budget - p.spent', 'ASC')
             ->getQuery()
-            ->getResult() ?? []; // cite: 6
+            ->getResult(); // cite: 6
     }
 
     /**
      * 📌 Statistiques budgétaires globales.
+     *
+     * @return array{totalBudget: float, totalSpent: float, remaining: float}
      */
     public function getBudgetStatistics(): array
     {
@@ -279,6 +294,8 @@ class ProjectRepository extends ServiceEntityRepository
 
     /**
      * 📌 Récupère les projets récents avec leur historique.
+     *
+     * @return Project[]
      */
     public function findRecentWithHistory(int $limit = 5): array
     {
@@ -288,6 +305,6 @@ class ProjectRepository extends ServiceEntityRepository
             ->orderBy('p.createdAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
-            ->getResult() ?? []; // cite: 6
+            ->getResult(); // cite: 6
     }
 }

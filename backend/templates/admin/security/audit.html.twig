@@ -1,0 +1,75 @@
+{# templates/admin/security/audit.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Audit & Monitoring
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="mb-8">
+			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+				<span class="material-icons text-brand-primary">visibility</span>
+				<span>Audit & Monitoring</span>
+			</h1>
+			<p class="text-sm opacity-60 mt-1">Qui a fait quoi, quand — sur tout le back-office.</p>
+		</div>
+
+		<!-- 🔍 FILTRES -->
+		<form method="get" class="mb-4 flex flex-wrap items-end gap-3">
+			<div>
+				<label class="label block text-xs mb-1" for="filter-action">Action</label>
+				<select id="filter-action" name="action" class="input input-bordered">
+					<option value="">Toutes</option>
+					{% for code, label in actionOptions %}
+						<option value="{{ code }}" {{ code == actionFilter ? 'selected' }}>{{ label }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div>
+				<label class="label block text-xs mb-1" for="filter-type">Type</label>
+				<select id="filter-type" name="type" class="input input-bordered">
+					<option value="">Tous</option>
+					{% for type in typeOptions %}
+						<option value="{{ type }}" {{ type == typeFilter ? 'selected' }}>{{ type }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<button type="submit" class="btn btn-secondary">Filtrer</button>
+			{% if actionFilter or typeFilter %}
+				<a href="{{ path('admin_security_audit_index') }}" class="btn btn-secondary">Réinitialiser</a>
+			{% endif %}
+		</form>
+
+		<!-- 📊 TABLEAU -->
+		<div class="soft-card">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Élément</th>
+						<th>Action</th>
+						<th>Par</th>
+						<th>Date</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for entry in entries %}
+						<tr>
+							<td class="font-medium text-brand-dark">{{ entry.label }}</td>
+							<td>
+								<span class="badge {{ entry.source == 'project' ? 'bg-brand-light text-brand-primary' : 'bg-gray-200 text-gray-600' }}">{{ entry.actionLabel }}</span>
+							</td>
+							<td class="text-sm opacity-70">{{ entry.user ? (entry.user.fullName ?? entry.user.email) : 'Système' }}</td>
+							<td class="text-sm opacity-70">{{ entry.date|date('d/m/Y H:i') }}</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="4" class="text-center py-12 opacity-40">Aucune action enregistrée.</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</main>
+{% endblock %}

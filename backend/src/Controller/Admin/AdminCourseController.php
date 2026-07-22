@@ -5,6 +5,8 @@ namespace App\Controller\Admin;
 use App\Entity\Course;
 use App\Form\CourseType;
 use App\Repository\CourseRepository;
+use App\Security\Voter\CourseVoter;
+use App\Service\AuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,7 +30,8 @@ final class AdminCourseController extends AbstractController
     #[Route('/index', name: 'index', methods: ['GET'])]
     public function index(CourseRepository $courseRepository): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        // Pas d'attribut COURSE_VIEW dédié : lecture ouverte à qui peut créer/éditer.
+        $this->denyAccessUnlessGranted('ROLE_EDITOR');
 
         return $this->render('admin/course/index.html.twig', [
             'courses' => $courseRepository->findAll(),
@@ -40,9 +43,9 @@ final class AdminCourseController extends AbstractController
     // =========================================================================
 
     #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
-    public function create(Request $request, EntityManagerInterface $entityManager): Response
+    public function create(Request $request, EntityManagerInterface $entityManager, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(CourseVoter::CREATE);
 
         $course = new Course();
         $form = $this->createForm(CourseType::class, $course);
@@ -50,6 +53,9 @@ final class AdminCourseController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($course);
+            $entityManager->flush();
+
+            $auditLogger->log(Course::class, $course->getId(), $course->getTitle(), 'created');
             $entityManager->flush();
 
             $this->addFlash('success', 'Le cours a été créé avec succès.');
@@ -69,7 +75,7 @@ final class AdminCourseController extends AbstractController
     #[Route('/{id}', name: 'read', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function read(Course $course): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted('ROLE_EDITOR');
 
         return $this->render('admin/course/read.html.twig', [
             'course' => $course,
@@ -81,14 +87,15 @@ final class AdminCourseController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/update', name: 'update', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
-    public function update(Request $request, Course $course, EntityManagerInterface $entityManager): Response
+    public function update(Request $request, Course $course, EntityManagerInterface $entityManager, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(CourseVoter::EDIT, $course);
 
         $form = $this->createForm(CourseType::class, $course);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $auditLogger->log(Course::class, $course->getId(), $course->getTitle(), 'updated');
             $entityManager->flush();
 
             $this->addFlash('success', 'Le cours a été mis à jour avec succès.');
@@ -106,12 +113,13 @@ final class AdminCourseController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function delete(Request $request, Course $course, EntityManagerInterface $entityManager): Response
+    public function delete(Request $request, Course $course, EntityManagerInterface $entityManager, AuditLogger $auditLogger): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->denyAccessUnlessGranted(CourseVoter::DELETE, $course);
 
         // ✅ Correction : Le message de succès est désormais conditionné par la validité du token
         if ($this->isCsrfTokenValid('admin_course_delete_' . $course->getId(), $request->request->get('_token'))) {
+            $auditLogger->log(Course::class, $course->getId(), $course->getTitle(), 'deleted');
             $entityManager->remove($course);
             $entityManager->flush();
             

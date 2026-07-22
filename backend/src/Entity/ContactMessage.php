@@ -22,32 +22,32 @@ class ContactMessage
     #[Groups(["api_public", "api_admin"])]
     #[Assert\NotBlank(message: "Le nom est obligatoire")]
     #[Assert\Length(max: 255)]
-    private ?string $name = null;
+    private string $name = '';
 
     #[ORM\Column(length: 150)]
     #[Groups(["api_admin"])] // email visible uniquement côté admin
     #[Assert\NotBlank(message: "L'email est obligatoire")]
     #[Assert\Email]
     #[Assert\Length(max: 150)]
-    private ?string $email = null;
+    private string $email = '';
 
     #[ORM\Column(length: 255)]
     #[Groups(["api_public", "api_admin"])]
     #[Assert\NotBlank(message: "Le sujet est obligatoire")]
     #[Assert\Length(max: 255)]
-    private ?string $subject = null;
+    private string $subject = '';
 
     #[ORM\Column(type: Types::TEXT)]
     #[Groups(["api_public", "api_admin"])]
     #[Assert\NotBlank(message: "Le message est obligatoire")]
     #[Assert\Length(min: 10)]
-    private ?string $message = null;
+    private string $message = '';
 
     #[ORM\Column]
     #[Groups(["api_admin"])]
     #[Assert\NotNull(message: "La date de création est obligatoire")]
     #[Assert\Type(\DateTimeImmutable::class)]
-    private ?\DateTimeImmutable $createdAt = null;
+    private \DateTimeImmutable $createdAt;
 
     #[ORM\Column(length: 20, enumType: ContactMessageStatusEnum::class)]
     #[Groups(["api_admin"])]
@@ -63,7 +63,7 @@ class ContactMessage
         return $this->id;
     }
 
-    public function getName(): ?string
+    public function getName(): string
     {
         return $this->name;
     }
@@ -75,7 +75,7 @@ class ContactMessage
         return $this;
     }
 
-    public function getEmail(): ?string
+    public function getEmail(): string
     {
         return $this->email;
     }
@@ -87,7 +87,7 @@ class ContactMessage
         return $this;
     }
 
-    public function getSubject(): ?string
+    public function getSubject(): string
     {
         return $this->subject;
     }
@@ -99,7 +99,7 @@ class ContactMessage
         return $this;
     }
 
-    public function getMessage(): ?string
+    public function getMessage(): string
     {
         return $this->message;
     }
@@ -111,7 +111,7 @@ class ContactMessage
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
     }

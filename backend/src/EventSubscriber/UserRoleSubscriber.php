@@ -6,9 +6,11 @@ use App\Entity\User;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Events;
 use Doctrine\Persistence\Event\LifecycleEventArgs;
+use Doctrine\Persistence\ObjectManager;
 
 class UserRoleSubscriber implements EventSubscriber
 {
+    /** @return string[] */
     public function getSubscribedEvents(): array
     {
         return [
@@ -17,6 +19,7 @@ class UserRoleSubscriber implements EventSubscriber
         ];
     }
 
+    /** @param LifecycleEventArgs<ObjectManager> $args */
     public function prePersist(LifecycleEventArgs $args): void
     {
         $entity = $args->getObject();
@@ -32,6 +35,7 @@ class UserRoleSubscriber implements EventSubscriber
         }
     }
 
+    /** @param LifecycleEventArgs<ObjectManager> $args */
     public function preUpdate(LifecycleEventArgs $args): void
     {
         $entity = $args->getObject();

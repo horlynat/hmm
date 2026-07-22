@@ -27,6 +27,8 @@ security:
                 lifetime: 604800 # 7 jours
                 path: /
                 always_remember_me: false
+                token_provider:
+                    doctrine: true
             lazy: true
 
         # 🔒 Firewall API (stateless)
@@ -37,13 +39,18 @@ security:
             custom_authenticator: App\Security\SecurityAuthenticator
 
     # 🔒 Hiérarchie des rôles
+    # Chaîne linéaire : chaque rang hérite de tous les droits du rang précédent.
+    # USER < EDITOR < MODERATOR < MANAGER < ADMIN < SUPER_ADMIN
     role_hierarchy:
-        ROLE_COLLABORATOR: [ROLE_USER]                # Collaborateur hérite des droits de base
-        ROLE_ADMIN: [ROLE_USER, ROLE_COLLABORATOR] # Admin hérite de tout
+        ROLE_EDITOR: [ROLE_USER]
+        ROLE_MODERATOR: [ROLE_EDITOR]
+        ROLE_MANAGER: [ROLE_MODERATOR]
+        ROLE_ADMIN: [ROLE_MANAGER]
+        ROLE_SUPER_ADMIN: [ROLE_ADMIN]
 
     # 🔒 Contrôle d'accès par rôle
     access_control:
-        - { path: ^/admin, roles: ROLE_ADMIN }              # Dashboard réservé aux admins
+        - { path: ^/admin, roles: ROLE_EDITOR }             # Back-office ouvert dès le rang Éditeur (le détail des actions est géré par les Voters)
         - { path: ^/projects, roles: ROLE_USER }            # Projets accessibles aux utilisateurs connectés
         - { path: ^/profile, roles: ROLE_USER }             # Profil accessible aux utilisateurs connectés
         - { path: ^/login, roles: PUBLIC_ACCESS }           # Login public

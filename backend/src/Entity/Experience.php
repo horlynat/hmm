@@ -21,19 +21,19 @@ class Experience
     #[Assert\NotBlank(message: "Le nom de l'entreprise est obligatoire.")]
     #[Assert\Length(min: 2, max: 100)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $company = null;
+    private string $company = '';
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le titre est obligatoire")]
     #[Assert\Length(max: 255)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $role = null;
+    private string $role = '';
 
     #[ORM\Column]
     #[Assert\NotNull(message: "La date de début est obligatoire.")]
     #[Assert\Type(\DateTimeImmutable::class)]
     #[Groups(['api_admin'])]
-    private ?\DateTimeImmutable $startDate = null;
+    private \DateTimeImmutable $startDate;
 
     #[ORM\Column(nullable: true)]
     #[Assert\Type(\DateTimeImmutable::class)]
@@ -44,20 +44,25 @@ class Experience
     #[Assert\NotBlank(message: "La description est obligatoire.")]
     #[Assert\Length(min: 10)]
     #[Groups(['api_public', 'api_admin'])]
-    private ?string $description = null;
+    private string $description = '';
 
     #[ORM\ManyToOne(inversedBy: 'experience')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(message: "Un utilisateur doit être associé à l'expérience.")]
     #[Groups(['api_admin'])] // exposé seulement côté admin
-    private ?User $user = null;
+    private User $user;
+
+    public function __construct()
+    {
+        $this->startDate = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getCompany(): ?string
+    public function getCompany(): string
     {
         return $this->company;
     }
@@ -69,7 +74,7 @@ class Experience
         return $this;
     }
 
-    public function getRole(): ?string
+    public function getRole(): string
     {
         return $this->role;
     }
@@ -81,7 +86,7 @@ class Experience
         return $this;
     }
 
-    public function getStartDate(): ?\DateTimeImmutable
+    public function getStartDate(): \DateTimeImmutable
     {
         return $this->startDate;
     }
@@ -105,7 +110,7 @@ class Experience
         return $this;
     }
 
-    public function getDescription(): ?string
+    public function getDescription(): string
     {
         return $this->description;
     }
@@ -117,12 +122,12 @@ class Experience
         return $this;
     }
 
-    public function getUser(): ?User
+    public function getUser(): User
     {
         return $this->user;
     }
 
-    public function setUser(?User $user): static
+    public function setUser(User $user): static
     {
         $this->user = $user;
 

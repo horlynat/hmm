@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\SkillCategory;
 use App\Form\SkillCategoryType;
 use App\Repository\SkillCategoryRepository;
+use App\Service\AuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,7 +41,7 @@ final class AdminSkillCategoryController extends AbstractController
     // =========================================================================
 
     #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
-    public function create(Request $request, EntityManagerInterface $entityManager): Response
+    public function create(Request $request, EntityManagerInterface $entityManager, AuditLogger $auditLogger): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
@@ -50,6 +51,9 @@ final class AdminSkillCategoryController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($skillCategory);
+            $entityManager->flush();
+
+            $auditLogger->log(SkillCategory::class, $skillCategory->getId(), $skillCategory->getName(), 'created');
             $entityManager->flush();
 
             $this->addFlash('success', 'La catégorie de compétence a été créée avec succès.');
@@ -81,7 +85,7 @@ final class AdminSkillCategoryController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/update', name: 'update', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
-    public function update(Request $request, SkillCategory $skillCategory, EntityManagerInterface $entityManager): Response
+    public function update(Request $request, SkillCategory $skillCategory, EntityManagerInterface $entityManager, AuditLogger $auditLogger): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
@@ -89,6 +93,7 @@ final class AdminSkillCategoryController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $auditLogger->log(SkillCategory::class, $skillCategory->getId(), $skillCategory->getName(), 'updated');
             $entityManager->flush();
 
             $this->addFlash('success', 'La catégorie de compétence a été mise à jour avec succès.');
@@ -106,12 +111,13 @@ final class AdminSkillCategoryController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function delete(Request $request, SkillCategory $skillCategory, EntityManagerInterface $entityManager): Response
+    public function delete(Request $request, SkillCategory $skillCategory, EntityManagerInterface $entityManager, AuditLogger $auditLogger): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
         // Validation sécurisée et uniforme du jeton CSRF
         if ($this->isCsrfTokenValid('admin_skill_category_delete_' . $skillCategory->getId(), $request->request->get('_token'))) {
+            $auditLogger->log(SkillCategory::class, $skillCategory->getId(), $skillCategory->getName(), 'deleted');
             $entityManager->remove($skillCategory);
             $entityManager->flush();
             

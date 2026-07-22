@@ -2,7 +2,7 @@
 {% extends 'base.html.twig' %}
 
 {% block title %}Historique du projet -
-	{{ project.name }}
+	{{ project.title }}
 {% endblock %}
 
 {% block body %}
@@ -16,7 +16,7 @@
 			<div>
 				<h1 class="text-3xl font-extrabold text-brand-dark tracking-tight mb-1">
 					Historique de
-					{{ project.name }}
+					{{ project.title }}
 				</h1>
 				<p class="text-sm text-gray-500">Journal d'audit complet des actions réalisées.</p>
 			</div>
@@ -35,7 +35,7 @@
 				<h2 class="text-xs font-bold text-brand-dark uppercase tracking-wider mb-4">Statistiques d'Activité</h2>
 
 				<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-					{% for action, count in historyRepo.countByAction(project.id) %}
+					{% for action, count in actionCounts %}
 						<div class="bg-gray-50/50 dark:bg-gray-800/40 border border-gray-100/50 p-4 rounded-xl text-center hover:border-gray-200 hover:shadow-2xs transition-all">
 							<div class="text-2xl font-extrabold text-brand-dark">{{ count }}</div>
 							<div class="text-[10px] font-bold text-gray-500 uppercase tracking-wide mt-1 leading-tight">
@@ -44,8 +44,12 @@
                                 'updated': 'Mises à jour',
                                 'status_changed': 'Statuts',
                                 'expense_added': 'Dépenses +',
+                                'expense_removed': 'Dépenses -',
                                 'collaborator_added': 'Membres +',
-                                'collaborator_removed': 'Membres -'
+                                'collaborator_removed': 'Membres -',
+                                'client_assigned': 'Client',
+                                'media_removed': 'Médias -',
+                                'project_deleted': 'Suppression'
                             }) }}
 							</div>
 						</div>
