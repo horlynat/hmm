@@ -3,6 +3,7 @@
 namespace App\ApiResource;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Doctrine\Orm\State\Options;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
@@ -11,6 +12,8 @@ use ApiPlatform\Metadata\Delete;
 use App\Entity\QuoteRequest;
 
 #[ApiResource(
+    stateOptions: new Options(entityClass: QuoteRequest::class),
+    shortName: 'QuoteRequest',
     description: "Ressource API pour gérer les demandes de devis des utilisateurs.",
     operations: [
         // 📌 Liste des demandes (admin uniquement)

@@ -9,3 +9,11 @@
 
 controllers:
     resource: routing.controllers
+
+# La route n'a pas besoin de controller : le firewall `api_login` (json_login)
+# intercepte la requête avant la résolution du controller, dès que le path
+# correspond à `check_path`. Sans cette route, le routeur 404 avant même que
+# le firewall ait sa chance d'intervenir.
+api_login_check:
+    path: /api/login_check
+    methods: [POST]
