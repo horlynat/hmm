@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
 # Démarre/arrête l'environnement de dev complet (backend Symfony + frontend
-# Next.js + dépendances : MySQL, Mailpit). L'app n'est pas conteneurisée :
-# seul Mailpit tourne dans Docker, tout le reste tourne en process locaux.
+# Next.js + dépendances : MySQL, MailHog). L'app n'est pas conteneurisée :
+# seul MailHog tourne dans Docker, tout le reste tourne en process locaux.
 #
 # Usage: scripts/dev.sh {up|down|status|logs}
 
@@ -59,8 +59,8 @@ start_mysql() {
   fi
 }
 
-start_mailpit() {
-  log deps "mailpit : démarrage (docker compose)…"
+start_mailhog() {
+  log deps "mailhog : démarrage (docker compose)…"
   (cd "$BACKEND_DIR" && docker compose up -d mailer)
 }
 
@@ -101,14 +101,14 @@ start_frontend() {
 
 cmd_up() {
   start_mysql
-  start_mailpit
+  start_mailhog
   start_backend
   start_frontend
   sleep 1
   echo
   echo "Environnement démarré :"
   echo "  MySQL     : service système (127.0.0.1:3306)"
-  echo "  Mailpit   : http://127.0.0.1:8025  (SMTP 127.0.0.1:1025)"
+  echo "  MailHog   : http://127.0.0.1:8025  (SMTP 127.0.0.1:1025)"
   echo "  Backend   : https://127.0.0.1:8000  (logs: symfony server:log --dir=$BACKEND_DIR)"
   echo "  Frontend  : http://127.0.0.1:$FRONTEND_PORT  (logs: $LOG_DIR/frontend.log)"
 }
@@ -129,7 +129,7 @@ cmd_down() {
   log backend "arrêt du serveur symfony…"
   (cd "$BACKEND_DIR" && symfony server:stop) 2>/dev/null || true
 
-  log deps "arrêt de mailpit…"
+  log deps "arrêt de mailhog…"
   (cd "$BACKEND_DIR" && docker compose stop mailer) 2>/dev/null || true
 
   echo
@@ -139,7 +139,7 @@ cmd_down() {
 cmd_status() {
   echo "--- MySQL ---"
   systemctl is-active "$MYSQL_SERVICE" 2>/dev/null || echo "inactif"
-  echo "--- Mailpit ---"
+  echo "--- MailHog ---"
   (cd "$BACKEND_DIR" && docker compose ps mailer)
   echo "--- Backend (symfony) ---"
   symfony local:server:status --dir="$BACKEND_DIR" 2>/dev/null || echo "arrêté"
