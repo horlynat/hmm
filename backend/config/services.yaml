@@ -1,6 +1,7 @@
 # config/services.yaml
 parameters:
     app.default_sender: '%env(APP_DEFAULT_SENDER)%'
+    app.jwtsecret: '%env(APP_JWTSECRET)%'
 
     # ✅ CORRECTION 1 : utiliser %kernel.project_dir% ici (paramètre Symfony)
     #    et non dans .env où cette syntaxe n'est pas supportée

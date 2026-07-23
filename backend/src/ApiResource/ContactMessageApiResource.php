@@ -3,6 +3,7 @@
 namespace App\ApiResource;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Doctrine\Orm\State\Options;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
@@ -10,6 +11,8 @@ use ApiPlatform\Metadata\Delete;
 use App\Entity\ContactMessage;
 
 #[ApiResource(
+    stateOptions: new Options(entityClass: ContactMessage::class),
+    shortName: 'ContactMessage',
     description: "Ressource API pour gérer les messages de contact envoyés via le site.",
     operations: [
         // 📌 Liste des messages (admin uniquement)

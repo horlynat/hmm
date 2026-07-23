@@ -3,6 +3,7 @@
 namespace App\ApiResource;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Doctrine\Orm\State\Options;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
@@ -11,6 +12,8 @@ use ApiPlatform\Metadata\Delete;
 use App\Entity\Project;
 
 #[ApiResource(
+    stateOptions: new Options(entityClass: Project::class),
+    shortName: 'Project',
     description: "Ressource API pour gérer les projets du portfolio.
     Permet de lister, consulter, créer, mettre à jour et supprimer des projets.",
     operations: [

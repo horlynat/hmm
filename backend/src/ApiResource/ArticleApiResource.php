@@ -3,6 +3,7 @@
 namespace App\ApiResource;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Doctrine\Orm\State\Options;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
@@ -11,6 +12,8 @@ use ApiPlatform\Metadata\Delete;
 use App\Entity\Article;
 
 #[ApiResource(
+    stateOptions: new Options(entityClass: Article::class),
+    shortName: 'Article',
     description: "Ressource API pour gérer les articles du site.
     Permet de lister, consulter, créer, mettre à jour et supprimer des articles.",
     operations: [

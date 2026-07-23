@@ -3,6 +3,7 @@
 namespace App\ApiResource;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Doctrine\Orm\State\Options;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
@@ -11,6 +12,8 @@ use ApiPlatform\Metadata\Delete;
 use App\Entity\Skill;
 
 #[ApiResource(
+    stateOptions: new Options(entityClass: Skill::class),
+    shortName: 'Skill',
     description: "Ressource API pour gérer les compétences (skills).",
     operations: [
         // 📌 Liste des compétences (public)
