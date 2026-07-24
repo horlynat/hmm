@@ -18,3 +18,73 @@ nelmio_security:
         policies:
             - 'no-referrer'
             - 'strict-origin-when-cross-origin'
+
+    # Défense en profondeur contre le XSS : bloque le chargement de script/style/
+    # image/police depuis un hôte tiers non listé (ex : un payload XSS stocké qui
+    # tenterait de charger un script depuis un domaine attaquant). 'unsafe-inline'
+    # reste nécessaire pour script-src/style-src tant que l'app s'appuie sur des
+    # attributs onclick/x-data (Alpine.js) et des <style> inline plutôt que des
+    # nonces — ça n'empêche pas un payload inline injecté de s'exécuter, mais ça
+    # bloque toute exfiltration/chargement de ressource vers un hôte externe non
+    # whitelisté, ce qui est déjà un gain réel. Liste d'hôtes tiers réellement
+    # utilisés confirmée par grep sur templates/ et assets/.
+    csp:
+        enforce:
+            default-src:
+                - 'self'
+            script-src:
+                - 'self'
+                - 'unsafe-inline'
+                - 'https://cdn.jsdelivr.net'
+            style-src:
+                - 'self'
+                - 'unsafe-inline'
+                - 'https://fonts.googleapis.com'
+                - 'https://cdn.jsdelivr.net'
+                - 'https://cdnjs.cloudflare.com'
+            font-src:
+                - 'self'
+                - 'data:'
+                - 'https://fonts.gstatic.com'
+                - 'https://cdn.jsdelivr.net'
+                - 'https://cdnjs.cloudflare.com'
+            img-src:
+                - 'self'
+                - 'data:'
+                - 'https://ui-avatars.com'
+            connect-src:
+                - 'self'
+            object-src:
+                - 'none'
+            base-uri:
+                - 'self'
+            frame-ancestors:
+                - 'none'
+
+when@dev:
+    nelmio_security:
+        csp:
+            enforce:
+                # Le serveur de dev Vite (`npm run dev`) sert les entrées JS (et injecte
+                # le CSS via JS, cf. login.js/register.js) depuis http://127.0.0.1:5173,
+                # avec un client HMR connecté en WebSocket. Sans ces autorisations, le
+                # CSP ci-dessus bloque ce script -> le CSS ne s'applique plus du tout sur
+                # les pages login/register en dev. Inutile en prod : les assets y sont
+                # servis en 'self' depuis public/build (fichiers compilés par `vite build`).
+                script-src:
+                    - 'http://127.0.0.1:5173'
+                style-src:
+                    - 'http://127.0.0.1:5173'
+                connect-src:
+                    - 'http://127.0.0.1:5173'
+                    - 'ws://127.0.0.1:5173'
+
+when@prod:
+    nelmio_security:
+        # HSTS + redirection forcée vers HTTPS : uniquement en prod, jamais en
+        # dev/test où le serveur local tourne en HTTP simple (activer ceci
+        # hors prod casserait l'accès au site en local).
+        forced_ssl:
+            enabled: true
+            hsts_max_age: 31536000
+            hsts_subdomains: true

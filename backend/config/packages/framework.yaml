@@ -7,6 +7,12 @@ framework:
         cookie_samesite: strict
         cookie_httponly: true
         handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
+        # Filet de sécurité côté serveur : le timeout d'inactivité de 10 min
+        # (assets/js/idle-timeout.js) est désactivable en coupant JavaScript.
+        # Au-delà de 30 min sans la moindre requête, la session expire aussi
+        # côté serveur (PdoSessionHandler s'appuie sur cette valeur, pas sur
+        # l'ini PHP par défaut).
+        gc_maxlifetime: 1800
 
     # Protection CSRF
     csrf_protection: true
@@ -25,6 +31,26 @@ framework:
             policy: fixed_window
             limit: 5
             interval: '1 minute'
+        # Anti-spam des notifications admin par email (ErrorNotifier) : au plus
+        # 1 email par heure et par classe d'exception. Pool dédié (cache.yaml)
+        # pour pouvoir le vider isolément sans affecter les autres limiteurs.
+        error_notification:
+            policy: fixed_window
+            limit: 1
+            interval: '1 hour'
+            cache_pool: cache.error_notifier
+        # Anti-spam des formulaires publics non protégés jusqu'ici (contact,
+        # devis, témoignage) — App\Service\PublicSubmissionThrottler.
+        public_form_submission:
+            policy: sliding_window
+            limit: 10
+            interval: '1 hour'
+        # Inscription (formulaire web /register et API collaborator_registrations)
+        # — plus stricte car elle déclenche un envoi d'email synchrone.
+        registration_attempt:
+            policy: sliding_window
+            limit: 5
+            interval: '1 hour'
 
     # HTTP cache et fragments (désactivés par défaut)
     # esi: true

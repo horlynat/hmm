@@ -9,7 +9,7 @@ use App\Entity\Testimonial;
  *
  * - VIEW / CREATE / EDIT / APPROVE / REJECT : Modérateur et plus (contenu modéré,
  *   pas d'auto-publication possible même pour un simple Éditeur).
- * - DELETE / FEATURE                        : Manager et plus.
+ * - DELETE                                  : Manager et plus.
  */
 class TestimonialVoter extends AbstractRoleVoter
 {
@@ -19,7 +19,6 @@ class TestimonialVoter extends AbstractRoleVoter
     public const APPROVE = 'TESTIMONIAL_APPROVE';
     public const REJECT = 'TESTIMONIAL_REJECT';
     public const DELETE = 'TESTIMONIAL_DELETE';
-    public const FEATURE = 'TESTIMONIAL_FEATURE';
 
     protected function getRequiredRole(string $attribute, mixed $subject): ?string
     {
@@ -30,7 +29,6 @@ class TestimonialVoter extends AbstractRoleVoter
             self::APPROVE === $attribute && $subject instanceof Testimonial => 'ROLE_MODERATOR',
             self::REJECT === $attribute && $subject instanceof Testimonial => 'ROLE_MODERATOR',
             self::DELETE === $attribute && $subject instanceof Testimonial => 'ROLE_MANAGER',
-            self::FEATURE === $attribute && $subject instanceof Testimonial => 'ROLE_MANAGER',
             default => null,
         };
     }

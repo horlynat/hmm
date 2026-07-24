@@ -8,7 +8,6 @@ use App\Entity\QuoteRequest;
  * Permissions sur les demandes de devis.
  *
  * - VIEW / EDIT / DELETE / APPROVE / REJECT : Manager et plus (impact commercial direct).
- * - CONVERT (transformation en projet)      : Administrateur et plus.
  */
 class QuoteVoter extends AbstractRoleVoter
 {
@@ -17,7 +16,6 @@ class QuoteVoter extends AbstractRoleVoter
     public const DELETE = 'QUOTE_DELETE';
     public const APPROVE = 'QUOTE_APPROVE';
     public const REJECT = 'QUOTE_REJECT';
-    public const CONVERT = 'QUOTE_CONVERT';
 
     protected function getRequiredRole(string $attribute, mixed $subject): ?string
     {
@@ -27,7 +25,6 @@ class QuoteVoter extends AbstractRoleVoter
             self::DELETE === $attribute && $subject instanceof QuoteRequest => 'ROLE_MANAGER',
             self::APPROVE === $attribute && $subject instanceof QuoteRequest => 'ROLE_MANAGER',
             self::REJECT === $attribute && $subject instanceof QuoteRequest => 'ROLE_MANAGER',
-            self::CONVERT === $attribute && $subject instanceof QuoteRequest => 'ROLE_ADMIN',
             default => null,
         };
     }
