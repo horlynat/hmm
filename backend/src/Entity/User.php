@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
@@ -103,6 +104,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     // le code confirmé par l'utilisateur (voir TwoFactorController::setup).
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $totpSecret = null;
+
+    /**
+     * Codes de récupération 2FA — hachés (SHA-256), jamais stockés en clair.
+     * Permettent de se connecter si l'appareil TOTP est perdu ; chaque code est
+     * à usage unique (retiré de la liste après emploi). Jamais exposé via l'API.
+     *
+     * @var list<string>|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $backupCodes = null;
 
     // ✅ Typage corrigé : Collection au lieu de ArrayCollection
     /** @var Collection<int, LoginHistory> */
@@ -342,6 +353,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     public function setTotpSecret(?string $totpSecret): self
     {
         $this->totpSecret = $totpSecret;
+        return $this;
+    }
+
+    /**
+     * @return list<string> Hachés (SHA-256), jamais en clair.
+     */
+    public function getBackupCodes(): array
+    {
+        return $this->backupCodes ?? [];
+    }
+
+    /**
+     * @param list<string> $backupCodes Doivent déjà être hachés par l'appelant (BackupCodeManager).
+     */
+    public function setBackupCodes(array $backupCodes): self
+    {
+        $this->backupCodes = [] === $backupCodes ? null : $backupCodes;
         return $this;
     }
 
