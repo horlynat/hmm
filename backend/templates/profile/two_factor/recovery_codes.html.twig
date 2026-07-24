@@ -1,0 +1,43 @@
+{# templates/profile/two_factor/recovery_codes.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Codes de récupération 2FA{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8 max-w-2xl">
+
+		<div class="mb-8">
+			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+				<span class="material-icons text-brand-primary">vpn_key</span>
+				<span>Codes de récupération</span>
+			</h1>
+			<p class="text-sm opacity-60 mt-1">Utilisez l'un de ces codes à la place de votre application d'authentification si vous perdez l'accès à votre appareil. Chaque code ne fonctionne qu'une seule fois.</p>
+		</div>
+
+		<div class="soft-card p-6">
+			<div class="flex items-start gap-3 p-4 mb-6 rounded-lg bg-warning/10 border border-warning/30">
+				<span class="material-icons text-amber-600">warning_amber</span>
+				<p class="text-sm text-brand-dark">
+					<strong>Conservez ces codes maintenant.</strong> Ils ne s'afficheront plus jamais. Imprimez-les ou rangez-les dans un gestionnaire de mots de passe, à l'abri.
+				</p>
+			</div>
+
+			<ul class="grid grid-cols-2 gap-3 mb-6" aria-label="Codes de récupération">
+				{% for code in codes %}
+					<li class="text-center font-mono text-lg tracking-wider bg-gray-50 border border-gray-200 rounded-md py-2 select-all">{{ code }}</li>
+				{% endfor %}
+			</ul>
+
+			<div class="flex flex-wrap gap-3">
+				<button type="button" onclick="navigator.clipboard.writeText(Array.from(document.querySelectorAll('ul[aria-label] li')).map(function(el){return el.textContent.trim();}).join('\n'))" class="btn btn-secondary">
+					<span class="material-icons text-base mr-1.5">content_copy</span>
+					Copier tous les codes
+				</button>
+				<a href="{{ path('profile_two_factor_index') }}" class="btn btn-primary">
+					<span class="material-icons text-base mr-1.5">check</span>
+					J'ai enregistré mes codes
+				</a>
+			</div>
+		</div>
+	</main>
+{% endblock %}

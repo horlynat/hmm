@@ -5,3 +5,11 @@ api_platform:
         stateless: true
         cache_headers:
             vary: ['Content-Type', 'Authorization', 'Origin']
+
+when@prod:
+    api_platform:
+        # Le schéma complet (champs, relations, contraintes de validation) ne
+        # doit pas être exposé à un attaquant en phase de reconnaissance.
+        enable_swagger_ui: false
+        enable_re_doc: false
+        enable_docs: false

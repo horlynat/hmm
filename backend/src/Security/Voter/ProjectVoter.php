@@ -7,12 +7,12 @@ use App\Entity\User;
 use App\Enum\ProjectStatusEnum;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
+use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 
 /**
- * Class ProjectVoter
+ * Class ProjectVoter.
  *
  * Contrôle centralisé des accès et des actions sensibles sur l'entité Project.
  * Ce voter garantit que les règles métiers de sécurité sont appliquées uniformément.
@@ -21,7 +21,6 @@ use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
  * - VIEW              : Le client à qui le projet est confié, les collaborateurs (équipe de réalisation) et toi (admin) pouvez consulter le projet.
  * - EDIT               : Réservé à toi (admin), à condition que le projet soit actif (non terminé/suspendu).
  * - DELETE             : Réservé à toi (admin) — action critique.
- * - MANAGE_BUDGET      : Manager et plus, ET affecté au projet (ou admin), projet actif uniquement.
  * - ADD_EXPENSE        : Manager et plus, ET affecté au projet (ou admin), projet actif uniquement.
  * - ADD_COLLABORATOR   : Modérateur et plus, ET affecté au projet (ou admin).
  * - CHANGE_STATUS      : Éditeur et plus, ET affecté au projet (ou admin).
@@ -37,10 +36,9 @@ class ProjectVoter extends Voter
 {
     use RoleHierarchyAwareTrait;
 
-    public const VIEW   = 'PROJECT_VIEW';
-    public const EDIT   = 'PROJECT_EDIT';
+    public const VIEW = 'PROJECT_VIEW';
+    public const EDIT = 'PROJECT_EDIT';
     public const DELETE = 'PROJECT_DELETE';
-    public const MANAGE_BUDGET = 'PROJECT_MANAGE_BUDGET';
     public const ADD_EXPENSE = 'PROJECT_ADD_EXPENSE';
     public const ADD_COLLABORATOR = 'PROJECT_ADD_COLLABORATOR';
     public const CHANGE_STATUS = 'PROJECT_CHANGE_STATUS';
@@ -52,22 +50,23 @@ class ProjectVoter extends Voter
     public function __construct(
         private readonly RoleHierarchyInterface $roleHierarchy,
         private readonly LoggerInterface $logger,
-    ) {}
+    ) {
+    }
 
     /**
      * Détermine si ce Voter doit traiter la demande d'autorisation.
-     * 
+     *
      * @param string $attribute L'action demandée (ex: PROJECT_VIEW)
      * @param mixed  $subject   L'objet sur lequel porte l'action
-     * 
-     * @return bool True si le voter prend en charge l'attribut et que le sujet est un Projet.
+     *
+     * @return bool true si le voter prend en charge l'attribut et que le sujet est un Projet
      */
     protected function supports(string $attribute, mixed $subject): bool
     {
         // Utilisation du mode strict (true) pour in_array afin d'éviter les fausses correspondances de type
         return in_array($attribute, [
             self::VIEW, self::EDIT, self::DELETE,
-            self::MANAGE_BUDGET, self::ADD_EXPENSE, self::ADD_COLLABORATOR,
+            self::ADD_EXPENSE, self::ADD_COLLABORATOR,
             self::CHANGE_STATUS, self::ARCHIVE,
         ], true)
             && $subject instanceof Project;
@@ -75,13 +74,13 @@ class ProjectVoter extends Voter
 
     /**
      * Évalue l'accès en fonction des règles métiers.
-     * 
+     *
      * @param string         $attribute L'action demandée (VIEW, EDIT, DELETE)
      * @param mixed          $subject   L'instance de Project (typée mixed pour respecter la signature du parent)
      * @param TokenInterface $token     Le jeton contenant l'utilisateur connecté
      * @param Vote|null      $vote      Paramètre optionnel du moteur de sécurité Symfony
-     * 
-     * @return bool True si l'accès est accordé, False sinon.
+     *
+     * @return bool true si l'accès est accordé, False sinon
      */
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
     {
@@ -89,43 +88,43 @@ class ProjectVoter extends Voter
         $project = $subject;
 
         $user = $token->getUser();
-        
+
         // Sécurité primaire : L'utilisateur doit être une instance valide de notre entité User[cite: 1]
         if (!$user instanceof User) {
             $this->logger->warning('Tentative d\'accès refusée : Utilisateur non authentifié ou jeton invalide.', [
-                'action'     => $attribute,
-                'project_id' => $project->getId()
+                'action' => $attribute,
+                'project_id' => $project->getId(),
             ]);
+
             return false;
         }
 
         // Aiguillage vers les méthodes métiers spécifiques[cite: 1]
         $decision = match ($attribute) {
-            self::VIEW              => $this->canView($project, $user),
-            self::EDIT              => $this->canEdit($project, $user),
-            self::DELETE            => $this->canDelete($project, $user),
-            self::MANAGE_BUDGET     => $this->isProjectActive($project) && $this->hasRole($user, 'ROLE_MANAGER') && $this->isAssignedOrAdmin($project, $user),
-            self::ADD_EXPENSE       => $this->isProjectActive($project) && $this->hasRole($user, 'ROLE_MANAGER') && $this->isAssignedOrAdmin($project, $user),
-            self::ADD_COLLABORATOR  => $this->hasRole($user, 'ROLE_MODERATOR') && $this->isAssignedOrAdmin($project, $user),
-            self::CHANGE_STATUS     => $this->hasRole($user, 'ROLE_EDITOR') && $this->isAssignedOrAdmin($project, $user),
-            self::ARCHIVE           => $this->hasRole($user, 'ROLE_MANAGER') && $this->isAssignedOrAdmin($project, $user),
-            default      => false,
+            self::VIEW => $this->canView($project, $user),
+            self::EDIT => $this->canEdit($project, $user),
+            self::DELETE => $this->canDelete($project, $user),
+            self::ADD_EXPENSE => $this->isProjectActive($project) && $this->hasRole($user, 'ROLE_MANAGER') && $this->isAssignedOrAdmin($project, $user),
+            self::ADD_COLLABORATOR => $this->hasRole($user, 'ROLE_MODERATOR') && $this->isAssignedOrAdmin($project, $user),
+            self::CHANGE_STATUS => $this->hasRole($user, 'ROLE_EDITOR') && $this->isAssignedOrAdmin($project, $user),
+            self::ARCHIVE => $this->hasRole($user, 'ROLE_MANAGER') && $this->isAssignedOrAdmin($project, $user),
+            default => false,
         };
 
         // Journalisation système pour l'audit et le débogage[cite: 1]
         $this->logger->info("Décision d'autorisation ProjectVoter évaluée", [
-            'user_id'    => $user->getId(),
+            'user_id' => $user->getId(),
             'project_id' => $project->getId(),
-            'action'     => $attribute,
-            'status'     => $project->getStatus()->value,
-            'decision'   => $decision ? 'GRANTED' : 'DENIED',
+            'action' => $attribute,
+            'status' => $project->getStatus()->value,
+            'decision' => $decision ? 'GRANTED' : 'DENIED',
         ]);
 
         // Historisation métier : On garde une trace interne des tentatives d'accès non autorisées[cite: 1]
         if (!$decision) {
             $project->addToHistory(
-                'access_denied', 
-                $user, 
+                'access_denied',
+                $user,
                 sprintf("Tentative d'action '%s' refusée par les règles de sécurité.", $attribute)
             );
         }
@@ -138,10 +137,6 @@ class ProjectVoter extends Voter
      * Le projet est visible par le client à qui il est confié, par les
      * collaborateurs qui participent à sa réalisation, ou par un
      * administrateur (toi).
-     * 
-     * @param Project $project
-     * @param User    $user
-     * @return bool
      */
     private function canView(Project $project, User $user): bool
     {
@@ -154,10 +149,6 @@ class ProjectVoter extends Voter
      * Règle d'édition.
      * Réservée aux administrateurs. L'édition est verrouillée si le projet
      * est dans un état finalisé ou suspendu, même pour un administrateur.
-     * 
-     * @param Project $project
-     * @param User    $user
-     * @return bool
      */
     private function canEdit(Project $project, User $user): bool
     {
@@ -173,10 +164,6 @@ class ProjectVoter extends Voter
     /**
      * Règle de suppression (Action critique).
      * Réservée aux administrateurs.
-     * 
-     * @param Project $project
-     * @param User    $user
-     * @return bool
      */
     private function canDelete(Project $project, User $user): bool
     {

@@ -14,9 +14,43 @@ security:
             memory_cost: 1024 # mémoire utilisée pour argon2
 
     firewalls:
+        # 🔒 Émission du JWT (stateless) — doit être déclaré AVANT "api" : chemin
+        # plus spécifique (^/api/login_check) que ^/api, donc évalué en premier.
+        # POST { email, password } ici renvoie { token } via lexik/jwt-authentication-bundle.
+        api_login:
+            pattern: ^/api/login_check
+            stateless: true
+            user_checker: App\Security\UserChecker
+            json_login:
+                check_path: /api/login_check
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+            # Contrairement au formulaire web (limiter "login" dans SecurityAuthenticator),
+            # rien ne limitait le bruteforce de credentials sur ce endpoint JWT.
+            login_throttling:
+                max_attempts: 5
+                interval: '1 minute'
+
+        # 🔒 Firewall API (stateless) — doit être déclaré AVANT "main" : "main" n'a
+        # pas de `pattern` donc il matche tout, y compris /api/*, si on le laisse en
+        # premier. Les firewalls Symfony sont évalués dans l'ordre et le premier dont
+        # le pattern correspond gagne. Authentification par JWT Bearer token
+        # (lexik/jwt-authentication-bundle) — l'ancien `custom_authenticator` ici
+        # réutilisait à tort l'authenticator du formulaire web (session/CSRF),
+        # incompatible avec un firewall stateless.
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: app_user_provider
+            user_checker: App\Security\UserChecker
+            jwt: ~
+
         # 🔒 Firewall principal (site web)
         main:
             provider: app_user_provider
+            user_checker: App\Security\UserChecker
             custom_authenticator: App\Security\SecurityAuthenticator
             logout:
                 path: logout
@@ -29,14 +63,13 @@ security:
                 always_remember_me: false
                 token_provider:
                     doctrine: true
+            # Sans cette clé, le listener Scheb n'est jamais enregistré : la 2FA
+            # activée par un utilisateur (profile/2fa/setup) n'était jamais
+            # réellement demandée à la connexion (email+mot de passe suffisait).
+            two_factor:
+                auth_form_path: 2fa_login
+                check_path: 2fa_login_check
             lazy: true
-
-        # 🔒 Firewall API (stateless)
-        api:
-            pattern: ^/api
-            stateless: true
-            provider: app_user_provider
-            custom_authenticator: App\Security\SecurityAuthenticator
 
     # 🔒 Hiérarchie des rôles
     # Chaîne linéaire : chaque rang hérite de tous les droits du rang précédent.
@@ -56,5 +89,5 @@ security:
         - { path: ^/login, roles: PUBLIC_ACCESS }           # Login public
         - { path: ^/register, roles: PUBLIC_ACCESS }        # Inscription publique
         - { path: ^/verify/email, roles: PUBLIC_ACCESS }    # Vérification email publique
-        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }    # API protégée (auth obligatoire)
+        - { path: ^/api, roles: PUBLIC_ACCESS }              # Sécurité déléguée à API Platform (attribut `security` par opération, cf. *ApiResource)
    

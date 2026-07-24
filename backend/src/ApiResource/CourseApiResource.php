@@ -3,6 +3,7 @@
 namespace App\ApiResource;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Doctrine\Orm\State\Options;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
@@ -11,7 +12,9 @@ use ApiPlatform\Metadata\Delete;
 use App\Entity\Course;
 
 #[ApiResource(
-    description: "Ressource API pour gérer les cours. 
+    stateOptions: new Options(entityClass: Course::class),
+    shortName: 'Course',
+    description: "Ressource API pour gérer les cours.
     Permet de lister, consulter, créer, mettre à jour et supprimer des cours.",
     operations: [
         // 📌 Liste des cours (public)

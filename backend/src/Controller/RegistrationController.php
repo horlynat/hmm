@@ -9,11 +9,10 @@ use App\Repository\UserRepository;
 use App\Service\AdminAlertNotifier;
 use App\Service\EmailManager;
 use App\Service\JWTService;
-use App\Exception\JWTExpiredException;
-use App\Exception\JWTInvalidSignatureException;
-use App\Exception\JWTInvalidFormatException;
-use InvalidArgumentException;
+use App\Service\PublicSubmissionThrottler;
 use Doctrine\ORM\EntityManagerInterface;
+use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,23 +25,22 @@ class RegistrationController extends AbstractController
         private JWTService $jwt,
         private EmailManager $emailManager, // ✅ Un seul service, deux méthodes
         private EntityManagerInterface $entityManager,
-    ) {}
+        private LoggerInterface $logger,
+    ) {
+    }
 
     #[Route('/register', name: 'register')]
-    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, AdminAlertNotifier $adminAlertNotifier): Response
+    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, AdminAlertNotifier $adminAlertNotifier, PublicSubmissionThrottler $throttler): Response
     {
         $user = new User();
         $form = $this->createForm(RegistrationFormType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $throttler->assertRegistrationAllowed();
+
             $user->setPassword($userPasswordHasher->hashPassword($user, $form->get('plainPassword')->getData()));
             $user->setRoles(['ROLE_USER']);
-
-            if ($user->getEmail() === 'horlynat@gmail.com') {
-                $user->setRoles(['ROLE_ADMIN']);
-                $user->setIsVerified(true);
-            }
 
             $this->entityManager->persist($user);
             $this->entityManager->flush();
@@ -57,17 +55,18 @@ class RegistrationController extends AbstractController
 
             // ✅ sendNow() — synchrone car le token JWT a une durée de vie limitée
             $this->emailManager->sendNow(
-                to:       $user->getEmail(),
-                subject:  'Confirmez votre adresse email',
+                to: $user->getEmail(),
+                subject: 'Confirmez votre adresse email',
                 template: 'confirmation_email',
-                context:  [
-                    'user'     => $user,
-                    'token'    => $token,
+                context: [
+                    'user' => $user,
+                    'token' => $token,
                     'fullName' => $user->getFullName(),
                 ]
             );
 
             $this->addFlash('success', 'Inscription réussie ! Vérifiez vos emails.');
+
             return $this->redirectToRoute('profile_read', ['id' => $user->getId()]);
         }
 
@@ -81,14 +80,15 @@ class RegistrationController extends AbstractController
     {
         try {
             $payload = $this->jwt->validate($token, 'email_verification');
-            $user    = $userRepository->find($payload['user_id']);
+            $user = $userRepository->find($payload['user_id']);
 
             if (!$user) {
-                throw new InvalidArgumentException('Utilisateur introuvable.');
+                throw new \InvalidArgumentException('Utilisateur introuvable.');
             }
 
             if ($user->isVerified()) {
                 $this->addFlash('warning', 'Votre compte est déjà activé.');
+
                 return $this->redirectToRoute('profile_read');
             }
 
@@ -97,27 +97,28 @@ class RegistrationController extends AbstractController
 
             // ✅ sendAsync() — non-critique, pas de token expirant
             $this->emailManager->sendAsync(
-                to:       $user->getEmail(),
-                subject:  'Votre compte est activé',
+                to: $user->getEmail(),
+                subject: 'Votre compte est activé',
                 template: 'email_verified',
-                context:  [
+                context: [
                     'fullName' => $user->getFullName(),
-                    'user'     => $user // ✅ Passez l'objet user complet au template
+                    'user' => $user, // ✅ Passez l'objet user complet au template
                 ]
             );
 
             $this->addFlash('success', 'Votre compte a été activé !');
-            return $this->redirectToRoute('profile_read');
 
-        } catch (JWTExpiredException) {
-            $this->addFlash('danger', 'Le lien a expiré. Veuillez en demander un nouveau.');
+            return $this->redirectToRoute('profile_read');
+        } catch (\InvalidArgumentException $e) {
+            // JWTService::validate() ne lève que InvalidArgumentException (jamais les
+            // classes typées JWTExpiredException/JWTInvalidSignatureException/
+            // JWTInvalidFormatException) : un seul message générique est affiché au
+            // client pour ne pas exposer la raison exacte (signature/format/expiration)
+            // d'un échec de validation ; le détail reste en log.
+            $this->logger->info('Échec de vérification email.', ['reason' => $e->getMessage()]);
+            $this->addFlash('danger', 'Le lien de vérification est invalide ou a expiré. Veuillez en demander un nouveau.');
+
             return $this->redirectToRoute('resend_verif');
-        } catch (JWTInvalidSignatureException|JWTInvalidFormatException) {
-            $this->addFlash('danger', 'Le lien de vérification est invalide.');
-            return $this->redirectToRoute('register');
-        } catch (InvalidArgumentException $e) {
-            $this->addFlash('danger', $e->getMessage());
-            return $this->redirectToRoute('register');
         }
     }
 
@@ -133,6 +134,7 @@ class RegistrationController extends AbstractController
 
         if ($user->isVerified()) {
             $this->addFlash('warning', 'Votre compte est déjà activé.');
+
             return $this->redirectToRoute('profile_read');
         }
 
@@ -140,17 +142,18 @@ class RegistrationController extends AbstractController
 
         // ✅ sendNow() — même raison : token JWT sensible au temps
         $this->emailManager->sendNow(
-            to:       $user->getEmail(),
-            subject:  'Confirmez votre adresse email',
+            to: $user->getEmail(),
+            subject: 'Confirmez votre adresse email',
             template: 'confirmation_email',
-            context:  [
-                'user'     => $user,
-                'token'    => $token,
+            context: [
+                'user' => $user,
+                'token' => $token,
                 'fullName' => $user->getFullName(),
             ]
         );
 
         $this->addFlash('success', 'Un nouveau lien de vérification vous a été envoyé.');
+
         return $this->redirectToRoute('profile_read');
     }
 }

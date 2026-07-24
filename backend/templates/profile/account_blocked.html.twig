@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Accès bloqué — Profil</title>
+		{# Page autonome, mêmes raisons que templates/admin/account_blocked.html.twig #}
+		{{ vite_entry_link_tags('app') }}
+	</head>
+	<body class="bg-(--bg-default) text-(--brand-dark) min-h-screen flex items-center justify-center p-4">
+		<div class="max-w-lg w-full">
+			<div class="card p-6 text-center">
+				{% if reason == 'disabled' %}
+					<div class="mx-auto mb-4 w-14 h-14 rounded-full bg-danger/10 flex items-center justify-center">
+						<span class="material-icons text-danger text-3xl">block</span>
+					</div>
+					<h1 class="text-xl font-semibold mb-2">Compte désactivé</h1>
+					<p class="text-gray-600 mb-6">Votre compte a été désactivé. Contactez le support pour en connaître la raison ou demander sa réactivation — l'échange par email nous permet d'assurer un suivi de votre demande.</p>
+					<a href="mailto:contact@horlynat.com?subject=Compte%20d%C3%A9sactiv%C3%A9%20-%20demande%20d%27assistance" class="btn btn-primary inline-flex items-center gap-2">
+						<span class="material-icons text-base">mail</span>Contacter le support
+					</a>
+				{% else %}
+					<div class="mx-auto mb-4 w-14 h-14 rounded-full bg-warning/20 flex items-center justify-center">
+						<span class="material-icons text-amber-600 text-3xl">mark_email_unread</span>
+					</div>
+					<h1 class="text-xl font-semibold mb-2">Email non vérifié</h1>
+					<p class="text-gray-600 mb-6">Votre adresse email n'a pas encore été vérifiée. Vérifiez-la pour retrouver l'accès à votre profil.</p>
+					<a href="{{ path('resend_verif') }}" class="btn btn-primary inline-flex items-center gap-2">
+						<span class="material-icons text-base">refresh</span>Renvoyer l'email de vérification
+					</a>
+				{% endif %}
+
+				<div class="mt-6 pt-4 border-t border-gray-200">
+					<a href="{{ path('logout') }}" class="text-sm text-gray-500 hover:text-gray-700">Se déconnecter</a>
+				</div>
+			</div>
+		</div>
+
+		<dialog id="account-blocked-modal" class="card p-6 max-w-md w-full bg-bg-card backdrop:bg-brand-dark/40 backdrop:backdrop-blur-sm shadow-2xl border-0">
+			<div class="text-center">
+				{% if reason == 'disabled' %}
+					<div class="mx-auto mb-4 w-14 h-14 rounded-full bg-danger/10 flex items-center justify-center">
+						<span class="material-icons text-danger text-3xl">block</span>
+					</div>
+					<h2 class="text-lg font-semibold mb-2">Compte désactivé</h2>
+					<p class="text-gray-600 mb-6">L'accès à votre profil est bloqué. Contactez le support par email pour assurer le suivi de votre demande.</p>
+					<a href="mailto:contact@horlynat.com?subject=Compte%20d%C3%A9sactiv%C3%A9%20-%20demande%20d%27assistance" class="btn btn-primary inline-flex items-center gap-2 mb-3">
+						<span class="material-icons text-base">mail</span>Contacter le support
+					</a>
+				{% else %}
+					<div class="mx-auto mb-4 w-14 h-14 rounded-full bg-warning/20 flex items-center justify-center">
+						<span class="material-icons text-amber-600 text-3xl">mark_email_unread</span>
+					</div>
+					<h2 class="text-lg font-semibold mb-2">Email non vérifié</h2>
+					<p class="text-gray-600 mb-6">Vérifiez votre adresse email pour retrouver l'accès à votre profil.</p>
+					<a href="{{ path('resend_verif') }}" class="btn btn-primary inline-flex items-center gap-2 mb-3">
+						<span class="material-icons text-base">refresh</span>Renvoyer l'email de vérification
+					</a>
+				{% endif %}
+				<button type="button" class="btn btn-secondary w-full" onclick="document.getElementById('account-blocked-modal').close()">Fermer</button>
+			</div>
+		</dialog>
+
+		<script>
+			document.addEventListener('DOMContentLoaded', () => document.getElementById('account-blocked-modal').showModal());
+		</script>
+	</body>
+</html>
