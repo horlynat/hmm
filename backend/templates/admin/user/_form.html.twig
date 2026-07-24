@@ -43,6 +43,41 @@
 				{{ form_errors(form.profileImageFile, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
 			</div>
 		</div>
+
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
+			<h3 class="md:col-span-2 text-xs font-bold uppercase tracking-wider opacity-40 flex items-center gap-2">
+				<span class="material-icons text-sm">badge</span>
+				Profil collaborateur (pro / freelance)
+			</h3>
+
+			<!-- Spécialités -->
+			<div>
+				{{ form_label(form.specialties, null, {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.specialties, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.specialties, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<!-- Disponibilité -->
+			<div>
+				{{ form_label(form.availability, null, {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.availability, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.availability, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<!-- Portfolio -->
+			<div>
+				{{ form_label(form.portfolioUrl, null, {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.portfolioUrl, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.portfolioUrl, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<!-- Bio -->
+			<div class="md:col-span-2">
+				{{ form_label(form.bio, null, {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+				{{ form_widget(form.bio, {'attr': {'class': 'input w-full min-h-[90px]'}}) }}
+				{{ form_errors(form.bio, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+		</div>
 	</div>
 
 	<!-- ⚙️ COLONNE LATÉRALE (30%) -->

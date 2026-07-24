@@ -40,6 +40,23 @@ final class AdminCollaboratorController extends AbstractController
 
         return $this->render('admin/collaborator/index.html.twig', [
             'collaborators' => $this->userRepository->findCollaborators(),
+            'candidatesCount' => count($this->userRepository->findFreelanceCandidates()),
+        ]);
+    }
+
+    // =========================================================================
+    // 📌 CANDIDATURES FREELANCE EN ATTENTE (inscription publique, pas encore
+    //    promues ROLE_EDITOR) — la promotion se fait via read()/update() ci-
+    //    dessous, communs à tout compte User quel que soit son rôle actuel.
+    // =========================================================================
+
+    #[Route('/candidates', name: 'candidates', methods: ['GET'])]
+    public function candidates(): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        return $this->render('admin/collaborator/candidates.html.twig', [
+            'candidates' => $this->userRepository->findFreelanceCandidates(),
         ]);
     }
 

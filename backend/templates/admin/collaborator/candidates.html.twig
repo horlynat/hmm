@@ -1,0 +1,93 @@
+{# templates/admin/collaborator/candidates.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Candidatures freelance
+{% endblock %}
+
+{% block body %}
+	<main class="container mx-auto px-4 py-8">
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+			<div>
+				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+					<span class="material-icons text-brand-primary">how_to_reg</span>
+					<span>Candidatures freelance</span>
+				</h1>
+				<p class="text-sm opacity-60 mt-1">Comptes créés via le formulaire public d'inscription — en attente de revue avant promotion en collaborateur.</p>
+			</div>
+			<a href="{{ path('admin_collaborator_index') }}" class="btn btn-secondary gap-2">
+				<span class="material-icons text-sm">groups</span>
+				<span>Voir les collaborateurs</span>
+			</a>
+		</div>
+
+		<!-- 📊 TABLEAU -->
+		<div class="soft-card">
+			<table class="table">
+				<thead>
+					<tr>
+						<th class="w-16">Id</th>
+						<th>Compte</th>
+						<th>Spécialités</th>
+						<th>Disponibilité</th>
+						<th>Portfolio</th>
+						<th class="w-32 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for candidate in candidates %}
+						<tr>
+							<td class="font-mono text-xs opacity-50">{{ candidate.id }}</td>
+							<td>
+								<div class="flex items-center gap-3">
+									<img class="h-9 w-9 rounded-full" src="{{ candidate.profileImage ?? 'https://ui-avatars.com/api/?name=' ~ (candidate.fullName ?? candidate.email)|url_encode }}" alt="{{ candidate.fullName ?? candidate.email }}">
+									<div>
+										<div class="font-bold text-brand-dark">{{ candidate.fullName ?? 'Non spécifié' }}</div>
+										<div class="text-xs opacity-60">{{ candidate.email }}{% if candidate.phone %} — {{ candidate.phone }}{% endif %}</div>
+									</div>
+								</div>
+							</td>
+							<td>
+								{% if candidate.specialties %}
+									<div class="flex flex-wrap gap-1">
+										{% for specialty in candidate.specialties %}
+											<span class="badge bg-brand-light text-brand-dark">{{ specialty }}</span>
+										{% endfor %}
+									</div>
+								{% else %}
+									<span class="text-xs opacity-40">—</span>
+								{% endif %}
+							</td>
+							<td class="text-sm opacity-70">{{ candidate.availability ?? '—' }}</td>
+							<td>
+								{% if candidate.portfolioUrl %}
+									<a href="{{ candidate.portfolioUrl }}" target="_blank" rel="noopener" class="text-brand-primary text-sm hover:underline">Voir</a>
+								{% else %}
+									<span class="text-xs opacity-40">—</span>
+								{% endif %}
+							</td>
+							<td>
+								<div class="flex items-center justify-end gap-2">
+									<a href="{{ path('admin_collaborator_read', {'id': candidate.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir la candidature">
+										<span class="material-icons text-lg block">visibility</span>
+									</a>
+									<a href="{{ path('admin_collaborator_update', {'id': candidate.id}) }}" class="p-2 hover:bg-success/20 rounded-sm transition-colors text-success" title="Promouvoir en collaborateur (cocher Éditeur)">
+										<span class="material-icons text-lg block">how_to_reg</span>
+									</a>
+								</div>
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="6" class="text-center py-12 opacity-40">
+								<span class="material-icons text-4xl block mb-2">how_to_reg</span>
+								<span>Aucune candidature en attente.</span>
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</main>
+{% endblock %}

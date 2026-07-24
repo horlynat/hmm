@@ -8,8 +8,8 @@
 
 	</head>
 	<body class="bg-gray-100 font-sans text-gray-800">
-		<div
-			class="max-w-xl mx-auto my-8 p-6 bg-white border border-gray-200 rounded-lg shadow-md">
+		
+		<div class="max-w-xl mx-auto my-8 p-6 bg-white border border-gray-200 rounded-lg shadow-md">
 
 			<!-- Header -->
 			<div class="bg-blue-900 text-white text-center py-4 rounded-t-lg">
@@ -17,13 +17,15 @@
 			</div>
 
 			<!-- Content -->
-			<div class="p-6"> {% block body %}{% endblock %}
-				</div>
-
-				<!-- Footer -->
-				<div class="text-center text-sm text-gray-500 mt-6 border-t border-gray-200 pt-4">
-					<p>Cet e-mail a été envoyé depuis votre plateforme Portfolio.</p>
-				</div>
+			<div class="p-6"> 
+				{% block body %}{% endblock %}
 			</div>
-		</body>
-	</html>
+
+			<!-- Footer -->
+			<div class="text-center text-sm text-gray-500 mt-6 border-t border-gray-200 pt-4">
+				<p>Cet e-mail a été envoyé depuis la plateforme horlynat.com.</p>
+			</div>
+		</div>
+
+	</body>
+</html>

@@ -1,0 +1,27 @@
+{#
+	En dev, Vite injecte le CSS via le module JS (import "*.css" dans login.js/
+	register.js) au lieu d'un <link> statique : pentatrion-vite ne peut pas
+	générer de <link rel="stylesheet"> tant que le serveur Vite tourne (voir
+	public/build/.vite/entrypoints.json : "css" est absent pour toutes les
+	entrées en mode dev, seul le build de prod le remplit). Sans ce garde-fou,
+	le HTML rendu par le serveur s'affiche donc un instant totalement sans
+	styles (formulaire empilé, SVG géant, aucune couleur) avant que le module
+	JS ne charge et n'injecte les styles — un flash très visible à chaque
+	rechargement de page.
+	On masque le corps de la page jusqu'à ce que login.js/register.js aient
+	fini de s'exécuter (ils ajoutent la classe "vite-ready" juste après leur
+	import CSS). Le timeout est un filet de sécurité si le script ne charge
+	jamais (coupure réseau, bloqueur de script) : la page ne doit jamais
+	rester masquée indéfiniment, surtout sur un écran de connexion.
+#}
+<style>
+	html:not(.vite-ready) body { visibility: hidden; }
+</style>
+<script>
+	setTimeout(function () {
+		document.documentElement.classList.add('vite-ready');
+	}, 2000);
+</script>
+<noscript>
+	<style>html { visibility: visible !important; }</style>
+</noscript>

@@ -31,8 +31,15 @@
 			{{ vite_entry_link_tags('app') }}
 		{% endblock %}
 
-		{# Alpine.js utilisé pour la gestion réactive du menu mobile et des dropdowns #}
-		<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+		{# Alpine.js utilisé pour la gestion réactive du menu mobile, des accordéons et des dropdowns.
+		   ⚠️ Build CSP (@alpinejs/csp), PAS le build standard (alpinejs) : le build standard évalue
+		   x-data/x-show/@click via `new Function()`, ce qui exige 'unsafe-eval' dans script-src. Notre
+		   CSP (config/packages/nelmio_security.yaml) n'autorise pas 'unsafe-eval' volontairement, donc
+		   revenir au build standard cassera silencieusement tous les x-data de l'app (menu mobile,
+		   accordéons du nav admin, dropdowns) sans erreur PHP/Twig — seulement des erreurs CSP en
+		   console navigateur. Le plugin collapse doit être chargé AVANT le core Alpine. #}
+		<script src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js" defer></script>
+		<script src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.x.x/dist/cdn.min.js" defer></script>
 
 		{% block javascripts %}
 			{{ vite_entry_script_tags('app') }}

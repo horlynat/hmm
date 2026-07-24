@@ -86,6 +86,32 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     /**
+     * Candidatures freelance en attente de revue : inscrites via le formulaire
+     * public (donc avec des spécialités renseignées) mais pas encore promues
+     * ROLE_EDITOR par un administrateur — cf. AdminCollaboratorController.
+     *
+     * @return User[]
+     */
+    public function findFreelanceCandidates(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.roles NOT LIKE :roleAdmin')
+            ->andWhere('u.roles NOT LIKE :roleSuperAdmin')
+            ->andWhere('u.roles NOT LIKE :roleEditor')
+            ->andWhere('u.roles NOT LIKE :roleModerator')
+            ->andWhere('u.roles NOT LIKE :roleManager')
+            ->andWhere('u.specialties IS NOT NULL')
+            ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
+            ->setParameter('roleSuperAdmin', '%"ROLE_SUPER_ADMIN"%')
+            ->setParameter('roleEditor', '%"ROLE_EDITOR"%')
+            ->setParameter('roleModerator', '%"ROLE_MODERATOR"%')
+            ->setParameter('roleManager', '%"ROLE_MANAGER"%')
+            ->orderBy('u.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * @return User[] Comptes dont le mot de passe n'a pas été renouvelé depuis $days jours
      */
     public function findWithStalePassword(int $days = 90): array

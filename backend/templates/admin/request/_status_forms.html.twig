@@ -1,6 +1,6 @@
 {# templates/admin/request/_status_forms.html.twig #}
 <div class="flex flex-col gap-3">
-	{% if quoteRequest.status is not same as(true) %}
+	{% if quoteRequest.status.value == 'pending' %}
 		<form method="post" action="{{ path('admin_request_accept', {'id': quoteRequest.id}) }}" class="w-full">
 			<input type="hidden" name="_token" value="{{ csrf_token('request_status_' ~ quoteRequest.id) }}">
 			<button type="submit" class="btn w-full text-sm gap-2 bg-green-500 text-white border-0">
@@ -8,9 +8,6 @@
 				<span>Accepter</span>
 			</button>
 		</form>
-	{% endif %}
-
-	{% if quoteRequest.status is not same as(false) %}
 		<form method="post" action="{{ path('admin_request_reject', {'id': quoteRequest.id}) }}" class="w-full">
 			<input type="hidden" name="_token" value="{{ csrf_token('request_status_' ~ quoteRequest.id) }}">
 			<button type="submit" class="btn w-full text-sm gap-2 bg-danger text-white border-0">
@@ -18,15 +15,24 @@
 				<span>Refuser</span>
 			</button>
 		</form>
-	{% endif %}
-
-	{% if quoteRequest.status is not null %}
-		<form method="post" action="{{ path('admin_request_reset', {'id': quoteRequest.id}) }}" class="w-full">
+	{% elseif quoteRequest.status.value == 'accepted' %}
+		<form method="post" action="{{ path('admin_request_suspend', {'id': quoteRequest.id}) }}" class="w-full">
 			<input type="hidden" name="_token" value="{{ csrf_token('request_status_' ~ quoteRequest.id) }}">
-			<button type="submit" class="btn btn-secondary w-full text-sm gap-2">
-				<span class="material-icons text-sm">restart_alt</span>
-				<span>Réinitialiser (en attente)</span>
+			<button type="submit" class="btn w-full text-sm gap-2 bg-orange-500 text-white border-0">
+				<span class="material-icons text-sm">pause_circle</span>
+				<span>Suspendre les travaux</span>
 			</button>
 		</form>
+		<p class="text-xs opacity-50 text-center">Une demande acceptée ne peut plus être refusée.</p>
+	{% elseif quoteRequest.status.value == 'suspended' %}
+		<form method="post" action="{{ path('admin_request_resume', {'id': quoteRequest.id}) }}" class="w-full">
+			<input type="hidden" name="_token" value="{{ csrf_token('request_status_' ~ quoteRequest.id) }}">
+			<button type="submit" class="btn w-full text-sm gap-2 bg-green-500 text-white border-0">
+				<span class="material-icons text-sm">play_circle</span>
+				<span>Reprendre les travaux</span>
+			</button>
+		</form>
+	{% elseif quoteRequest.status.value == 'rejected' %}
+		<p class="text-xs opacity-50 text-center">Demande refusée — peut être conservée comme historique ou supprimée ci-dessous.</p>
 	{% endif %}
 </div>

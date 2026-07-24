@@ -21,10 +21,11 @@
 			<div class="lg:col-span-2 card space-y-6">
 				<div>
 					<span class="badge {{ message.status.getBadgeClass() }}">{{ message.status.getLabel() }}</span>
+					<span class="badge bg-brand-light text-brand-dark">{{ message.source }}</span>
 					<h1 class="text-3xl font-heading font-bold tracking-tight mt-3 text-brand-dark">
 						{{ message.subject }}
 					</h1>
-					<p class="text-sm opacity-60 mt-1">De {{ message.name }} ({{ message.email }}) — {{ message.createdAt ? message.createdAt|date('d/m/Y H:i') : '—' }}</p>
+					<p class="text-sm opacity-60 mt-1">De {{ message.name }}{% if message.company %} ({{ message.company }}){% endif %} — {{ message.email }} — {{ message.createdAt ? message.createdAt|date('d/m/Y H:i') : '—' }}</p>
 				</div>
 
 				<div class="leading-relaxed text-base space-y-4 whitespace-pre-line border-t border-gray-100 pt-6 text-brand-dark/80">
@@ -40,14 +41,38 @@
 					</h3>
 
 					<div class="space-y-3 text-sm">
-						<div class="flex justify-between items-center">
+						<div class="flex justify-between items-center gap-3">
 							<span class="opacity-60">Nom :</span>
-							<span class="font-bold text-brand-dark">{{ message.name }}</span>
+							<span class="font-bold text-brand-dark text-right">{{ message.name }}</span>
 						</div>
-						<div class="flex justify-between items-center">
+						{% if message.company %}
+							<div class="flex justify-between items-center gap-3">
+								<span class="opacity-60">Société :</span>
+								<span class="font-bold text-brand-dark text-right">{{ message.company }}</span>
+							</div>
+						{% endif %}
+						<div class="flex justify-between items-center gap-3">
 							<span class="opacity-60">Email :</span>
-							<span class="font-bold text-brand-dark">{{ message.email }}</span>
+							<span class="font-bold text-brand-dark text-right">{{ message.email }}</span>
 						</div>
+						{% if message.phone %}
+							<div class="flex justify-between items-center gap-3">
+								<span class="opacity-60">Téléphone :</span>
+								<span class="font-bold text-brand-dark text-right">{{ message.phone }}</span>
+							</div>
+						{% endif %}
+						{% if message.channel %}
+							<div class="flex justify-between items-center gap-3">
+								<span class="opacity-60">Canal préféré :</span>
+								<span class="font-bold text-brand-dark text-right">{{ message.channel }}</span>
+							</div>
+						{% endif %}
+						{% if message.slot %}
+							<div class="flex justify-between items-center gap-3">
+								<span class="opacity-60">Créneau souhaité :</span>
+								<span class="font-bold text-brand-dark text-right">{{ message.slot }}</span>
+							</div>
+						{% endif %}
 					</div>
 
 					<div class="pt-4 border-t border-gray-100 flex flex-col gap-3">

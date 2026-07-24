@@ -1,5 +1,10 @@
 import "../styles/login.css";
 
+// Révèle la page une fois que ce module (et son import CSS ci-dessus) a fini
+// de s'exécuter — voir templates/_partials/_vite_fouc_guard.html.twig pour
+// le détail du flash sans styles que ça évite en dev.
+document.documentElement.classList.add("vite-ready");
+
 /**
  * register.js
  * Validation en temps réel pour le formulaire d'inscription.

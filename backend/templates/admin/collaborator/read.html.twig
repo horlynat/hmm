@@ -43,6 +43,40 @@
 					</div>
 				</div>
 
+				{% if user.specialties or user.availability or user.portfolioUrl or user.bio %}
+					<!-- 🧑‍💻 PROFIL COLLABORATEUR -->
+					<div class="card">
+						<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 mb-4 flex items-center gap-2">
+							<span class="material-icons text-sm">badge</span>
+							Profil collaborateur
+						</h3>
+						{% if user.specialties %}
+							<div class="mb-4 flex flex-wrap gap-1.5">
+								{% for specialty in user.specialties %}
+									<span class="badge bg-brand-light text-brand-dark">{{ specialty }}</span>
+								{% endfor %}
+							</div>
+						{% endif %}
+						<div class="grid grid-cols-2 gap-4 mb-4">
+							<div>
+								<p class="text-xs opacity-60 uppercase font-bold">Disponibilité</p>
+								<p class="text-brand-dark font-bold">{{ user.availability ?? '—' }}</p>
+							</div>
+							<div>
+								<p class="text-xs opacity-60 uppercase font-bold">Portfolio</p>
+								{% if user.portfolioUrl %}
+									<a href="{{ user.portfolioUrl }}" target="_blank" rel="noopener" class="text-brand-primary font-bold hover:underline">Voir le lien</a>
+								{% else %}
+									<p class="text-brand-dark font-bold">—</p>
+								{% endif %}
+							</div>
+						</div>
+						{% if user.bio %}
+							<p class="text-sm leading-relaxed whitespace-pre-line text-brand-dark/80 border-t border-gray-100 pt-4">{{ user.bio }}</p>
+						{% endif %}
+					</div>
+				{% endif %}
+
 				<!-- 📁 PROJETS ASSOCIÉS -->
 				<div class="card">
 					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 mb-4 flex items-center gap-2">

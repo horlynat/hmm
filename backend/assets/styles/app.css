@@ -138,6 +138,10 @@ h1, h2, h3, .heading {
 .input-danger    { border-color: var(--color-danger);  color: var(--color-danger); }
 .input-warning   { border-color: var(--color-warning); color: var(--color-warning); }
 
+/* Textes d'aide sous les champs (login/register) */
+.helper-success  { color: var(--color-success); }
+.helper-danger   { color: var(--color-danger); }
+
 .input-disabled  { 
     @apply bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed dark:bg-gray-800/50; 
 }

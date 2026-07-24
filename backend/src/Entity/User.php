@@ -18,7 +18,10 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-#[UniqueEntity(fields: ['email'], message: "Il existe déjà un compte avec cet email.")]
+// entityClass explicite : sans lui, la validation échoue avec "Unable to find
+// the object manager" dès qu'on valide une sous-classe non mappée Doctrine
+// (ex: CollaboratorRegistrationApiResource extends User, pattern API Platform).
+#[UniqueEntity(fields: ['email'], message: "Il existe déjà un compte avec cet email.", entityClass: User::class)]
 #[ORM\HasLifecycleCallbacks] // ✅ Active les callbacks Doctrine
 class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwoFactorInterface
 {
@@ -29,10 +32,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Groups(["api_user", "api_admin"])]
+    #[Groups(["api_user", "api_admin", "collaborator_signup"])]
     #[Assert\NotBlank(message: "L'email est obligatoire.")]
     #[Assert\Email(message: "Veuillez entrer un email valide.")]
-    private string $email = '';
+    // protected (pas private) : UniqueEntityValidator reflète l'objet réellement
+    // validé (potentiellement une sous-classe ApiResource comme
+    // CollaboratorRegistrationApiResource) — une propriété private du parent est
+    // invisible à ReflectionObject sur une instance de sous-classe, alors qu'une
+    // propriété protected reste visible. Sans ça : "email is not a property of
+    // class ...ApiResource".
+    protected string $email = '';
 
     /** @var array<int, string> */
     #[ORM\Column]
@@ -47,7 +56,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     private string $password = '';
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["api_user", "api_admin"])]
+    #[Groups(["api_user", "api_admin", "collaborator_signup"])]
     #[Assert\Length(max: 255, maxMessage: "Le nom complet ne peut pas dépasser {{ limit }} caractères.")]
     private ?string $fullName = null;
 
@@ -88,13 +97,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     private ?\DateTimeImmutable $passwordChangedAt = null;
 
     #[ORM\Column(length: 20, nullable: true)]
-    #[Groups(["api_user", "api_admin"])]
+    #[Groups(["api_user", "api_admin", "collaborator_signup"])]
     #[Assert\Length(min: 7, max: 20, minMessage: "Le numéro doit contenir au moins {{ limit }} caractères.")]
     #[Assert\Regex(
         pattern: '/^[0-9+\-\s\(\)]+$/',
         message: "Le numéro de téléphone contient des caractères invalides."
     )]
     private ?string $phone = null;
+
+    /**
+     * Champs propres au profil "collaborateur" (pro/freelance) — renseignés à
+     * l'inscription via le formulaire public dédié, visibles/éditables ensuite
+     * par l'utilisateur (profil) et l'admin (fiche collaborateur).
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(["api_user", "api_admin", "collaborator_signup"])]
+    private ?array $specialties = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(["api_user", "api_admin", "collaborator_signup"])]
+    private ?string $availability = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["api_user", "api_admin", "collaborator_signup"])]
+    #[Assert\Url(message: "Le lien portfolio doit être une URL valide.")]
+    private ?string $portfolioUrl = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(["api_user", "api_admin", "collaborator_signup"])]
+    private ?string $bio = null;
 
     #[ORM\Column(type: 'boolean')]
     #[Groups(["api_admin"])]
@@ -331,6 +362,50 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     public function setPhone(?string $phone): self
     {
         $this->phone = $phone;
+        return $this;
+    }
+
+    public function getSpecialties(): ?array
+    {
+        return $this->specialties;
+    }
+
+    public function setSpecialties(?array $specialties): self
+    {
+        $this->specialties = $specialties;
+        return $this;
+    }
+
+    public function getAvailability(): ?string
+    {
+        return $this->availability;
+    }
+
+    public function setAvailability(?string $availability): self
+    {
+        $this->availability = $availability;
+        return $this;
+    }
+
+    public function getPortfolioUrl(): ?string
+    {
+        return $this->portfolioUrl;
+    }
+
+    public function setPortfolioUrl(?string $portfolioUrl): self
+    {
+        $this->portfolioUrl = $portfolioUrl;
+        return $this;
+    }
+
+    public function getBio(): ?string
+    {
+        return $this->bio;
+    }
+
+    public function setBio(?string $bio): self
+    {
+        $this->bio = $bio;
         return $this;
     }
 

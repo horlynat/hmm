@@ -20,22 +20,39 @@
 			<!-- 📖 CONTENU (70%) -->
 			<div class="lg:col-span-2 card space-y-6">
 				<div>
-					{% if quoteRequest.status is null %}
-						<span class="badge bg-yellow-500 text-black">En attente</span>
-					{% elseif quoteRequest.status %}
-						<span class="badge bg-green-500 text-white">Acceptée</span>
-					{% else %}
-						<span class="badge bg-red-500 text-white">Refusée</span>
-					{% endif %}
+					<span class="badge {{ quoteRequest.status.badgeClass }}">{{ quoteRequest.status.label }}</span>
+					<span class="badge bg-brand-light text-brand-dark">{{ quoteRequest.category }}</span>
 					<h1 class="text-3xl font-heading font-bold tracking-tight mt-3 text-brand-dark">
 						{{ quoteRequest.name }}
 					</h1>
-					<p class="text-sm opacity-60 mt-1">{{ quoteRequest.email }} — {{ quoteRequest.phone }}</p>
+					<p class="text-sm opacity-60 mt-1">{{ quoteRequest.email }}{% if quoteRequest.phone %} — {{ quoteRequest.phone }}{% endif %}</p>
 				</div>
 
+				{% if quoteRequest.categoryDetail %}
+					<div class="border-t border-gray-100 pt-4">
+						<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 mb-1">Besoin précis</h3>
+						<p class="text-sm font-semibold text-brand-dark">{{ quoteRequest.categoryDetail }}</p>
+					</div>
+				{% endif %}
+
 				<div class="leading-relaxed text-base space-y-4 whitespace-pre-line border-t border-gray-100 pt-6 text-brand-dark/80">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 mb-1">Description du client</h3>
 					{{ quoteRequest.message }}
 				</div>
+
+				{% if quoteRequest.clarifications %}
+					<div class="border-t border-gray-100 pt-6">
+						<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 mb-3">Précisions apportées à l'assistant IA</h3>
+						<dl class="space-y-3">
+							{% for item in quoteRequest.clarifications %}
+								<div class="text-sm">
+									<dt class="opacity-60">{{ item.question }}</dt>
+									<dd class="font-semibold text-brand-dark">{{ item.answer }}</dd>
+								</div>
+							{% endfor %}
+						</dl>
+					</div>
+				{% endif %}
 			</div>
 
 			<!-- ⚙️ INFOS LATÉRALES (30%) -->
@@ -46,9 +63,31 @@
 					</h3>
 
 					<div class="space-y-3 text-sm">
-						<div class="flex justify-between items-center">
+						<div class="flex justify-between items-center gap-3">
+							<span class="opacity-60">Trouvé via :</span>
+							<span class="font-bold text-brand-dark text-right">{{ quoteRequest.source|default('—') }}</span>
+						</div>
+						<div class="flex justify-between items-center gap-3">
+							<span class="opacity-60">Budget :</span>
+							<span class="font-bold text-brand-dark text-right">{{ quoteRequest.budget|default('—') }}{% if quoteRequest.currency %} {{ quoteRequest.currency }}{% endif %}</span>
+						</div>
+						<div class="flex justify-between items-center gap-3">
+							<span class="opacity-60">Délai souhaité :</span>
+							<span class="font-bold text-brand-dark text-right">{{ quoteRequest.timeline|default('—') }}</span>
+						</div>
+						<div class="flex justify-between items-center gap-3">
+							<span class="opacity-60">Canal préféré :</span>
+							<span class="font-bold text-brand-dark text-right">{{ quoteRequest.channel|default('—') }}</span>
+						</div>
+						{% if quoteRequest.attachmentName %}
+							<div class="flex justify-between items-center gap-3">
+								<span class="opacity-60">Pièce jointe mentionnée :</span>
+								<span class="font-bold text-brand-dark text-right">{{ quoteRequest.attachmentName }}</span>
+							</div>
+						{% endif %}
+						<div class="flex justify-between items-center gap-3 pt-3 border-t border-gray-100">
 							<span class="opacity-60">Compte lié :</span>
-							<span class="font-bold text-brand-dark">{{ quoteRequest.user ? quoteRequest.user.fullName ?? quoteRequest.user.email : '—' }}</span>
+							<span class="font-bold text-brand-dark text-right">{{ quoteRequest.user ? quoteRequest.user.fullName ?? quoteRequest.user.email : '—' }}</span>
 						</div>
 					</div>
 

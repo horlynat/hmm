@@ -46,8 +46,10 @@
 					<tr>
 						<th class="w-24">Id</th>
 						<th>Statut</th>
+						<th>Origine</th>
 						<th>Expéditeur</th>
 						<th>Sujet</th>
+						<th>Contact préféré</th>
 						<th>Reçu le</th>
 						<th class="w-24 text-right">Actions</th>
 					</tr>
@@ -60,10 +62,17 @@
 								<span class="badge {{ message.status.getBadgeClass() }}">{{ message.status.getLabel() }}</span>
 							</td>
 							<td>
-								<div>{{ message.name }}</div>
+								<span class="badge bg-brand-light text-brand-dark">{{ message.source }}</span>
+							</td>
+							<td>
+								<div>{{ message.name }}{% if message.company %} <span class="opacity-50">· {{ message.company }}</span>{% endif %}</div>
 								<div class="text-xs opacity-60">{{ message.email }}</div>
 							</td>
 							<td>{{ message.subject }}</td>
+							<td class="text-sm opacity-70">
+								{% if message.channel %}<div>{{ message.channel }}</div>{% endif %}
+								{% if message.phone %}<div class="text-xs opacity-60">{{ message.phone }}</div>{% endif %}
+							</td>
 							<td class="text-sm opacity-70">{{ message.createdAt ? message.createdAt|date('d/m/Y H:i') : '—' }}</td>
 							<td>
 								<div class="flex items-center justify-end gap-2">
@@ -76,7 +85,7 @@
 						</tr>
 					{% else %}
 						<tr>
-							<td colspan="6" class="text-center py-12 opacity-40">
+							<td colspan="8" class="text-center py-12 opacity-40">
 								<span class="material-icons text-4xl block mb-2">mail_off</span>
 								Aucun message pour le moment.
 							</td>

@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use App\Entity\QuoteRequest;
+use App\State\QuoteRequestCreateProcessor;
 
 #[ApiResource(
     stateOptions: new Options(entityClass: QuoteRequest::class),
@@ -33,6 +34,7 @@ use App\Entity\QuoteRequest;
         // 📌 Créer une demande (public)
         new Post(
             denormalizationContext: ['groups' => ['api_public']],
+            processor: QuoteRequestCreateProcessor::class,
             description: "Permet à un utilisateur de créer une demande de devis."
         ),
 

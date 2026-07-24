@@ -28,9 +28,9 @@
 				<label class="text-xs font-bold uppercase opacity-60">Statut</label>
 				<select name="status" class="input mt-1">
 					<option value="">Tous</option>
-					<option value="pending" {% if filters.status == 'pending' %}selected{% endif %}>En attente</option>
-					<option value="accepted" {% if filters.status == 'accepted' %}selected{% endif %}>Acceptées</option>
-					<option value="rejected" {% if filters.status == 'rejected' %}selected{% endif %}>Refusées</option>
+					{% for status in statuses %}
+						<option value="{{ status.value }}" {% if filters.status == status.value %}selected{% endif %}>{{ status.getLabel() }}</option>
+					{% endfor %}
 				</select>
 			</div>
 			<button type="submit" class="btn btn-primary">Filtrer</button>
@@ -44,7 +44,8 @@
 						<th class="w-24">Id</th>
 						<th>Statut</th>
 						<th>Demandeur</th>
-						<th>Téléphone</th>
+						<th>Catégorie</th>
+						<th>Contact préféré</th>
 						<th class="w-24 text-right">Actions</th>
 					</tr>
 				</thead>
@@ -53,19 +54,20 @@
 						<tr>
 							<td class="font-mono text-xs opacity-50">{{ quoteRequest.id }}</td>
 							<td>
-								{% if quoteRequest.status is null %}
-									<span class="badge bg-yellow-500 text-black">En attente</span>
-								{% elseif quoteRequest.status %}
-									<span class="badge bg-green-500 text-white">Acceptée</span>
-								{% else %}
-									<span class="badge bg-red-500 text-white">Refusée</span>
-								{% endif %}
+								<span class="badge {{ quoteRequest.status.badgeClass }}">{{ quoteRequest.status.label }}</span>
 							</td>
 							<td>
 								<div>{{ quoteRequest.name }}</div>
 								<div class="text-xs opacity-60">{{ quoteRequest.email }}</div>
 							</td>
-							<td class="text-sm opacity-70">{{ quoteRequest.phone }}</td>
+							<td>
+								<div class="text-sm font-semibold">{{ quoteRequest.category|default('—') }}</div>
+								<div class="text-xs opacity-60">{{ quoteRequest.categoryDetail }}</div>
+							</td>
+							<td class="text-sm opacity-70">
+								<div>{{ quoteRequest.channel|default('—') }}</div>
+								{% if quoteRequest.phone %}<div class="text-xs opacity-60">{{ quoteRequest.phone }}</div>{% endif %}
+							</td>
 							<td>
 								<div class="flex items-center justify-end gap-2">
 									<a href="{{ path('admin_request_read', {'id': quoteRequest.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir">
@@ -77,7 +79,7 @@
 						</tr>
 					{% else %}
 						<tr>
-							<td colspan="5" class="text-center py-12 opacity-40">
+							<td colspan="6" class="text-center py-12 opacity-40">
 								<span class="material-icons text-4xl block mb-2">inbox</span>
 								Aucune demande pour le moment.
 							</td>

@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\Project;
 use App\Enum\ContactMessageStatusEnum;
 use App\Enum\ProjectStatusEnum;
+use App\Enum\QuoteStatusEnum;
 use App\Repository\ArticleRepository;
 use App\Repository\ContactMessageRepository;
 use App\Repository\CourseRepository;
@@ -121,14 +122,19 @@ class AdminDashboardController extends AbstractController
             $deadlineProjects,
         );
 
-        // Demandes de devis en attente (statut = null) : compteur pour le KPI + aperçu pour le flux d'activité
-        $pendingQuoteRequestsCount = $quoteRequestRepository->countByStatus(null);
-        $recentQuoteRequests = array_slice($quoteRequestRepository->findByStatus(null), 0, 5);
+        // Demandes de devis en attente : compteur pour le KPI + aperçu pour le flux d'activité
+        $pendingQuoteRequestsCount = $quoteRequestRepository->countByStatus(QuoteStatusEnum::PENDING);
+        $recentQuoteRequests = array_slice($quoteRequestRepository->findByStatus(QuoteStatusEnum::PENDING), 0, 5);
 
-        // Taux de conversion des devis (acceptés / total)
+        // Taux de conversion des devis (acceptées, y compris suspendues temporairement / total)
         $totalQuoteRequests = $quoteRequestRepository->count([]);
         $quoteConversionRate = $totalQuoteRequests > 0
-            ? round($quoteRequestRepository->countByStatus(true) / $totalQuoteRequests * 100, 1)
+            ? round(
+                ($quoteRequestRepository->countByStatus(QuoteStatusEnum::ACCEPTED)
+                    + $quoteRequestRepository->countByStatus(QuoteStatusEnum::SUSPENDED))
+                / $totalQuoteRequests * 100,
+                1,
+            )
             : 0.0;
 
         // Messages de contact non lus : compteur pour le KPI + aperçu pour le flux d'activité

@@ -13,13 +13,22 @@
 				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
 					<span class="material-icons text-brand-primary">groups</span>
 					<span>Collaborateurs</span>
+					{% if candidatesCount > 0 %}
+						<a href="{{ path('admin_collaborator_candidates') }}" class="badge bg-blue-500 text-white hover:opacity-80" title="Candidatures freelance en attente">{{ candidatesCount }} candidature{{ candidatesCount > 1 ? 's' : '' }}</a>
+					{% endif %}
 				</h1>
 				<p class="text-sm opacity-60 mt-1">Pros et freelances associés à vos projets.</p>
 			</div>
-			<a href="{{ path('admin_collaborator_create') }}" class="btn btn-primary gap-2">
-				<span class="material-icons text-sm">add_circle</span>
-				<span>Ajouter un collaborateur</span>
-			</a>
+			<div class="flex gap-2">
+				<a href="{{ path('admin_collaborator_candidates') }}" class="btn btn-secondary gap-2">
+					<span class="material-icons text-sm">how_to_reg</span>
+					<span>Candidatures</span>
+				</a>
+				<a href="{{ path('admin_collaborator_create') }}" class="btn btn-primary gap-2">
+					<span class="material-icons text-sm">add_circle</span>
+					<span>Ajouter un collaborateur</span>
+				</a>
+			</div>
 		</div>
 
 		<!-- 📊 TABLEAU -->
