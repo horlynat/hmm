@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>{% block page_title %}Erreur{% endblock %} — Mon Portfolio</title>
+		{#
+			Page volontairement autonome : elle ne doit dépendre ni de la base de
+			données (contrairement à templates/base.html.twig, qui lit des réglages
+			via SystemSettingRepository) ni du manifest Vite — si l'erreur affichée
+			vient justement d'une panne DB ou d'assets manquants, la page d'erreur
+			elle-même ne doit pas planter à son tour.
+		#}
+		<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+	</head>
+	<body class="bg-gray-100 font-sans text-gray-800 min-h-screen flex items-center justify-center">
+		<div class="max-w-lg w-full mx-4 p-8 bg-white border border-gray-200 rounded-lg shadow-md text-center">
+			<p class="text-6xl font-bold {% block code_color %}text-blue-900{% endblock %} mb-2">{% block code %}{% endblock %}</p>
+			<h1 class="text-xl font-semibold mb-4">{% block title %}Une erreur est survenue{% endblock %}</h1>
+			<p class="text-gray-600 mb-6">{% block message %}Veuillez réessayer plus tard.{% endblock %}</p>
+			<a href="/" class="inline-block px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800">Retour à l'accueil</a>
+		</div>
+	</body>
+</html>
