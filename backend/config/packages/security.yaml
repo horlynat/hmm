@@ -20,6 +20,7 @@ security:
         api_login:
             pattern: ^/api/login_check
             stateless: true
+            user_checker: App\Security\UserChecker
             json_login:
                 check_path: /api/login_check
                 username_path: email
@@ -43,11 +44,13 @@ security:
             pattern: ^/api
             stateless: true
             provider: app_user_provider
+            user_checker: App\Security\UserChecker
             jwt: ~
 
         # 🔒 Firewall principal (site web)
         main:
             provider: app_user_provider
+            user_checker: App\Security\UserChecker
             custom_authenticator: App\Security\SecurityAuthenticator
             logout:
                 path: logout

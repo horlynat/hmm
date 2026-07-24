@@ -1,6 +1,16 @@
 framework:
     secret: '%env(APP_SECRET)%'
 
+    # Reverse proxy / load balancer : sans ceci, derrière un proxy (nginx,
+    # Traefik, un CDN...), $request->getClientIp() renvoie l'IP du proxy pour
+    # TOUT le monde — ce qui neutraliserait silencieusement tous les rate
+    # limiters par IP (login, formulaires publics) et fausserait la géoloc des
+    # connexions. Renseigner SYMFONY_TRUSTED_PROXIES en prod avec l'IP/plage du
+    # proxy de confiance (ex: "10.0.0.0/8", ou "REMOTE_ADDR" si un seul proxy
+    # direct). Laissé vide en local (pas de proxy) : aucune IP n'est approuvée.
+    trusted_proxies: '%env(default::SYMFONY_TRUSTED_PROXIES)%'
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port']
+
     # Sessions sécurisées
     session:
         cookie_secure: auto
@@ -31,6 +41,14 @@ framework:
             policy: fixed_window
             limit: 5
             interval: '1 minute'
+        # Anti-bruteforce du code TOTP à la connexion (/2fa_check). Scheb ne
+        # limite pas nativement les tentatives ; sans ce garde-fou, un code à
+        # 6 chiffres (1 000 000 de combinaisons, fenêtre TOTP ~30-90s) resterait
+        # théoriquement attaquable. Clé = identifiant utilisateur.
+        two_factor_attempt:
+            policy: fixed_window
+            limit: 5
+            interval: '15 minutes'
         # Anti-spam des notifications admin par email (ErrorNotifier) : au plus
         # 1 email par heure et par classe d'exception. Pool dédié (cache.yaml)
         # pour pouvoir le vider isolément sans affecter les autres limiteurs.
