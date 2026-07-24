@@ -1,0 +1,38 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block body %}
+	<div class="bg-white shadow-md rounded-lg p-6">
+		<h1 class="text-2xl font-bold text-red-700 mb-4">🚨 Erreur applicative — {{ statusCode }}</h1>
+
+		<p class="text-gray-700 mb-4">Une erreur nécessitant votre attention vient de se produire sur la plateforme.</p>
+
+		<ul class="space-y-2 bg-gray-50 border border-gray-200 rounded-lg p-4">
+			<li class="text-gray-800">
+				<strong class="text-red-700">Classe :</strong>
+				<code>{{ exceptionClass }}</code>
+			</li>
+			<li class="text-gray-800">
+				<strong class="text-red-700">Message :</strong>
+				{{ message }}
+			</li>
+			<li class="text-gray-800">
+				<strong class="text-red-700">Code HTTP :</strong>
+				{{ statusCode }}
+			</li>
+			<li class="text-gray-800">
+				<strong class="text-red-700">Date :</strong>
+				{{ date|date('d/m/Y H:i') }}
+			</li>
+			{% if context is not empty %}
+				<li class="text-gray-800">
+					<strong class="text-red-700">Contexte :</strong>
+					<pre class="whitespace-pre-wrap text-sm">{{ context|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+				</li>
+			{% endif %}
+		</ul>
+
+		<p class="mt-6 text-gray-700">
+			Cette alerte est limitée à un envoi par heure et par type d'erreur.
+		</p>
+	</div>
+{% endblock %}

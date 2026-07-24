@@ -15,5 +15,10 @@ framework:
         #app: cache.adapter.apcu
 
         # Namespaced pools use the above "app" backend by default
-        #pools:
-            #my.dedicated.cache: null
+        pools:
+            # Utilisé par le rate limiter "error_notification" (framework.yaml) :
+            # pool isolé pour pouvoir le vider (cache:pool:clear cache.error_notifier)
+            # sans réinitialiser les compteurs login/api/two_factor_setup, qui
+            # partagent le pool cache.rate_limiter par défaut.
+            cache.error_notifier:
+                adapter: cache.adapter.filesystem
