@@ -32,7 +32,11 @@
 				</div>
 
 				<div class="leading-relaxed text-base space-y-4 whitespace-pre-line border-t border-gray-100 pt-6">
-					{{ course.description ?: '<em class="opacity-40">Aucune description renseignée pour cette formation.</em>'|raw }}
+					{% if course.description %}
+						{{ course.description }}
+					{% else %}
+						<em class="opacity-40">Aucune description renseignée pour cette formation.</em>
+					{% endif %}
 				</div>
 			</div>
 

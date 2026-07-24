@@ -3,11 +3,11 @@
 namespace App\ApiResource;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use ApiPlatform\Metadata\Delete;
 use App\Entity\User;
 
 #[ApiResource(
@@ -18,9 +18,12 @@ use App\Entity\User;
             security: "is_granted('ROLE_ADMIN')"
         ),
 
-        // 📌 Lire un utilisateur (public : profil simplifié)
+        // 📌 Lire un utilisateur (admin, ou l'utilisateur lui-même) — le groupe
+        // api_user expose email/téléphone/bio : jamais accessible anonymement,
+        // même en lecture seule, sous peine d'énumération de PII par id.
         new Get(
-            normalizationContext: ['groups' => ['api_user']]
+            normalizationContext: ['groups' => ['api_user']],
+            security: "is_granted('ROLE_ADMIN') or object == user"
         ),
 
         // 📌 Créer un utilisateur (admin)

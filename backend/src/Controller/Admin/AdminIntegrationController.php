@@ -127,6 +127,12 @@ class AdminIntegrationController extends AbstractController
             return $this->redirectToRoute('admin_integration_index');
         }
 
+        if (!$this->isSafeWebhookUrl($integration->getWebhookUrl())) {
+            $this->addFlash('error', 'URL de webhook invalide ou pointant vers un hôte interne — requête bloquée.');
+
+            return $this->redirectToRoute('admin_integration_index');
+        }
+
         try {
             $response = $httpClient->request('POST', $integration->getWebhookUrl(), [
                 'json' => ['text' => sprintf('✅ Test de connexion depuis le back-office (%s).', $integration->getName())],
@@ -175,5 +181,29 @@ class AdminIntegrationController extends AbstractController
         if (\is_string($apiKey) && '' !== trim($apiKey)) {
             $integration->setApiKeyEncrypted($secretEncryptor->encrypt($apiKey));
         }
+    }
+
+    /**
+     * Empêche un admin (compte potentiellement compromis, ou simple erreur de
+     * saisie) de faire requêter au serveur une URL interne (SSRF) via le
+     * webhook d'une intégration : schéma HTTPS obligatoire, résolution DNS de
+     * l'hôte et rejet des plages privées/loopback/lien-local.
+     */
+    private function isSafeWebhookUrl(string $url): bool
+    {
+        $host = parse_url($url, PHP_URL_HOST);
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+
+        if (!\is_string($host) || '' === $host || 'https' !== $scheme) {
+            return false;
+        }
+
+        $ip = filter_var($host, FILTER_VALIDATE_IP) ? $host : gethostbyname($host);
+        if ($ip === $host && !filter_var($host, FILTER_VALIDATE_IP)) {
+            // gethostbyname() renvoie le nom tel quel si la résolution échoue.
+            return false;
+        }
+
+        return false !== filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
     }
 }
