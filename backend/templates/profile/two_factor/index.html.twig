@@ -45,8 +45,37 @@
 			</div>
 
 			{% if user.isTotpAuthenticationEnabled %}
-				<p class="text-xs opacity-50 mt-4 pt-4 border-t border-gray-100">Un code sera demandé à chaque connexion, en plus de votre mot de passe. Si vous perdez l'accès à votre application d'authentification, contactez un administrateur pour réinitialiser la 2FA sur votre compte.</p>
+				<p class="text-xs opacity-50 mt-4 pt-4 border-t border-gray-100">Un code sera demandé à chaque connexion, en plus de votre mot de passe.</p>
 			{% endif %}
 		</div>
+
+		{% if user.isTotpAuthenticationEnabled %}
+			{% set remaining = user.backupCodes|length %}
+			<div class="soft-card p-6 mt-6">
+				<div class="flex items-center justify-between mb-2">
+					<h2 class="font-heading font-bold text-lg flex items-center gap-2 text-brand-dark">
+						<span class="material-icons text-brand-primary">vpn_key</span>
+						Codes de récupération
+					</h2>
+					<span class="badge {{ remaining > 2 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger' }}">
+						{{ remaining }} restant{{ remaining > 1 ? 's' : '' }}
+					</span>
+				</div>
+				<p class="text-sm opacity-60 mb-4">Ils vous permettent de vous connecter si vous perdez l'accès à votre application d'authentification. {% if remaining <= 2 %}<strong class="text-danger">Il vous en reste peu — pensez à en générer de nouveaux.</strong>{% endif %}</p>
+
+				<form method="post" action="{{ path('profile_two_factor_recovery_codes_regenerate') }}" class="flex flex-wrap items-end gap-3">
+					<input type="hidden" name="_token" value="{{ csrf_token('profile_two_factor_recovery_regenerate') }}">
+					<div class="flex-1 min-w-[12rem]">
+						<label for="regen_password" class="label block text-sm mb-1">Confirmez votre mot de passe</label>
+						<input type="password" id="regen_password" name="password" required autocomplete="current-password" class="input input-primary w-full">
+					</div>
+					<button type="submit" class="btn btn-secondary">
+						<span class="material-icons text-base mr-1.5">autorenew</span>
+						Générer de nouveaux codes
+					</button>
+				</form>
+				<p class="text-xs opacity-50 mt-3">Générer de nouveaux codes invalide immédiatement les anciens.</p>
+			</div>
+		{% endif %}
 	</main>
 {% endblock %}
