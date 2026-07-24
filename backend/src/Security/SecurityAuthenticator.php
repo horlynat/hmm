@@ -2,6 +2,7 @@
 
 namespace App\Security;
 
+use App\Entity\User;
 use App\Repository\UserRepository;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Cookie;
@@ -61,21 +62,13 @@ class SecurityAuthenticator extends AbstractLoginFormAuthenticator
         $request->getSession()->set(SecurityRequestAttributes::LAST_USERNAME, $email);
 
         return new Passport(
-            new UserBadge($email, function (string $userIdentifier) {
-                $user = $this->userRepository->findOneBy(['email' => $userIdentifier]);
-
-                if (!$user) {
-                    throw new CustomUserMessageAuthenticationException('Utilisateur introuvable.');
-                }
-                if (!$user->isVerified()) {
-                    throw new CustomUserMessageAuthenticationException('Votre compte n\'est pas encore vérifié.');
-                }
-                if (!$user->isActive()) {
-                    throw new CustomUserMessageAuthenticationException('Votre compte a été désactivé.');
-                }
-
-                return $user;
-            }),
+            // Le loader ne fait qu'une résolution : il ne distingue pas
+            // « utilisateur introuvable » d'un mauvais mot de passe (les deux
+            // aboutissent au même message générique « identifiants invalides »),
+            // pour ne pas permettre d'énumérer les comptes. Les contrôles de
+            // statut (vérifié / actif) sont faits par App\Security\UserChecker
+            // APRÈS validation du mot de passe.
+            new UserBadge($email, fn (string $userIdentifier): ?User => $this->userRepository->findOneBy(['email' => $userIdentifier])),
             new PasswordCredentials($password),
             [
                 new CsrfTokenBadge('authenticate', $request->getPayload()->getString('_csrf_token')),
@@ -98,7 +91,7 @@ class SecurityAuthenticator extends AbstractLoginFormAuthenticator
             return new RedirectResponse($this->urlGenerator->generate('admin_dashboard_index'));
         }
 
-        /** @var \App\Entity\User $user */
+        /** @var User $user */
         $user = $token->getUser();
 
         return new RedirectResponse($this->urlGenerator->generate('profile_read', ['id' => $user->getId()]));

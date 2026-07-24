@@ -1,6 +1,7 @@
 <?php
 
 // src/EventListener/LoginListener.php
+
 namespace App\EventListener;
 
 use App\Entity\FailedLoginAttempt;
@@ -10,11 +11,13 @@ use App\Entity\UserSession;
 use App\Enum\NotificationPriorityEnum;
 use App\Message\LoginNotification;
 use App\Repository\FailedLoginAttemptRepository;
+use App\Repository\UserRepository;
 use App\Service\AdminAlertNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Security\Core\Exception\AccountStatusException;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Http\Event\InteractiveLoginEvent;
 use Symfony\Component\Security\Http\Event\LoginFailureEvent;
@@ -30,12 +33,14 @@ class LoginListener
     private const SUSPICIOUS_MIN_ATTEMPTS = 3;
 
     public function __construct(
-        private MessageBusInterface    $bus,
-        private RequestStack           $requestStack,
+        private MessageBusInterface $bus,
+        private RequestStack $requestStack,
         private EntityManagerInterface $entityManager,
         private FailedLoginAttemptRepository $failedLoginAttemptRepository,
-        private AdminAlertNotifier     $adminAlertNotifier,
-    ) {}
+        private AdminAlertNotifier $adminAlertNotifier,
+        private UserRepository $userRepository,
+    ) {
+    }
 
     public function __invoke(LoginSuccessEvent $event): void
     {
@@ -49,7 +54,7 @@ class LoginListener
             return;
         }
 
-        $ip     = $request->getClientIp() ?? '0.0.0.0';
+        $ip = $request->getClientIp() ?? '0.0.0.0';
         $device = $request->headers->get('User-Agent') ?? 'Appareil inconnu';
 
         $user->setLastIp($ip);
@@ -58,12 +63,12 @@ class LoginListener
         $this->entityManager->flush();
 
         $this->bus->dispatch(new LoginNotification(
-            userId:   $user->getId(),
-            email:    $user->getEmail(),
+            userId: $user->getId(),
+            email: $user->getEmail(),
             fullName: $user->getFullName(),
-            ip:       $ip,
-            device:   $device,
-            date:     new \DateTimeImmutable(),
+            ip: $ip,
+            device: $device,
+            date: new \DateTimeImmutable(),
         ));
     }
 
@@ -104,13 +109,19 @@ class LoginListener
 
         $exception = $event->getException();
         $reason = match (true) {
-            $exception instanceof CustomUserMessageAuthenticationException => match (true) {
-                str_contains($exception->getMessage(), 'introuvable') => 'unknown_user',
+            // Statut du compte (UserChecker) : le message porte le mot-clé.
+            $exception instanceof AccountStatusException => match (true) {
                 str_contains($exception->getMessage(), 'vérifié') => 'unverified_account',
                 str_contains($exception->getMessage(), 'désactivé') => 'inactive_account',
-                str_contains($exception->getMessage(), 'tentatives') => 'rate_limited',
-                default => 'bad_credentials',
+                default => 'account_status',
             },
+            $exception instanceof CustomUserMessageAuthenticationException
+                && str_contains($exception->getMessage(), 'tentatives') => 'rate_limited',
+            // « email inconnu » vs « mauvais mot de passe » n'est plus distingué
+            // par le message renvoyé au client (anti-énumération) : on reconstitue
+            // la distinction ici, côté serveur, uniquement pour le journal admin —
+            // jamais exposée à l'attaquant.
+            null === $this->userRepository->findOneBy(['email' => $email]) => 'unknown_user',
             default => 'bad_credentials',
         };
 
@@ -144,7 +155,7 @@ class LoginListener
             new \DateInterval(sprintf('PT%dH', self::SUSPICIOUS_WINDOW_HOURS)),
         );
 
-        if ($count !== self::SUSPICIOUS_MIN_ATTEMPTS) {
+        if (self::SUSPICIOUS_MIN_ATTEMPTS !== $count) {
             return;
         }
 
