@@ -43,6 +43,8 @@ class ProjectVoter extends Voter
     public const ADD_COLLABORATOR = 'PROJECT_ADD_COLLABORATOR';
     public const CHANGE_STATUS = 'PROJECT_CHANGE_STATUS';
     public const ARCHIVE = 'PROJECT_ARCHIVE';
+    public const APPROVE_EXPENSE = 'PROJECT_APPROVE_EXPENSE';
+    public const MANAGE_TASK = 'PROJECT_MANAGE_TASK';
 
     /**
      * @param LoggerInterface $logger Service de journalisation (déclaré en readonly pour la sécurité d'exécution)
@@ -68,6 +70,7 @@ class ProjectVoter extends Voter
             self::VIEW, self::EDIT, self::DELETE,
             self::ADD_EXPENSE, self::ADD_COLLABORATOR,
             self::CHANGE_STATUS, self::ARCHIVE,
+            self::APPROVE_EXPENSE, self::MANAGE_TASK,
         ], true)
             && $subject instanceof Project;
     }
@@ -105,9 +108,13 @@ class ProjectVoter extends Voter
             self::EDIT => $this->canEdit($project, $user),
             self::DELETE => $this->canDelete($project, $user),
             self::ADD_EXPENSE => $this->isProjectActive($project) && $this->hasRole($user, 'ROLE_MANAGER') && $this->isAssignedOrAdmin($project, $user),
-            self::ADD_COLLABORATOR => $this->hasRole($user, 'ROLE_MODERATOR') && $this->isAssignedOrAdmin($project, $user),
-            self::CHANGE_STATUS => $this->hasRole($user, 'ROLE_EDITOR') && $this->isAssignedOrAdmin($project, $user),
-            self::ARCHIVE => $this->hasRole($user, 'ROLE_MANAGER') && $this->isAssignedOrAdmin($project, $user),
+            self::ADD_COLLABORATOR => $this->hasRole($user, 'ROLE_ADMIN') && $this->isAssignedOrAdmin($project, $user),
+            self::CHANGE_STATUS => $this->hasRole($user, 'ROLE_ADMIN') && $this->isAssignedOrAdmin($project, $user),
+            self::ARCHIVE => $this->hasRole($user, 'ROLE_ADMIN') && $this->isAssignedOrAdmin($project, $user),
+            // Approuver/refuser une dépense = décision budgétaire (Manager+), projet actif.
+            self::APPROVE_EXPENSE => $this->isProjectActive($project) && $this->hasRole($user, 'ROLE_ADMIN') && $this->isAssignedOrAdmin($project, $user),
+            // Gérer les tâches (créer/éditer/cocher) = Éditeur+, projet actif.
+            self::MANAGE_TASK => $this->isProjectActive($project) && $this->hasRole($user, 'ROLE_ADMIN') && $this->isAssignedOrAdmin($project, $user),
             default => false,
         };
 
@@ -190,5 +197,14 @@ class ProjectVoter extends Voter
     {
         return in_array('ROLE_ADMIN', $user->getRoles(), true)
             || $project->getCollaborators()->contains($user);
+    }
+
+    /**
+     * L'utilisateur possède-t-il le rôle demandé, **hiérarchie comprise** ?
+     * (un ROLE_SUPER_ADMIN hérite de ROLE_MANAGER, etc. — cf. security.yaml).
+     */
+    private function hasRole(User $user, string $role): bool
+    {
+        return in_array($role, $this->roleHierarchy->getReachableRoleNames($user->getRoles()), true);
     }
 }

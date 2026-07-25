@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+{% set settings = systemSettingRepository.getSettings() %}
+<html lang="{{ settings.defaultLocale }}" class="{{ settings.theme.value == 'dark' ? 'dark' : '' }}">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>{% block title %}Mon espace projets{% endblock %} — {{ settings.siteName }}</title>
+
+		<style>:root { --color-brand-primary: {{ settings.primaryColor }}; }</style>
+
+		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>📁</text></svg>">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+		{% block stylesheets %}{{ vite_entry_link_tags('app') }}{% endblock %}
+		<script src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.x.x/dist/cdn.min.js" defer></script>
+		{% block javascripts %}{{ vite_entry_script_tags('app') }}{% endblock %}
+	</head>
+	<body class="min-h-screen bg-(--bg-default) text-(--brand-dark)">
+		<header class="border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/60 backdrop-blur sticky top-0 z-10">
+			<div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+				<a href="{{ path('member_project_index') }}" class="flex items-center gap-2 font-bold text-brand-dark">
+					<span class="ti ti-briefcase text-(--brand-primary) text-xl" aria-hidden="true"></span>
+					<span>{{ settings.siteName }} · Espace projets</span>
+				</a>
+				<div class="flex items-center gap-3 text-sm">
+					{% if app.user %}
+						<span class="hidden sm:inline text-brand-dark/60">{{ app.user.fullName ?? app.user.email }}</span>
+						<a href="{{ path('profile_read', {id: app.user.id}) }}" class="btn btn-ghost btn-sm gap-1" title="Mon profil"><span class="ti ti-user" aria-hidden="true"></span></a>
+						<a href="{{ path('logout') }}" class="btn btn-secondary btn-sm gap-1"><span class="ti ti-logout" aria-hidden="true"></span> Déconnexion</a>
+					{% endif %}
+				</div>
+			</div>
+		</header>
+
+		<main class="max-w-5xl mx-auto px-4 py-8">
+			{% include '_partials/_flashes.html.twig' %}
+			{% block body %}{% endblock %}
+		</main>
+	</body>
+</html>

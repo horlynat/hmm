@@ -3,6 +3,8 @@
 namespace App\Repository;
 
 use App\Entity\Project;
+use App\Entity\User;
+use App\Enum\ExpenseStatusEnum;
 use App\Enum\ProjectStatusEnum;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -306,5 +308,184 @@ class ProjectRepository extends ServiceEntityRepository
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult(); // cite: 6
+    }
+
+    /**
+     * 👤 Projets d'une partie prenante : ceux dont elle est le client OU un collaborateur.
+     *
+     * @return Project[]
+     */
+    public function findForStakeholder(User $user): array
+    {
+        return $this->createQueryBuilder('p')
+            ->leftJoin('p.collaborators', 'c')
+            ->where('p.client = :user OR c = :user')
+            ->setParameter('user', $user)
+            ->orderBy('p.createdAt', 'DESC')
+            ->distinct()
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * 📊 Agrégats globaux pour la centrale de gestion (une seule requête).
+     * Compte actif/terminé, dépassements, retards, échéances proches, orphelins,
+     * et totaux budgétaires du portefeuille.
+     *
+     * @return array{total:int,active:int,completed:int,overBudget:int,lowBudget:int,overdue:int,dueThisWeek:int,noClient:int,noTeam:int,totalBudget:string,totalSpent:string,remainingBudget:string}
+     */
+    public function getCommandCenterStats(): array
+    {
+        $now = new \DateTimeImmutable('today');
+        $closed = [ProjectStatusEnum::COMPLETED->value, ProjectStatusEnum::SUSPENDED->value];
+
+        /** @var array<string, mixed> $row */
+        $row = $this->createQueryBuilder('p')
+            ->select(
+                'COUNT(p.id) AS total',
+                'SUM(p.budget) AS totalBudget',
+                'SUM(p.spent) AS totalSpent',
+                'SUM(CASE WHEN p.status NOT IN (:closed) THEN 1 ELSE 0 END) AS active',
+                'SUM(CASE WHEN p.status = :completed THEN 1 ELSE 0 END) AS completed',
+                'SUM(CASE WHEN p.spent > p.budget THEN 1 ELSE 0 END) AS overBudget',
+                'SUM(CASE WHEN p.budget > 0 AND p.spent <= p.budget AND (p.budget - p.spent) / p.budget < 0.1 THEN 1 ELSE 0 END) AS lowBudget',
+                'SUM(CASE WHEN p.deadline IS NOT NULL AND p.deadline < :now AND p.status NOT IN (:closed) THEN 1 ELSE 0 END) AS overdue',
+                'SUM(CASE WHEN p.deadline IS NOT NULL AND p.deadline >= :now AND p.deadline <= :weekEnd AND p.status NOT IN (:closed) THEN 1 ELSE 0 END) AS dueThisWeek',
+                'SUM(CASE WHEN p.client IS NULL THEN 1 ELSE 0 END) AS noClient',
+            )
+            ->setParameter('closed', $closed)
+            ->setParameter('completed', ProjectStatusEnum::COMPLETED->value)
+            ->setParameter('now', $now)
+            ->setParameter('weekEnd', $now->modify('+7 days'))
+            ->getQuery()
+            ->getSingleResult();
+
+        $totalBudget = (string) ($row['totalBudget'] ?? '0');
+        $totalSpent = (string) ($row['totalSpent'] ?? '0');
+        if ('' === $totalBudget) { $totalBudget = '0'; }
+        if ('' === $totalSpent) { $totalSpent = '0'; }
+
+        // Projets sans aucun collaborateur (staff) : une ligne par projet à 0 collaborateur.
+        $noTeam = \count(
+            $this->createQueryBuilder('p')
+                ->select('p.id')
+                ->leftJoin('p.collaborators', 'c')
+                ->groupBy('p.id')
+                ->having('COUNT(c.id) = 0')
+                ->getQuery()
+                ->getScalarResult()
+        );
+
+        return [
+            'total' => (int) $row['total'],
+            'active' => (int) $row['active'],
+            'completed' => (int) $row['completed'],
+            'overBudget' => (int) $row['overBudget'],
+            'lowBudget' => (int) $row['lowBudget'],
+            'overdue' => (int) $row['overdue'],
+            'dueThisWeek' => (int) $row['dueThisWeek'],
+            'noClient' => (int) $row['noClient'],
+            'noTeam' => $noTeam,
+            'totalBudget' => $totalBudget,
+            'totalSpent' => $totalSpent,
+            'remainingBudget' => bcsub($totalBudget, $totalSpent, 2),
+        ];
+    }
+
+    /**
+     * 💸 Synthèse des dépenses en attente d'approbation sur tout le portefeuille.
+     *
+     * @return array{count:int,total:string}
+     */
+    public function getPendingApprovalsSummary(): array
+    {
+        /** @var array<string, mixed> $row */
+        $row = $this->getEntityManager()
+            ->createQuery(
+                'SELECT COUNT(e.id) AS cnt, COALESCE(SUM(e.amount), 0) AS total
+                 FROM App\Entity\ProjectExpense e
+                 WHERE e.status = :pending'
+            )
+            ->setParameter('pending', ExpenseStatusEnum::PENDING->value)
+            ->getSingleResult();
+
+        return [
+            'count' => (int) ($row['cnt'] ?? 0),
+            'total' => (string) ($row['total'] ?? '0'),
+        ];
+    }
+
+    /**
+     * 🎯 Répartition des projets par priorité (clé = valeur d'enum ou '' si nulle).
+     *
+     * @return array<string, int>
+     */
+    public function countByPriority(): array
+    {
+        /** @var array<int, array<string, mixed>> $rows */
+        $rows = $this->createQueryBuilder('p')
+            ->select('p.priority AS priority', 'COUNT(p.id) AS cnt')
+            ->groupBy('p.priority')
+            ->getQuery()
+            ->getScalarResult();
+
+        $out = [];
+        foreach ($rows as $r) {
+            $out[(string) ($r['priority'] ?? '')] = (int) $r['cnt'];
+        }
+
+        return $out;
+    }
+
+    /**
+     * ⏰ Prochaines échéances (projets actifs dont l'échéance tombe dans `$days` jours).
+     *
+     * @return Project[]
+     */
+    public function findUpcomingDeadlines(int $days = 14, int $limit = 6): array
+    {
+        $now = new \DateTimeImmutable('today');
+
+        return $this->createQueryBuilder('p')
+            ->where('p.deadline IS NOT NULL')
+            ->andWhere('p.deadline >= :now')
+            ->andWhere('p.deadline <= :until')
+            ->andWhere('p.status NOT IN (:closed)')
+            ->setParameter('now', $now)
+            ->setParameter('until', $now->modify('+'.$days.' days'))
+            ->setParameter('closed', [ProjectStatusEnum::COMPLETED->value, ProjectStatusEnum::SUSPENDED->value])
+            ->orderBy('p.deadline', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * 👥 Charge d'équipe : nombre de projets actifs par collaborateur (top N).
+     *
+     * @return array<int, array{id:int,name:string|null,email:string,cnt:int}>
+     */
+    public function countActiveProjectsByCollaborator(int $limit = 5): array
+    {
+        /** @var array<int, array<string, mixed>> $rows */
+        $rows = $this->createQueryBuilder('p')
+            ->select('u.id AS id', 'u.fullName AS name', 'u.email AS email', 'COUNT(p.id) AS cnt')
+            ->join('p.collaborators', 'u')
+            ->where('p.status NOT IN (:closed)')
+            ->setParameter('closed', [ProjectStatusEnum::COMPLETED->value, ProjectStatusEnum::SUSPENDED->value])
+            ->groupBy('u.id')
+            ->addGroupBy('u.fullName')
+            ->addGroupBy('u.email')
+            ->orderBy('cnt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_map(static fn (array $r): array => [
+            'id' => (int) $r['id'],
+            'name' => null !== $r['name'] ? (string) $r['name'] : null,
+            'email' => (string) $r['email'],
+            'cnt' => (int) $r['cnt'],
+        ], $rows);
     }
 }

@@ -1,0 +1,53 @@
+{# templates/admin/project/_history_list.html.twig #}
+{#
+   Fragment réutilisable : liste (timeline) des entrées d'historique d'un projet.
+   Rendu seul par le endpoint AJAX admin_project_history_recent (fragment "récent"),
+   et inclusible depuis la page complète (history.html.twig).
+
+   Variables attendues :
+   - histories : itérable de App\Entity\ProjectHistory
+   - project   : App\Entity\Project (optionnel, pour le contexte)
+#}
+{% if histories|length > 0 %}
+	<div class="space-y-4">
+		{% for history in histories %}
+			<div class="flex items-start gap-4 p-4 bg-white dark:bg-gray-900 border border-gray-100/80 rounded-xl shadow-3xs border-l-4 {{ history.getActionBadgeClass() }} hover:shadow-2xs hover:border-gray-200 transition-all duration-200">
+
+				{# Badge icône #}
+				<div class="text-2xl shrink-0 p-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg" aria-hidden="true">
+					{{ history.getActionIcon() }}
+				</div>
+
+				{# Corps de l'information #}
+				<div class="flex-1 min-w-0">
+					<div class="flex flex-wrap justify-between items-start gap-2">
+						<div>
+							<p class="text-sm font-semibold text-brand-dark mb-0">
+								<strong class="text-brand-dark font-bold">{{ history.user.fullName ?? history.user.email }}</strong>
+								a
+								<span class="text-brand-primary font-bold">{{ history.getActionLabel() }}</span>
+							</p>
+
+							{% if history.details %}
+								<p class="text-xs text-gray-500 mt-2 leading-relaxed bg-gray-50/75 dark:bg-gray-800/40 p-2.5 rounded-lg border border-gray-100/50">
+									{{ history.details }}
+								</p>
+							{% endif %}
+						</div>
+
+						{# Horodatage #}
+						<span class="text-[10px] text-gray-400 font-mono bg-gray-100/70 dark:bg-gray-800 px-2 py-0.5 rounded border border-gray-100">
+							{{ history.createdAt|date('d/m/Y H:i') }}
+						</span>
+					</div>
+				</div>
+
+			</div>
+		{% endfor %}
+	</div>
+{% else %}
+	<div class="text-center py-12 border-2 border-dashed border-gray-150 rounded-xl">
+		<span class="text-3xl block mb-2" role="img" aria-label="Boîte vide">⏳</span>
+		<p class="text-gray-400 font-medium mb-0">Aucune action enregistrée pour ce projet.</p>
+	</div>
+{% endif %}

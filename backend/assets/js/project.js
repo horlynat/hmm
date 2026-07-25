@@ -251,6 +251,83 @@ function initDynamicListeners() {
 }
 
 /**
+ * Onglets de la page de détail projet (read.html.twig).
+ * Robuste vis-à-vis de la CSP (aucune expression Alpine inline) : simple bascule
+ * d'attributs `aria-selected` (stylés via les variantes Tailwind `aria-selected:`)
+ * et de l'attribut `hidden` sur les panneaux. Gère aussi le deep-link par hash
+ * (#budget, #team, …) et les boutons/liens internes marqués [data-tab-goto].
+ * @function initProjectTabs
+ * @returns {void}
+ */
+function initProjectTabs() {
+    const group = document.querySelector("[data-project-tabs]");
+    if (!group) return;
+
+    const tabs = Array.from(group.querySelectorAll("[data-tab]"));
+    const panels = Array.from(group.querySelectorAll("[data-tab-panel]"));
+    if (!tabs.length) return;
+
+    // Clé de mémorisation par projet (indépendante du hash), pour restaurer
+    // l'onglet courant après un rechargement provoqué par une soumission de
+    // formulaire (ajout de temps / commentaire / tâche, etc.).
+    const storageKey = "projectTab:" + window.location.pathname;
+
+    const remember = (target) => {
+        try {
+            window.sessionStorage.setItem(storageKey, target);
+        } catch (e) {
+            /* sessionStorage indisponible : on ignore */
+        }
+    };
+
+    const activate = (name, push) => {
+        const exists = tabs.some((t) => t.dataset.tab === name);
+        const target = exists ? name : tabs[0].dataset.tab;
+
+        tabs.forEach((t) => {
+            const on = t.dataset.tab === target;
+            t.setAttribute("aria-selected", on ? "true" : "false");
+            t.tabIndex = on ? 0 : -1;
+        });
+        panels.forEach((p) => {
+            p.hidden = p.dataset.tabPanel !== target;
+        });
+
+        if (push) {
+            remember(target);
+            if (window.history.replaceState) {
+                window.history.replaceState(null, "", "#" + target);
+            }
+        }
+    };
+
+    tabs.forEach((t) => {
+        t.addEventListener("click", () => activate(t.dataset.tab, true));
+    });
+
+    // Boutons/liens ailleurs dans la page qui sautent vers un onglet précis.
+    document.querySelectorAll("[data-tab-goto]").forEach((el) => {
+        el.addEventListener("click", (e) => {
+            e.preventDefault();
+            activate(el.dataset.tabGoto, true);
+            group.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+    });
+
+    // Onglet initial : hash d'URL en priorité, sinon dernier onglet mémorisé,
+    // sinon le premier.
+    let initial = window.location.hash.replace("#", "");
+    if (!initial) {
+        try {
+            initial = window.sessionStorage.getItem(storageKey) || "";
+        } catch (e) {
+            initial = "";
+        }
+    }
+    activate(initial || tabs[0].dataset.tab, false);
+}
+
+/**
  * Handler pour le clic sur les en-têtes de colonne.
  * @this HTMLElement
  */
@@ -310,6 +387,7 @@ function initPage() {
     hideSkeleton();
     initHiddenInputs();
     initDynamicListeners();
+    initProjectTabs();
 }
 
 // 1. Écouteur standard pour le premier chargement classique de la page

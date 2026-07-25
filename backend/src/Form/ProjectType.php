@@ -4,9 +4,14 @@ namespace App\Form;
 
 use App\Entity\Project;
 use App\Entity\Skill;
+use App\Enum\BillingTypeEnum;
+use App\Enum\ProjectPriorityEnum;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
+use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
+use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -30,7 +35,15 @@ class ProjectType extends AbstractType
                 'label' => 'Lien',
                 'required' => false,
             ])
-            
+            ->add('budget', MoneyType::class, [
+                'label' => 'Budget alloué',
+                'currency' => 'EUR',
+                'scale' => 2,
+                'required' => false,
+                'empty_data' => '0.00',
+                'help' => 'Montant total alloué au projet. Doit être > 0 pour pouvoir enregistrer des dépenses.',
+            ])
+
             ->add('skills', EntityType::class, [
                 'class' => Skill::class,
                 'choice_label' => 'name',
@@ -58,12 +71,47 @@ class ProjectType extends AbstractType
                     )
                 ],
             ]);
+
+        // Paramètres & planning : présents à la création (config complète du projet).
+        // En édition, ces champs sont gérés en inline sur la page de lecture pour
+        // ne pas surcharger ce formulaire.
+        if ($options['include_planning']) {
+            $builder
+                ->add('priority', EnumType::class, [
+                    'class' => ProjectPriorityEnum::class,
+                    'choice_label' => fn (ProjectPriorityEnum $p) => $p->getLabel(),
+                    'required' => false,
+                    'placeholder' => '— Non définie —',
+                    'label' => 'Priorité',
+                ])
+                ->add('billingType', EnumType::class, [
+                    'class' => BillingTypeEnum::class,
+                    'choice_label' => fn (BillingTypeEnum $b) => $b->getLabel(),
+                    'required' => false,
+                    'placeholder' => '— Non défini —',
+                    'label' => 'Type de facturation',
+                ])
+                ->add('startedAt', DateType::class, [
+                    'widget' => 'single_text',
+                    'input' => 'datetime_immutable',
+                    'required' => false,
+                    'label' => 'Date de démarrage',
+                ])
+                ->add('deadline', DateType::class, [
+                    'widget' => 'single_text',
+                    'input' => 'datetime_immutable',
+                    'required' => false,
+                    'label' => 'Échéance',
+                ]);
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
             'data_class' => Project::class,
+            'include_planning' => false,
         ]);
+        $resolver->setAllowedTypes('include_planning', 'bool');
     }
 }

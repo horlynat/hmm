@@ -30,7 +30,7 @@
 		class="space-y-6"> <!-- Bloc Actions, Statut & Sauvegarde -->
 		<div class="card space-y-4">
 			<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 flex items-center gap-2">
-				<span class="material-icons text-sm">bolt</span>
+				<span class="ti ti-bolt text-sm" aria-hidden="true"></span>
 				Statut & Sauvegarde
 			</h3>
 
@@ -50,7 +50,7 @@
 
 			<div class="pt-2 flex flex-col gap-2">
 				<button type="submit" class="btn btn-primary w-full gap-2 cursor-pointer group">
-					<span class="material-icons text-sm transition-transform group-hover:scale-110">save</span>
+					<span class="ti ti-device-floppy text-sm transition-transform group-hover:scale-110" aria-hidden="true"></span>
 					<span>{{ button_label|default('Enregistrer le projet') }}</span>
 				</button>
 				{% if cancel_path is defined %}
@@ -60,6 +60,45 @@
 				{% endif %}
 			</div>
 		</div>
+
+		<!-- Bloc Budget -->
+		<div class="card">
+			{{ form_label(form.budget, 'Budget alloué (€)', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+			{{ form_widget(form.budget, {'attr': {'class': 'input w-full text-sm', 'placeholder': '0.00'}}) }}
+			<p class="text-[11px] opacity-40 mt-2 leading-normal">Requis (&gt; 0) pour enregistrer des dépenses sur le projet.</p>
+			{{ form_errors(form.budget, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+		</div>
+
+		{# Bloc Paramètres & planning (présent uniquement à la création) #}
+		{% if form.priority is defined %}
+			<div class="card space-y-3">
+				<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 flex items-center gap-2">
+					<span class="ti ti-adjustments text-sm" aria-hidden="true"></span> Paramètres &amp; planning
+				</h3>
+				<div>
+					{{ form_label(form.priority, 'Priorité', {'label_attr': {'class': 'block text-sm font-bold mb-1'}}) }}
+					{{ form_widget(form.priority, {'attr': {'class': 'input input-select w-full text-sm'}}) }}
+					{{ form_errors(form.priority, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+				<div>
+					{{ form_label(form.billingType, 'Type de facturation', {'label_attr': {'class': 'block text-sm font-bold mb-1'}}) }}
+					{{ form_widget(form.billingType, {'attr': {'class': 'input input-select w-full text-sm'}}) }}
+					{{ form_errors(form.billingType, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+				<div class="grid grid-cols-2 gap-2">
+					<div>
+						{{ form_label(form.startedAt, 'Démarrage', {'label_attr': {'class': 'block text-sm font-bold mb-1'}}) }}
+						{{ form_widget(form.startedAt, {'attr': {'class': 'input w-full text-sm'}}) }}
+						{{ form_errors(form.startedAt, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+					</div>
+					<div>
+						{{ form_label(form.deadline, 'Échéance', {'label_attr': {'class': 'block text-sm font-bold mb-1'}}) }}
+						{{ form_widget(form.deadline, {'attr': {'class': 'input w-full text-sm'}}) }}
+						{{ form_errors(form.deadline, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+					</div>
+				</div>
+			</div>
+		{% endif %}
 
 		<!-- Bloc Technologies / Skills -->
 		<div class="card">

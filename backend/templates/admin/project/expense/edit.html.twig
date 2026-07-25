@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Nouvelle dépense — {{ project.title }}{% endblock %}
+{% block title %}Modifier une dépense — {{ project.title }}{% endblock %}
 
 {% block body %}
 	<div class="page-header">
@@ -8,11 +8,11 @@
 			<nav class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider opacity-50 mb-1" aria-label="Fil d'Ariane">
 				<a href="{{ path('admin_project_read', {id: project.id}) }}" class="hover:text-(--brand-primary) transition-colors">{{ project.title }}</a>
 				<span class="ti ti-chevron-right text-xs" aria-hidden="true"></span>
-				<span aria-current="page">Nouvelle dépense</span>
+				<span aria-current="page">Modifier une dépense</span>
 			</nav>
 			<h1 class="page-title flex items-center gap-2">
-				<span class="ti ti-cash text-(--brand-primary)" aria-hidden="true"></span>
-				Enregistrer une dépense
+				<span class="ti ti-edit text-(--brand-primary)" aria-hidden="true"></span>
+				Modifier la dépense
 			</h1>
 		</div>
 		<a href="{{ path('admin_project_read', {id: project.id}) }}" class="btn btn-secondary gap-2">
@@ -23,7 +23,11 @@
 	<div class="max-w-2xl">
 		<div class="mb-4 flex items-center gap-2 text-sm rounded-lg bg-brand-light/30 border border-brand-light p-3 text-(--brand-dark)">
 			<span class="ti ti-info-circle shrink-0" aria-hidden="true"></span>
-			<span>La dépense sera enregistrée <strong>en attente d'approbation</strong> ; elle n'impactera le budget qu'une fois approuvée. Solde disponible : <strong>{{ project.formattedRemainingBudget }}</strong>.</span>
+			<span>
+				Statut actuel : <twig:Badge :variant="expense.status.variant" icon="{{ expense.status.icon }}">{{ expense.status.label }}</twig:Badge>.
+				Solde disponible : <strong>{{ project.formattedRemainingBudget }}</strong>.
+				{% if expense.approved %}Modifier une dépense approuvée met à jour le budget dépensé.{% endif %}
+			</span>
 		</div>
 
 		<div class="panel">
@@ -48,6 +52,15 @@
 					<div class="field">
 						{{ form_label(form.receipt, 'Justificatif', {'label_attr': {'class': 'field-label'}}) }}
 						{{ form_widget(form.receipt) }}
+						{% if expense.receiptPath %}
+							<p class="text-[11px] opacity-60 mt-1">
+								Justificatif actuel :
+								<a href="{{ expense.receiptPath }}" target="_blank" rel="noopener noreferrer" class="text-(--brand-primary) hover:underline inline-flex items-center gap-0.5">
+									<span class="ti ti-paperclip" aria-hidden="true"></span> voir
+								</a>
+								— téléverser un nouveau fichier le remplacera.
+							</p>
+						{% endif %}
 						{{ form_errors(form.receipt, {'attr': {'class': 'field-error'}}) }}
 					</div>
 				</div>
@@ -60,7 +73,7 @@
 				<div class="pt-4 flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-800">
 					<a href="{{ path('admin_project_read', {id: project.id}) }}" class="btn btn-secondary">Annuler</a>
 					<button type="submit" class="btn btn-primary gap-2">
-						<span class="ti ti-device-floppy" aria-hidden="true"></span> Soumettre la dépense
+						<span class="ti ti-device-floppy" aria-hidden="true"></span> Enregistrer les modifications
 					</button>
 				</div>
 				{{ form_end(form) }}

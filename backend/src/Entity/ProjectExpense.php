@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Entity\Project;
 use App\Entity\User;
+use App\Enum\ExpenseCategoryEnum;
+use App\Enum\ExpenseStatusEnum;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -45,6 +47,33 @@ class ProjectExpense
     #[ORM\Column(type: 'datetime_immutable')]
     #[Groups(['api_admin'])]
     private \DateTimeImmutable $createdAt;
+
+    #[ORM\Column(type: 'string', enumType: ExpenseCategoryEnum::class, options: ['default' => 'other'])]
+    #[Groups(['api_admin'])]
+    private ExpenseCategoryEnum $category = ExpenseCategoryEnum::OTHER;
+
+    /** Date effective de la dépense (peut différer de la date de saisie). */
+    #[ORM\Column(type: 'date_immutable', nullable: true)]
+    #[Groups(['api_admin'])]
+    private ?\DateTimeImmutable $spentAt = null;
+
+    #[ORM\Column(type: 'string', enumType: ExpenseStatusEnum::class, options: ['default' => 'pending'])]
+    #[Groups(['api_admin'])]
+    private ExpenseStatusEnum $status = ExpenseStatusEnum::PENDING;
+
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'approved_by_id', nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['api_admin'])]
+    private ?User $approvedBy = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['api_admin'])]
+    private ?\DateTimeImmutable $approvedAt = null;
+
+    /** Chemin du justificatif uploadé (reçu, facture) — via MediaUploader. */
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['api_admin'])]
+    private ?string $receiptPath = null;
 
     public function __construct()
     {
@@ -113,7 +142,94 @@ class ProjectExpense
         return $this;
     }
 
+    public function getCategory(): ExpenseCategoryEnum
+    {
+        return $this->category;
+    }
+
+    public function setCategory(ExpenseCategoryEnum $category): static
+    {
+        $this->category = $category;
+        return $this;
+    }
+
+    public function getSpentAt(): ?\DateTimeImmutable
+    {
+        return $this->spentAt;
+    }
+
+    public function setSpentAt(?\DateTimeImmutable $spentAt): static
+    {
+        $this->spentAt = $spentAt;
+        return $this;
+    }
+
+    public function getStatus(): ExpenseStatusEnum
+    {
+        return $this->status;
+    }
+
+    public function setStatus(ExpenseStatusEnum $status): static
+    {
+        $this->status = $status;
+        return $this;
+    }
+
+    public function getApprovedBy(): ?User
+    {
+        return $this->approvedBy;
+    }
+
+    public function setApprovedBy(?User $approvedBy): static
+    {
+        $this->approvedBy = $approvedBy;
+        return $this;
+    }
+
+    public function getApprovedAt(): ?\DateTimeImmutable
+    {
+        return $this->approvedAt;
+    }
+
+    public function setApprovedAt(?\DateTimeImmutable $approvedAt): static
+    {
+        $this->approvedAt = $approvedAt;
+        return $this;
+    }
+
+    public function getReceiptPath(): ?string
+    {
+        return $this->receiptPath;
+    }
+
+    public function setReceiptPath(?string $receiptPath): static
+    {
+        $this->receiptPath = $receiptPath;
+        return $this;
+    }
+
     // ========== Méthodes Utilitaires & Business Logique ==========
+
+    public function isApproved(): bool
+    {
+        return ExpenseStatusEnum::APPROVED === $this->status;
+    }
+
+    public function isPending(): bool
+    {
+        return ExpenseStatusEnum::PENDING === $this->status;
+    }
+
+    public function isRejected(): bool
+    {
+        return ExpenseStatusEnum::REJECTED === $this->status;
+    }
+
+    /** Date effective si renseignée, sinon la date de saisie. */
+    public function getEffectiveDate(): \DateTimeImmutable
+    {
+        return $this->spentAt ?? $this->createdAt;
+    }
 
     /**
      * Retourne le montant proprement formaté avec le symbole monétaire.
