@@ -1,0 +1,497 @@
+{
+  "common": {
+    "siteName": "Horlynat",
+    "ctaConfierProjet": "Start a project",
+    "ctaParlerAssistant": "Talk to the AI assistant",
+    "ctaTelechargerCv": "Download my CV",
+    "backToTop": "Back to top",
+    "whatsapp": "Chat on WhatsApp",
+    "toggleTheme": "Toggle dark mode",
+    "openMenu": "Open menu",
+    "aVenir": "to be completed",
+    "envoiEnCours": "Sending...",
+    "envoye": "Sent",
+    "readMore": "Read article",
+    "seeProject": "View project"
+  },
+  "nav": {
+    "accueil": "Home",
+    "apropos": "About",
+    "competences": "Skills",
+    "realisations": "Projects",
+    "blog": "Blog",
+    "freelances": "Freelancers",
+    "contact": "Start a project"
+  },
+  "footer": {
+    "mentionsLegales": "Legal notice",
+    "note": "Portfolio of Horlynat Mampassi Mbama — full-stack, mobile developer and AI solutions integrator, cybersecurity consultant and insurance technician."
+  },
+  "home": {
+    "eyebrow": "Full-Stack Developer & AI Integrator",
+    "title": "From ideas to architecture,",
+    "titleAccent": "connected end to end.",
+    "sub": "Horlynat Mampassi Mbama — web & mobile developer, cybersecurity consultant and insurance technician. Symfony backend, API Platform and Next.js frontend designed as one system, AI-assisted.",
+    "ctaFreelance": "Join as a freelancer",
+    "diagramCaption": "this site's real architecture — not an illustration",
+    "stats": {
+      "layers": "Architecture layers",
+      "apiFirst": "API-first",
+      "freelance": "Open to freelance collaboration",
+      "open": "Open"
+    },
+    "about": {
+      "eyebrow": "About",
+      "title": "Who I am",
+      "p1": "I design and build web applications end to end: a solid back office, a well-structured API, and a fast client-side interface. I like clean architectures, where each piece has a clear role.",
+      "p2": "On this portfolio, I apply my own method: a Symfony back office for management, an API Platform layer, a decoupled Next.js frontend, and an AI assistant that helps visitors get to know me and qualify their need."
+    },
+    "skills": {
+      "eyebrow": "Skills",
+      "title": "The same architecture, explained simply",
+      "lede": "Each card matches a real building block of the stack used on this site."
+    },
+    "projects": {
+      "eyebrow": "Projects",
+      "title": "Recent projects",
+      "lede": "Discover recently completed projects.",
+      "empty": "Projects will appear here as soon as they're published."
+    },
+    "testimonials": {
+      "eyebrow": "Testimonials",
+      "title": "What clients say",
+      "empty": "Testimonials will appear here as soon as they're published."
+    },
+    "blog": {
+      "eyebrow": "Blog",
+      "title": "Technical notes and lessons learned",
+      "lede": "Thoughts on architecture, technical choices and my view of the craft.",
+      "empty": "Articles will appear here as soon as they're published."
+    },
+    "freelance": {
+      "eyebrow": "Freelancer space",
+      "title": "Let's build projects together",
+      "lede": "Client projects that go beyond what I can carry alone are opened up to associated freelancers.",
+      "point1": "A freelancer account with a skills and availability profile",
+      "point2": "Access to qualified client projects matching your profile",
+      "point3": "Centralized tracking, from the same back office",
+      "cardTitle": "Create my profile",
+      "cardDesc": "Fill in your skills and availability to be suggested for relevant projects.",
+      "cardCta": "Create a freelancer account"
+    },
+    "contactCta": {
+      "title": "Got a project in mind?",
+      "sub": "Let's talk about what you want to build, or let my assistant qualify your request in a few questions."
+    }
+  },
+  "about": {
+    "eyebrow": "About",
+    "title": "Building systems that last,",
+    "titleAccent": "not just projects that ship.",
+    "sub": "Full-stack developer and AI solutions integrator, with a rare double background: expertise in insurance and cybersecurity, alongside hands-on practice in web, mobile development and design.",
+    "card": {
+      "name": "Horlynat Mampassi Mbama",
+      "role": "Full-Stack, Mobile Dev. & AI Integrator",
+      "dispo": "Availability",
+      "disponible": "Available",
+      "aussi": "Also",
+      "aussiValue": "Cybersecurity · Insurance",
+      "localisation": "Location",
+      "localisationValue": "Brazzaville, Congo",
+      "mode": "Way of working",
+      "modeValue": "Remote or on-site",
+      "langues": "Languages",
+      "languesValue": "French · English"
+    },
+    "bio": {
+      "eyebrow": "Background",
+      "title": "Who I am",
+      "p1": "Versatile, passionate and deeply committed, I draw on multidisciplinary expertise spanning insurance, web and mobile development, cybersecurity and web design.",
+      "p2": "My path started with a degree in mathematics, before training as a web integrator developer and then as an insurance technician. This dual background gives me a rare perspective: I understand both a company's business logic and how to translate it into reliable technical systems.",
+      "p3": "On this portfolio, I apply my own method: a Symfony back office for management, an API Platform layer as the single entry point, a decoupled Next.js frontend, and an AI assistant that represents me and qualifies requests even before we talk directly."
+    },
+    "vision": {
+      "eyebrow": "Vision",
+      "title": "My view of the craft, today and tomorrow",
+      "lede": "What I think about the current state of web development, and what's changing.",
+      "today": "Today",
+      "todayText": "API-first decoupling is becoming the norm rather than the exception: a backend handling data and business logic, an API as the single entry point, and interchangeable frontends depending on the use case (web, mobile, assistant).",
+      "tomorrow": "Tomorrow",
+      "tomorrowText": "AI assistants will become a fully-fledged interaction layer, on par with a web or mobile frontend, consuming the same API — not a bolted-on gadget, but an interface designed from the start."
+    },
+    "formation": {
+      "eyebrow": "Education",
+      "title": "Qualifications and certifications"
+    },
+    "experience": {
+      "eyebrow": "Experience",
+      "title": "Roles and projects led"
+    },
+    "skillsDetail": {
+      "eyebrow": "Skills",
+      "title": "What I master",
+      "lede": "The detail of the stack used daily, including on this site."
+    },
+    "why": {
+      "eyebrow": "Why me",
+      "title": "What makes the difference",
+      "card1Title": "A dual business and technical reading",
+      "card1Desc": "Years spent managing risks and insurance contracts taught me to understand a business need before writing code.",
+      "card2Title": "Cybersecurity built in from the start",
+      "card2Desc": "As a cybersecurity consultant, I don't treat security as a layer added afterwards, but as a design criterion.",
+      "card3Title": "An AI assistant that answers before I do",
+      "card3Desc": "You can qualify your need and get to know me 24/7, without waiting for a first meeting.",
+      "card4Title": "Design and development under one roof",
+      "card4Desc": "As a graphic and web designer on top of developer, I can carry a project from mockup to deployment."
+    },
+    "beyond": {
+      "eyebrow": "Beyond the code",
+      "title": "Languages and interests",
+      "langues": "Languages",
+      "langue1": "French — native",
+      "langue2": "English — intermediate",
+      "interets": "Interests",
+      "interet1": "Directing an SATB choir",
+      "interet2": "Graphic design & web design"
+    },
+    "cta": {
+      "title": "Want to talk about it?",
+      "sub": "Describe your project directly, or ask my AI assistant — it knows my profile as well as I do."
+    }
+  },
+  "skills": {
+    "eyebrow": "Skills",
+    "title": "A wide range,",
+    "titleAccent": "connected by a single logic.",
+    "sub": "Web and mobile development, AI, cybersecurity, insurance and design: fields that seem unrelated, but converge as soon as it's about understanding a need and answering it with a reliable system.",
+    "list": {
+      "eyebrow": "Skills",
+      "title": "The stack used daily",
+      "lede": "Grouping by category is temporarily unavailable from the public API — flat list in the meantime.",
+      "empty": "Skills will appear here as soon as they're published."
+    },
+    "domain": {
+      "eyebrow": "Business expertise",
+      "title": "Cybersecurity and insurance",
+      "lede": "Two fields that directly shape how I design technical systems.",
+      "cyberTitle": "Cybersecurity",
+      "cyberText": "An approach to security as a design criterion: access management, system reliability, team awareness — not a layer bolted on afterwards.",
+      "assuranceTitle": "Insurance & risk management",
+      "assuranceText": "Trained insurance technician, with hands-on experience handling quotes, contracts and client portfolio management."
+    },
+    "soft": {
+      "eyebrow": "Soft skills",
+      "title": "What can't be coded",
+      "lede": "Qualities that matter as much as the technical stack in a collaboration.",
+      "items": [
+        "Adaptability",
+        "Easy client contact",
+        "Autonomy and drive",
+        "Team spirit",
+        "Sense of dialogue",
+        "Professional rigor",
+        "Working under pressure",
+        "Conflict management",
+        "Sense of confidentiality"
+      ]
+    },
+    "tools": {
+      "eyebrow": "Office tools",
+      "title": "Everyday tools",
+      "items": ["Word", "Excel", "PowerPoint", "Outlook", "Access", "OneDrive"]
+    },
+    "cta": {
+      "title": "A skill in mind for your project?",
+      "sub": "Development, cybersecurity, design or insurance consulting — describe your need and I'll tell you how these skills apply."
+    }
+  },
+  "projects": {
+    "eyebrow": "Projects",
+    "title": "Systems that ship,",
+    "titleAccent": "not just mockups.",
+    "sub": "This site is the first concrete proof. The following projects will be added over time.",
+    "caseStudy": {
+      "eyebrow": "Case study",
+      "title": "This portfolio, as a demonstration",
+      "lede": "The most accomplished project to date is the one you're browsing right now.",
+      "badge": "Decoupled architecture",
+      "cardTitle": "One system, four layers",
+      "cardText": "Backend, API, frontend and AI assistant — each with a clear role.",
+      "bodyTitle": "Personal portfolio & AI assistant",
+      "bodyText1": "A showcase site designed like a real product: a Symfony back office for content management, API Platform as the single entry point, a decoupled Next.js frontend, and an AI assistant that presents my profile and qualifies project requests on my behalf.",
+      "bodyText2": "The goal: the site itself demonstrates how I design an architecture — every piece replaceable without breaking the others.",
+      "linkText": "See the full profile"
+    },
+    "list": {
+      "eyebrow": "Other projects",
+      "title": "Published projects",
+      "lede": "Filter by status to find ongoing, completed or collaborative projects.",
+      "empty": "Upcoming projects will appear here as soon as they're published.",
+      "filterAll": "All"
+    },
+    "status": {
+      "a_venir": "Upcoming",
+      "en_cours": "In progress",
+      "suspendu": "On hold",
+      "collaboration": "Collaboration",
+      "termine": "Completed"
+    },
+    "invite": {
+      "badge": "Have a project to showcase?",
+      "text": "Tell me about it — client, context, technologies used and outcome — and I'll replace these placeholders with your real work."
+    },
+    "cta": {
+      "title": "Got a project in mind?",
+      "sub": "Let's talk about what you want to build, or let my assistant qualify your request in a few questions."
+    }
+  },
+  "blog": {
+    "eyebrow": "Blog",
+    "title": "Technical notes",
+    "titleAccent": "and lessons learned.",
+    "sub": "Thoughts on architecture, technical choices and my view of the craft — between development, cybersecurity and insurance.",
+    "empty": "Articles will appear here as soon as they're published.",
+    "newsletter": {
+      "title": "Follow upcoming articles",
+      "text": "An occasional email, no spam — only when a new article or project comes out.",
+      "placeholder": "you@example.com",
+      "submit": "Subscribe",
+      "success": "Subscription confirmed, thank you!",
+      "note": "Feature coming soon — subscriptions aren't stored yet."
+    }
+  },
+  "freelances": {
+    "eyebrow": "Freelancer space",
+    "title": "Let's build projects",
+    "titleAccent": "together.",
+    "sub": "Client projects that go beyond what one person can carry are opened up to associated freelancers. Create your profile to be suggested for matching assignments.",
+    "ctaCreate": "Create my freelancer profile",
+    "stats": {
+      "qualified": "Qualified projects",
+      "contact": "Point of contact",
+      "open": "Open to all profiles"
+    },
+    "how": {
+      "eyebrow": "How it works",
+      "title": "Three steps, one single tracking",
+      "lede": "Everything goes through the same back office used to manage client projects.",
+      "step1Title": "You create your profile",
+      "step1Desc": "Skills, availability, and the type of assignments you're interested in.",
+      "step2Title": "You're suggested for relevant projects",
+      "step2Desc": "When a client request goes beyond what one person can carry, your profile is highlighted if it matches.",
+      "step3Title": "You collaborate, with full transparency",
+      "step3Desc": "Centralized tracking, clear roles, a single point of contact with the client."
+    },
+    "benefits": {
+      "eyebrow": "Why join",
+      "title": "What you gain",
+      "b1Title": "Already-qualified projects",
+      "b1Desc": "The client's need, budget and timeline are clarified before being proposed to you.",
+      "b2Title": "A single tracking interface",
+      "b2Desc": "No scattering across tools: everything happens in the same space as the rest of the project.",
+      "b3Title": "Recognized specialization",
+      "b3Desc": "Backend, frontend, mobile, design or cybersecurity, your specialty is highlighted, not diluted.",
+      "b4Title": "A relationship built on trust",
+      "b4Desc": "A direct collaborator, not an anonymous platform."
+    },
+    "signup": {
+      "eyebrow": "Sign up",
+      "title": "Create my profile",
+      "lede": "A few details are enough to get started — the rest can be filled in later.",
+      "faq1Q": "How long does sign-up take?",
+      "faq1A": "Less than two minutes. The profile can be completed or edited at any time.",
+      "faq2Q": "Do I need to be available right away?",
+      "faq2A": "No, the availability you indicate is exactly what's used to only suggest compatible assignments.",
+      "faq3Q": "Can I offer several specialties?",
+      "faq3A": "Yes, select all the ones that match your profile.",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "specialtiesLabel": "Specialties",
+      "specialtyBackend": "Backend",
+      "specialtyFrontend": "Frontend",
+      "specialtyMobile": "Mobile",
+      "specialtyAi": "AI / Data",
+      "specialtyCyber": "Cybersecurity",
+      "specialtyDesign": "Design",
+      "dispoLabel": "Availability",
+      "dispoImmediate": "Immediate",
+      "dispo2Weeks": "Within 2 weeks",
+      "dispo1Month": "Within 1 month",
+      "dispoDiscuss": "To discuss",
+      "linkLabel": "Portfolio or profile",
+      "linkPlaceholder": "Link to your work",
+      "messageLabel": "Message",
+      "messagePlaceholder": "Tell me about your experience...",
+      "submit": "Send my profile",
+      "success": "Profile sent — we'll get back to you as soon as a project matches.",
+      "error": "Something went wrong, please try again."
+    }
+  },
+  "contact": {
+    "eyebrow": "Start a project",
+    "title": "Two ways to",
+    "titleAccent": "reach me.",
+    "sub": "A guided questionnaire if you already have a clear idea of your need, or a quick appointment if you'd rather talk about it directly.",
+    "modeDevis": "Request a quote",
+    "modeDevisSub": "Step-by-step questionnaire",
+    "modeRdv": "Schedule a call",
+    "modeRdvSub": "Book an appointment directly",
+    "wizard": {
+      "step1Label": "Step 1 of 7",
+      "step1Question": "What type of service are you looking for?",
+      "typeWeb": "Web development",
+      "typeMobile": "Mobile app",
+      "typeIa": "AI integration",
+      "typeCyber": "Cybersecurity consulting",
+      "typeDesign": "Design / branding",
+      "typeOther": "Other / not sure yet",
+      "step2Label": "Step 2 of 7",
+      "step2Question": "How did you hear about me?",
+      "sourceGoogle": "Google search",
+      "sourceSocial": "Social media",
+      "sourceReco": "Referral",
+      "sourceOther": "Other",
+      "step3Label": "Step 3 of 7",
+      "step3Question": "Describe your project in a few sentences",
+      "descPlaceholder": "Context, goal, specific constraints...",
+      "fileLabel": "Attachment (optional)",
+      "fileHint": "Requirements doc, mockup or example — any format accepted.",
+      "step4Label": "Step 4 of 7",
+      "step4Question": "What is your indicative budget?",
+      "step4QuestionOther": "The need isn't fully defined yet — do you still have an approximate range?",
+      "currencyLabel": "Currency",
+      "budgetLow": "Under",
+      "budgetToDefine": "To define together",
+      "step5Label": "Step 5 of 7",
+      "step5Question": "What timeline do you want?",
+      "delaiAsap": "As soon as possible",
+      "delai1Month": "Within 1 month",
+      "delai3Months": "1 to 3 months",
+      "delaiNone": "No timeline constraint",
+      "step6Label": "Step 6 of 7",
+      "step6Question": "Your contact details",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "canalLabel": "Preferred contact channel",
+      "canalEmail": "Email",
+      "canalWhatsapp": "WhatsApp",
+      "canalPhone": "Phone call",
+      "step7Label": "Step 7 of 7",
+      "step7Question": "Review your request",
+      "recapType": "Service",
+      "recapSource": "Found via",
+      "recapDesc": "Description",
+      "recapFile": "Attachment",
+      "recapFileNone": "None",
+      "recapBudget": "Budget",
+      "recapDelai": "Timeline",
+      "recapName": "Name",
+      "recapEmail": "Email",
+      "recapCanal": "Preferred channel",
+      "recapEmpty": "—",
+      "reassurance1": "Before the final submission, my AI assistant will ask you 1 or 2 quick questions to refine your request.",
+      "reassurance2": "Your information is only used to qualify your request. Response within 48h, via your chosen channel.",
+      "consent": "I agree that this information may be used to process my request.",
+      "errorRequired": "Please fill in this field to continue.",
+      "back": "Back",
+      "next": "Next",
+      "continueWithAssistant": "Continue with the assistant",
+      "iaLabel": "Assistant review",
+      "iaQuestion": "One last thing before sending",
+      "iaAnswerPlaceholder": "Your answer (optional)...",
+      "iaSkip": "Skip",
+      "iaAnswer": "Answer",
+      "iaThanks": "Thanks, I've noted these details — your request is ready to go.",
+      "iaQuestionOther": "To better qualify your need: what concrete outcome are you expecting?",
+      "iaQuestionBudget": "Do you still have a budget ceiling, even approximate, not to exceed?",
+      "iaQuestionDefault": "Is there an existing system or hosting setup I should take into account?",
+      "iaQuestionLast": "One last thing the questionnaire may not have covered that I should know?",
+      "sendRequest": "Send my request",
+      "successTitle": "Request sent",
+      "successText": "Thank you, your quote request has been sent. Horlynat or his AI assistant will get back to you shortly, via your chosen channel.",
+      "errorSubmit": "Something went wrong while sending, please try again."
+    },
+    "rdv": {
+      "badge": "Quick chat",
+      "title": "Talk before you commit",
+      "text": "Don't have a precise brief yet? A short conversation is often enough to clarify the direction.",
+      "point1": "15 to 30 minutes, by video call or phone",
+      "point2": "No commitment on your part",
+      "point3": "Confirmation sent by email",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "slotLabel": "Preferred slot",
+      "slotMonMorning": "Mon. morning",
+      "slotMonAfternoon": "Mon. afternoon",
+      "slotTueMorning": "Tue. morning",
+      "slotTueAfternoon": "Tue. afternoon",
+      "slotWedMorning": "Wed. morning",
+      "slotWedAfternoon": "Wed. afternoon",
+      "subjectLabel": "Topic",
+      "subjectNew": "Scoping a new project",
+      "subjectQuestion": "Question about a service",
+      "subjectFollowup": "Follow-up on an ongoing project",
+      "subjectOther": "Other",
+      "messageLabel": "Message (optional)",
+      "messagePlaceholder": "A word on what you'd like to discuss...",
+      "submit": "Send appointment request",
+      "success": "Request sent — you'll receive a confirmation by email.",
+      "error": "Something went wrong, please try again."
+    }
+  },
+  "legal": {
+    "title": "Legal notice & privacy",
+    "lastUpdate": "Last updated",
+    "editorTitle": "Site publisher",
+    "editorText": "This site is published professionally by Horlynat Mampassi Mbama, independent full-stack developer based in Brazzaville, Republic of Congo.",
+    "hostingTitle": "Hosting",
+    "hostingText": "Hosting provider details once the site is deployed.",
+    "ipTitle": "Intellectual property",
+    "ipText": "All content on this site (text, visuals, code, brand identity) is the property of Horlynat Mampassi Mbama, unless stated otherwise.",
+    "privacyTitle": "Privacy policy",
+    "privacyText": "This section explains what information is collected on this site, for what purpose, and how it is processed.",
+    "dataTitle": "Data collected",
+    "dataText": "Depending on the form used: name and email address, project description, preferred contact channel, skills and availability (freelancer form).",
+    "purposeTitle": "Purpose of processing",
+    "purposeText": "This information is used only to qualify your request, get back to you, and where applicable prepare a quote or arrange an appointment.",
+    "rightsTitle": "Your rights",
+    "rightsText": "You may request access to, correction of, or deletion of your data at any time by writing via the contact form.",
+    "cookiesTitle": "Cookies and local storage",
+    "cookiesText": "This site uses your browser's local storage to temporarily keep your progress in forms and your display preferences, only for the duration of your visit.",
+    "aiTitle": "AI assistant",
+    "aiText": "The conversational assistant on this site answers based on predefined information about Horlynat Mampassi Mbama's profile. It does not constitute a contractual commitment."
+  },
+  "notFound": {
+    "code": "404 error",
+    "title": "This page doesn't exist (yet).",
+    "sub": "The link you followed may be outdated, or the URL may contain a typo.",
+    "backHome": "Back to home"
+  },
+  "aiAssistant": {
+    "title": "Horlynat's assistant",
+    "sub": "answers on my behalf — profile, projects, vision",
+    "greeting": "Hello, I'm Horlynat's AI assistant. I can introduce his profile, skills, projects, view of the craft, or qualify your project request. What would you like to know?",
+    "placeholder": "Ask your question...",
+    "send": "Send",
+    "close": "Close the assistant",
+    "chipPresentation": "Who is Horlynat?",
+    "chipCompetences": "His skills",
+    "chipRealisations": "His projects",
+    "chipPhilosophie": "His vision",
+    "chipPourquoi": "Why him?",
+    "chipProjet": "Start a project",
+    "fallback": "I can tell you about his profile, skills, projects, view of the craft, or help you qualify a project request. What would you like to know more about?",
+    "answerPresentation": "I'm the assistant of Horlynat Mampassi Mbama, based in Brazzaville. He's a versatile professional: full-stack, mobile developer and AI solutions integrator, but also a cybersecurity consultant and insurance technician.",
+    "answerCompetences": "On the development side: Symfony, API Platform, Next.js, React, Vue.js, Python (Django, Flask), and AI/data with TensorFlow, PyTorch and scikit-learn. He also does mobile with Flutter, design with Figma and Photoshop.",
+    "answerRealisations": "His most accomplished work to date is this portfolio itself: Symfony/API Platform/Next.js architecture with a built-in AI assistant.",
+    "answerPhilosophie": "His view: technology is only worthwhile if it serves a real business need, and cybersecurity must be designed in from the start, not bolted on afterwards.",
+    "answerPourquoi": "Because he combines business expertise (insurance, risk management), cybersecurity, full-range development and design — rare to find all of that in one person.",
+    "answerProjet": "Tell me the type of service, your indicative budget and desired timeline, and I'll prepare your request for Horlynat."
+  }
+}
