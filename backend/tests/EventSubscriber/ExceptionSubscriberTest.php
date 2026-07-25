@@ -16,6 +16,8 @@ use Symfony\Component\Notifier\Notifier;
 use Symfony\Component\Notifier\Recipient\Recipient;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
 final class ExceptionSubscriberTest extends TestCase
 {
@@ -72,6 +74,45 @@ final class ExceptionSubscriberTest extends TestCase
 
         $subscriber = $this->createSubscriber($appErrors, $securityErrors, $businessErrors, $emailManager);
         $subscriber->onKernelException($this->createEvent(new AccessDeniedHttpException('Accès refusé.')));
+    }
+
+    /**
+     * Régression : une AccessDeniedException "brute" (Security\Core, sans
+     * HttpExceptionInterface) survient AVANT que le listener de sécurité du
+     * firewall ne la convertisse en 403. Elle ne doit jamais être classée 5xx
+     * ni déclencher d'alerte admin (sinon : fausse alerte "erreur 500" à chaque
+     * appel anonyme d'une opération protégée, ex: GET /api/me sans token).
+     */
+    public function testRawAccessDeniedExceptionGoesToSecurityChannelAndDoesNotNotify(): void
+    {
+        $appErrors = $this->createStub(LoggerInterface::class);
+        $securityErrors = $this->createMock(LoggerInterface::class);
+        $securityErrors->expects($this->once())->method('log')->with('warning', $this->anything(), $this->anything());
+        $businessErrors = $this->createStub(LoggerInterface::class);
+
+        $emailManager = $this->createMock(EmailManager::class);
+        $emailManager->expects($this->never())->method('sendNow');
+
+        $subscriber = $this->createSubscriber($appErrors, $securityErrors, $businessErrors, $emailManager);
+        $subscriber->onKernelException($this->createEvent(new AccessDeniedException("The user doesn't have ROLE_USER.")));
+    }
+
+    /**
+     * Régression : idem pour une AuthenticationException brute (échec d'auth),
+     * classée 401 et non notifiée.
+     */
+    public function testRawAuthenticationExceptionGoesToSecurityChannelAndDoesNotNotify(): void
+    {
+        $appErrors = $this->createStub(LoggerInterface::class);
+        $securityErrors = $this->createMock(LoggerInterface::class);
+        $securityErrors->expects($this->once())->method('log')->with('warning', $this->anything(), $this->anything());
+        $businessErrors = $this->createStub(LoggerInterface::class);
+
+        $emailManager = $this->createMock(EmailManager::class);
+        $emailManager->expects($this->never())->method('sendNow');
+
+        $subscriber = $this->createSubscriber($appErrors, $securityErrors, $businessErrors, $emailManager);
+        $subscriber->onKernelException($this->createEvent(new AuthenticationException('Invalid credentials.')));
     }
 
     public function testUnexpectedThrowableGoesToAppErrorsChannelAndNotifies(): void

@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+{% block title %}Modifier : {{ user.fullName ?? user.email }}{% endblock %}
+
+{% block body %}
+	<div class="page-header">
+		<div class="min-w-0">
+			<nav class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider opacity-50 mb-1" aria-label="Fil d'Ariane">
+				<a href="{{ path('admin_admins_index') }}" class="hover:text-(--brand-primary) transition-colors">Administrateurs</a>
+				<span class="ti ti-chevron-right text-xs" aria-hidden="true"></span>
+				<span aria-current="page">Édition</span>
+			</nav>
+			<h1 class="page-title flex items-center gap-2">
+				<span class="ti ti-edit text-(--brand-primary)" aria-hidden="true"></span>
+				Modifier l'administrateur
+			</h1>
+		</div>
+		<a href="{{ path('admin_admins_index') }}" class="btn btn-secondary gap-2">
+			<span class="ti ti-arrow-left" aria-hidden="true"></span>
+			<span>Retour à la liste</span>
+		</a>
+	</div>
+
+	{{ include('admin/admins/_form.html.twig', {'button_label': 'Mettre à jour'}) }}
+{% endblock %}

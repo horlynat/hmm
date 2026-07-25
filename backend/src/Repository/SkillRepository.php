@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Skill;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -14,6 +15,23 @@ class SkillRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Skill::class);
+    }
+
+    /**
+     * Compétences paginées (ordre alphabétique).
+     *
+     * @return Paginator<Skill>
+     */
+    public function findPaginated(int $page = 1, int $perPage = 20): Paginator
+    {
+        $page = max(1, $page);
+        $query = $this->createQueryBuilder('s')
+            ->orderBy('s.name', 'ASC')
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage)
+            ->getQuery();
+
+        return new Paginator($query, fetchJoinCollection: false);
     }
 
     //    /**

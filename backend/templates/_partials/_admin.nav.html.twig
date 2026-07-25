@@ -1,12 +1,12 @@
 {# 📌 Détection automatique de la route actuelle pour ouvrir le bon accordéon au chargement #}
 {% set currentRoute = app.request.attributes.get('_route') %}
 {% set isContenuActive = currentRoute starts with 'admin_project' or currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_tag' or currentRoute starts with 'admin_article' or currentRoute starts with 'admin_course' or currentRoute starts with 'admin_experience' %}
-{% set isUtilisateursActive = currentRoute starts with 'user_' or currentRoute starts with 'admin_user' or currentRoute starts with 'admin_collaborator' or currentRoute starts with 'admin_contact' or currentRoute starts with 'admin_request' or currentRoute starts with 'admin_testimonial' %}
+{% set isUtilisateursActive = currentRoute starts with 'admin_admins' or currentRoute starts with 'admin_user' or currentRoute starts with 'admin_collaborator' or currentRoute starts with 'admin_contact' or currentRoute starts with 'admin_request' or currentRoute starts with 'admin_testimonial' %}
 {% set isSecuriteActive = currentRoute starts with 'admin_security_' %}
 {% set isParametresActive = currentRoute starts with 'admin_config' or currentRoute starts with 'admin_notification' or currentRoute starts with 'admin_integration' or currentRoute starts with 'admin_backup' %}
 
-<aside class="fixed inset-y-0 left-0 z-50 w-64 h-full bg-(--bg-default) border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out
-			       md:translate-x-0 md:static md:h-screen shadow-xl md:shadow-none" :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+<aside class="fixed inset-y-0 left-0 z-50 w-64 h-full bg-(--bg-default) border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out
+			       md:translate-x-0 md:static md:h-screen shadow-xl md:shadow-none" :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'" aria-label="Navigation principale">
 	<!-- 🏢 LOGO & ENTÊTE (configurable : Paramètres > Configuration) -->
 	<div class="p-6 border-b border-gray-200 flex items-center gap-3 justify-between shrink-0">
 		<div class="flex items-center gap-3 min-w-0">
@@ -18,8 +18,8 @@
 				<p class="text-sm text-(--brand-dark) truncate">Portfolio Admin</p>
 			</div>
 		</div>
-		<button @click="mobileSidebarOpen = false" class="md:hidden p-1 rounded-lg text-(--brand-dark) hover:bg-gray-100" aria-label="Fermer le menu">
-			<span class="material-icons">close</span>
+		<button type="button" @click="mobileSidebarOpen = false" class="md:hidden p-1 rounded-lg text-(--brand-dark) hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Fermer le menu">
+			<span class="ti ti-x text-xl" aria-hidden="true"></span>
 		</button>
 	</div>
 
@@ -41,7 +41,7 @@
 				     📁 CONTENU (ACCORDÉON)
 				     ========================================== -->
 		<div x-data="{ open: {{ isContenuActive ? 'true' : 'false' }} }">
-			<button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 transition font-medium focus:outline-none">
+			<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
 				<div class="flex items-center gap-3">
 					<i class="ti ti-folders text-lg text-(--brand-dark)"></i>
 					<span>Contenu</span>
@@ -84,7 +84,7 @@
 				     👥 UTILISATEURS (ACCORDÉON)
 				     ========================================== -->
 		<div x-data="{ open: {{ isUtilisateursActive ? 'true' : 'false' }} }">
-			<button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 transition font-medium focus:outline-none">
+			<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
 				<div class="flex items-center gap-3">
 					<i class="ti ti-users text-lg text-(--brand-dark)"></i>
 					<span>Utilisateurs</span>
@@ -93,7 +93,7 @@
 			</button>
 
 			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
-				<a href="{{ path('admin_user_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_user' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+				<a href="{{ path('admin_admins_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_admins' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-user-shield text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Admins
 				</a>
@@ -101,7 +101,7 @@
 					<i class="ti ti-users-group text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Collaborateurs
 				</a>
-				<a href="{{ path('user_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'user_' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+				<a href="{{ path('admin_users_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_users' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-user-dollar text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Clients
 				</a>
@@ -124,7 +124,7 @@
 				     🛡️ SÉCURITÉ (ACCORDÉON)
 				     ========================================== -->
 		<div x-data="{ open: {{ isSecuriteActive ? 'true' : 'false' }} }">
-			<button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 transition font-medium focus:outline-none">
+			<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
 				<div class="flex items-center gap-3">
 					<i class="ti ti-shield-lock text-lg text-(--brand-dark)"></i>
 					<span>Sécurité</span>
@@ -164,7 +164,7 @@
 				     ⚙️ PARAMÈTRES (ACCORDÉON)
 				     ========================================== -->
 		<div x-data="{ open: {{ isParametresActive ? 'true' : 'false' }} }">
-			<button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 transition font-medium focus:outline-none">
+			<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
 				<div class="flex items-center gap-3">
 					<i class="ti ti-settings text-lg text-(--brand-dark)"></i>
 					<span>Paramètres</span>
@@ -196,7 +196,7 @@
 				     ❓ SUPPORT (ACCORDÉON)
 				     ========================================== -->
 		<div x-data="{ open: false }">
-			<button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 transition font-medium focus:outline-none">
+			<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
 				<div class="flex items-center gap-3">
 					<i class="ti ti-help-circle text-lg text-(--brand-dark)"></i>
 					<span>Support</span>

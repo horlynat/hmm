@@ -1,0 +1,10 @@
+{#
+   Composant : badge de statut sémantique.
+   variant ∈ success|danger|warning|info|neutral. Icône Tabler optionnelle.
+   Usage : <twig:Badge variant="success" icon="ti-circle-check">Actif</twig:Badge>
+#}
+{% props variant = 'neutral', icon = null %}
+<span class="badge badge-{{ variant }}">
+	{%- if icon %}<span class="ti {{ icon }} text-sm mr-1" aria-hidden="true"></span>{% endif -%}
+	{% block content %}{% endblock %}
+</span>

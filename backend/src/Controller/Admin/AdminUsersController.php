@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller;
+namespace App\Controller\Admin;
 
 use App\Entity\User;
 use App\Form\UserType;
@@ -8,14 +8,14 @@ use App\Repository\UserRepository;
 use App\Security\Voter\UserVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Form\FormInterface;
+use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/admin/users', name: 'user_')]
-final class UserController extends AbstractController
+#[Route('/admin/users', name: 'admin_users_')]
+final class AdminUsersController extends AbstractController
 {
     /**
      * Constructeur
@@ -24,23 +24,32 @@ final class UserController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly UserRepository $userRepository,
-        private readonly UserPasswordHasherInterface $passwordHasher
-    ) {}
+        private readonly UserPasswordHasherInterface $passwordHasher,
+    ) {
+    }
 
     /**
      * 📌 Liste des utilisateurs
      * - Récupère tous les utilisateurs
-     * - Affiche la vue Twig correspondante
+     * - Affiche la vue Twig correspondante.
      */
+    private const PER_PAGE = 20;
+
     #[Route(name: 'index', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        $users = $this->userRepository->findClients();
+        $page = max(1, $request->query->getInt('page', 1));
+        $paginator = $this->userRepository->findClientsPaginated($page, self::PER_PAGE);
+        $total = \count($paginator);
+        $totalPages = (int) ceil($total / self::PER_PAGE) ?: 1;
 
-        return $this->render('user/index.html.twig', [
-            'users' => $users,
+        return $this->render('admin/users/index.html.twig', [
+            'users' => $paginator,
+            'total' => $total,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
         ]);
     }
 
@@ -48,7 +57,7 @@ final class UserController extends AbstractController
      * 📌 Créer un nouvel utilisateur
      * - Affiche un formulaire UserType
      * - Hash le mot de passe si fourni
-     * - Persiste l’utilisateur en base
+     * - Persiste l’utilisateur en base.
      */
     #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
     public function create(Request $request): Response
@@ -65,11 +74,12 @@ final class UserController extends AbstractController
             $this->entityManager->persist($user);
             $this->entityManager->flush();
 
-            $this->addFlash('success', sprintf("Utilisateur #%d créé avec succès !", $user->getId()));
-            return $this->redirectToRoute('user_index');
+            $this->addFlash('success', sprintf('Utilisateur #%d créé avec succès !', $user->getId()));
+
+            return $this->redirectToRoute('admin_users_index');
         }
 
-        return $this->render('user/create.html.twig', [
+        return $this->render('admin/users/create.html.twig', [
             'user' => $user,
             'form' => $form->createView(),
         ]);
@@ -78,7 +88,7 @@ final class UserController extends AbstractController
     /**
      * 📌 Afficher un utilisateur
      * - Affiche les détails d’un utilisateur
-     * - Retourne une erreur si l’utilisateur n’existe pas
+     * - Retourne une erreur si l’utilisateur n’existe pas.
      */
     #[Route('/{id}', name: 'read', methods: ['GET'])]
     public function read(int $id): Response
@@ -91,7 +101,7 @@ final class UserController extends AbstractController
 
         $this->denyAccessUnlessGranted(UserVoter::VIEW, $user);
 
-        return $this->render('user/read.html.twig', [
+        return $this->render('admin/users/read.html.twig', [
             'user' => $user,
         ]);
     }
@@ -101,7 +111,7 @@ final class UserController extends AbstractController
      * - Affiche un formulaire UserType
      * - Met à jour les informations
      * - Hash le mot de passe si modifié
-     * - Met à jour la date de modification
+     * - Met à jour la date de modification.
      */
     #[Route('/{id}/edit', name: 'update', methods: ['GET', 'POST'])]
     public function update(Request $request, int $id): Response
@@ -123,11 +133,12 @@ final class UserController extends AbstractController
             $user->setUpdatedAt(new \DateTimeImmutable());
             $this->entityManager->flush();
 
-            $this->addFlash('success', sprintf("Utilisateur #%d mis à jour avec succès !", $user->getId()));
-            return $this->redirectToRoute('user_index');
+            $this->addFlash('success', sprintf('Utilisateur #%d mis à jour avec succès !', $user->getId()));
+
+            return $this->redirectToRoute('admin_users_index');
         }
 
-        return $this->render('user/update.html.twig', [
+        return $this->render('admin/users/update.html.twig', [
             'user' => $user,
             'form' => $form->createView(),
         ]);
@@ -136,7 +147,7 @@ final class UserController extends AbstractController
     /**
      * 📌 Supprimer un utilisateur
      * - Vérifie le token CSRF
-     * - Supprime l’utilisateur si valide
+     * - Supprime l’utilisateur si valide.
      */
     #[Route('/{id}', name: 'delete', methods: ['POST'])]
     public function delete(Request $request, int $id): Response
@@ -153,19 +164,18 @@ final class UserController extends AbstractController
             $this->entityManager->remove($user);
             $this->entityManager->flush();
 
-            $this->addFlash('success', sprintf("Utilisateur #%d supprimé avec succès !", $user->getId()));
+            $this->addFlash('success', sprintf('Utilisateur #%d supprimé avec succès !', $user->getId()));
         } else {
             $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
         }
 
-        return $this->redirectToRoute('user_index');
+        return $this->redirectToRoute('admin_users_index');
     }
 
-    
     /**
      * 🔒 Méthode privée pour gérer le hash du mot de passe
      * - Vérifie si plainPassword est défini
-     * - Hash et définit le mot de passe
+     * - Hash et définit le mot de passe.
      */
     private function handlePassword(User $user, FormInterface $form): void
     {
@@ -175,5 +185,4 @@ final class UserController extends AbstractController
             );
         }
     }
-
 }

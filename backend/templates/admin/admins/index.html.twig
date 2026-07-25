@@ -1,0 +1,92 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des administrateurs{% endblock %}
+
+{% block body %}
+	{% set sub = total ~ ' compte' ~ (total > 1 ? 's' : '') ~ ' — rôles & permissions.' %}
+	<twig:PageHeader title="Administrateurs" :subtitle="sub" icon="ti-shield-lock">
+		<a href="{{ path('admin_admins_create') }}" class="btn btn-primary gap-2">
+			<span class="ti ti-shield-plus" aria-hidden="true"></span>
+			<span>Ajouter un administrateur</span>
+		</a>
+	</twig:PageHeader>
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Liste des comptes administrateurs</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="w-16">Id</th>
+					<th scope="col">Compte</th>
+					<th scope="col">Rôles</th>
+					<th scope="col">Statut</th>
+					<th scope="col">Dernière connexion</th>
+					<th scope="col" class="w-40 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for admin in admins %}
+					<tr>
+						<td class="font-mono text-xs opacity-50">{{ admin.id }}</td>
+						<td>
+							<div class="flex items-center gap-3">
+								<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style="background: var(--color-brand-primary)" aria-hidden="true">
+									{{ (admin.fullName ?? admin.email)|slice(0, 2)|upper }}
+								</span>
+								<div class="min-w-0">
+									<div class="font-bold text-(--brand-dark) truncate">{{ admin.fullName ?? 'Non spécifié' }}</div>
+									<div class="text-xs opacity-60 truncate">{{ admin.email }}</div>
+								</div>
+							</div>
+						</td>
+						<td>
+							<div class="flex flex-wrap gap-1">
+								{% for role in admin.roles %}
+									<twig:Badge :variant="role == 'ROLE_SUPER_ADMIN' ? 'danger' : 'info'">{{ role|replace({'ROLE_': ''})|capitalize }}</twig:Badge>
+								{% endfor %}
+							</div>
+						</td>
+						<td>
+							<div class="flex flex-wrap items-center gap-1">
+								{% if admin.isActive %}
+									<twig:Badge variant="success">Actif</twig:Badge>
+								{% else %}
+									<twig:Badge variant="danger">Désactivé</twig:Badge>
+								{% endif %}
+								{% if admin.isTwoFactorEnabled %}
+									<twig:Badge variant="neutral" icon="ti-shield-check">2FA</twig:Badge>
+								{% endif %}
+							</div>
+						</td>
+						<td class="text-sm opacity-70 whitespace-nowrap">
+							{{ admin.lastLoginAt ? admin.lastLoginAt|date('d/m/Y H:i') : 'Jamais' }}
+						</td>
+						<td>
+							<div class="flex items-center justify-end gap-1">
+								<a href="{{ path('admin_admins_read', {'id': admin.id}) }}" class="btn btn-ghost btn-icon" aria-label="Voir {{ admin.fullName ?? admin.email }}">
+									<span class="ti ti-eye text-lg" aria-hidden="true"></span>
+								</a>
+								<a href="{{ path('admin_admins_update', {'id': admin.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ admin.fullName ?? admin.email }}">
+									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
+								</a>
+								{% if admin.id != app.user.id %}
+									<twig:DeleteModal :id="admin.id" :action="path('admin_admins_delete', {id: admin.id})" :token="csrf_token('admin_admins_delete_' ~ admin.id)" :label="admin.fullName ?? admin.email" entity="cet administrateur" />
+								{% endif %}
+							</div>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="6"><twig:EmptyState text="Aucun administrateur trouvé." icon="ti-shield-lock" /></td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	{% if totalPages > 1 %}
+		<div class="flex justify-center mt-6">
+			<twig:Pagination :currentPage="currentPage" :totalPages="totalPages" route="admin_admins_index" />
+		</div>
+	{% endif %}
+{% endblock %}

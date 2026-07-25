@@ -1,94 +1,77 @@
-{# templates/admin/testimonial/testimonials.html.twig #}
 {% extends 'base.html.twig' %}
 
-{% block title %}Témoignages
-{% endblock %}
+{% block title %}Témoignages{% endblock %}
 
 {% block body %}
-	<main class="container mx-auto px-4 py-8">
+	<twig:PageHeader title="Témoignages" subtitle="Modérez et publiez les témoignages clients du site public." icon="ti-message-star">
+		<a href="{{ path('admin_testimonial_create') }}" class="btn btn-primary gap-2">
+			<span class="ti ti-plus" aria-hidden="true"></span>
+			<span>Ajouter un témoignage</span>
+		</a>
+	</twig:PageHeader>
 
-		<!-- 📑 EN-TÊTE -->
-		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-			<div>
-				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
-					<span class="material-icons text-brand-primary">rate_review</span>
-					<span>Témoignages</span>
-				</h1>
-				<p class="text-sm opacity-60 mt-1">Modérez et publiez les témoignages clients affichés sur le site public.</p>
-			</div>
-			<a href="{{ path('admin_testimonial_create') }}" class="btn btn-primary gap-2">
-				<span class="material-icons text-sm">add_circle</span>
-				<span>Ajouter un témoignage</span>
-			</a>
+	<form method="get" role="search" class="panel panel-body mb-6 flex flex-col sm:flex-row gap-3 sm:items-end">
+		<div class="flex-1">
+			<label for="f-search" class="field-label">Recherche</label>
+			<input id="f-search" type="search" name="search" value="{{ filters.search }}" placeholder="Auteur, contenu…" class="input w-full">
 		</div>
+		<div>
+			<label for="f-status" class="field-label">Statut</label>
+			<select id="f-status" name="status" class="input input-select">
+				<option value="">Tous</option>
+				<option value="published" {% if filters.status == 'published' %}selected{% endif %}>Publiés</option>
+				<option value="pending" {% if filters.status == 'pending' %}selected{% endif %}>En attente</option>
+			</select>
+		</div>
+		<button type="submit" class="btn btn-primary gap-2"><span class="ti ti-filter" aria-hidden="true"></span> Filtrer</button>
+	</form>
 
-		<!-- 🔎 FILTRES -->
-		<form method="get" class="soft-card mb-6 flex flex-col sm:flex-row gap-3 sm:items-end p-4">
-			<div class="flex-1">
-				<label class="text-xs font-bold uppercase opacity-60">Recherche</label>
-				<input type="text" name="search" value="{{ filters.search }}" placeholder="Auteur, contenu..." class="input w-full mt-1">
-			</div>
-			<div>
-				<label class="text-xs font-bold uppercase opacity-60">Statut</label>
-				<select name="status" class="input mt-1">
-					<option value="">Tous</option>
-					<option value="published" {% if filters.status == 'published' %}selected{% endif %}>Publiés</option>
-					<option value="pending" {% if filters.status == 'pending' %}selected{% endif %}>En attente</option>
-				</select>
-			</div>
-			<button type="submit" class="btn btn-primary">Filtrer</button>
-		</form>
-
-		<!-- 📊 TABLEAU -->
-		<div class="soft-card">
-			<table class="table">
-				<thead>
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Liste des témoignages</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="w-16">Id</th>
+					<th scope="col">Statut</th>
+					<th scope="col">Auteur</th>
+					<th scope="col">Note</th>
+					<th scope="col" class="w-32 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for testimonial in testimonials %}
 					<tr>
-						<th class="w-24">Id</th>
-						<th>Statut</th>
-						<th>Auteur</th>
-						<th>Note</th>
-						<th class="w-32 text-right">Actions</th>
+						<td class="font-mono text-xs opacity-50">{{ testimonial.id }}</td>
+						<td>
+							{% if testimonial.isPublished %}
+								<twig:Badge variant="success" icon="ti-circle-check">Publié</twig:Badge>
+							{% else %}
+								<twig:Badge variant="warning" icon="ti-clock">En attente</twig:Badge>
+							{% endif %}
+						</td>
+						<td>
+							<div class="font-medium">{{ testimonial.author }}</div>
+							<div class="text-xs opacity-60 truncate max-w-xs">{{ testimonial.content }}</div>
+						</td>
+						<td class="whitespace-nowrap">{{ testimonial.rating ? testimonial.rating ~ ' ★' : '—' }}</td>
+						<td>
+							<div class="flex items-center justify-end gap-1">
+								<a href="{{ path('admin_testimonial_read', {'id': testimonial.id}) }}" class="btn btn-ghost btn-icon" aria-label="Voir le témoignage de {{ testimonial.author }}">
+									<span class="ti ti-eye text-lg" aria-hidden="true"></span>
+								</a>
+								<a href="{{ path('admin_testimonial_update', {'id': testimonial.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier le témoignage de {{ testimonial.author }}">
+									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
+								</a>
+								<twig:DeleteModal :id="testimonial.id" :action="path('admin_testimonial_delete', {id: testimonial.id})" :token="csrf_token('admin_testimonial_delete_' ~ testimonial.id)" :label="testimonial.author" entity="ce témoignage" />
+							</div>
+						</td>
 					</tr>
-				</thead>
-				<tbody>
-					{% for testimonial in testimonials %}
-						<tr>
-							<td class="font-mono text-xs opacity-50">{{ testimonial.id }}</td>
-							<td>
-								{% if testimonial.isPublished %}
-									<span class="badge bg-green-500 text-white">Publié</span>
-								{% else %}
-									<span class="badge bg-yellow-500 text-black">En attente</span>
-								{% endif %}
-							</td>
-							<td>
-								<div class="font-medium">{{ testimonial.author }}</div>
-								<div class="text-xs opacity-60 truncate max-w-xs">{{ testimonial.content }}</div>
-							</td>
-							<td>{{ testimonial.rating ? testimonial.rating ~ ' ★' : '—' }}</td>
-							<td>
-								<div class="flex items-center justify-end gap-2">
-									<a href="{{ path('admin_testimonial_read', {'id': testimonial.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir">
-										<span class="material-icons text-lg block">visibility</span>
-									</a>
-									<a href="{{ path('admin_testimonial_update', {'id': testimonial.id}) }}" class="p-2 hover:bg-warning/20 rounded-sm transition-colors text-warning" title="Modifier">
-										<span class="material-icons text-lg block">edit</span>
-									</a>
-									{% include 'admin/testimonial/_delete_form.html.twig' with {'testimonial': testimonial} %}
-								</div>
-							</td>
-						</tr>
-					{% else %}
-						<tr>
-							<td colspan="5" class="text-center py-12 opacity-40">
-								<span class="material-icons text-4xl block mb-2">rate_review</span>
-								Aucun témoignage pour le moment.
-							</td>
-						</tr>
-					{% endfor %}
-				</tbody>
-			</table>
-		</div>
-	</main>
+				{% else %}
+					<tr>
+						<td colspan="5"><twig:EmptyState text="Aucun témoignage pour le moment." icon="ti-message-star" /></td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
 {% endblock %}

@@ -10,7 +10,7 @@
 			            {% elseif color == 'slate' %}bg-[var(--surface-1)] text-[var(--text-secondary)] border border-[var(--border)] hover:bg-slate-100 dark:hover:bg-slate-800
 			            {% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}
 			            transition-colors duration-200 ease-in-out"> {% if icon %}
-			<span class="material-icons text-xs">{{ icon }}</span>
+			<span class="ti ti-{{ icon }} text-xs" aria-hidden="true"></span>
 		{% endif %}
 		{{ label }}
 	</span>
@@ -21,7 +21,7 @@
 	<div class="flex items-center gap-3 bg-[var(--surface-1)] border border-[var(--border)] rounded-xl p-4 shadow-sm card-hover">
 		{% if icon %}
 			<div class="w-10 h-10 rounded-lg bg-{{ color }}-100 dark:bg-{{ color }}-900 flex items-center justify-center shadow-inner">
-				<span class="material-icons-outlined text-{{ color }}-600 dark:text-{{ color }}-400 text-base">{{ icon }}</span>
+				<span class="ti ti-{{ icon }} text-{{ color }}-600 dark:text-{{ color }}-400 text-base" aria-hidden="true"></span>
 			</div>
 		{% endif %}
 		<div>

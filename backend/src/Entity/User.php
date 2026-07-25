@@ -32,7 +32,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    #[Groups(["api_user", "api_admin", "collaborator_signup"])]
+    #[Groups(["api_user", "api_admin", "collaborator_signup", "client_signup"])]
     #[Assert\NotBlank(message: "L'email est obligatoire.")]
     #[Assert\Email(message: "Veuillez entrer un email valide.")]
     // protected (pas private) : UniqueEntityValidator reflète l'objet réellement
@@ -56,7 +56,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     private string $password = '';
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(["api_user", "api_admin", "collaborator_signup"])]
+    #[Groups(["api_user", "api_admin", "collaborator_signup", "client_signup"])]
     #[Assert\Length(max: 255, maxMessage: "Le nom complet ne peut pas dépasser {{ limit }} caractères.")]
     private ?string $fullName = null;
 
@@ -97,7 +97,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     private ?\DateTimeImmutable $passwordChangedAt = null;
 
     #[ORM\Column(length: 20, nullable: true)]
-    #[Groups(["api_user", "api_admin", "collaborator_signup"])]
+    #[Groups(["api_user", "api_admin", "collaborator_signup", "client_signup"])]
     #[Assert\Length(min: 7, max: 20, minMessage: "Le numéro doit contenir au moins {{ limit }} caractères.")]
     #[Assert\Regex(
         pattern: '/^[0-9+\-\s\(\)]+$/',

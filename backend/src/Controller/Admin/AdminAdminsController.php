@@ -26,8 +26,8 @@ use Symfony\Component\Routing\Attribute\Route;
  *   sont centralisées dans UserVoter afin de s'appliquer de la même façon quel que
  *   soit le contrôleur (Admins, Collaborateurs, Clients) utilisé pour atteindre le compte.
  */
-#[Route('/admin/admins', name: 'admin_user_')]
-final class AdminUserController extends AbstractController
+#[Route('/admin/admins', name: 'admin_admins_')]
+final class AdminAdminsController extends AbstractController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -36,13 +36,22 @@ final class AdminUserController extends AbstractController
     ) {
     }
 
+    private const PER_PAGE = 20;
+
     #[Route('/index', name: 'index', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        return $this->render('admin/user/index.html.twig', [
-            'admins' => $this->userRepository->findAdmins(),
+        $page = max(1, $request->query->getInt('page', 1));
+        $paginator = $this->userRepository->findAdminsPaginated($page, self::PER_PAGE);
+        $total = \count($paginator);
+
+        return $this->render('admin/admins/index.html.twig', [
+            'admins' => $paginator,
+            'total' => $total,
+            'currentPage' => $page,
+            'totalPages' => (int) ceil($total / self::PER_PAGE) ?: 1,
         ]);
     }
 
@@ -68,10 +77,11 @@ final class AdminUserController extends AbstractController
             $this->entityManager->flush();
 
             $this->addFlash('success', sprintf('Le compte administrateur #%d a été créé avec succès.', $user->getId()));
-            return $this->redirectToRoute('admin_user_index', [], Response::HTTP_SEE_OTHER);
+
+            return $this->redirectToRoute('admin_admins_index', [], Response::HTTP_SEE_OTHER);
         }
 
-        return $this->render('admin/user/create.html.twig', [
+        return $this->render('admin/admins/create.html.twig', [
             'user' => $user,
             'form' => $form->createView(),
         ]);
@@ -82,7 +92,7 @@ final class AdminUserController extends AbstractController
     {
         $this->denyAccessUnlessGranted(UserVoter::VIEW, $user);
 
-        return $this->render('admin/user/read.html.twig', [
+        return $this->render('admin/admins/read.html.twig', [
             'user' => $user,
         ]);
     }
@@ -92,7 +102,8 @@ final class AdminUserController extends AbstractController
     {
         if (!$this->isGranted(UserVoter::EDIT, $user)) {
             $this->addFlash('error', 'Seul un Super Administrateur peut modifier ce compte.');
-            return $this->redirectToRoute('admin_user_index', [], Response::HTTP_SEE_OTHER);
+
+            return $this->redirectToRoute('admin_admins_index', [], Response::HTTP_SEE_OTHER);
         }
 
         $wasAdmin = \in_array('ROLE_ADMIN', $user->getRoles(), true) || \in_array('ROLE_SUPER_ADMIN', $user->getRoles(), true);
@@ -105,7 +116,8 @@ final class AdminUserController extends AbstractController
 
             if ($user === $this->getUser() && $wasAdmin && !$stillAdmin) {
                 $this->addFlash('error', 'Vous ne pouvez pas retirer votre propre rôle administrateur.');
-                return $this->redirectToRoute('admin_user_update', ['id' => $user->getId()], Response::HTTP_SEE_OTHER);
+
+                return $this->redirectToRoute('admin_admins_update', ['id' => $user->getId()], Response::HTTP_SEE_OTHER);
             }
 
             $this->handlePassword($user, $form);
@@ -127,10 +139,11 @@ final class AdminUserController extends AbstractController
             }
 
             $this->addFlash('success', sprintf('Le compte administrateur #%d a été mis à jour avec succès.', $user->getId()));
-            return $this->redirectToRoute('admin_user_index', [], Response::HTTP_SEE_OTHER);
+
+            return $this->redirectToRoute('admin_admins_index', [], Response::HTTP_SEE_OTHER);
         }
 
-        return $this->render('admin/user/update.html.twig', [
+        return $this->render('admin/admins/update.html.twig', [
             'user' => $user,
             'form' => $form->createView(),
         ]);
@@ -144,10 +157,11 @@ final class AdminUserController extends AbstractController
                 ? 'Vous ne pouvez pas supprimer votre propre compte.'
                 : 'Seul un Super Administrateur peut supprimer ce compte.';
             $this->addFlash('error', $message);
-            return $this->redirectToRoute('admin_user_index', [], Response::HTTP_SEE_OTHER);
+
+            return $this->redirectToRoute('admin_admins_index', [], Response::HTTP_SEE_OTHER);
         }
 
-        if ($this->isCsrfTokenValid('admin_user_delete_' . $user->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('admin_admins_delete_'.$user->getId(), $request->request->get('_token'))) {
             $auditLogger->log(User::class, $user->getId(), $user->getEmail(), 'deleted');
             $this->entityManager->remove($user);
             $this->entityManager->flush();
@@ -157,7 +171,7 @@ final class AdminUserController extends AbstractController
             $this->addFlash('error', 'Token CSRF invalide. Action de suppression annulée.');
         }
 
-        return $this->redirectToRoute('admin_user_index', [], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute('admin_admins_index', [], Response::HTTP_SEE_OTHER);
     }
 
     private function handlePassword(User $user, FormInterface $form): void

@@ -1,97 +1,91 @@
-{# templates/admin/collaborator/index.html.twig #}
 {% extends 'base.html.twig' %}
 
-{% block title %}Gestion des collaborateurs
-{% endblock %}
+{% block title %}Gestion des collaborateurs{% endblock %}
 
 {% block body %}
-	<main class="container mx-auto px-4 py-8">
-
-		<!-- 📑 EN-TÊTE -->
-		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-			<div>
-				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
-					<span class="material-icons text-brand-primary">groups</span>
-					<span>Collaborateurs</span>
-					{% if candidatesCount > 0 %}
-						<a href="{{ path('admin_collaborator_candidates') }}" class="badge bg-blue-500 text-white hover:opacity-80" title="Candidatures freelance en attente">{{ candidatesCount }} candidature{{ candidatesCount > 1 ? 's' : '' }}</a>
-					{% endif %}
-				</h1>
-				<p class="text-sm opacity-60 mt-1">Pros et freelances associés à vos projets.</p>
-			</div>
-			<div class="flex gap-2">
-				<a href="{{ path('admin_collaborator_candidates') }}" class="btn btn-secondary gap-2">
-					<span class="material-icons text-sm">how_to_reg</span>
-					<span>Candidatures</span>
-				</a>
-				<a href="{{ path('admin_collaborator_create') }}" class="btn btn-primary gap-2">
-					<span class="material-icons text-sm">add_circle</span>
-					<span>Ajouter un collaborateur</span>
-				</a>
-			</div>
+	<div class="page-header">
+		<div class="min-w-0">
+			<h1 class="page-title flex items-center gap-2">
+				<span class="ti ti-users-group text-(--brand-primary)" aria-hidden="true"></span>
+				Collaborateurs
+				{% if candidatesCount > 0 %}
+					<a href="{{ path('admin_collaborator_candidates') }}" class="badge badge-info hover:opacity-80" title="Candidatures freelance en attente">{{ candidatesCount }} candidature{{ candidatesCount > 1 ? 's' : '' }}</a>
+				{% endif %}
+			</h1>
+			<p class="page-subtitle">Pros et freelances associés à vos projets.</p>
 		</div>
+		<div class="flex items-center gap-2 shrink-0">
+			<a href="{{ path('admin_collaborator_candidates') }}" class="btn btn-secondary gap-2">
+				<span class="ti ti-user-check" aria-hidden="true"></span>
+				<span>Candidatures</span>
+			</a>
+			<a href="{{ path('admin_collaborator_create') }}" class="btn btn-primary gap-2">
+				<span class="ti ti-plus" aria-hidden="true"></span>
+				<span>Ajouter</span>
+			</a>
+		</div>
+	</div>
 
-		<!-- 📊 TABLEAU -->
-		<div class="soft-card">
-			<table class="table">
-				<thead>
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Liste des collaborateurs</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="w-16">Id</th>
+					<th scope="col">Compte</th>
+					<th scope="col">Statut</th>
+					<th scope="col">Projets</th>
+					<th scope="col" class="w-40 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for collaborator in collaborators %}
 					<tr>
-						<th class="w-16">Id</th>
-						<th>Compte</th>
-						<th>Statut</th>
-						<th>Projets</th>
-						<th class="w-40 text-right">Actions</th>
+						<td class="font-mono text-xs opacity-50">{{ collaborator.id }}</td>
+						<td>
+							<div class="flex items-center gap-3">
+								<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style="background: var(--color-brand-primary)" aria-hidden="true">
+									{{ (collaborator.fullName ?? collaborator.email)|slice(0, 2)|upper }}
+								</span>
+								<div class="min-w-0">
+									<div class="font-bold text-(--brand-dark) truncate">{{ collaborator.fullName ?? 'Non spécifié' }}</div>
+									<div class="text-xs opacity-60 truncate">{{ collaborator.email }}</div>
+								</div>
+							</div>
+						</td>
+						<td>
+							{% if collaborator.isActive %}
+								<twig:Badge variant="success">Actif</twig:Badge>
+							{% else %}
+								<twig:Badge variant="danger">Désactivé</twig:Badge>
+							{% endif %}
+						</td>
+						<td>
+							{% set pc = collaborator.collaboratingProjects|length %}
+							{% if pc > 0 %}
+								<twig:Badge variant="info">{{ pc }} projet{{ pc > 1 ? 's' : '' }}</twig:Badge>
+							{% else %}
+								<span class="text-xs opacity-40">Aucun</span>
+							{% endif %}
+						</td>
+						<td>
+							<div class="flex items-center justify-end gap-1">
+								<a href="{{ path('admin_collaborator_read', {'id': collaborator.id}) }}" class="btn btn-ghost btn-icon" aria-label="Voir {{ collaborator.fullName ?? collaborator.email }}">
+									<span class="ti ti-eye text-lg" aria-hidden="true"></span>
+								</a>
+								<a href="{{ path('admin_collaborator_update', {'id': collaborator.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ collaborator.fullName ?? collaborator.email }}">
+									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
+								</a>
+								<twig:DeleteModal :id="collaborator.id" :action="path('admin_collaborator_delete', {id: collaborator.id})" :token="csrf_token('admin_collaborator_delete_' ~ collaborator.id)" :label="collaborator.fullName ?? collaborator.email" entity="ce collaborateur" />
+							</div>
+						</td>
 					</tr>
-				</thead>
-				<tbody>
-					{% for collaborator in collaborators %}
-						<tr>
-							<td class="font-mono text-xs opacity-50">{{ collaborator.id }}</td>
-							<td>
-								<div class="flex items-center gap-3">
-									<img class="h-9 w-9 rounded-full" src="{{ collaborator.profileImage ?? 'https://ui-avatars.com/api/?name=' ~ (collaborator.fullName ?? collaborator.email)|url_encode }}" alt="{{ collaborator.fullName ?? collaborator.email }}">
-									<div>
-										<div class="font-bold text-brand-dark">{{ collaborator.fullName ?? 'Non spécifié' }}</div>
-										<div class="text-xs opacity-60">{{ collaborator.email }}</div>
-									</div>
-								</div>
-							</td>
-							<td>
-								{% if collaborator.isActive %}
-									<span class="badge bg-success/10 text-success">Actif</span>
-								{% else %}
-									<span class="badge bg-danger/10 text-danger">Désactivé</span>
-								{% endif %}
-							</td>
-							<td>
-								{% if collaborator.collaboratingProjects|length > 0 %}
-									<span class="badge bg-brand-light text-brand-primary">{{ collaborator.collaboratingProjects|length }} projet{{ collaborator.collaboratingProjects|length > 1 ? 's' : '' }}</span>
-								{% else %}
-									<span class="text-xs opacity-40">Aucun</span>
-								{% endif %}
-							</td>
-							<td>
-								<div class="flex items-center justify-end gap-2">
-									<a href="{{ path('admin_collaborator_read', {'id': collaborator.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir">
-										<span class="material-icons text-lg block">visibility</span>
-									</a>
-									<a href="{{ path('admin_collaborator_update', {'id': collaborator.id}) }}" class="p-2 hover:bg-warning/20 rounded-sm transition-colors text-warning" title="Modifier">
-										<span class="material-icons text-lg block">edit</span>
-									</a>
-									{{ include('admin/collaborator/_delete_form.html.twig', {'user': collaborator}) }}
-								</div>
-							</td>
-						</tr>
-					{% else %}
-						<tr>
-							<td colspan="5" class="text-center py-12 opacity-40">
-								<span class="material-icons text-4xl block mb-2">groups</span>
-								<span>Aucun collaborateur trouvé.</span>
-							</td>
-						</tr>
-					{% endfor %}
-				</tbody>
-			</table>
-		</div>
-	</main>
+				{% else %}
+					<tr>
+						<td colspan="5"><twig:EmptyState text="Aucun collaborateur trouvé." icon="ti-users-group" /></td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
 {% endblock %}

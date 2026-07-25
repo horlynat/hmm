@@ -1,31 +1,26 @@
-<div class="w-full space-y-2.5 z-50">
+{# Notifications flash — harmonisées, accessibles (role/aria-live), icônes Tabler. #}
+<div class="w-full space-y-2.5 z-50" aria-live="polite" aria-atomic="false">
 	{% for label, messages in app.flashes %}
 		{% for message in messages %}
-			{# Configuration dynamique des styles d'alertes selon le type #}
 			{% set config = {
-				'success': {'icon': 'check_circle', 'bg': 'bg-emerald-50 border-emerald-200 text-emerald-800'},
-				'danger':  {'icon': 'dangerous', 'bg': 'bg-rose-50 border-rose-200 text-rose-800'},
-				'error':   {'icon': 'error', 'bg': 'bg-rose-50 border-rose-200 text-rose-800'},
-				'warning': {'icon': 'warning', 'bg': 'bg-amber-50 border-amber-200 text-amber-800'},
-				'info':    {'icon': 'info', 'bg': 'bg-sky-50 border-sky-200 text-sky-800'}
+				'success': {'icon': 'ti-circle-check',   'cls': 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-200'},
+				'danger':  {'icon': 'ti-alert-octagon',   'cls': 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-200'},
+				'error':   {'icon': 'ti-alert-octagon',   'cls': 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-200'},
+				'warning': {'icon': 'ti-alert-triangle',  'cls': 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-200'},
+				'info':    {'icon': 'ti-info-circle',     'cls': 'bg-sky-50 border-sky-200 text-sky-800 dark:bg-sky-950/40 dark:border-sky-900 dark:text-sky-200'}
 			} %}
 			{% set current = config[label] ?? config['info'] %}
 
-			<div
-				x-data="{ isVisible: true }" x-show="isVisible" x-transition:leave="transition ease-in duration-300 transform translate-x-4 opacity-0" class="alert border rounded-xl p-3.5 flex items-start md:items-center shadow-sm {{ current.bg }} transition-all duration-300">
-				<!-- Icône Métier -->
-				<span class="material-icons mr-3 text-xl opacity-90 shrink-0 select-none">
-					{{ current.icon }}
-				</span>
-
-				<!-- Message descriptif -->
-				<div class="text-xs md:text-sm font-medium flex-1 leading-normal">
-					{{ message }}
-				</div>
-
-				<!-- Bouton Fermeture avec zone de clic élargie (Mobile Friendly) -->
-				<button @click="isVisible = false" class="ml-3 p-1 rounded-lg opacity-40 hover:opacity-100 hover:bg-black/5 transition shrink-0 focus:outline-none" aria-label="Fermer la notification">
-					<span class="material-icons text-base flex items-center">close</span>
+			<div role="alert" x-data="{ isVisible: true }" x-show="isVisible"
+				 x-transition:leave="transition ease-in duration-300"
+				 x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0 translate-x-4"
+				 class="flex items-start md:items-center gap-3 border rounded-xl p-3.5 shadow-sm transition-all {{ current.cls }}">
+				<span class="ti {{ current.icon }} text-xl shrink-0" aria-hidden="true"></span>
+				<div class="text-xs md:text-sm font-medium flex-1 leading-normal">{{ message }}</div>
+				<button type="button" @click="isVisible = false"
+						class="p-1 rounded-lg opacity-50 hover:opacity-100 hover:bg-black/5 transition shrink-0"
+						aria-label="Fermer la notification">
+					<span class="ti ti-x text-base" aria-hidden="true"></span>
 				</button>
 			</div>
 		{% endfor %}

@@ -2,14 +2,14 @@
 
 <div class="bg-[var(--surface-2)] border-[0.5px] border-[var(--border)] rounded-xl py-4 px-4 card-hover">
 	<p class="flex items-center gap-2 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-4">
-		<span class="material-icons">history</span>
+		<span class="ti ti-history" aria-hidden="true"></span>
 		Activité et connexions
 	</p>
 
 	{% if user.lastLoginAt %}
 		<div class="flex items-center gap-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-slate-800 dark:to-slate-900 border-[0.5px] border-indigo-200 dark:border-slate-700 rounded-xl p-4 mb-4">
 			<div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-				<span class="material-icons text-indigo-600 dark:text-indigo-400">login</span>
+				<span class="ti ti-login text-indigo-600 dark:text-indigo-400" aria-hidden="true"></span>
 			</div>
 			<div>
 				<p class="text-xs uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-0.5">Dernière connexion</p>
@@ -21,11 +21,11 @@
 	{% endif %}
 
 	<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-		{{ macros.stat('Adresse IP', user.lastIp ?? 'N/A', 'computer') }}
-		{{ macros.stat('Localisation', user.lastLocation ?? 'Inconnue', 'location_on') }}
+		{{ macros.stat('Adresse IP', user.lastIp ?? 'N/A', 'device-desktop') }}
+		{{ macros.stat('Localisation', user.lastLocation ?? 'Inconnue', 'map-pin') }}
 	</div>
 
-	{{ macros.stat('Dernier appareil', user.lastDevice ?? 'Non enregistré', 'phone_iphone') }}
+	{{ macros.stat('Dernier appareil', user.lastDevice ?? 'Non enregistré', 'device-mobile') }}
 
 	<div class="mt-6">
 		<p class="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-3">Historique des connexions</p>
@@ -58,7 +58,7 @@
 			</div>
 		{% else %}
 			<div class="flex flex-col items-center py-6 text-center">
-				<span class="material-icons text-[var(--text-muted)] text-4xl mb-2">history_toggle_off</span>
+				<span class="ti ti-history text-[var(--text-muted)] text-4xl mb-2" aria-hidden="true"></span>
 				<p class="text-sm text-[var(--text-muted)]">Aucun historique de connexion disponible.</p>
 			</div>
 		{% endif %}

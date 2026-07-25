@@ -99,7 +99,7 @@
 				<div class="flex items-center justify-between mb-4">
 					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">CA En Développement</span>
 					<div class="p-2 bg-blue-50 text-info rounded-xl">
-						<i class="ti ti-browser-code text-xl"></i>
+						<i class="ti ti-code text-xl"></i>
 					</div>
 				</div>
 				<div class="text-2xl font-bold tracking-tight">{{ stats.remainingBudget|default(0)|format_currency(app_currency) }}</div>
@@ -151,9 +151,9 @@
 
 			<p class="text-xs uppercase text-brand-dark/40 font-bold tracking-wider mb-2">Équipe & utilisateurs</p>
 			<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-				{{ _self.tile('admin_user_index', {}, 'ti-user-shield', adminsCount|default(0), 'Admins', false) }}
+				{{ _self.tile('admin_admins_index', {}, 'ti-user-shield', adminsCount|default(0), 'Admins', false) }}
 				{{ _self.tile('admin_collaborator_index', {}, 'ti-users-group', collaboratorsCount|default(0), 'Collaborateurs', false) }}
-				{{ _self.tile('user_index', {}, 'ti-user-dollar', clientsCount|default(0), 'Clients', false) }}
+				{{ _self.tile('admin_users_index', {}, 'ti-user-dollar', clientsCount|default(0), 'Clients', false) }}
 			</div>
 
 			<p class="text-xs uppercase text-brand-dark/40 font-bold tracking-wider mb-2">Contenu</p>

@@ -6,11 +6,11 @@
 {% endblock %}
 
 {% block body %}
-	<main class="container mx-auto px-4 py-8">
+	<div>
 
 		<div class="mb-6">
 			<a href="{{ path('admin_request_index') }}" class="btn btn-secondary gap-2 px-3 py-2 text-sm w-fit">
-				<span class="material-icons text-base">arrow_back</span>
+				<span class="ti ti-arrow-left text-base" aria-hidden="true"></span>
 				<span>Retour à la liste des demandes</span>
 			</a>
 		</div>
@@ -93,13 +93,13 @@
 
 					<div class="pt-4 border-t border-gray-100 flex flex-col gap-3">
 						{% include 'admin/request/_status_forms.html.twig' with {'quoteRequest': quoteRequest} %}
-						<div class="w-full [&>div]:w-full [&>div>form]:w-full text-center">
-							{% include 'admin/request/_delete_form.html.twig' with {'quoteRequest': quoteRequest} %}
+						<div class="w-full [&>div]:w-full [&_.btn]:w-full text-center">
+							<twig:DeleteModal :id="quoteRequest.id" :action="path('admin_request_delete', {id: quoteRequest.id})" :token="csrf_token('admin_request_delete_' ~ quoteRequest.id)" :label="quoteRequest.name" entity="cette demande" />
 						</div>
 					</div>
 				</div>
 			</div>
 
 		</div>
-	</main>
+	</div>
 {% endblock %}

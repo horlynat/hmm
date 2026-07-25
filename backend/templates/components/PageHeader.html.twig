@@ -1,0 +1,15 @@
+{#
+   Composant : en-tête de page (titre + sous-titre + slot d'actions).
+   Usage : <twig:PageHeader title="Clients" subtitle="…"><a class="btn btn-primary">…</a></twig:PageHeader>
+#}
+{% props title, subtitle = null, icon = null %}
+<div class="page-header">
+	<div class="min-w-0">
+		<h1 class="page-title flex items-center gap-2">
+			{%- if icon %}<span class="ti {{ icon }} text-(--brand-primary)" aria-hidden="true"></span>{% endif -%}
+			{{ title }}
+		</h1>
+		{% if subtitle %}<p class="page-subtitle">{{ subtitle }}</p>{% endif %}
+	</div>
+	<div class="flex items-center gap-2 shrink-0">{% block content %}{% endblock %}</div>
+</div>
