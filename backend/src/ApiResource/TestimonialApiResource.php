@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use App\Entity\Testimonial;
+use App\State\TestimonialCreateProcessor;
 
 #[ApiResource(
     stateOptions: new Options(entityClass: Testimonial::class),
@@ -31,6 +32,7 @@ use App\Entity\Testimonial;
         // 📌 Créer un témoignage (public)
         new Post(
             denormalizationContext: ['groups' => ['api_public']],
+            processor: TestimonialCreateProcessor::class,
             description: "Permet à un client de créer un témoignage."
         ),
 

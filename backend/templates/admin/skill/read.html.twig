@@ -6,11 +6,11 @@
 {% endblock %}
 
 {% block body %}
-	<main class="container mx-auto px-4 py-8">
+	<div>
 
 		<div class="mb-6">
 			<a href="{{ path('admin_skill_index') }}" class="btn btn-secondary gap-2 px-3 py-2 text-sm w-fit">
-				<span class="material-icons text-base">arrow_back</span>
+				<span class="ti ti-arrow-left text-base" aria-hidden="true"></span>
 				<span>Retour à la liste</span>
 			</a>
 		</div>
@@ -45,16 +45,16 @@
 					</h3>
 					<div class="pt-4 flex flex-col gap-3">
 						<a href="{{ path('admin_skill_update', {'id': skill.id}) }}" class="btn btn-primary w-full text-sm gap-2">
-							<span class="material-icons text-sm">edit</span>
+							<span class="ti ti-edit text-sm" aria-hidden="true"></span>
 							<span>Modifier</span>
 						</a>
-						<div class="w-full [&>form]:w-full text-center">
-							{{ include('admin/skill/_delete_form.html.twig', {'skill': skill}) }}
+						<div class="w-full [&>div]:w-full [&_.btn]:w-full text-center">
+							<twig:DeleteModal :id="skill.id" :action="path('admin_skill_delete', {id: skill.id})" :token="csrf_token('delete' ~ skill.id)" :label="skill.name" entity="cette compétence" />
 						</div>
 					</div>
 				</div>
 			</div>
 
 		</div>
-	</main>
+	</div>
 {% endblock %}

@@ -4,7 +4,7 @@
 
 	<!-- 🗑️ BOUTON DÉCLENCHEUR (Affiche le modal) -->
 	<button type="button" onclick="document.getElementById('delete-modal-{{ project.id }}').showModal()" class="p-2 bg-gray-50 hover:bg-red-500/10 text-brand-dark/70 hover:text-danger rounded-xl transition-all cursor-pointer flex items-center justify-center" title="Supprimer le projet">
-		<span class="material-icons text-lg block">delete_forever</span>
+		<span class="ti ti-trash text-lg block" aria-hidden="true"></span>
 	</button>
 
 	<!-- 🖼️ MODAL NATIF (DIALOG) -->
@@ -14,7 +14,7 @@
 			class="text-center">
 			<!-- Icône d'avertissement -->
 			<div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-50 text-danger mb-4">
-				<span class="material-icons text-2xl">warning</span>
+				<span class="ti ti-alert-triangle text-2xl" aria-hidden="true"></span>
 			</div>
 
 			<!-- Message de confirmation -->

@@ -6,11 +6,11 @@
 {% endblock %}
 
 {% block body %}
-	<main class="container mx-auto px-4 py-8">
+	<div>
 
 		<div class="mb-6">
 			<a href="{{ path('admin_collaborator_index') }}" class="btn btn-secondary gap-2 px-3 py-2 text-sm w-fit">
-				<span class="material-icons text-base">arrow_back</span>
+				<span class="ti ti-arrow-left text-base" aria-hidden="true"></span>
 				<span>Retour à la liste</span>
 			</a>
 		</div>
@@ -43,10 +43,44 @@
 					</div>
 				</div>
 
+				{% if user.specialties or user.availability or user.portfolioUrl or user.bio %}
+					<!-- 🧑‍💻 PROFIL COLLABORATEUR -->
+					<div class="card">
+						<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 mb-4 flex items-center gap-2">
+							<span class="ti ti-id-badge text-sm" aria-hidden="true"></span>
+							Profil collaborateur
+						</h3>
+						{% if user.specialties %}
+							<div class="mb-4 flex flex-wrap gap-1.5">
+								{% for specialty in user.specialties %}
+									<span class="badge bg-brand-light text-brand-dark">{{ specialty }}</span>
+								{% endfor %}
+							</div>
+						{% endif %}
+						<div class="grid grid-cols-2 gap-4 mb-4">
+							<div>
+								<p class="text-xs opacity-60 uppercase font-bold">Disponibilité</p>
+								<p class="text-brand-dark font-bold">{{ user.availability ?? '—' }}</p>
+							</div>
+							<div>
+								<p class="text-xs opacity-60 uppercase font-bold">Portfolio</p>
+								{% if user.portfolioUrl %}
+									<a href="{{ user.portfolioUrl }}" target="_blank" rel="noopener" class="text-brand-primary font-bold hover:underline">Voir le lien</a>
+								{% else %}
+									<p class="text-brand-dark font-bold">—</p>
+								{% endif %}
+							</div>
+						</div>
+						{% if user.bio %}
+							<p class="text-sm leading-relaxed whitespace-pre-line text-brand-dark/80 border-t border-gray-100 pt-4">{{ user.bio }}</p>
+						{% endif %}
+					</div>
+				{% endif %}
+
 				<!-- 📁 PROJETS ASSOCIÉS -->
 				<div class="card">
 					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 mb-4 flex items-center gap-2">
-						<span class="material-icons text-sm">folder_shared</span>
+						<span class="ti ti-folder-share text-sm" aria-hidden="true"></span>
 						Projets associés
 					</h3>
 					{% if user.collaboratingProjects|length > 0 %}
@@ -74,20 +108,20 @@
 					</h3>
 					<div class="pt-4 flex flex-col gap-3">
 						<a href="{{ path('profile_read', {'id': user.id}) }}" class="btn btn-secondary w-full text-sm gap-2">
-							<span class="material-icons text-sm">badge</span>
+							<span class="ti ti-id-badge text-sm" aria-hidden="true"></span>
 							<span>Voir le profil complet</span>
 						</a>
 						<a href="{{ path('admin_collaborator_update', {'id': user.id}) }}" class="btn btn-primary w-full text-sm gap-2">
-							<span class="material-icons text-sm">edit</span>
+							<span class="ti ti-edit text-sm" aria-hidden="true"></span>
 							<span>Modifier</span>
 						</a>
-						<div class="w-full [&>form]:w-full text-center">
-							{{ include('admin/collaborator/_delete_form.html.twig', {'user': user}) }}
+						<div class="w-full [&>div]:w-full [&_.btn]:w-full text-center">
+							<twig:DeleteModal :id="user.id" :action="path('admin_collaborator_delete', {id: user.id})" :token="csrf_token('admin_collaborator_delete_' ~ user.id)" :label="user.fullName ?? user.email" entity="ce collaborateur" />
 						</div>
 					</div>
 				</div>
 			</div>
 
 		</div>
-	</main>
+	</div>
 {% endblock %}

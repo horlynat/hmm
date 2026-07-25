@@ -23,11 +23,23 @@ nelmio_security:
     # image/police depuis un hôte tiers non listé (ex : un payload XSS stocké qui
     # tenterait de charger un script depuis un domaine attaquant). 'unsafe-inline'
     # reste nécessaire pour script-src/style-src tant que l'app s'appuie sur des
-    # attributs onclick/x-data (Alpine.js) et des <style> inline plutôt que des
-    # nonces — ça n'empêche pas un payload inline injecté de s'exécuter, mais ça
-    # bloque toute exfiltration/chargement de ressource vers un hôte externe non
-    # whitelisté, ce qui est déjà un gain réel. Liste d'hôtes tiers réellement
-    # utilisés confirmée par grep sur templates/ et assets/.
+    # attributs onclick, des <script>/<style> inline (ex: base.html.twig, cf. les
+    # bandeaux "flash de thème" et account_blocked) plutôt que des nonces — ça
+    # n'empêche pas un payload inline injecté de s'exécuter, mais ça bloque toute
+    # exfiltration/chargement de ressource vers un hôte externe non whitelisté, ce
+    # qui est déjà un gain réel. Liste d'hôtes tiers réellement utilisés confirmée
+    # par grep sur templates/ et assets/.
+    #
+    # ⚠️ 'unsafe-eval' est volontairement ABSENT de script-src. Alpine.js (utilisé
+    # pour x-data/x-show/@click) a besoin d'évaluer ses expressions en JS : le
+    # build standard (alpinejs@3.x.x) le fait via `new Function()`, qui exige
+    # 'unsafe-eval' et casse silencieusement (pas d'erreur serveur, juste des
+    # violations CSP en console) dès que ce header est actif sans ce mot-clé.
+    # C'est pour ça que templates/base.html.twig charge le build @alpinejs/csp
+    # (évaluateur sûr, sans eval) au lieu du build standard. Si un jour Alpine.js
+    # est remplacé/mis à jour, NE PAS revenir au build standard sans ajouter
+    # 'unsafe-eval' ici — sinon tous les x-data de l'admin (menu mobile,
+    # accordéons du nav, dropdowns) se figent à nouveau.
     csp:
         enforce:
             default-src:

@@ -1,3 +1,52 @@
+## architecture de gestion des erreurs:
+
+src/
+├── Controller/
+│   └── ErrorController.php                    ← optionnel, si tu préfères un contrôleur au subscriber pour le rendu
+├── EventSubscriber/
+│   └── ExceptionSubscriber.php                 ← cœur du système : intercepte, logue, notifie, route vers le bon template
+├── Exception/
+│   ├── AppException.php                        ← exception de base métier (abstraite)
+│   ├── ProjectRequestException.php             ← ex: demande de projet client invalide (422)
+│   └── ...                                     ← une classe par domaine métier au besoin
+├── Service/
+│   └── ErrorNotifier.php                       ← notifications email, réutilise EmailManager + RateLimiter anti-spam
+└── Normalizer/
+    └── ApiExceptionNormalizer.php               ← format JSON:API cohérent pour les erreurs API Platform
+
+templates/
+├── bundles/TwigBundle/Exception/
+│   ├── error401.html.twig                      ← non authentifié
+│   ├── error402.html.twig                      ← paiement requis (si pertinent pour ton offre freelance)
+│   ├── error403.html.twig                      ← accès refusé
+│   ├── error404.html.twig                      ← page introuvable
+│   ├── error422.html.twig                      ← erreur métier/validation (AppException)
+│   ├── error500.html.twig                      ← erreur serveur critique
+│   └── error.html.twig                         ← fallback générique pour tout code non listé
+└── emails/
+    └── error_alert.html.twig                    ← template du mail de notification critique
+
+config/
+├── packages/
+│   ├── monolog.yaml                            ← channels dédiés (app_errors, security_errors, business_errors) + niveaux + fingers_crossed
+│   ├── framework.yaml                           ← error_controller si tu utilises l'option contrôleur
+│   ├── cache.yaml                               ← pool dédié pour ErrorNotifier (évite collision avec le cache applicatif)
+│   ├── rate_limiter.yaml                        ← limiteur pour l'anti-spam des notifications (préférable au cache bricolé)
+│   └── api_platform.yaml                        ← exception_to_status : mapping AppException → codes HTTP pour les réponses API
+└── services.yaml                                ← binding explicite du logger de channel sur ExceptionSubscriber
+
+tests/
+├── EventSubscriber/
+│   └── ExceptionSubscriberTest.php              ← vérifie code HTTP retourné + template rendu par type d'exception
+├── Exception/
+│   └── AppExceptionTest.php                     ← vérifie getHttpStatusCode(), getContext(), getExtra()
+└── Service/
+    └── ErrorNotifierTest.php                    ← vérifie la déduplication (1 mail max/heure/type d'erreur)
+
+docs/
+└── error-handling.md                            ← comment ajouter une AppException, seuils de notification, architecture du pipeline
+
+
 
 📂 Arborescence Admin (vue hiérarchique)
 Principal

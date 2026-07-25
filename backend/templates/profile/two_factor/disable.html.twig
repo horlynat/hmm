@@ -4,11 +4,11 @@
 {% block title %}Désactiver la 2FA{% endblock %}
 
 {% block body %}
-	<main class="container mx-auto px-4 py-8 max-w-md">
+	<div class="max-w-md mx-auto">
 
 		<div class="mb-8">
 			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
-				<span class="material-icons text-danger">lock_open</span>
+				<span class="ti ti-lock-open text-danger" aria-hidden="true"></span>
 				<span>Désactiver la 2FA</span>
 			</h1>
 			<p class="text-sm opacity-60 mt-1">Confirmez votre mot de passe pour désactiver la double authentification sur ce compte.</p>
@@ -30,15 +30,15 @@
 				</div>
 
 				<button type="submit" class="btn w-full bg-danger text-white hover:opacity-90">
-					<span class="material-icons text-base mr-1.5">warning</span>
+					<span class="ti ti-alert-triangle text-base mr-1.5" aria-hidden="true"></span>
 					Désactiver la double authentification
 				</button>
 			</form>
 		</div>
 
 		<a href="{{ path('profile_two_factor_index') }}" class="inline-flex items-center gap-1.5 text-sm text-brand-dark opacity-60 hover:opacity-100 mt-4">
-			<span class="material-icons text-base">arrow_back</span>
+			<span class="ti ti-arrow-left text-base" aria-hidden="true"></span>
 			Annuler
 		</a>
-	</main>
+	</div>
 {% endblock %}

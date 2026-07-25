@@ -1,207 +1,849 @@
-{# templates/admin/project/read.html.twig #}
+{# templates/admin/project/read.html.twig — Centre de commande d'un projet #}
 {% extends 'base.html.twig' %}
 
-{% block title %}Projet :
-	{{ project.title }}
-{% endblock %}
+{% block title %}Projet : {{ project.title }}{% endblock %}
 
 {% block body %}
-	<div
-		class="container mx-auto px-4 py-8 space-y-8">
+	{% set canEdit = is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
+	{% set canManageTasks = is_granted(constant('App\\Security\\Voter\\ProjectVoter::MANAGE_TASK'), project) %}
+	{% set isAdmin = is_granted('ROLE_ADMIN') %}
+	{% set isLocked = project.status.value in ['termine', 'suspendu'] %}
 
-		{# ================= HEADER ================= #}
-		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-			<div>
-				<h1 class="heading text-3xl font-extrabold mb-2">{{ project.title }}</h1>
-				<div
-					class="flex items-center gap-3">
-					{# ✅ APPEL STANDARD #}
-					<twig:project:badge_status
-					:status="project.status"/>
+	{% set budget = project.budget %}
+	{% set spent = project.spent %}
+	{% set remaining = budget - spent %}
+	{% set pctSpent = budget > 0 ? (spent / budget * 100) : 0 %}
+	{% set pendingCount = project.expenses|filter(e => e.pending)|length %}
+	{% set pendingTotal = project.pendingExpensesTotal %}
+	{% set daysLeft = project.deadline ? ((date(project.deadline)|date('U')) - (date('today')|date('U'))) // 86400 : null %}
 
-					{# ================= CHANGEMENT RAPIDE DE STATUT ================= #}
-					{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
-						<div class="relative" x-data="{ statusMenuOpen: false }">
-							<button type="button" class="text-sm text-brand-primary font-medium flex items-center gap-1 bg-transparent border-0 cursor-pointer" @click="statusMenuOpen = !statusMenuOpen" @click.outside="statusMenuOpen = false">
-								<span class="material-icons text-sm">sync_alt</span>
-								Changer le statut
-							</button>
+	{# Une seule passe sur les tâches : compteurs par statut et par responsable
+	   (évite de réutiliser le résultat de |filter, qui est un itérateur à usage unique). #}
+	{% set statusCounts = {'todo': 0, 'in_progress': 0, 'blocked': 0, 'done': 0} %}
+	{% set taskTotalByUser = {} %}
+	{% set taskOpenByUser = {} %}
+	{% for t in project.tasks %}
+		{% set statusCounts = statusCounts|merge({ (t.status.value): (statusCounts[t.status.value] ?? 0) + 1 }) %}
+		{% if t.assignee %}
+			{% set uid = t.assignee.id %}
+			{% set taskTotalByUser = taskTotalByUser|merge({ (uid): (taskTotalByUser[uid] ?? 0) + 1 }) %}
+			{% if not t.done %}{% set taskOpenByUser = taskOpenByUser|merge({ (uid): (taskOpenByUser[uid] ?? 0) + 1 }) %}{% endif %}
+		{% endif %}
+	{% endfor %}
+	{% set overdueTasks = project.tasks|filter(t => t.overdue)|length %}
+	{% set blockedTasks = statusCounts['blocked'] %}
 
-							<div x-show="statusMenuOpen" x-transition class="absolute z-10 mt-2 w-56 card p-2" style="display: none;">
-								{% for statusOption in statuses %}
+	{% set budgetHealth = budget <= 0 ? 'none' : (pctSpent >= 100 ? 'over' : (pctSpent >= 80 ? 'tight' : 'ok')) %}
+	{% set scheduleHealth = daysLeft is null or isLocked ? 'none' : (daysLeft < 0 ? 'late' : (daysLeft <= 7 ? 'soon' : 'ok')) %}
+	{% set riskCount = blockedTasks + overdueTasks %}
+
+	{# ================================================================= #}
+	{# HEADER                                                            #}
+	{# ================================================================= #}
+	<div class="page-header">
+		<div class="min-w-0">
+			<nav class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider opacity-50 mb-2" aria-label="Fil d'Ariane">
+				<a href="{{ path('admin_project_index') }}" class="hover:text-(--brand-primary) transition-colors">Projets</a>
+				<span class="ti ti-chevron-right text-xs" aria-hidden="true"></span>
+				<span aria-current="page" class="truncate max-w-[40ch]">{{ project.title }}</span>
+			</nav>
+
+			<h1 class="page-title mb-2">{{ project.title }}</h1>
+
+			<div class="flex flex-wrap items-center gap-2">
+				<twig:project:badge_status :status="project.status"/>
+
+				{% if project.priority %}
+					<span class="badge {{ project.priority.badgeClass }} px-2.5 py-1 rounded-full text-xs font-semibold">
+						<span class="ti ti-flag-3 mr-1" aria-hidden="true"></span>{{ project.priority.label }}
+					</span>
+				{% endif %}
+				{% if project.billingType %}
+					<span class="badge badge-neutral px-2.5 py-1 rounded-full text-xs font-semibold">
+						<span class="ti ti-receipt mr-1" aria-hidden="true"></span>{{ project.billingType.label }}
+					</span>
+				{% endif %}
+
+				{% if canEdit %}
+					<div class="relative" x-data="{ open: false }">
+						<button type="button" @click="open = !open" :aria-expanded="open" aria-haspopup="menu"
+								class="inline-flex items-center gap-1 text-sm text-(--brand-primary) font-medium bg-transparent border-0 cursor-pointer hover:underline">
+							<span class="ti ti-arrows-exchange text-sm" aria-hidden="true"></span> Changer le statut
+						</button>
+						<div x-show="open" x-cloak @click.away="open = false" @keydown.escape.window="open = false"
+							 x-transition class="absolute z-20 mt-2 w-60 panel p-2">
+							{% set hasTransition = false %}
+							{% for statusOption in statuses %}
+								{% if project.status.canTransitionTo(statusOption) %}
+									{% set hasTransition = true %}
 									<form method="POST" action="{{ path('admin_project_change_status', {id: project.id, status: statusOption.value}) }}">
 										<input type="hidden" name="_token" value="{{ csrf_token('change_status_' ~ project.id) }}">
-										<button type="submit" class="w-full text-left text-sm px-3 py-2 rounded-sm hover:bg-gray-50 bg-transparent border-0 cursor-pointer {{ statusOption == project.status ? 'font-bold text-brand-primary' : 'text-brand-dark' }}" {{ statusOption == project.status ? 'disabled' }}>
-											{{ statusOption.label }}
-											{% if statusOption == project.status %}
-												<span class="text-xs text-gray-400">(actuel)</span>
-											{% endif %}
+										<button type="submit" class="w-full text-left text-sm px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 bg-transparent border-0 cursor-pointer text-brand-dark inline-flex items-center gap-2">
+											<span class="ti ti-arrow-right text-xs opacity-50" aria-hidden="true"></span>{{ statusOption.label }}
 										</button>
 									</form>
-								{% endfor %}
+								{% endif %}
+							{% endfor %}
+							{% if not hasTransition %}
+								<p class="text-xs text-gray-400 px-3 py-2 mb-0">Aucune transition possible depuis « {{ project.status.label }} ».</p>
+							{% endif %}
+						</div>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+
+		<div class="flex flex-wrap items-center gap-2">
+			{% if project.link %}
+				<a href="{{ project.link }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary gap-2">
+					<span class="ti ti-external-link" aria-hidden="true"></span> Voir en ligne
+				</a>
+			{% endif %}
+			{% if canEdit %}
+				<a href="{{ path('admin_project_update', {id: project.id}) }}" class="btn btn-primary gap-2">
+					<span class="ti ti-edit" aria-hidden="true"></span> Modifier
+				</a>
+			{% endif %}
+			{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::DELETE'), project) %}
+				{% include 'admin/project/_delete_form.html.twig' %}
+			{% endif %}
+		</div>
+	</div>
+
+	{# ================================================================= #}
+	{# KPIs                                                              #}
+	{# ================================================================= #}
+	<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-progress" aria-hidden="true"></span></div>
+			<div>
+				<div class="stat-tile__value">{{ project.progress }}%</div>
+				<div class="stat-tile__label">Avancement · {{ project.doneTasksCount }}/{{ project.tasksCount }} tâches</div>
+			</div>
+		</div>
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-wallet" aria-hidden="true"></span></div>
+			<div>
+				<div class="stat-tile__value">{{ budget|number_format(0, ',', ' ') }} €</div>
+				<div class="stat-tile__label">Budget alloué</div>
+			</div>
+		</div>
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-cash" aria-hidden="true"></span></div>
+			<div>
+				<div class="stat-tile__value">{{ spent|number_format(0, ',', ' ') }} €</div>
+				<div class="stat-tile__label">Dépensé · {{ pctSpent|number_format(0) }}%</div>
+			</div>
+		</div>
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti {{ daysLeft is not null and daysLeft < 0 and not isLocked ? 'ti-calendar-x' : 'ti-calendar-event' }}" aria-hidden="true"></span></div>
+			<div>
+				{% if daysLeft is null %}
+					<div class="stat-tile__value">—</div>
+					<div class="stat-tile__label">Aucune échéance</div>
+				{% elseif daysLeft < 0 and not isLocked %}
+					<div class="stat-tile__value text-danger">{{ -daysLeft }} j</div>
+					<div class="stat-tile__label text-danger">de retard</div>
+				{% else %}
+					<div class="stat-tile__value">{{ daysLeft }} j</div>
+					<div class="stat-tile__label">avant échéance</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+
+	{# ================================================================= #}
+	{# SANTÉ DU PROJET                                                   #}
+	{# ================================================================= #}
+	{% set healthBox = 'flex items-center gap-3 rounded-xl border p-4' %}
+	<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+		{# Budget #}
+		<div class="{{ healthBox }} {{ budgetHealth == 'over' ? 'bg-rose-50 border-rose-200' : (budgetHealth == 'tight' ? 'bg-amber-50 border-amber-200' : (budgetHealth == 'none' ? 'bg-gray-50 border-gray-200' : 'bg-emerald-50 border-emerald-200')) }}">
+			<span class="ti ti-wallet text-2xl {{ budgetHealth == 'over' ? 'text-rose-600' : (budgetHealth == 'tight' ? 'text-amber-600' : (budgetHealth == 'none' ? 'text-gray-500' : 'text-emerald-600')) }}" aria-hidden="true"></span>
+			<div class="min-w-0">
+				<div class="font-bold text-sm text-brand-dark">
+					{{ budgetHealth == 'over' ? 'Budget dépassé' : (budgetHealth == 'tight' ? 'Budget tendu' : (budgetHealth == 'none' ? 'Budget non défini' : 'Budget sain')) }}
+				</div>
+				<div class="text-xs text-brand-dark/60">{{ pctSpent|number_format(0) }}% consommé · reste {{ remaining|number_format(0, ',', ' ') }} €</div>
+			</div>
+		</div>
+		{# Planning #}
+		<div class="{{ healthBox }} {{ scheduleHealth == 'late' ? 'bg-rose-50 border-rose-200' : (scheduleHealth == 'soon' ? 'bg-amber-50 border-amber-200' : (scheduleHealth == 'none' ? 'bg-gray-50 border-gray-200' : 'bg-emerald-50 border-emerald-200')) }}">
+			<span class="ti ti-calendar-stats text-2xl {{ scheduleHealth == 'late' ? 'text-rose-600' : (scheduleHealth == 'soon' ? 'text-amber-600' : (scheduleHealth == 'none' ? 'text-gray-500' : 'text-emerald-600')) }}" aria-hidden="true"></span>
+			<div class="min-w-0">
+				<div class="font-bold text-sm text-brand-dark">
+					{{ scheduleHealth == 'late' ? 'En retard' : (scheduleHealth == 'soon' ? 'Échéance proche' : (scheduleHealth == 'none' ? 'Planning libre' : 'Dans les temps')) }}
+				</div>
+				<div class="text-xs text-brand-dark/60">
+					{% if scheduleHealth == 'none' %}Aucune échéance active{% elseif scheduleHealth == 'late' %}{{ -daysLeft }} j de retard{% else %}{{ daysLeft }} j restants{% endif %}
+				</div>
+			</div>
+		</div>
+		{# Risques & approbations #}
+		{% set riskColor = riskCount > 0 ? 'rose' : (pendingCount > 0 ? 'amber' : 'emerald') %}
+		<div class="{{ healthBox }} {{ riskColor == 'rose' ? 'bg-rose-50 border-rose-200' : (riskColor == 'amber' ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200') }}">
+			<span class="ti ti-alert-hexagon text-2xl {{ riskColor == 'rose' ? 'text-rose-600' : (riskColor == 'amber' ? 'text-amber-600' : 'text-emerald-600') }}" aria-hidden="true"></span>
+			<div class="min-w-0">
+				<div class="font-bold text-sm text-brand-dark">{{ riskCount > 0 ? 'À surveiller' : (pendingCount > 0 ? 'Approbations en attente' : 'Aucun risque') }}</div>
+				<div class="text-xs text-brand-dark/60">{{ blockedTasks }} bloquée(s) · {{ overdueTasks }} en retard · {{ pendingCount }} dépense(s) à approuver</div>
+			</div>
+		</div>
+	</div>
+
+	{# Bandeau dépenses en attente (raccourci) #}
+	{% if pendingCount > 0 %}
+		<div class="flex flex-wrap items-center gap-2 border rounded-xl p-3 text-sm bg-amber-50 border-amber-200 text-amber-800">
+			<span class="ti ti-clock-exclamation text-lg" aria-hidden="true"></span>
+			<span><strong>{{ pendingCount }}</strong> dépense(s) en attente pour <strong>{{ pendingTotal|number_format(2, ',', ' ') }} €</strong> (non décomptées du budget).</span>
+			<button type="button" data-tab-goto="budget" class="ml-auto btn btn-ghost btn-sm text-amber-800">Voir les dépenses →</button>
+		</div>
+	{% endif %}
+
+	{# ================================================================= #}
+	{# ONGLETS                                                           #}
+	{# ================================================================= #}
+	<div data-project-tabs class="mt-2">
+		<div class="border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
+			<div class="flex gap-1" role="tablist" aria-label="Sections du projet">
+				{% set tabBtn = 'group inline-flex items-center gap-2 px-4 py-2.5 -mb-px border-b-2 border-transparent text-sm font-semibold text-brand-dark/60 hover:text-brand-dark whitespace-nowrap cursor-pointer transition-colors aria-selected:border-(--brand-primary) aria-selected:text-(--brand-primary)' %}
+				<button type="button" role="tab" data-tab="overview" aria-selected="true" class="{{ tabBtn }}"><span class="ti ti-layout-dashboard" aria-hidden="true"></span> Vue d'ensemble</button>
+				<button type="button" role="tab" data-tab="budget" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-cash" aria-hidden="true"></span> Budget &amp; Dépenses</button>
+				<button type="button" role="tab" data-tab="tasks" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-checklist" aria-hidden="true"></span> Tâches ({{ project.doneTasksCount }}/{{ project.tasksCount }})</button>
+				<button type="button" role="tab" data-tab="team" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-users-group" aria-hidden="true"></span> Équipe &amp; parties prenantes</button>
+				<button type="button" role="tab" data-tab="time" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-clock" aria-hidden="true"></span> Temps ({{ project.formattedTotalTime }})</button>
+				<button type="button" role="tab" data-tab="discussion" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-messages" aria-hidden="true"></span> Discussion ({{ project.comments|length }})</button>
+				<button type="button" role="tab" data-tab="media" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-photo" aria-hidden="true"></span> Médias</button>
+				{% if isAdmin %}
+					<button type="button" role="tab" data-tab="history" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-history" aria-hidden="true"></span> Historique</button>
+				{% endif %}
+			</div>
+		</div>
+
+		{# ============================= VUE D'ENSEMBLE ============================= #}
+		<section data-tab-panel="overview" role="tabpanel" class="pt-6">
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				<div class="lg:col-span-2 space-y-6">
+					<div class="panel">
+						<div class="panel-header"><h3 class="panel-title">Description</h3></div>
+						<div class="panel-body">
+							<p class="text-brand-dark/80 leading-relaxed whitespace-pre-line mb-0">{{ project.description }}</p>
+						</div>
+					</div>
+
+					<div class="panel">
+						<div class="panel-header"><h3 class="panel-title">Technologies &amp; compétences</h3></div>
+						<div class="panel-body">
+							{% if project.skills is empty %}
+								<p class="text-sm text-gray-500 mb-0">Aucune technologie renseignée. <a href="{{ path('admin_project_update', {id: project.id}) }}" class="text-(--brand-primary) underline">Ajouter</a>.</p>
+							{% else %}
+								<div class="flex flex-wrap gap-2">
+									{% for skill in project.skills %}
+										<span class="badge badge-info px-2.5 py-1 rounded-full text-xs font-semibold">{{ skill.name }}</span>
+									{% endfor %}
+								</div>
+							{% endif %}
+						</div>
+					</div>
+
+					{# ---- Étiquettes (tags) éditables ---- #}
+					<div class="panel" x-data="{ editing: false }">
+						<div class="panel-header flex items-center justify-between">
+							<h3 class="panel-title mb-0">Étiquettes</h3>
+							{% if canEdit and not isLocked %}
+								<button type="button" @click="editing = !editing" class="text-xs text-(--brand-primary) font-semibold hover:underline bg-transparent border-0 cursor-pointer">
+									<span x-show="!editing"><span class="ti ti-pencil" aria-hidden="true"></span> Éditer</span>
+									<span x-show="editing" x-cloak>Fermer</span>
+								</button>
+							{% endif %}
+						</div>
+						<div class="panel-body">
+							<div {% if canEdit and not isLocked %}x-show="!editing"{% endif %}>
+								{% if project.tags is empty %}
+									<p class="text-sm text-gray-500 mb-0">Aucune étiquette.</p>
+								{% else %}
+									<div class="flex flex-wrap gap-2">
+										{% for tag in project.tags %}
+											<span class="inline-flex items-center gap-1 badge badge-neutral px-2.5 py-1 rounded-full text-xs font-semibold"><span class="ti ti-tag" aria-hidden="true"></span>{{ tag.name }}</span>
+										{% endfor %}
+									</div>
+								{% endif %}
 							</div>
+							{% if canEdit and not isLocked %}
+								<form method="POST" action="{{ path('admin_project_tags', {id: project.id}) }}" x-show="editing" x-cloak class="space-y-2">
+									<input type="hidden" name="_token" value="{{ csrf_token('project_tags_' ~ project.id) }}">
+									<label for="project-tags" class="field-label">Étiquettes (séparées par des virgules)</label>
+									<input id="project-tags" name="tags" class="input w-full" value="{{ project.tags|map(t => t.name)|join(', ') }}" placeholder="urgent, mobile, refonte">
+									<p class="text-[11px] opacity-40">Les étiquettes inexistantes sont créées automatiquement.</p>
+									<div class="flex items-center justify-end gap-2">
+										<button type="button" @click="editing = false" class="btn btn-secondary btn-sm">Annuler</button>
+										<button type="submit" class="btn btn-primary btn-sm gap-2"><span class="ti ti-device-floppy" aria-hidden="true"></span> Enregistrer</button>
+									</div>
+								</form>
+							{% endif %}
+						</div>
+					</div>
+
+					<div class="panel">
+						<div class="panel-header"><h3 class="panel-title">Avancement global</h3></div>
+						<div class="panel-body">
+							<div class="flex items-center justify-between mb-1 text-sm">
+								<span class="font-semibold text-brand-dark">{{ project.doneTasksCount }}/{{ project.tasksCount }} tâche(s) terminée(s)</span>
+								<span class="font-bold text-(--brand-dark)">{{ project.progress }}%</span>
+							</div>
+							<div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden">
+								<div class="h-2.5 rounded-full bg-(--brand-primary) transition-all" style="width: {{ project.progress }}%"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{# Colonne latérale : paramètres/planning éditables + parties prenantes #}
+				<div class="space-y-6">
+					<div class="panel" x-data="{ editing: false }">
+						<div class="panel-header flex items-center justify-between">
+							<h3 class="panel-title mb-0">Paramètres &amp; planning</h3>
+							{% if canEdit and not isLocked %}
+								<button type="button" @click="editing = !editing" class="text-xs text-(--brand-primary) font-semibold hover:underline bg-transparent border-0 cursor-pointer">
+									<span x-show="!editing"><span class="ti ti-pencil" aria-hidden="true"></span> Éditer</span>
+									<span x-show="editing" x-cloak>Fermer</span>
+								</button>
+							{% endif %}
+						</div>
+
+						<div class="panel-body space-y-3 text-sm" {% if canEdit and not isLocked %}x-show="!editing"{% endif %}>
+							{% set rowClass = 'flex items-center justify-between gap-3 py-1.5 border-b border-gray-100 dark:border-gray-800 last:border-0' %}
+							<div class="{{ rowClass }}"><span class="text-brand-dark/50">Statut</span><span class="font-semibold">{{ project.status.label }}</span></div>
+							<div class="{{ rowClass }}"><span class="text-brand-dark/50">Priorité</span><span class="font-semibold">{{ project.priority ? project.priority.label : '—' }}</span></div>
+							<div class="{{ rowClass }}"><span class="text-brand-dark/50">Facturation</span><span class="font-semibold">{{ project.billingType ? project.billingType.label : '—' }}</span></div>
+							<div class="{{ rowClass }}"><span class="text-brand-dark/50">Créé le</span><span class="font-semibold">{{ project.createdAt|date('d/m/Y') }}</span></div>
+							<div class="{{ rowClass }}"><span class="text-brand-dark/50">Démarré le</span><span class="font-semibold">{{ project.startedAt ? project.startedAt|date('d/m/Y') : '—' }}</span></div>
+							<div class="{{ rowClass }}"><span class="text-brand-dark/50">Échéance</span><span class="font-semibold {{ daysLeft is not null and daysLeft < 0 and not isLocked ? 'text-danger' : '' }}">{{ project.deadline ? project.deadline|date('d/m/Y') : '—' }}</span></div>
+							<div class="{{ rowClass }}"><span class="text-brand-dark/50">Terminé le</span><span class="font-semibold">{{ project.completedAt ? project.completedAt|date('d/m/Y') : '—' }}</span></div>
+						</div>
+
+						{% if canEdit and not isLocked %}
+							<div class="panel-body" x-show="editing" x-cloak>
+								<form method="POST" action="{{ path('admin_project_settings', {id: project.id}) }}" class="space-y-4">
+									<input type="hidden" name="_token" value="{{ csrf_token('project_settings_' ~ project.id) }}">
+
+									<div class="text-[11px] font-bold uppercase tracking-wider text-brand-dark/40">Paramètres</div>
+									<div class="field">
+										<label for="set-priority" class="field-label">Priorité</label>
+										<select id="set-priority" name="priority" class="input input-select w-full">
+											<option value="">— Non définie —</option>
+											{% for p in priorities %}
+												<option value="{{ p.value }}" {{ project.priority and project.priority.value == p.value ? 'selected' : '' }}>{{ p.label }}</option>
+											{% endfor %}
+										</select>
+									</div>
+									<div class="field">
+										<label for="set-billing" class="field-label">Type de facturation</label>
+										<select id="set-billing" name="billingType" class="input input-select w-full">
+											<option value="">— Non défini —</option>
+											{% for b in billingTypes %}
+												<option value="{{ b.value }}" {{ project.billingType and project.billingType.value == b.value ? 'selected' : '' }}>{{ b.label }}</option>
+											{% endfor %}
+										</select>
+									</div>
+
+									<div class="text-[11px] font-bold uppercase tracking-wider text-brand-dark/40 pt-3 border-t border-gray-100 dark:border-gray-800">Planning</div>
+									<div class="field">
+										<label for="set-started" class="field-label">Démarré le</label>
+										<input id="set-started" type="date" name="startedAt" value="{{ project.startedAt ? project.startedAt|date('Y-m-d') : '' }}" class="input w-full">
+									</div>
+									<div class="field">
+										<label for="set-deadline" class="field-label">Échéance</label>
+										<input id="set-deadline" type="date" name="deadline" value="{{ project.deadline ? project.deadline|date('Y-m-d') : '' }}" class="input w-full">
+									</div>
+									<div class="field">
+										<label for="set-completed" class="field-label">Terminé le</label>
+										<input id="set-completed" type="date" name="completedAt" value="{{ project.completedAt ? project.completedAt|date('Y-m-d') : '' }}" class="input w-full">
+										<p class="text-[11px] opacity-40 mt-1">Vider un champ efface la date correspondante.</p>
+									</div>
+
+									<div class="flex items-center justify-end gap-2 pt-2">
+										<button type="button" @click="editing = false" class="btn btn-secondary btn-sm">Annuler</button>
+										<button type="submit" class="btn btn-primary btn-sm gap-2"><span class="ti ti-device-floppy" aria-hidden="true"></span> Enregistrer</button>
+									</div>
+								</form>
+							</div>
+						{% endif %}
+					</div>
+
+					<div class="panel">
+						<div class="panel-header flex items-center justify-between">
+							<h3 class="panel-title">Parties prenantes</h3>
+							<button type="button" data-tab-goto="team" class="text-xs text-(--brand-primary) font-semibold hover:underline bg-transparent border-0 cursor-pointer">Gérer →</button>
+						</div>
+						<div class="panel-body space-y-3">
+							<div class="flex items-center gap-3">
+								<div class="w-9 h-9 rounded-full bg-(--brand-primary)/15 text-(--brand-primary) flex items-center justify-center font-bold shrink-0">{{ (project.owner.fullName ?? project.owner.email)|first|upper }}</div>
+								<div class="min-w-0">
+									<div class="font-semibold text-brand-dark truncate">{{ project.owner.fullName ?? project.owner.email }}</div>
+									<div class="text-xs text-brand-dark/50">Pilote / Responsable</div>
+								</div>
+							</div>
+							<div class="flex items-center gap-3">
+								<div class="w-9 h-9 rounded-full bg-brand-light flex items-center justify-center font-bold text-brand-dark shrink-0">{{ project.client ? (project.client.fullName ?? project.client.email)|first|upper : '?' }}</div>
+								<div class="min-w-0">
+									<div class="font-semibold text-brand-dark truncate">{{ project.client ? (project.client.fullName ?? project.client.email) : 'Non assigné' }}</div>
+									<div class="text-xs text-brand-dark/50">Client / Commanditaire</div>
+								</div>
+							</div>
+							<div class="flex items-center gap-3">
+								<div class="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-brand-dark shrink-0"><span class="ti ti-users" aria-hidden="true"></span></div>
+								<div class="min-w-0">
+									<div class="font-semibold text-brand-dark">{{ project.collaborators|length }} collaborateur(s)</div>
+									<div class="text-xs text-brand-dark/50">Équipe / Intervenants</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		{# ============================= BUDGET & DÉPENSES ============================= #}
+		<section data-tab-panel="budget" role="tabpanel" class="pt-6 space-y-6" hidden>
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				<div class="lg:col-span-2 space-y-6">
+					<twig:project:budget_summary :project="project"/>
+
+					{# Répartition visuelle par catégorie #}
+					<div class="panel">
+						<div class="panel-header"><h3 class="panel-title">Répartition des dépenses par catégorie</h3></div>
+						<div class="panel-body">
+							{% if project.expenses is empty %}
+								<p class="text-sm text-gray-500 mb-0">Aucune dépense enregistrée.</p>
+							{% else %}
+								{% set catTotals = {} %}
+								{% for e in project.expenses %}
+									{% set k = e.category.label %}
+									{% set catTotals = catTotals|merge({ (k): (catTotals[k] ?? 0) + e.amount }) %}
+								{% endfor %}
+								{% set maxCat = 0 %}
+								{% for k, v in catTotals %}{% if v > maxCat %}{% set maxCat = v %}{% endif %}{% endfor %}
+								<div class="space-y-3">
+									{% for label, total in catTotals %}
+										<div>
+											<div class="flex items-center justify-between text-sm mb-1">
+												<span class="text-brand-dark/70">{{ label }}</span>
+												<span class="font-semibold text-brand-dark">{{ total|number_format(2, ',', ' ') }} €</span>
+											</div>
+											<div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
+												<div class="h-2 rounded-full bg-(--brand-primary)" style="width: {{ maxCat > 0 ? (total / maxCat * 100) : 0 }}%"></div>
+											</div>
+										</div>
+									{% endfor %}
+								</div>
+							{% endif %}
+						</div>
+					</div>
+				</div>
+
+				{# Synthèse chiffrée #}
+				<div class="panel h-fit">
+					<div class="panel-header"><h3 class="panel-title">Synthèse financière</h3></div>
+					<div class="panel-body space-y-3 text-sm">
+						{% set frow = 'flex items-center justify-between gap-3 py-1.5 border-b border-gray-100 dark:border-gray-800 last:border-0' %}
+						<div class="{{ frow }}"><span class="text-brand-dark/50">Budget alloué</span><span class="font-semibold">{{ budget|number_format(2, ',', ' ') }} €</span></div>
+						<div class="{{ frow }}"><span class="text-brand-dark/50">Dépensé (approuvé)</span><span class="font-semibold">{{ spent|number_format(2, ',', ' ') }} €</span></div>
+						<div class="{{ frow }}"><span class="text-brand-dark/50">En attente</span><span class="font-semibold text-amber-600">{{ pendingTotal|number_format(2, ',', ' ') }} €</span></div>
+						<div class="{{ frow }}"><span class="text-brand-dark/50">Disponible</span><span class="font-bold {{ remaining < 0 ? 'text-danger' : 'text-emerald-600' }}">{{ remaining|number_format(2, ',', ' ') }} €</span></div>
+						<div class="{{ frow }}"><span class="text-brand-dark/50">Nombre de dépenses</span><span class="font-semibold">{{ project.expenses|length }}</span></div>
+					</div>
+				</div>
+			</div>
+
+			<div class="panel">
+				<div class="panel-header flex items-center justify-between">
+					<h3 class="panel-title">Dépenses ({{ project.expenses|length }})</h3>
+					{% if canEdit and not isLocked %}
+						<a href="{{ path('admin_project_add_expense', {id: project.id}) }}" class="btn btn-primary btn-sm gap-2">
+							<span class="ti ti-plus" aria-hidden="true"></span> Nouvelle dépense
+						</a>
+					{% endif %}
+				</div>
+				<div class="panel-body">
+					{% if not project.hasBudget %}
+						<div class="mb-4 flex items-center gap-2 text-sm rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-800">
+							<span class="ti ti-alert-triangle shrink-0" aria-hidden="true"></span>
+							<span>Aucun budget défini. <a href="{{ path('admin_project_update', {id: project.id}) }}" class="underline font-semibold">Définissez un budget</a> (&gt; 0) pour enregistrer des dépenses.</span>
+						</div>
+					{% endif %}
+					<twig:project:expense_list :project="project"/>
+				</div>
+			</div>
+		</section>
+
+		{# ============================= TÂCHES / JALONS (tableau par statut) ============================= #}
+		<section data-tab-panel="tasks" role="tabpanel" class="pt-6 space-y-6" hidden>
+			<div class="panel">
+				<div class="panel-header">
+					<div class="flex items-center justify-between mb-1">
+						<h3 class="panel-title mb-0">Avancement — {{ project.doneTasksCount }}/{{ project.tasksCount }} tâche(s)</h3>
+						<span class="text-sm font-bold text-(--brand-dark)">{{ project.progress }}%</span>
+					</div>
+					<div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 mt-2">
+						<div class="h-2 rounded-full bg-(--brand-primary) transition-all" style="width: {{ project.progress }}%"></div>
+					</div>
+				</div>
+				<div class="panel-body space-y-6">
+					{% if canManageTasks and not isLocked %}
+						<form method="post" action="{{ path('admin_project_task_add', {id: project.id}) }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+							<input type="hidden" name="_token" value="{{ csrf_token('task_add_' ~ project.id) }}">
+							<div class="sm:col-span-5">
+								<label for="task-title" class="field-label">Nouvelle tâche</label>
+								<input id="task-title" name="title" required class="input w-full" placeholder="Ex : Maquettes de la page d'accueil">
+							</div>
+							<div class="sm:col-span-3">
+								<label for="task-assignee" class="field-label">Responsable</label>
+								<select id="task-assignee" name="assignee" class="input input-select w-full">
+									<option value="0">—</option>
+									<option value="{{ project.owner.id }}">{{ project.owner.fullName ?? project.owner.email }} (pilote)</option>
+									{% for c in project.collaborators %}
+										<option value="{{ c.id }}">{{ c.fullName ?? c.email }}</option>
+									{% endfor %}
+								</select>
+							</div>
+							<div class="sm:col-span-2">
+								<label for="task-due" class="field-label">Échéance</label>
+								<input id="task-due" type="date" name="dueDate" class="input w-full">
+							</div>
+							<div class="sm:col-span-2">
+								<button type="submit" class="btn btn-primary w-full gap-2"><span class="ti ti-plus" aria-hidden="true"></span> Ajouter</button>
+							</div>
+						</form>
+					{% endif %}
+
+					{% if project.tasks is empty %}
+						<twig:EmptyState text="Aucune tâche pour le moment." icon="ti-checklist" />
+					{% else %}
+						{% set statusOrder = ['todo', 'in_progress', 'blocked', 'done'] %}
+						<div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+							{% for sv in statusOrder %}
+								{% set st = null %}
+								{% for cand in taskStatuses %}{% if cand.value == sv %}{% set st = cand %}{% endif %}{% endfor %}
+								<div class="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/40 dark:bg-gray-800/20 p-3">
+									<div class="flex items-center justify-between mb-3 px-1">
+										<span class="inline-flex items-center gap-1.5 text-sm font-bold text-brand-dark">
+											<span class="ti {{ st.icon }} {{ st.value == 'done' ? 'text-success' : (st.value == 'blocked' ? 'text-danger' : 'opacity-60') }}" aria-hidden="true"></span>{{ st.label }}
+										</span>
+										<span class="badge badge-neutral text-[11px] px-2 py-0.5 rounded-full">{{ statusCounts[sv] }}</span>
+									</div>
+									<div class="space-y-2">
+										{% for task in project.tasks|filter(t => t.status.value == sv) %}
+											<div class="soft-card p-3">
+												<div class="flex items-start gap-2">
+													<div class="min-w-0 flex-1">
+														<div class="font-semibold text-sm text-brand-dark {{ task.done ? 'line-through opacity-70' : '' }}">{{ task.title }}</div>
+														<div class="flex flex-wrap items-center gap-2 text-xs opacity-70 mt-1">
+															{% if task.assignee %}<span class="inline-flex items-center gap-1"><span class="ti ti-user" aria-hidden="true"></span>{{ task.assignee.fullName ?? task.assignee.email }}</span>{% endif %}
+															{% if task.dueDate %}<span class="inline-flex items-center gap-1 {{ task.overdue ? 'text-danger font-bold' : '' }}"><span class="ti ti-calendar-event" aria-hidden="true"></span>{{ task.dueDate|date('d/m/Y') }}{% if task.overdue %} ⚠{% endif %}</span>{% endif %}
+														</div>
+													</div>
+													{% if canManageTasks %}
+														<div class="flex items-center gap-0.5 shrink-0">
+															{% if not isLocked %}
+																<div class="relative" x-data="{ open: false }">
+																	<button type="button" @click="open = !open" :aria-expanded="open" class="btn btn-ghost btn-icon btn-sm" title="Déplacer / changer le statut">
+																		<span class="ti ti-dots-vertical" aria-hidden="true"></span>
+																	</button>
+																	<div x-show="open" x-cloak @click.away="open = false" @keydown.escape.window="open = false" class="absolute right-0 z-20 mt-1 w-44 panel p-1">
+																		{% for mv in taskStatuses %}
+																			{% if mv.value != task.status.value %}
+																				<form method="post" action="{{ path('admin_project_task_status', {id: project.id, taskId: task.id, status: mv.value}) }}">
+																					<input type="hidden" name="_token" value="{{ csrf_token('task_status_' ~ task.id) }}">
+																					<button type="submit" class="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-gray-50 dark:hover:bg-gray-800 bg-transparent border-0 cursor-pointer inline-flex items-center gap-2"><span class="ti {{ mv.icon }} opacity-60" aria-hidden="true"></span>Vers « {{ mv.label }} »</button>
+																				</form>
+																			{% endif %}
+																		{% endfor %}
+																	</div>
+																</div>
+															{% endif %}
+															<form method="post" action="{{ path('admin_project_task_delete', {id: project.id, taskId: task.id}) }}" onsubmit="return confirm('Supprimer cette tâche ?');">
+																<input type="hidden" name="_token" value="{{ csrf_token('task_delete_' ~ task.id) }}">
+																<button type="submit" class="btn btn-ghost btn-icon btn-sm text-danger" title="Supprimer"><span class="ti ti-trash" aria-hidden="true"></span></button>
+															</form>
+														</div>
+													{% endif %}
+												</div>
+											</div>
+										{% else %}
+											<p class="text-xs text-gray-400 px-1 py-2 mb-0">—</p>
+										{% endfor %}
+									</div>
+								</div>
+							{% endfor %}
 						</div>
 					{% endif %}
 				</div>
 			</div>
+		</section>
 
-			<div class="flex gap-2">
-				{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
-					<a href="{{ path('admin_project_update', {id: project.id}) }}" class="btn btn-primary gap-2">
-						<span class="material-icons text-sm">edit</span>
-						Modifier le Projet
-					</a>
-				{% endif %}
-			</div>
-		</div>
-
-		{# ================= ACTIONS RAPIDES ================= #}
-		{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
-			<div class="flex flex-wrap gap-2">
-				<a href="{{ path('admin_project_add_expense', {id: project.id}) }}" class="btn btn-primary gap-2 text-sm py-2">
-					<span class="material-icons text-sm">payments</span>
-					Ajouter une dépense
-				</a>
-				<a href="{{ path('admin_project_add_collaborator', {id: project.id}) }}" class="btn btn-primary gap-2 text-sm py-2">
-					<span class="material-icons text-sm">person_add</span>
-					Ajouter un collaborateur
-				</a>
-				<button type="button" class="btn btn-primary gap-2 text-sm py-2" onclick="document.querySelector('[data-tab-target=team]').click(); document.getElementById('assign-client-email').focus();">
-					<span class="material-icons text-sm">badge</span>
-					{{ project.client ? 'Changer le client' : 'Assigner un client' }}
-				</button>
-				{% if is_granted('ROLE_ADMIN') %}
-					<button type="button" class="btn btn-primary gap-2 text-sm py-2" onclick="document.querySelector('[data-tab-target=history]').click();">
-						<span class="material-icons text-sm">history</span>
-						Suivre l'évolution
-					</button>
-				{% endif %}
-			</div>
-		{% endif %}
-
-		{# ================= RÉSUMÉ BUDGET ================= #}
-		{# ✅ APPEL STANDARD #}
-		<twig:project:budget_summary
-		:project="project"/>
-
-		{# ================= SYSTÈME D'ONGLETS SANS INLINE JS ================= #}
-		<div class="mt-8">
-			<div class="tabs mb-6">
-				<button class="tab tab-active" data-tab-target="media">Détails & Médias</button>
-				<button class="tab" data-tab-target="expenses">Dépenses</button>
-				<button class="tab" data-tab-target="team">Équipe</button>
-				{% if is_granted('ROLE_ADMIN') %}
-					<button class="tab" data-tab-target="history">Historique</button>
-				{% endif %}
-			</div>
-
-			<div
-				class="soft-card p-6">
-
-				{# CONTENU DE L'ONGLET 1 : Détails & Médias #}
-				<div id="tab-media" class="tab-content space-y-6">
-					<p class="text-gray-600 leading-relaxed text-base">{{ project.description }}</p>
-					{# ✅ APPEL STANDARD #}
-					<twig:project:media_grid :project="project"/>
-				</div>
-
-				{# CONTENU DE L'ONGLET 2 : Dépenses #}
-				<div id="tab-expenses" class="tab-content hidden">
-					<div class="flex justify-between items-center mb-6">
-						<h3 class="heading text-xl">Dépenses liées</h3>
-						{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
-							<a href="{{ path('admin_project_add_expense', {id: project.id}) }}" class="btn btn-primary gap-2 text-sm py-2">
-								<span class="material-icons text-sm">add</span>
-								Nouvelle Dépense
-							</a>
-						{% endif %}
-					</div>
-					{# ✅ APPEL STANDARD #}
-					<twig:project:expense_list :project="project"/>
-				</div>
-
-				{# CONTENU DE L'ONGLET 3 : Équipe (client + collaborateurs) #}
-				<div id="tab-team" class="tab-content hidden space-y-6">
-					<div>
-						<h3 class="heading text-xl mb-3">Client</h3>
-						{% if project.client %}
-							<div class="flex items-center gap-3 soft-card p-4 mb-3">
-								<div class="w-10 h-10 rounded-full bg-brand-light flex items-center justify-center font-bold text-brand-dark">
-									{{ project.client.fullName|slice(0, 1)|upper }}
-								</div>
-								<div>
-									<div class="font-semibold text-brand-dark">{{ project.client.fullName }}</div>
-									<div class="text-sm text-gray-500">{{ project.client.email }}</div>
-								</div>
-							</div>
-						{% else %}
-							<p class="text-gray-500 text-sm mb-3">Aucun client rattaché à ce projet.</p>
-						{% endif %}
-
-						{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
-							<form method="POST" action="{{ path('admin_project_assign_client', {id: project.id}) }}" class="flex gap-2">
-								<input type="hidden" name="_token" value="{{ csrf_token('assign_client_' ~ project.id) }}">
-								<input id="assign-client-email" type="email" name="email" required class="input text-sm py-2 flex-1" placeholder="Email du client à assigner">
-								<button type="submit" class="btn btn-primary text-sm py-2 px-4">
-									{{ project.client ? 'Changer' : 'Assigner' }}
-								</button>
-							</form>
-							<p class="text-xs text-gray-400 mt-1">Seul un compte client (ni administrateur, ni collaborateur) peut être assigné.</p>
-						{% endif %}
-					</div>
-
-					<div>
-						<div class="flex justify-between items-center mb-3">
-							<h3 class="heading text-xl">Collaborateurs ({{ project.collaborators|length }})</h3>
-							{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
-								<a href="{{ path('admin_project_add_collaborator', {id: project.id}) }}" class="btn btn-primary gap-2 text-sm py-2">
-									<span class="material-icons text-sm">person_add</span>
-									Ajouter un collaborateur
-								</a>
-							{% endif %}
+		{# ============================= ÉQUIPE & PARTIES PRENANTES ============================= #}
+		<section data-tab-panel="team" role="tabpanel" class="pt-6 space-y-6" hidden>
+			{# Pilote #}
+			<div class="panel">
+				<div class="panel-header"><h3 class="panel-title">Pilote / Responsable</h3></div>
+				<div class="panel-body">
+					<div class="flex items-center gap-3">
+						<div class="w-11 h-11 rounded-full bg-(--brand-primary)/15 text-(--brand-primary) flex items-center justify-center font-bold shrink-0">{{ (project.owner.fullName ?? project.owner.email)|first|upper }}</div>
+						<div class="min-w-0">
+							<div class="font-semibold text-brand-dark">{{ project.owner.fullName ?? project.owner.email }}</div>
+							<div class="text-sm text-gray-500">{{ project.owner.email }}</div>
 						</div>
+						<div class="ml-auto flex items-center gap-2">
+							<span class="text-xs text-brand-dark/60">{{ taskOpenByUser[project.owner.id] ?? 0 }} en cours · {{ taskTotalByUser[project.owner.id] ?? 0 }} tâche(s)</span>
+							<span class="badge badge-info px-2.5 py-1 rounded-full text-xs font-semibold">Propriétaire</span>
+						</div>
+					</div>
+				</div>
+			</div>
 
-						{% if project.collaborators is empty %}
-							<p class="text-gray-500 text-sm">Aucun collaborateur sur ce projet pour le moment.</p>
-						{% else %}
-							<div class="space-y-2">
-								{% for collaborator in project.collaborators %}
-									<div class="flex items-center justify-between soft-card p-4">
-										<div class="flex items-center gap-3">
-											<div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-brand-dark">
-												{{ collaborator.fullName|slice(0, 1)|upper }}
-											</div>
-											<div>
-												<div class="font-semibold text-brand-dark">{{ collaborator.fullName }}</div>
-												<div class="text-sm text-gray-500">{{ collaborator.email }}</div>
-											</div>
+			{# Client #}
+			<div class="panel">
+				<div class="panel-header"><h3 class="panel-title">Client / Commanditaire</h3></div>
+				<div class="panel-body space-y-3">
+					{% if project.client %}
+						<div class="flex items-center gap-3">
+							<div class="w-11 h-11 rounded-full bg-brand-light flex items-center justify-center font-bold text-brand-dark shrink-0">{{ (project.client.fullName ?? project.client.email)|first|upper }}</div>
+							<div class="min-w-0">
+								<div class="font-semibold text-brand-dark">{{ project.client.fullName ?? project.client.email }}</div>
+								<div class="text-sm text-gray-500">{{ project.client.email }}</div>
+							</div>
+						</div>
+					{% else %}
+						<p class="text-gray-500 text-sm mb-0">Aucun client rattaché à ce projet.</p>
+					{% endif %}
+
+					{% if canEdit %}
+						<form method="POST" action="{{ path('admin_project_assign_client', {id: project.id}) }}" class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+							<input type="hidden" name="_token" value="{{ csrf_token('assign_client_' ~ project.id) }}">
+							<input id="assign-client-email" type="email" name="email" required class="input text-sm flex-1" placeholder="Email du client à assigner">
+							<button type="submit" class="btn btn-primary text-sm px-4">{{ project.client ? 'Changer le client' : 'Assigner un client' }}</button>
+						</form>
+						<p class="text-xs text-gray-400 mb-0">Seul un compte client (ni administrateur, ni collaborateur) peut être assigné.</p>
+					{% endif %}
+				</div>
+			</div>
+
+			{# Collaborateurs #}
+			<div class="panel">
+				<div class="panel-header flex items-center justify-between">
+					<h3 class="panel-title">Équipe / Intervenants ({{ project.collaborators|length }})</h3>
+					{% if canEdit %}
+						<a href="{{ path('admin_project_add_collaborator', {id: project.id}) }}" class="btn btn-primary btn-sm gap-2">
+							<span class="ti ti-user-plus" aria-hidden="true"></span> Ajouter
+						</a>
+					{% endif %}
+				</div>
+				<div class="panel-body">
+					{% if project.collaborators is empty %}
+						<p class="text-gray-500 text-sm mb-0">Aucun collaborateur sur ce projet pour le moment.</p>
+					{% else %}
+						<div class="space-y-2">
+							{% for collaborator in project.collaborators %}
+								<div class="flex items-center justify-between soft-card p-4">
+									<div class="flex items-center gap-3 min-w-0">
+										<div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-brand-dark shrink-0">{{ (collaborator.fullName ?? collaborator.email)|first|upper }}</div>
+										<div class="min-w-0">
+											<div class="font-semibold text-brand-dark truncate">{{ collaborator.fullName ?? collaborator.email }}</div>
+											<div class="text-sm text-gray-500 truncate">{{ collaborator.email }}</div>
 										</div>
-										{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
-											<form method="POST" action="{{ path('admin_project_remove_collaborator', {id: project.id, collaboratorId: collaborator.id}) }}" onsubmit="return confirm('Retirer {{ collaborator.fullName }} de ce projet ?');">
+									</div>
+									<div class="flex items-center gap-3 shrink-0">
+										<span class="text-xs text-brand-dark/60 whitespace-nowrap">{{ taskOpenByUser[collaborator.id] ?? 0 }} en cours · {{ taskTotalByUser[collaborator.id] ?? 0 }} tâche(s)</span>
+										{% if canEdit %}
+											<form method="POST" action="{{ path('admin_project_remove_collaborator', {id: project.id, collaboratorId: collaborator.id}) }}" onsubmit="return confirm('Retirer {{ collaborator.fullName ?? collaborator.email }} de ce projet ?');">
 												<input type="hidden" name="_token" value="{{ csrf_token('remove_collaborator_' ~ collaborator.id) }}">
-												<button type="submit" class="text-danger hover:underline text-sm font-medium bg-transparent border-0 cursor-pointer">
-													Retirer
-												</button>
+												<button type="submit" class="text-danger hover:underline text-sm font-medium bg-transparent border-0 cursor-pointer">Retirer</button>
 											</form>
 										{% endif %}
 									</div>
-								{% endfor %}
+								</div>
+							{% endfor %}
+						</div>
+					{% endif %}
+				</div>
+			</div>
+		</section>
+
+		{# ============================= SUIVI DU TEMPS ============================= #}
+		<section data-tab-panel="time" role="tabpanel" class="pt-6 space-y-6" hidden>
+			{# Totaux par personne (calculés en une passe) #}
+			{% set minutesByUser = {} %}
+			{% set namesByUser = {} %}
+			{% for e in project.timeEntries %}
+				{% set uid = e.user.id %}
+				{% set minutesByUser = minutesByUser|merge({ (uid): (minutesByUser[uid] ?? 0) + e.minutes }) %}
+				{% set namesByUser = namesByUser|merge({ (uid): (e.user.fullName ?? e.user.email) }) %}
+			{% endfor %}
+
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				<div class="panel lg:col-span-2">
+					<div class="panel-header flex items-center justify-between">
+						<h3 class="panel-title mb-0">Saisies de temps — total {{ project.formattedTotalTime }}</h3>
+					</div>
+					<div class="panel-body">
+						{% if canManageTasks and not isLocked %}
+							<form method="post" action="{{ path('admin_project_add_time', {id: project.id}) }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end mb-4">
+								<input type="hidden" name="_token" value="{{ csrf_token('time_add_' ~ project.id) }}">
+								<div class="sm:col-span-2">
+									<label for="time-h" class="field-label">Heures</label>
+									<input id="time-h" type="number" min="0" name="hours" class="input w-full" placeholder="0">
+								</div>
+								<div class="sm:col-span-2">
+									<label for="time-m" class="field-label">Minutes</label>
+									<input id="time-m" type="number" min="0" max="59" name="minutes" class="input w-full" placeholder="0">
+								</div>
+								<div class="sm:col-span-3">
+									<label for="time-user" class="field-label">Intervenant</label>
+									<select id="time-user" name="user" class="input input-select w-full">
+										<option value="{{ project.owner.id }}">{{ project.owner.fullName ?? project.owner.email }} (pilote)</option>
+										{% for c in project.collaborators %}<option value="{{ c.id }}">{{ c.fullName ?? c.email }}</option>{% endfor %}
+									</select>
+								</div>
+								<div class="sm:col-span-2">
+									<label for="time-date" class="field-label">Date</label>
+									<input id="time-date" type="date" name="spentOn" class="input w-full" value="{{ 'now'|date('Y-m-d') }}">
+								</div>
+								<div class="sm:col-span-3">
+									<label for="time-task" class="field-label">Tâche (option)</label>
+									<select id="time-task" name="task" class="input input-select w-full">
+										<option value="0">—</option>
+										{% for t in project.tasks %}<option value="{{ t.id }}">{{ t.title }}</option>{% endfor %}
+									</select>
+								</div>
+								<div class="sm:col-span-10">
+									<input type="text" name="description" class="input w-full" placeholder="Description (optionnel)">
+								</div>
+								<div class="sm:col-span-2">
+									<button type="submit" class="btn btn-primary w-full gap-2"><span class="ti ti-plus" aria-hidden="true"></span> Ajouter</button>
+								</div>
+							</form>
+						{% endif %}
+
+						{% if project.timeEntries is empty %}
+							<twig:EmptyState text="Aucun temps saisi sur ce projet." icon="ti-clock" />
+						{% else %}
+							<div class="table-wrap">
+								<table class="table">
+									<thead><tr><th>Date</th><th>Intervenant</th><th>Tâche</th><th>Description</th><th class="text-right">Durée</th>{% if canManageTasks %}<th></th>{% endif %}</tr></thead>
+									<tbody>
+										{% for e in project.timeEntries %}
+											<tr>
+												<td class="text-xs opacity-70 whitespace-nowrap">{{ e.spentOn|date('d/m/Y') }}</td>
+												<td class="text-sm">{{ e.user.fullName ?? e.user.email }}</td>
+												<td class="text-sm">{{ e.task ? e.task.title : '—' }}</td>
+												<td class="text-sm">{{ e.description ?: '—' }}</td>
+												<td class="text-right font-semibold whitespace-nowrap">{{ e.formattedDuration }}</td>
+												{% if canManageTasks %}
+													<td class="text-right">
+														<form method="post" action="{{ path('admin_project_delete_time', {id: project.id, entryId: e.id}) }}" onsubmit="return confirm('Supprimer cette saisie ?');">
+															<input type="hidden" name="_token" value="{{ csrf_token('time_delete_' ~ e.id) }}">
+															<button type="submit" class="btn btn-ghost btn-icon btn-sm text-danger" title="Supprimer"><span class="ti ti-trash" aria-hidden="true"></span></button>
+														</form>
+													</td>
+												{% endif %}
+											</tr>
+										{% endfor %}
+									</tbody>
+								</table>
 							</div>
 						{% endif %}
 					</div>
 				</div>
 
-				{# CONTENU DE L'ONGLET 4 : Historique — réservé à l'admin #}
-				{% if is_granted('ROLE_ADMIN') %}
-					<div
-						id="tab-history" class="tab-content hidden">
-						{# ✅ APPEL STANDARD #}
+				<div class="panel h-fit">
+					<div class="panel-header"><h3 class="panel-title">Répartition par intervenant</h3></div>
+					<div class="panel-body">
+						{% if minutesByUser is empty %}
+							<p class="text-sm text-gray-500 mb-0">—</p>
+						{% else %}
+							<ul class="space-y-2 mb-0">
+								{% for uid, mins in minutesByUser %}
+									<li class="flex items-center justify-between text-sm">
+										<span class="text-brand-dark/70 truncate">{{ namesByUser[uid] }}</span>
+										<span class="font-semibold text-brand-dark whitespace-nowrap">{{ (mins // 60) }} h {{ '%02d'|format(mins % 60) }}</span>
+									</li>
+								{% endfor %}
+							</ul>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+		</section>
+
+		{# ============================= DISCUSSION ============================= #}
+		<section data-tab-panel="discussion" role="tabpanel" class="pt-6 space-y-6" hidden>
+			<div class="panel">
+				<div class="panel-header"><h3 class="panel-title">Fil de discussion ({{ project.comments|length }})</h3></div>
+				<div class="panel-body space-y-4">
+					{% if project.comments is empty %}
+						<twig:EmptyState text="Aucun commentaire pour le moment." icon="ti-message" />
+					{% else %}
+						<ul class="space-y-3">
+							{% for comment in project.comments %}
+								<li class="flex items-start gap-3">
+									<div class="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-brand-dark shrink-0">{{ (comment.author.fullName ?? comment.author.email)|first|upper }}</div>
+									<div class="min-w-0 flex-1 soft-card p-3">
+										<div class="flex items-center justify-between gap-2 mb-1">
+											<span class="font-semibold text-sm text-brand-dark">{{ comment.author.fullName ?? comment.author.email }}</span>
+											<span class="text-[11px] text-brand-dark/40">{{ comment.createdAt|date('d/m/Y H:i') }}</span>
+										</div>
+										<p class="text-sm text-brand-dark/80 whitespace-pre-line mb-0">{{ comment.content }}</p>
+									</div>
+									{% if comment.author.id == app.user.id or isAdmin %}
+										<form method="post" action="{{ path('admin_project_delete_comment', {id: project.id, commentId: comment.id}) }}" onsubmit="return confirm('Supprimer ce commentaire ?');">
+											<input type="hidden" name="_token" value="{{ csrf_token('comment_delete_' ~ comment.id) }}">
+											<button type="submit" class="btn btn-ghost btn-icon btn-sm text-danger" title="Supprimer"><span class="ti ti-trash" aria-hidden="true"></span></button>
+										</form>
+									{% endif %}
+								</li>
+							{% endfor %}
+						</ul>
+					{% endif %}
+
+					<form method="post" action="{{ path('admin_project_add_comment', {id: project.id}) }}" class="flex items-start gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+						<input type="hidden" name="_token" value="{{ csrf_token('comment_add_' ~ project.id) }}">
+						<textarea name="content" required rows="2" class="input textarea flex-1" placeholder="Écrire un commentaire…"></textarea>
+						<button type="submit" class="btn btn-primary gap-2 shrink-0"><span class="ti ti-send" aria-hidden="true"></span> Publier</button>
+					</form>
+				</div>
+			</div>
+		</section>
+
+		{# ============================= MÉDIAS ============================= #}
+		<section data-tab-panel="media" role="tabpanel" class="pt-6 space-y-6" hidden>
+			<div class="panel">
+				<div class="panel-header flex items-center justify-between">
+					<h3 class="panel-title">Médias &amp; livrables</h3>
+					{% if canEdit %}
+						<a href="{{ path('admin_project_update', {id: project.id}) }}" class="btn btn-secondary btn-sm gap-2">
+							<span class="ti ti-upload" aria-hidden="true"></span> Ajouter des médias
+						</a>
+					{% endif %}
+				</div>
+				<div class="panel-body">
+					<twig:project:media_grid :project="project"/>
+				</div>
+			</div>
+		</section>
+
+		{# ============================= HISTORIQUE ============================= #}
+		{% if isAdmin %}
+			<section data-tab-panel="history" role="tabpanel" class="pt-6" hidden>
+				<div class="panel">
+					<div class="panel-header flex items-center justify-between">
+						<h3 class="panel-title">Journal d'activité</h3>
+						<a href="{{ path('admin_project_history_index', {id: project.id}) }}" class="text-xs text-(--brand-primary) font-semibold hover:underline">Historique complet →</a>
+					</div>
+					<div class="panel-body">
 						<twig:project:history_timeline :project="project"/>
 					</div>
-				{% endif %}
-
-			</div>
-		</div>
+				</div>
+			</section>
+		{% endif %}
 	</div>
 {% endblock %}
-

@@ -110,6 +110,22 @@ class Project
     #[Groups(['api_admin'])]
     private Collection $expenses;
 
+    /** @var Collection<int, ProjectTask> */
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: ProjectTask::class, cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OrderBy(['position' => 'ASC', 'id' => 'ASC'])]
+    #[Groups(['api_admin'])]
+    private Collection $tasks;
+
+    /** @var Collection<int, Comment> */
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Comment::class, cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OrderBy(['createdAt' => 'ASC'])]
+    private Collection $comments;
+
+    /** @var Collection<int, TimeEntry> */
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: TimeEntry::class, cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OrderBy(['spentOn' => 'DESC', 'id' => 'DESC'])]
+    private Collection $timeEntries;
+
     /** @var Collection<int, Skill> */
     #[ORM\ManyToMany(targetEntity: Skill::class, inversedBy: 'projects')]
     #[Groups(['api_admin'])]
@@ -145,6 +161,9 @@ class Project
         $this->histories = new ArrayCollection();
         $this->expenses = new ArrayCollection();
         $this->tags = new ArrayCollection();
+        $this->tasks = new ArrayCollection();
+        $this->comments = new ArrayCollection();
+        $this->timeEntries = new ArrayCollection();
     }
 
     // ========== Getters et Setters Globaux ==========
@@ -472,9 +491,54 @@ class Project
         return bcsub($this->budget, $this->spent, 2);
     }
 
+    /** Solde budgétaire disponible pour de nouvelles dépenses approuvées (budget − dépensé). */
+    public function getAvailableBudget(): string
+    {
+        return bcsub($this->budget, $this->spent, 2);
+    }
+
+    /**
+     * Recalcule `spent` comme la somme des dépenses APPROUVÉES — source de vérité.
+     * À appeler après tout changement de statut/montant/suppression d'une dépense.
+     */
+    public function recalculateSpent(): static
+    {
+        $total = '0.00';
+        foreach ($this->expenses as $expense) {
+            if ($expense->isApproved()) {
+                $total = bcadd($total, $expense->getAmount(), 2);
+            }
+        }
+        $this->spent = $total;
+        return $this;
+    }
+
+    /** Montant des dépenses en attente d'approbation (engagé mais pas encore décompté). */
+    public function getPendingExpensesTotal(): string
+    {
+        $total = '0.00';
+        foreach ($this->expenses as $expense) {
+            if ($expense->isPending()) {
+                $total = bcadd($total, $expense->getAmount(), 2);
+            }
+        }
+        return $total;
+    }
+
+    public function hasPendingExpenses(): bool
+    {
+        return bccomp($this->getPendingExpensesTotal(), '0.00', 2) > 0;
+    }
+
     public function isOverBudget(): bool
     {
         return bccomp($this->spent, $this->budget, 2) > 0;
+    }
+
+    /** Le budget est-il renseigné (> 0) ? Prérequis à toute dépense. */
+    public function hasBudget(): bool
+    {
+        return bccomp($this->budget, '0.00', 2) > 0;
     }
 
     public function getFormattedBudget(): string
@@ -528,23 +592,36 @@ class Project
         );
     }
 
+    /**
+     * Soumet une dépense (statut PENDING par défaut) : elle n'impacte PAS `spent`
+     * tant qu'elle n'est pas approuvée (cf. App\Service\ExpenseWorkflow). Ne touche
+     * jamais `spent` directement — le décompte reste dérivé des dépenses approuvées.
+     */
     public function addProjectExpense(string $amount, string $description, User $user): static
     {
         $expense = new ProjectExpense();
         $expense
             ->setAmount($amount)
             ->setDescription($description)
-            ->setProject($this)
-            ->setUser($user)
-            ->setCreatedAt(new \DateTimeImmutable());
+            ->setUser($user);
 
-        $this->expenses->add($expense);
-        $this->spent = bcadd($this->spent, $amount, 2);
+        $this->attachExpense($expense, $user);
+        return $this;
+    }
 
-        $this->addToHistory('expense_added', $user, sprintf(
-            'Dépense ajoutée: %s - %s',
-            number_format((float) $amount, 2, ',', ' ') . ' €',
-            $description
+    /** Attache une dépense déjà construite (PENDING) au projet + journalisation. */
+    public function attachExpense(ProjectExpense $expense, User $user): static
+    {
+        $expense->setProject($this);
+        if (!$this->expenses->contains($expense)) {
+            $this->expenses->add($expense);
+        }
+
+        $this->addToHistory('expense_submitted', $user, sprintf(
+            'Dépense soumise: %s (%s) - %s',
+            $expense->getFormattedAmount(),
+            $expense->getCategory()->getLabel(),
+            $expense->getDescription() ?? 'sans description',
         ));
 
         return $this;
@@ -553,15 +630,154 @@ class Project
     public function removeProjectExpense(ProjectExpense $expense): static
     {
         if ($this->expenses->removeElement($expense)) {
-            $this->spent = bcsub($this->spent, $expense->getAmount(), 2);
+            // `spent` est recalculé depuis les dépenses approuvées restantes.
+            $this->recalculateSpent();
 
             $this->addToHistory('expense_removed', $expense->getUser(), sprintf(
                 'Dépense supprimée: %s - %s',
-                number_format((float) $expense->getAmount(), 2, ',', ' ') . ' €',
+                $expense->getFormattedAmount(),
                 $expense->getDescription() ?? 'Sans description'
             ));
         }
         return $this;
+    }
+
+    // ========== Tâches / jalons ==========
+
+    /** @return Collection<int, ProjectTask> */
+    public function getTasks(): Collection
+    {
+        return $this->tasks;
+    }
+
+    public function addTask(ProjectTask $task): static
+    {
+        if (!$this->tasks->contains($task)) {
+            $this->tasks->add($task);
+            $task->setProject($this);
+        }
+        $this->recalculateProgress();
+        return $this;
+    }
+
+    public function removeTask(ProjectTask $task): static
+    {
+        if ($this->tasks->removeElement($task)) {
+            $this->recalculateProgress();
+        }
+        return $this;
+    }
+
+    public function getTasksCount(): int
+    {
+        return $this->tasks->count();
+    }
+
+    public function getDoneTasksCount(): int
+    {
+        return $this->tasks->filter(static fn (ProjectTask $t) => $t->isDone())->count();
+    }
+
+    /** Reste-t-il des tâches non terminées ? (garde-fou de clôture) */
+    public function hasOpenTasks(): bool
+    {
+        return $this->getDoneTasksCount() < $this->getTasksCount();
+    }
+
+    /**
+     * Dérive `progress` du ratio de tâches terminées dès qu'au moins une tâche
+     * existe. Sans tâche, la valeur manuelle est conservée.
+     */
+    public function recalculateProgress(): static
+    {
+        $total = $this->getTasksCount();
+        if ($total > 0) {
+            $this->progress = (int) round(100 * $this->getDoneTasksCount() / $total);
+        }
+        return $this;
+    }
+
+    // ========== Commentaires ==========
+
+    /** @return Collection<int, Comment> */
+    public function getComments(): Collection
+    {
+        return $this->comments;
+    }
+
+    public function addComment(Comment $comment): static
+    {
+        if (!$this->comments->contains($comment)) {
+            $this->comments->add($comment);
+            $comment->setProject($this);
+        }
+
+        return $this;
+    }
+
+    public function removeComment(Comment $comment): static
+    {
+        $this->comments->removeElement($comment);
+
+        return $this;
+    }
+
+    // ========== Suivi du temps ==========
+
+    /** @return Collection<int, TimeEntry> */
+    public function getTimeEntries(): Collection
+    {
+        return $this->timeEntries;
+    }
+
+    public function addTimeEntry(TimeEntry $entry): static
+    {
+        if (!$this->timeEntries->contains($entry)) {
+            $this->timeEntries->add($entry);
+            $entry->setProject($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTimeEntry(TimeEntry $entry): static
+    {
+        $this->timeEntries->removeElement($entry);
+
+        return $this;
+    }
+
+    /** Total du temps passé (minutes), toutes saisies confondues. */
+    public function getTotalMinutes(): int
+    {
+        $total = 0;
+        foreach ($this->timeEntries as $entry) {
+            $total += $entry->getMinutes();
+        }
+
+        return $total;
+    }
+
+    /** Total du temps passé, formaté « 12 h 30 ». */
+    public function getFormattedTotalTime(): string
+    {
+        $minutes = $this->getTotalMinutes();
+        $h = intdiv($minutes, 60);
+        $m = $minutes % 60;
+
+        if (0 === $h) {
+            return $m.' min';
+        }
+
+        return 0 === $m ? $h.' h' : sprintf('%d h %02d', $h, $m);
+    }
+
+    // ========== Équipe ==========
+
+    /** L'utilisateur fait-il partie de l'équipe du projet (owner ou collaborateur) ? */
+    public function isTeamMember(User $user): bool
+    {
+        return $this->owner === $user || $this->collaborators->contains($user);
     }
 
     public function logCollaboratorAdded(User $user, User $collaborator): static

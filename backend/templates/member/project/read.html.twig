@@ -1,0 +1,114 @@
+{% extends 'member/base.html.twig' %}
+
+{% block title %}{{ project.title }}{% endblock %}
+
+{% block body %}
+	<nav class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider opacity-50 mb-3" aria-label="Fil d'Ariane">
+		<a href="{{ path('member_project_index') }}" class="hover:text-(--brand-primary) transition-colors">Mes projets</a>
+		<span class="ti ti-chevron-right text-xs" aria-hidden="true"></span>
+		<span aria-current="page" class="truncate max-w-[30ch]">{{ project.title }}</span>
+	</nav>
+
+	<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+		<h1 class="text-2xl font-bold text-brand-dark">{{ project.title }}</h1>
+		<div class="flex items-center gap-2">
+			<span class="badge {{ project.status.badgeClass|default('bg-gray-400 text-white') }} text-xs">{{ project.status.label }}</span>
+			{% if project.link %}<a href="{{ project.link }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm gap-1"><span class="ti ti-external-link" aria-hidden="true"></span> Voir en ligne</a>{% endif %}
+		</div>
+	</div>
+
+	{# Avancement + échéance #}
+	<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-progress" aria-hidden="true"></span></div>
+			<div><div class="stat-tile__value">{{ project.progress }}%</div><div class="stat-tile__label">Avancement · {{ project.doneTasksCount }}/{{ project.tasksCount }} tâches</div></div>
+		</div>
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-calendar-event" aria-hidden="true"></span></div>
+			<div><div class="stat-tile__value">{{ project.deadline ? project.deadline|date('d/m/Y') : '—' }}</div><div class="stat-tile__label">Échéance</div></div>
+		</div>
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-user" aria-hidden="true"></span></div>
+			<div><div class="stat-tile__value text-base">{{ project.owner.fullName ?? project.owner.email }}</div><div class="stat-tile__label">Responsable</div></div>
+		</div>
+	</div>
+
+	{# Description #}
+	<div class="panel mb-6">
+		<div class="panel-header"><h3 class="panel-title">Description</h3></div>
+		<div class="panel-body"><p class="text-brand-dark/80 leading-relaxed whitespace-pre-line mb-0">{{ project.description }}</p></div>
+	</div>
+
+	{# Avancement détaillé : tâches (lecture seule) #}
+	<div class="panel mb-6">
+		<div class="panel-header"><h3 class="panel-title">Suivi des tâches</h3></div>
+		<div class="panel-body">
+			{% if project.tasks is empty %}
+				<p class="text-sm text-gray-500 mb-0">Aucune tâche publiée pour le moment.</p>
+			{% else %}
+				<ul class="space-y-2">
+					{% for task in project.tasks %}
+						<li class="flex items-center gap-3">
+							<span class="ti {{ task.status.icon }} text-lg {{ task.done ? 'text-success' : 'opacity-50' }}" aria-hidden="true"></span>
+							<span class="flex-1 text-sm {{ task.done ? 'line-through opacity-60' : 'text-brand-dark' }}">{{ task.title }}</span>
+							<twig:Badge :variant="task.status.variant">{{ task.status.label }}</twig:Badge>
+						</li>
+					{% endfor %}
+				</ul>
+			{% endif %}
+		</div>
+	</div>
+
+	{# Livrables (médias) #}
+	{% if project.media is not empty %}
+		<div class="panel mb-6">
+			<div class="panel-header"><h3 class="panel-title">Livrables</h3></div>
+			<div class="panel-body">
+				<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+					{% for media in project.media %}
+						<div class="rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900">
+							<div class="aspect-square flex items-center justify-center bg-gray-50/50 dark:bg-gray-800/40">
+								{% if 'image' in media.mimeType %}
+									<img src="/uploads/projects/{{ media.filePath }}" alt="{{ media.altText }}" class="object-cover w-full h-full">
+								{% else %}
+									<span class="ti ti-file text-3xl opacity-40" aria-hidden="true"></span>
+								{% endif %}
+							</div>
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+	{% endif %}
+
+	{# Discussion #}
+	<div class="panel">
+		<div class="panel-header"><h3 class="panel-title">Discussion ({{ project.comments|length }})</h3></div>
+		<div class="panel-body space-y-4">
+			{% if project.comments is empty %}
+				<p class="text-sm text-gray-500 mb-0">Aucun message. Démarrez la conversation ci-dessous.</p>
+			{% else %}
+				<ul class="space-y-3">
+					{% for comment in project.comments %}
+						<li class="flex items-start gap-3">
+							<div class="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-brand-dark shrink-0">{{ (comment.author.fullName ?? comment.author.email)|first|upper }}</div>
+							<div class="min-w-0 flex-1 soft-card p-3">
+								<div class="flex items-center justify-between gap-2 mb-1">
+									<span class="font-semibold text-sm text-brand-dark">{{ comment.author.fullName ?? comment.author.email }}</span>
+									<span class="text-[11px] text-brand-dark/40">{{ comment.createdAt|date('d/m/Y H:i') }}</span>
+								</div>
+								<p class="text-sm text-brand-dark/80 whitespace-pre-line mb-0">{{ comment.content }}</p>
+							</div>
+						</li>
+					{% endfor %}
+				</ul>
+			{% endif %}
+
+			<form method="post" action="{{ path('member_project_add_comment', {id: project.id}) }}" class="flex items-start gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+				<input type="hidden" name="_token" value="{{ csrf_token('member_comment_add_' ~ project.id) }}">
+				<textarea name="content" required rows="2" class="input textarea flex-1" placeholder="Écrire un message…"></textarea>
+				<button type="submit" class="btn btn-primary gap-2 shrink-0"><span class="ti ti-send" aria-hidden="true"></span> Publier</button>
+			</form>
+		</div>
+	</div>
+{% endblock %}

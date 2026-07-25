@@ -9,6 +9,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Delete;
 use App\Entity\ContactMessage;
+use App\State\ContactMessageCreateProcessor;
 
 #[ApiResource(
     stateOptions: new Options(entityClass: ContactMessage::class),
@@ -32,6 +33,7 @@ use App\Entity\ContactMessage;
         // 📌 Créer un message (public)
         new Post(
             denormalizationContext: ['groups' => ['api_public']],
+            processor: ContactMessageCreateProcessor::class,
             description: "Permet à un utilisateur de créer un message de contact."
         ),
 

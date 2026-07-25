@@ -85,8 +85,19 @@ final class ExceptionSubscriber implements EventSubscriberInterface
 
     private function resolveStatusCode(\Throwable $throwable): int
     {
-        // AppException implémente déjà HttpExceptionInterface (voir AppException::class).
-        return $throwable instanceof HttpExceptionInterface ? $throwable->getStatusCode() : 500;
+        return match (true) {
+            // AppException et AccessDeniedHttpException implémentent HttpExceptionInterface.
+            $throwable instanceof HttpExceptionInterface => $throwable->getStatusCode(),
+            // Exceptions de sécurité "brutes" : ce subscriber s'exécute en priorité
+            // 100, AVANT le listener de sécurité du firewall qui les convertira en
+            // 401/403. À ce stade elles n'implémentent pas encore HttpExceptionInterface ;
+            // les laisser retomber sur le 500 par défaut déclencherait de fausses
+            // alertes admin "erreur 5xx" pour de simples échecs d'authentification
+            // ou d'autorisation (ex: appel anonyme à une opération protégée).
+            $throwable instanceof AuthenticationException => 401,
+            $throwable instanceof AccessDeniedException => 403,
+            default => 500,
+        };
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\QuoteRequest;
+use App\Enum\QuoteStatusEnum;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -19,36 +20,26 @@ class QuoteRequestRepository extends ServiceEntityRepository
     /**
      * @return QuoteRequest[]
      */
-    public function findByStatus(?bool $status): array
+    public function findByStatus(QuoteStatusEnum $status): array
     {
-        $queryBuilder = $this->createQueryBuilder('q');
-
-        if (null === $status) {
-            $queryBuilder->andWhere('q.status IS NULL');
-        } else {
-            $queryBuilder->andWhere('q.status = :status')
-                ->setParameter('status', $status);
-        }
-
-        return $queryBuilder
+        return $this->createQueryBuilder('q')
+            ->andWhere('q.status = :status')
+            ->setParameter('status', $status)
             ->orderBy('q.id', 'DESC')
             ->getQuery()
             ->getResult()
         ;
     }
 
-    public function countByStatus(?bool $status): int
+    public function countByStatus(QuoteStatusEnum $status): int
     {
-        $queryBuilder = $this->createQueryBuilder('q')->select('COUNT(q.id)');
-
-        if (null === $status) {
-            $queryBuilder->andWhere('q.status IS NULL');
-        } else {
-            $queryBuilder->andWhere('q.status = :status')
-                ->setParameter('status', $status);
-        }
-
-        return (int) $queryBuilder->getQuery()->getSingleScalarResult();
+        return (int) $this->createQueryBuilder('q')
+            ->select('COUNT(q.id)')
+            ->andWhere('q.status = :status')
+            ->setParameter('status', $status)
+            ->getQuery()
+            ->getSingleScalarResult()
+        ;
     }
 
     //    /**

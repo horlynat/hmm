@@ -4,12 +4,12 @@
 {% block title %}Explorateur d'utilisateurs{% endblock %}
 
 {% block body %}
-	<main class="container mx-auto px-4 py-8">
+	<div>
 
 		<!-- 📑 EN-TÊTE -->
 		<div class="mb-8">
 			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
-				<span class="material-icons text-brand-primary">manage_accounts</span>
+				<span class="ti ti-user-cog text-brand-primary" aria-hidden="true"></span>
 				<span>Explorateur d'utilisateurs</span>
 			</h1>
 			<p class="text-sm opacity-60 mt-1">Recherche et tri libre sur l'ensemble des comptes.</p>
@@ -32,7 +32,7 @@
 
 			<button type="submit" class="btn btn-primary text-sm">Filtrer</button>
 			<a href="{{ path('admin_dashboard_users') }}" class="btn btn-secondary text-sm" title="Réinitialiser">
-				<span class="material-icons text-base">close</span>
+				<span class="ti ti-x text-base" aria-hidden="true"></span>
 			</a>
 		</form>
 
@@ -79,8 +79,8 @@
 							</td>
 							<td class="text-sm opacity-70">{{ user.lastLoginAt ? user.lastLoginAt|date('d/m/Y H:i') : 'Jamais' }}</td>
 							<td class="text-right">
-								<a href="{{ path('user_read', {id: user.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir">
-									<span class="material-icons text-lg block">visibility</span>
+								<a href="{{ path('admin_users_read', {id: user.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir">
+									<span class="ti ti-eye text-lg block" aria-hidden="true"></span>
 								</a>
 							</td>
 						</tr>
@@ -114,5 +114,5 @@
 				</nav>
 			</div>
 		{% endif %}
-	</main>
+	</div>
 {% endblock %}

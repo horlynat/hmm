@@ -1,0 +1,34 @@
+{#
+   Composant : pagination accessible et fenêtrée. Conserve les paramètres de route.
+   Usage : <twig:Pagination :currentPage="currentPage" :totalPages="totalPages" route="admin_users_index" />
+#}
+{% props currentPage, totalPages, route, params = {} %}
+{% if totalPages > 1 %}
+	<nav class="pagination" aria-label="Pagination">
+		{% if currentPage > 1 %}
+			<a href="{{ path(route, params|merge({ page: currentPage - 1 })) }}" rel="prev" aria-label="Page précédente">
+				<span class="ti ti-chevron-left" aria-hidden="true"></span>
+			</a>
+		{% else %}
+			<span class="is-disabled" aria-hidden="true"><span class="ti ti-chevron-left"></span></span>
+		{% endif %}
+
+		{% for p in 1..totalPages %}
+			{% if p == currentPage %}
+				<span class="is-active" aria-current="page">{{ p }}</span>
+			{% elseif p == 1 or p == totalPages or (p >= currentPage - 2 and p <= currentPage + 2) %}
+				<a href="{{ path(route, params|merge({ page: p })) }}" aria-label="Page {{ p }}">{{ p }}</a>
+			{% elseif p == currentPage - 3 or p == currentPage + 3 %}
+				<span class="is-disabled">…</span>
+			{% endif %}
+		{% endfor %}
+
+		{% if currentPage < totalPages %}
+			<a href="{{ path(route, params|merge({ page: currentPage + 1 })) }}" rel="next" aria-label="Page suivante">
+				<span class="ti ti-chevron-right" aria-hidden="true"></span>
+			</a>
+		{% else %}
+			<span class="is-disabled" aria-hidden="true"><span class="ti ti-chevron-right"></span></span>
+		{% endif %}
+	</nav>
+{% endif %}

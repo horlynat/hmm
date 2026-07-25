@@ -52,7 +52,7 @@ final class AdminContactController extends AbstractController
         }
 
         if ('' !== $search) {
-            $queryBuilder->andWhere('c.subject LIKE :search OR c.name LIKE :search OR c.email LIKE :search')
+            $queryBuilder->andWhere('c.subject LIKE :search OR c.name LIKE :search OR c.email LIKE :search OR c.company LIKE :search')
                 ->setParameter('search', '%'.$search.'%');
         }
 

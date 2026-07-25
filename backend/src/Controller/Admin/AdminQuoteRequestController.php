@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\QuoteRequest;
+use App\Enum\QuoteStatusEnum;
 use App\Repository\QuoteRequestRepository;
 use App\Security\Voter\QuoteVoter;
 use App\Service\AuditLogger;
@@ -19,9 +20,15 @@ use Symfony\Component\Routing\Attribute\Route;
  * - Réservé exclusivement aux utilisateurs dotés du rôle ROLE_ADMIN.
  * - Validation stricte des jetons CSRF pour les actions de statut et de suppression.
  *
- * ✅ Fonctionnalités :
- * - Statut : en attente (null) / accepté (true) / refusé (false).
- * - Actions Accepter / Refuser / Réinitialiser.
+ * ✅ Cycle de vie (QuoteStatusEnum) — reflète la réalité commerciale : une fois
+ * une demande acceptée, on ne revient plus en arrière vers "refusée" (le client
+ * a déjà dit oui) ; au pire les travaux sont suspendus temporairement puis
+ * repris. "Refusée" est un état terminal (suppression possible mais pas
+ * obligatoire).
+ *
+ *   en attente ──accept──▶ acceptée ──suspend──▶ suspendue
+ *       │                     ▲                      │
+ *       └──reject──▶ refusée  └───────resume──────────┘
  */
 #[Route('/admin/request', name: 'admin_request_')]
 final class AdminQuoteRequestController extends AbstractController
@@ -42,21 +49,20 @@ final class AdminQuoteRequestController extends AbstractController
             ->leftJoin('q.user', 'u')
             ->orderBy('q.id', 'DESC');
 
-        if ('pending' === $statusFilter) {
-            $queryBuilder->andWhere('q.status IS NULL');
-        } elseif ('accepted' === $statusFilter) {
-            $queryBuilder->andWhere('q.status = true');
-        } elseif ('rejected' === $statusFilter) {
-            $queryBuilder->andWhere('q.status = false');
+        $status = QuoteStatusEnum::tryFrom($statusFilter);
+        if (null !== $status) {
+            $queryBuilder->andWhere('q.status = :status')
+                ->setParameter('status', $status);
         }
 
         if ('' !== $search) {
-            $queryBuilder->andWhere('q.name LIKE :search OR q.email LIKE :search OR q.message LIKE :search')
+            $queryBuilder->andWhere('q.name LIKE :search OR q.email LIKE :search OR q.message LIKE :search OR q.category LIKE :search')
                 ->setParameter('search', '%'.$search.'%');
         }
 
         return $this->render('admin/request/requests.html.twig', [
             'requests' => $queryBuilder->getQuery()->getResult(),
+            'statuses' => QuoteStatusEnum::cases(),
             'filters' => [
                 'status' => $statusFilter,
                 'search' => $search,
@@ -79,7 +85,7 @@ final class AdminQuoteRequestController extends AbstractController
     }
 
     // =========================================================================
-    // 📌 ACCEPTER UNE DEMANDE
+    // 📌 ACCEPTER UNE DEMANDE (uniquement depuis "en attente")
     // =========================================================================
 
     #[Route('/{id}/accept', name: 'accept', methods: ['POST'], requirements: ['id' => '\d+'])]
@@ -87,21 +93,30 @@ final class AdminQuoteRequestController extends AbstractController
     {
         $this->denyAccessUnlessGranted(QuoteVoter::APPROVE, $quoteRequest);
 
-        if ($this->isCsrfTokenValid('request_status_'.$quoteRequest->getId(), $request->request->get('_token'))) {
-            $quoteRequest->setStatus(true);
-            $auditLogger->log(QuoteRequest::class, $quoteRequest->getId(), $quoteRequest->getName(), 'accepted');
-            $entityManager->flush();
-
-            $this->addFlash('success', 'La demande a été acceptée.');
-        } else {
+        if (!$this->isCsrfTokenValid('request_status_'.$quoteRequest->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+
+            return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
         }
+
+        if (QuoteStatusEnum::PENDING !== $quoteRequest->getStatus()) {
+            $this->addFlash('error', 'Seule une demande en attente peut être acceptée.');
+
+            return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
+        }
+
+        $quoteRequest->setStatus(QuoteStatusEnum::ACCEPTED);
+        $auditLogger->log(QuoteRequest::class, $quoteRequest->getId(), $quoteRequest->getName(), 'accepted');
+        $entityManager->flush();
+
+        $this->addFlash('success', 'La demande a été acceptée.');
 
         return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
     }
 
     // =========================================================================
-    // 📌 REFUSER UNE DEMANDE
+    // 📌 REFUSER UNE DEMANDE (uniquement depuis "en attente" — une demande déjà
+    //    acceptée ne peut plus être refusée, cf. suspend()/resume())
     // =========================================================================
 
     #[Route('/{id}/reject', name: 'reject', methods: ['POST'], requirements: ['id' => '\d+'])]
@@ -109,43 +124,91 @@ final class AdminQuoteRequestController extends AbstractController
     {
         $this->denyAccessUnlessGranted(QuoteVoter::REJECT, $quoteRequest);
 
-        if ($this->isCsrfTokenValid('request_status_'.$quoteRequest->getId(), $request->request->get('_token'))) {
-            $quoteRequest->setStatus(false);
-            $auditLogger->log(QuoteRequest::class, $quoteRequest->getId(), $quoteRequest->getName(), 'rejected');
-            $entityManager->flush();
-
-            $this->addFlash('success', 'La demande a été refusée.');
-        } else {
+        if (!$this->isCsrfTokenValid('request_status_'.$quoteRequest->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+
+            return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
         }
+
+        if (QuoteStatusEnum::PENDING !== $quoteRequest->getStatus()) {
+            $this->addFlash('error', 'Seule une demande en attente peut être refusée. Une demande déjà acceptée ne peut plus l\'être — suspendez-la si besoin.');
+
+            return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
+        }
+
+        $quoteRequest->setStatus(QuoteStatusEnum::REJECTED);
+        $auditLogger->log(QuoteRequest::class, $quoteRequest->getId(), $quoteRequest->getName(), 'rejected');
+        $entityManager->flush();
+
+        $this->addFlash('success', 'La demande a été refusée.');
 
         return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
     }
 
     // =========================================================================
-    // 📌 RÉINITIALISER LE STATUT (RETOUR "EN ATTENTE")
+    // 📌 SUSPENDRE TEMPORAIREMENT LES TRAVAUX (uniquement depuis "acceptée")
     // =========================================================================
 
-    #[Route('/{id}/reset', name: 'reset', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function reset(QuoteRequest $quoteRequest, EntityManagerInterface $entityManager, Request $request, AuditLogger $auditLogger): Response
+    #[Route('/{id}/suspend', name: 'suspend', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function suspend(QuoteRequest $quoteRequest, EntityManagerInterface $entityManager, Request $request, AuditLogger $auditLogger): Response
     {
         $this->denyAccessUnlessGranted(QuoteVoter::EDIT, $quoteRequest);
 
-        if ($this->isCsrfTokenValid('request_status_'.$quoteRequest->getId(), $request->request->get('_token'))) {
-            $quoteRequest->setStatus(null);
-            $auditLogger->log(QuoteRequest::class, $quoteRequest->getId(), $quoteRequest->getName(), 'reset');
-            $entityManager->flush();
-
-            $this->addFlash('success', 'La demande a été remise en attente.');
-        } else {
+        if (!$this->isCsrfTokenValid('request_status_'.$quoteRequest->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+
+            return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
         }
+
+        if (QuoteStatusEnum::ACCEPTED !== $quoteRequest->getStatus()) {
+            $this->addFlash('error', 'Seule une demande acceptée peut être suspendue.');
+
+            return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
+        }
+
+        $quoteRequest->setStatus(QuoteStatusEnum::SUSPENDED);
+        $auditLogger->log(QuoteRequest::class, $quoteRequest->getId(), $quoteRequest->getName(), 'suspended');
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Les travaux ont été suspendus temporairement.');
 
         return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
     }
 
     // =========================================================================
-    // 📌 SUPPRESSION D'UNE DEMANDE
+    // 📌 REPRENDRE LES TRAVAUX (uniquement depuis "suspendue")
+    // =========================================================================
+
+    #[Route('/{id}/resume', name: 'resume', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function resume(QuoteRequest $quoteRequest, EntityManagerInterface $entityManager, Request $request, AuditLogger $auditLogger): Response
+    {
+        $this->denyAccessUnlessGranted(QuoteVoter::EDIT, $quoteRequest);
+
+        if (!$this->isCsrfTokenValid('request_status_'.$quoteRequest->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+
+            return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
+        }
+
+        if (QuoteStatusEnum::SUSPENDED !== $quoteRequest->getStatus()) {
+            $this->addFlash('error', 'Seule une demande suspendue peut être reprise.');
+
+            return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
+        }
+
+        $quoteRequest->setStatus(QuoteStatusEnum::ACCEPTED);
+        $auditLogger->log(QuoteRequest::class, $quoteRequest->getId(), $quoteRequest->getName(), 'resumed');
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Les travaux ont repris.');
+
+        return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
+    }
+
+    // =========================================================================
+    // 📌 SUPPRESSION D'UNE DEMANDE (toujours possible, notamment pour purger
+    //    les demandes refusées — mais pas obligatoire, elles peuvent rester
+    //    comme historique)
     // =========================================================================
 
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'], requirements: ['id' => '\d+'])]

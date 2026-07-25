@@ -18,21 +18,21 @@
 			<div class="card p-6 text-center">
 				{% if reason == 'disabled' %}
 					<div class="mx-auto mb-4 w-14 h-14 rounded-full bg-danger/10 flex items-center justify-center">
-						<span class="material-icons text-danger text-3xl">block</span>
+						<span class="ti ti-ban text-danger text-3xl" aria-hidden="true"></span>
 					</div>
 					<h1 class="text-xl font-semibold mb-2">Compte désactivé</h1>
 					<p class="text-gray-600 mb-6">Votre compte administrateur a été désactivé. Contactez le support pour en connaître la raison ou demander sa réactivation — l'échange par email nous permet d'assurer un suivi de votre demande.</p>
 					<a href="mailto:contact@horlynat.com?subject=Compte%20d%C3%A9sactiv%C3%A9%20-%20demande%20d%27assistance" class="btn btn-primary inline-flex items-center gap-2">
-						<span class="material-icons text-base">mail</span>Contacter le support
+						<span class="ti ti-mail text-base" aria-hidden="true"></span>Contacter le support
 					</a>
 				{% else %}
 					<div class="mx-auto mb-4 w-14 h-14 rounded-full bg-warning/20 flex items-center justify-center">
-						<span class="material-icons text-amber-600 text-3xl">mark_email_unread</span>
+						<span class="ti ti-mail-opened text-amber-600 text-3xl" aria-hidden="true"></span>
 					</div>
 					<h1 class="text-xl font-semibold mb-2">Email non vérifié</h1>
 					<p class="text-gray-600 mb-6">Votre adresse email n'a pas encore été vérifiée. Vérifiez-la pour retrouver l'accès à l'administration.</p>
 					<a href="{{ path('resend_verif') }}" class="btn btn-primary inline-flex items-center gap-2">
-						<span class="material-icons text-base">refresh</span>Renvoyer l'email de vérification
+						<span class="ti ti-refresh text-base" aria-hidden="true"></span>Renvoyer l'email de vérification
 					</a>
 				{% endif %}
 
@@ -46,21 +46,21 @@
 			<div class="text-center">
 				{% if reason == 'disabled' %}
 					<div class="mx-auto mb-4 w-14 h-14 rounded-full bg-danger/10 flex items-center justify-center">
-						<span class="material-icons text-danger text-3xl">block</span>
+						<span class="ti ti-ban text-danger text-3xl" aria-hidden="true"></span>
 					</div>
 					<h2 class="text-lg font-semibold mb-2">Compte désactivé</h2>
 					<p class="text-gray-600 mb-6">L'accès à l'administration est bloqué. Contactez le support par email pour assurer le suivi de votre demande.</p>
 					<a href="mailto:contact@horlynat.com?subject=Compte%20d%C3%A9sactiv%C3%A9%20-%20demande%20d%27assistance" class="btn btn-primary inline-flex items-center gap-2 mb-3">
-						<span class="material-icons text-base">mail</span>Contacter le support
+						<span class="ti ti-mail text-base" aria-hidden="true"></span>Contacter le support
 					</a>
 				{% else %}
 					<div class="mx-auto mb-4 w-14 h-14 rounded-full bg-warning/20 flex items-center justify-center">
-						<span class="material-icons text-amber-600 text-3xl">mark_email_unread</span>
+						<span class="ti ti-mail-opened text-amber-600 text-3xl" aria-hidden="true"></span>
 					</div>
 					<h2 class="text-lg font-semibold mb-2">Email non vérifié</h2>
 					<p class="text-gray-600 mb-6">Vérifiez votre adresse email pour retrouver l'accès à l'administration.</p>
 					<a href="{{ path('resend_verif') }}" class="btn btn-primary inline-flex items-center gap-2 mb-3">
-						<span class="material-icons text-base">refresh</span>Renvoyer l'email de vérification
+						<span class="ti ti-refresh text-base" aria-hidden="true"></span>Renvoyer l'email de vérification
 					</a>
 				{% endif %}
 				<button type="button" class="btn btn-secondary w-full" onclick="document.getElementById('account-blocked-modal').close()">Fermer</button>

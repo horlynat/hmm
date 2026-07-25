@@ -2,11 +2,16 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\Comment;
 use App\Entity\Media;
 use App\Entity\Project;
 use App\Entity\ProjectExpense;
+use App\Entity\ProjectTask;
+use App\Entity\Tag;
+use App\Entity\TimeEntry;
 use App\Entity\User;
 use App\Enum\BillingTypeEnum;
+use App\Enum\TaskStatusEnum;
 use App\Enum\BudgetStatusEnum;
 use App\Enum\ProjectPriorityEnum;
 use App\Enum\ProjectStatusEnum;
@@ -149,6 +154,13 @@ final class AdminProjectController extends AbstractController
         // l'action 'expense_added', pas besoin d'une requête séparée sur ProjectExpense)
         $recentHistory = $projectHistoryRepository->findRecent(10);
 
+        // 📌 Agrégats de la centrale de gestion (portefeuille entier, indépendant des filtres)
+        $portfolio = $projectRepository->getCommandCenterStats();
+        $pendingApprovals = $projectRepository->getPendingApprovalsSummary();
+        $byPriority = $projectRepository->countByPriority();
+        $upcomingDeadlines = $projectRepository->findUpcomingDeadlines(14, 6);
+        $workload = $projectRepository->countActiveProjectsByCollaborator(5);
+
         return $this->render('admin/project/projects.html.twig', [
             'projects' => $projects,
             'users' => $users,
@@ -160,6 +172,11 @@ final class AdminProjectController extends AbstractController
             'budgetStatuses' => BudgetStatusEnum::cases(),
             'projectsByStatus' => $projectsByStatus,
             'recentHistory' => $recentHistory,
+            'portfolio' => $portfolio,
+            'pendingApprovals' => $pendingApprovals,
+            'byPriority' => $byPriority,
+            'upcomingDeadlines' => $upcomingDeadlines,
+            'workload' => $workload,
             'filters' => $defaultFilters,
             'page' => $page,
             'totalPages' => $totalPages,
@@ -359,7 +376,7 @@ final class AdminProjectController extends AbstractController
         $project = new Project();
         $project->setOwner($this->getAuthenticatedUser());
 
-        $form = $this->createForm(ProjectType::class, $project);
+        $form = $this->createForm(ProjectType::class, $project, ['include_planning' => true]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -399,6 +416,9 @@ final class AdminProjectController extends AbstractController
         return $this->render('admin/project/read.html.twig', [
             'project' => $project,
             'statuses' => ProjectStatusEnum::cases(),
+            'priorities' => ProjectPriorityEnum::cases(),
+            'billingTypes' => BillingTypeEnum::cases(),
+            'taskStatuses' => TaskStatusEnum::cases(),
         ]);
     }
 
@@ -526,6 +546,7 @@ final class AdminProjectController extends AbstractController
         string $status,
         EntityManagerInterface $entityManager,
         Request $request,
+        \App\Service\ProjectNotifier $projectNotifier,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::CHANGE_STATUS, $project);
 
@@ -550,6 +571,24 @@ final class AdminProjectController extends AbstractController
                 return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
             }
 
+            // Garde-fou de clôture : on ne termine pas un projet tant qu'il reste des
+            // dépenses en attente d'approbation ou des tâches non terminées.
+            if (ProjectStatusEnum::COMPLETED === $newStatus) {
+                if ($project->hasPendingExpenses()) {
+                    $this->addFlash('error', 'Impossible de clôturer : des dépenses sont encore en attente d\'approbation.');
+
+                    return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+                }
+                if ($project->hasOpenTasks()) {
+                    $this->addFlash('error', sprintf(
+                        'Impossible de clôturer : %d tâche(s) ne sont pas terminées.',
+                        $project->getTasksCount() - $project->getDoneTasksCount(),
+                    ));
+
+                    return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+                }
+            }
+
             // Journaliser le changement de statut
             $project->logStatusChange(
                 $this->getAuthenticatedUser(),
@@ -559,6 +598,8 @@ final class AdminProjectController extends AbstractController
 
             $project->setStatus($newStatus);
             $entityManager->flush();
+
+            $projectNotifier->statusChanged($project, $oldStatus->getLabel(), $newStatus->getLabel());
 
             $this->addFlash('success', sprintf(
                 'Statut mis à jour : "%s" → "%s".',
@@ -573,6 +614,152 @@ final class AdminProjectController extends AbstractController
     }
 
     // =========================================================================
+    // 📌 PARAMÈTRES & PLANNING (édition inline depuis le centre de commande)
+    // =========================================================================
+
+    /**
+     * Met à jour, « bloc par bloc », les métadonnées du projet éditables depuis la
+     * page de lecture (priorité, facturation, planning). Chaque champ n'est modifié
+     * que s'il est présent dans la requête : un mini-formulaire peut donc n'envoyer
+     * qu'une partie des champs. Une valeur vide efface le champ correspondant.
+     */
+    #[Route('/{id}/settings', name: 'settings', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function updateSettings(
+        Project $project,
+        Request $request,
+        EntityManagerInterface $entityManager,
+    ): Response {
+        $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
+
+        if (!$this->isCsrfTokenValid('project_settings_'.$project->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        if ($this->isProjectLocked($project)) {
+            $this->addFlash('error', 'Ce projet ne peut plus être modifié (statut : '.$project->getStatusLabel().').');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        $updated = [];
+
+        if ($request->request->has('priority')) {
+            $value = (string) $request->request->get('priority');
+            $project->setPriority('' !== $value ? ProjectPriorityEnum::tryFrom($value) : null);
+            $updated[] = 'priorité';
+        }
+
+        if ($request->request->has('billingType')) {
+            $value = (string) $request->request->get('billingType');
+            $project->setBillingType('' !== $value ? BillingTypeEnum::tryFrom($value) : null);
+            $updated[] = 'facturation';
+        }
+
+        $dateFields = ['startedAt' => 'setStartedAt', 'deadline' => 'setDeadline', 'completedAt' => 'setCompletedAt'];
+        foreach ($dateFields as $field => $setter) {
+            if (!$request->request->has($field)) {
+                continue;
+            }
+            $raw = trim((string) $request->request->get($field));
+            if ('' === $raw) {
+                $project->{$setter}(null);
+            } else {
+                try {
+                    $project->{$setter}(new \DateTimeImmutable($raw));
+                } catch (\Exception) {
+                    $this->addFlash('error', 'Date invalide fournie pour le champ « '.$field.' ».');
+
+                    return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+                }
+            }
+            $updated[] = $field;
+        }
+
+        if ([] === $updated) {
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        $project->addToHistory('updated', $this->getAuthenticatedUser(), 'Paramètres mis à jour : '.implode(', ', $updated));
+        $entityManager->flush();
+        $this->addFlash('success', 'Paramètres du projet mis à jour.');
+
+        return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+    }
+
+    // =========================================================================
+    // 📌 ÉTIQUETTES (TAGS) — édition inline, création à la volée
+    // =========================================================================
+
+    /**
+     * Synchronise les étiquettes du projet depuis une liste de noms séparés par des
+     * virgules. Les tags inexistants sont créés à la volée ; ceux retirés de la liste
+     * sont détachés du projet (l'entité Tag n'est pas supprimée si réutilisée ailleurs).
+     */
+    #[Route('/{id}/tags', name: 'tags', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function updateTags(
+        Project $project,
+        Request $request,
+        EntityManagerInterface $entityManager,
+    ): Response {
+        $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
+
+        if (!$this->isCsrfTokenValid('project_tags_'.$project->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        if ($this->isProjectLocked($project)) {
+            $this->addFlash('error', 'Ce projet ne peut plus être modifié (statut : '.$project->getStatusLabel().').');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        // Noms nettoyés, dédoublonnés (insensible à la casse), longueur bornée.
+        $names = [];
+        foreach (explode(',', (string) $request->request->get('tags', '')) as $piece) {
+            $name = trim($piece);
+            if ('' === $name) {
+                continue;
+            }
+            $name = mb_substr($name, 0, 100);
+            $lower = mb_strtolower($name);
+            if (!isset($names[$lower])) {
+                $names[$lower] = $name;
+            }
+        }
+
+        $tagRepository = $entityManager->getRepository(Tag::class);
+
+        // Détacher les tags absents de la nouvelle liste.
+        foreach ($project->getTags()->toArray() as $existing) {
+            if (!isset($names[mb_strtolower($existing->getName())])) {
+                $project->removeTag($existing);
+            }
+        }
+
+        // Associer / créer les tags de la liste.
+        foreach ($names as $lower => $name) {
+            foreach ($project->getTags() as $current) {
+                if (mb_strtolower($current->getName()) === $lower) {
+                    continue 2; // déjà rattaché
+                }
+            }
+            $tag = $tagRepository->findOneBy(['name' => $name]) ?? (new Tag())->setName($name);
+            $entityManager->persist($tag);
+            $project->addTag($tag);
+        }
+
+        $project->addToHistory('updated', $this->getAuthenticatedUser(), 'Étiquettes mises à jour');
+        $entityManager->flush();
+        $this->addFlash('success', 'Étiquettes mises à jour.');
+
+        return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+    }
+
+    // =========================================================================
     // 📌 AJOUT D'UNE DÉPENSE
     // =========================================================================
 
@@ -580,7 +767,9 @@ final class AdminProjectController extends AbstractController
     public function addExpense(
         Project $project,
         Request $request,
-        EntityManagerInterface $entityManager,
+        \App\Service\ExpenseWorkflow $expenseWorkflow,
+        \App\Service\ProjectNotifier $projectNotifier,
+        MediaUploader $mediaUploader,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::ADD_EXPENSE, $project);
 
@@ -591,26 +780,95 @@ final class AdminProjectController extends AbstractController
             return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
         }
 
+        // Prérequis « on ne dépense pas sans argent » : un budget doit être défini.
+        if (!$project->hasBudget()) {
+            $this->addFlash('error', 'Définissez d\'abord un budget (> 0) pour ce projet avant d\'ajouter une dépense.');
+
+            return $this->redirectToRoute('admin_project_update', ['id' => $project->getId()]);
+        }
+
         $expense = new ProjectExpense();
         $form = $this->createForm(ProjectExpenseType::class, $expense);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Ajout de la dépense et journalisation
-            $project->addProjectExpense(
-                $expense->getAmount(),
-                $expense->getDescription() ?? '',
-                $this->getAuthenticatedUser()
-            );
+            // Justificatif optionnel (reçu/facture) — champ non mappé.
+            $receipt = $form->get('receipt')->getData();
+            if ($receipt instanceof \Symfony\Component\HttpFoundation\File\UploadedFile) {
+                $uploaded = $mediaUploader->upload($receipt, 'receipts');
+                $expense->setReceiptPath($uploaded['path']);
+            }
 
-            $entityManager->flush();
-            $this->addFlash('success', 'Dépense ajoutée avec succès.');
+            try {
+                // Soumise en « en attente » : elle n'impacte le budget qu'après approbation.
+                $expenseWorkflow->submit($project, $expense, $this->getAuthenticatedUser());
+                $projectNotifier->expenseSubmitted($expense);
+                $this->addFlash('success', 'Dépense soumise — en attente d\'approbation.');
 
-            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+                return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+            } catch (\DomainException $e) {
+                $this->addFlash('error', $e->getMessage());
+            }
         }
 
         return $this->render('admin/project/expense/new.html.twig', [
             'project' => $project,
+            'form' => $form->createView(),
+        ]);
+    }
+
+    // =========================================================================
+    // 📌 MODIFICATION D'UNE DÉPENSE
+    // =========================================================================
+
+    #[Route('/{id}/expenses/{expenseId}/update', name: 'update_expense', methods: ['GET', 'POST'], requirements: ['id' => '\d+', 'expenseId' => '\d+'])]
+    public function updateExpense(
+        Project $project,
+        #[MapEntity(id: 'expenseId')] ProjectExpense $expense,
+        Request $request,
+        \App\Service\ExpenseWorkflow $expenseWorkflow,
+        MediaUploader $mediaUploader,
+    ): Response {
+        $this->denyAccessUnlessGranted(ProjectVoter::ADD_EXPENSE, $project);
+
+        // Vérifier que la dépense appartient bien au projet
+        if ($expense->getProject() !== $project) {
+            $this->addFlash('error', 'Dépense introuvable ou non associée à ce projet.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        // Double sécurité : empêche la modification de dépenses sur projets terminés ou suspendus
+        if ($this->isProjectLocked($project)) {
+            $this->addFlash('error', 'Impossible de modifier une dépense de ce projet (statut : '.$project->getStatusLabel().').');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        $form = $this->createForm(ProjectExpenseType::class, $expense);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // Justificatif optionnel : remplace le précédent si un nouveau fichier est fourni.
+            $receipt = $form->get('receipt')->getData();
+            if ($receipt instanceof \Symfony\Component\HttpFoundation\File\UploadedFile) {
+                $uploaded = $mediaUploader->upload($receipt, 'receipts');
+                $expense->setReceiptPath($uploaded['path']);
+            }
+
+            try {
+                $expenseWorkflow->update($expense, $this->getAuthenticatedUser());
+                $this->addFlash('success', 'Dépense modifiée avec succès.');
+
+                return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+            } catch (\DomainException $e) {
+                $this->addFlash('error', $e->getMessage());
+            }
+        }
+
+        return $this->render('admin/project/expense/edit.html.twig', [
+            'project' => $project,
+            'expense' => $expense,
             'form' => $form->createView(),
         ]);
     }
@@ -649,6 +907,264 @@ final class AdminProjectController extends AbstractController
             $this->addFlash('success', 'Dépense supprimée avec succès.');
         } else {
             $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+        }
+
+        return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+    }
+
+    // =========================================================================
+    // 📌 TÂCHES / JALONS (suivi étape par étape)
+    // =========================================================================
+
+    #[Route('/{id}/tasks/add', name: 'task_add', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function addTask(Project $project, Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository, \App\Service\ProjectNotifier $projectNotifier): Response
+    {
+        $this->denyAccessUnlessGranted(ProjectVoter::MANAGE_TASK, $project);
+
+        if (!$this->isCsrfTokenValid('task_add_'.$project->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        $title = trim((string) $request->request->get('title'));
+        if ('' === $title) {
+            $this->addFlash('error', 'Le titre de la tâche est obligatoire.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        $task = new ProjectTask();
+        $task->setTitle($title)->setPosition($project->getTasksCount());
+
+        // Responsable optionnel — doit faire partie de l'équipe du projet.
+        $assigneeId = $request->request->getInt('assignee', 0);
+        if ($assigneeId > 0) {
+            $assignee = $userRepository->find($assigneeId);
+            if ($assignee && $project->isTeamMember($assignee)) {
+                $task->setAssignee($assignee);
+            } else {
+                $this->addFlash('error', 'Le responsable doit faire partie de l\'équipe du projet.');
+
+                return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+            }
+        }
+
+        $dueDate = trim((string) $request->request->get('dueDate'));
+        if ('' !== $dueDate) {
+            $task->setDueDate(new \DateTimeImmutable($dueDate));
+        }
+
+        $project->addTask($task);
+        $project->addToHistory('task_added', $this->getAuthenticatedUser(), 'Tâche ajoutée : '.$title);
+        $entityManager->flush();
+
+        $projectNotifier->taskAssigned($task);
+        $this->addFlash('success', 'Tâche ajoutée.');
+
+        return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+    }
+
+    #[Route('/{id}/tasks/{taskId}/status/{status}', name: 'task_status', methods: ['POST'], requirements: ['id' => '\d+', 'taskId' => '\d+'])]
+    public function taskStatus(
+        Project $project,
+        #[MapEntity(id: 'taskId')] ProjectTask $task,
+        string $status,
+        EntityManagerInterface $entityManager,
+        Request $request,
+    ): Response {
+        $this->denyAccessUnlessGranted(ProjectVoter::MANAGE_TASK, $project);
+
+        if ($task->getProject() !== $project) {
+            $this->addFlash('error', 'Tâche introuvable pour ce projet.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        if (!$this->isCsrfTokenValid('task_status_'.$task->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        try {
+            $newStatus = TaskStatusEnum::from($status);
+        } catch (\ValueError) {
+            $this->addFlash('error', 'Statut de tâche invalide.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        $task->setStatus($newStatus);
+        $project->recalculateProgress();
+        $project->addToHistory(
+            $newStatus->isDone() ? 'task_completed' : 'task_updated',
+            $this->getAuthenticatedUser(),
+            sprintf('Tâche « %s » → %s', $task->getTitle(), $newStatus->getLabel()),
+        );
+        $entityManager->flush();
+
+        return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+    }
+
+    #[Route('/{id}/tasks/{taskId}/delete', name: 'task_delete', methods: ['POST'], requirements: ['id' => '\d+', 'taskId' => '\d+'])]
+    public function deleteTask(
+        Project $project,
+        #[MapEntity(id: 'taskId')] ProjectTask $task,
+        EntityManagerInterface $entityManager,
+        Request $request,
+    ): Response {
+        $this->denyAccessUnlessGranted(ProjectVoter::MANAGE_TASK, $project);
+
+        if ($task->getProject() === $project && $this->isCsrfTokenValid('task_delete_'.$task->getId(), $request->request->get('_token'))) {
+            $title = $task->getTitle();
+            $project->removeTask($task);
+            $project->addToHistory('task_removed', $this->getAuthenticatedUser(), 'Tâche supprimée : '.$title);
+            $entityManager->flush();
+            $this->addFlash('success', 'Tâche supprimée.');
+        } else {
+            $this->addFlash('error', 'Action impossible (jeton invalide ou tâche invalide).');
+        }
+
+        return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+    }
+
+    // =========================================================================
+    // 📌 COMMENTAIRES (discussion projet)
+    // =========================================================================
+
+    #[Route('/{id}/comments/add', name: 'add_comment', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function addComment(Project $project, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $this->denyAccessUnlessGranted(ProjectVoter::VIEW, $project);
+
+        if (!$this->isCsrfTokenValid('comment_add_'.$project->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        $content = trim((string) $request->request->get('content'));
+        if ('' === $content) {
+            $this->addFlash('error', 'Le commentaire ne peut pas être vide.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        $comment = new Comment();
+        $comment->setContent($content)->setAuthor($this->getAuthenticatedUser());
+        $project->addComment($comment);
+        $entityManager->persist($comment);
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Commentaire ajouté.');
+
+        return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+    }
+
+    #[Route('/{id}/comments/{commentId}/delete', name: 'delete_comment', methods: ['POST'], requirements: ['id' => '\d+', 'commentId' => '\d+'])]
+    public function deleteComment(
+        Project $project,
+        #[MapEntity(id: 'commentId')] Comment $comment,
+        EntityManagerInterface $entityManager,
+        Request $request,
+    ): Response {
+        $this->denyAccessUnlessGranted(ProjectVoter::VIEW, $project);
+
+        // Seul l'auteur ou un administrateur peut supprimer un commentaire.
+        $isAuthor = $comment->getAuthor() === $this->getAuthenticatedUser();
+        if ($comment->getProject() !== $project || (!$isAuthor && !$this->isGranted('ROLE_ADMIN'))) {
+            $this->addFlash('error', 'Suppression non autorisée.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        if ($this->isCsrfTokenValid('comment_delete_'.$comment->getId(), $request->request->get('_token'))) {
+            $project->removeComment($comment);
+            $entityManager->flush();
+            $this->addFlash('success', 'Commentaire supprimé.');
+        }
+
+        return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+    }
+
+    // =========================================================================
+    // 📌 SUIVI DU TEMPS
+    // =========================================================================
+
+    #[Route('/{id}/time/add', name: 'add_time', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function addTime(Project $project, Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository): Response
+    {
+        $this->denyAccessUnlessGranted(ProjectVoter::MANAGE_TASK, $project);
+
+        if (!$this->isCsrfTokenValid('time_add_'.$project->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        $hours = (int) $request->request->get('hours', 0);
+        $minutes = (int) $request->request->get('minutes', 0);
+        $total = $hours * 60 + $minutes;
+        if ($total <= 0) {
+            $this->addFlash('error', 'La durée doit être strictement positive.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        $entry = new TimeEntry();
+        $entry->setMinutes($total)->setDescription(trim((string) $request->request->get('description')) ?: null);
+
+        // Auteur du temps : par défaut l'admin courant ; sinon un membre de l'équipe choisi.
+        $userId = $request->request->getInt('user', 0);
+        $author = $userId > 0 ? $userRepository->find($userId) : $this->getAuthenticatedUser();
+        if (!$author instanceof User || (!$project->isTeamMember($author))) {
+            $author = $this->getAuthenticatedUser();
+        }
+        $entry->setUser($author);
+
+        $spentOn = trim((string) $request->request->get('spentOn'));
+        if ('' !== $spentOn) {
+            try {
+                $entry->setSpentOn(new \DateTimeImmutable($spentOn));
+            } catch (\Exception) {
+                // conserve la date du jour par défaut
+            }
+        }
+
+        // Tâche optionnelle
+        $taskId = $request->request->getInt('task', 0);
+        if ($taskId > 0) {
+            foreach ($project->getTasks() as $t) {
+                if ($t->getId() === $taskId) {
+                    $entry->setTask($t);
+                    break;
+                }
+            }
+        }
+
+        $project->addTimeEntry($entry);
+        $entityManager->persist($entry);
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Temps enregistré.');
+
+        return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+    }
+
+    #[Route('/{id}/time/{entryId}/delete', name: 'delete_time', methods: ['POST'], requirements: ['id' => '\d+', 'entryId' => '\d+'])]
+    public function deleteTime(
+        Project $project,
+        #[MapEntity(id: 'entryId')] TimeEntry $entry,
+        EntityManagerInterface $entityManager,
+        Request $request,
+    ): Response {
+        $this->denyAccessUnlessGranted(ProjectVoter::MANAGE_TASK, $project);
+
+        if ($entry->getProject() === $project && $this->isCsrfTokenValid('time_delete_'.$entry->getId(), $request->request->get('_token'))) {
+            $project->removeTimeEntry($entry);
+            $entityManager->flush();
+            $this->addFlash('success', 'Saisie de temps supprimée.');
         }
 
         return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
@@ -725,6 +1241,7 @@ final class AdminProjectController extends AbstractController
         Request $request,
         EntityManagerInterface $entityManager,
         UserRepository $userRepository,
+        \App\Service\ProjectNotifier $projectNotifier,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::ADD_COLLABORATOR, $project);
 
@@ -770,6 +1287,7 @@ final class AdminProjectController extends AbstractController
             $project->logCollaboratorAdded($this->getAuthenticatedUser(), $user);
 
             $entityManager->flush();
+            $projectNotifier->collaboratorAdded($project, $user);
             $this->addFlash('success', 'Collaborateur ajouté avec succès.');
 
             return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);

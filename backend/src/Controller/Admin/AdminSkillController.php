@@ -27,14 +27,23 @@ final class AdminSkillController extends AbstractController
     // 📌 LISTE DES COMPÉTENCES
     // =========================================================================
 
+    private const PER_PAGE = 20;
+
     #[Route('/index', name: 'index', methods: ['GET'])]
-    public function index(SkillRepository $skillRepository): Response
+    public function index(Request $request, SkillRepository $skillRepository): Response
     {
         // Pas d'attribut SKILL_VIEW dédié : lecture ouverte à qui peut créer/éditer.
         $this->denyAccessUnlessGranted('ROLE_EDITOR');
 
+        $page = max(1, $request->query->getInt('page', 1));
+        $paginator = $skillRepository->findPaginated($page, self::PER_PAGE);
+        $total = \count($paginator);
+
         return $this->render('admin/skill/index.html.twig', [
-            'skills' => $skillRepository->findAll(),
+            'skills' => $paginator,
+            'total' => $total,
+            'currentPage' => $page,
+            'totalPages' => (int) ceil($total / self::PER_PAGE) ?: 1,
         ]);
     }
 

@@ -6,11 +6,13 @@ namespace App\Form;
 use App\Entity\User;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -55,6 +57,30 @@ class UserType extends AbstractType
             ->add('phone', TextType::class, [
                 'required' => false,
                 'label' => 'Téléphone',
+            ])
+
+            // Profil "collaborateur" (pro/freelance) — renseigné à l'inscription
+            // publique, éditable ensuite ici (ex : revue d'une candidature).
+            ->add('specialties', TextType::class, [
+                'required' => false,
+                'label' => 'Spécialités (séparées par des virgules)',
+                'attr' => ['placeholder' => 'Backend, Cybersécurité...'],
+            ])
+
+            ->add('availability', TextType::class, [
+                'required' => false,
+                'label' => 'Disponibilité',
+                'attr' => ['placeholder' => 'Immédiate, Sous 1 mois...'],
+            ])
+
+            ->add('portfolioUrl', TextType::class, [
+                'required' => false,
+                'label' => 'Portfolio / lien',
+            ])
+
+            ->add('bio', TextareaType::class, [
+                'required' => false,
+                'label' => 'Présentation / bio',
             ])
 
             ->add('plainPassword', PasswordType::class, [
@@ -116,6 +142,13 @@ class UserType extends AbstractType
                 // en libre-service (vérification d'un vrai code TOTP requise).
                 'disabled' => true,
             ]);
+
+        $builder->get('specialties')->addModelTransformer(new CallbackTransformer(
+            static fn (?array $specialties): string => $specialties ? implode(', ', $specialties) : '',
+            static fn (?string $specialties): ?array => $specialties
+                ? array_values(array_filter(array_map('trim', explode(',', $specialties))))
+                : null,
+        ));
     }
 
     public function configureOptions(OptionsResolver $resolver): void

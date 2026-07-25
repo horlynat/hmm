@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class RegistrationController extends AbstractController
 {
@@ -29,7 +30,14 @@ class RegistrationController extends AbstractController
     ) {
     }
 
+    /**
+     * Inscription réservée aux administrateurs : crée un nouveau compte
+     * administrateur (ROLE_ADMIN). L'inscription publique (client, freelance,
+     * pro, collaborateur) est désormais gérée côté frontend Next.js via les
+     * ApiResource d'inscription (CollaboratorRegistration / ClientRegistration).
+     */
     #[Route('/register', name: 'register')]
+    #[IsGranted('ROLE_ADMIN', message: "Seul un administrateur peut créer un compte depuis cette page.")]
     public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, AdminAlertNotifier $adminAlertNotifier, PublicSubmissionThrottler $throttler): Response
     {
         $user = new User();
@@ -40,15 +48,22 @@ class RegistrationController extends AbstractController
             $throttler->assertRegistrationAllowed();
 
             $user->setPassword($userPasswordHasher->hashPassword($user, $form->get('plainPassword')->getData()));
-            $user->setRoles(['ROLE_USER']);
+            $user->setRoles(['ROLE_ADMIN']);
+            $user->setCreatedAt(new \DateTimeImmutable());
 
             $this->entityManager->persist($user);
             $this->entityManager->flush();
 
+            $actor = $this->getUser();
             $adminAlertNotifier->alert(
-                NotificationPriorityEnum::LOW,
-                'Nouvelle inscription',
-                sprintf('%s <%s> vient de créer un compte.', $user->getFullName() ?? $user->getEmail(), $user->getEmail()),
+                NotificationPriorityEnum::HIGH,
+                'Nouveau compte administrateur',
+                sprintf(
+                    '%s <%s> a été créé comme administrateur par %s.',
+                    $user->getFullName() ?? $user->getEmail(),
+                    $user->getEmail(),
+                    $actor instanceof User ? $actor->getEmail() : 'un administrateur',
+                ),
             );
 
             $token = $this->jwt->generateEmailVerificationToken($user->getId());
@@ -65,9 +80,9 @@ class RegistrationController extends AbstractController
                 ]
             );
 
-            $this->addFlash('success', 'Inscription réussie ! Vérifiez vos emails.');
+            $this->addFlash('success', sprintf('Le compte administrateur #%d a été créé avec succès.', $user->getId()));
 
-            return $this->redirectToRoute('profile_read', ['id' => $user->getId()]);
+            return $this->redirectToRoute('admin_admins_index');
         }
 
         return $this->render('registration/register.html.twig', [

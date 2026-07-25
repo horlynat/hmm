@@ -4,6 +4,8 @@ namespace App\Repository;
 
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -38,13 +40,34 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      */
     public function findAdmins(): array
     {
+        return $this->adminsQueryBuilder()
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Administrateurs paginés (LIMIT/OFFSET).
+     *
+     * @return Paginator<User>
+     */
+    public function findAdminsPaginated(int $page = 1, int $perPage = 20): Paginator
+    {
+        $page = max(1, $page);
+        $query = $this->adminsQueryBuilder()
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage)
+            ->getQuery();
+
+        return new Paginator($query, fetchJoinCollection: false);
+    }
+
+    private function adminsQueryBuilder(): QueryBuilder
+    {
         return $this->createQueryBuilder('u')
             ->andWhere('u.roles LIKE :roleAdmin OR u.roles LIKE :roleSuperAdmin')
             ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
             ->setParameter('roleSuperAdmin', '%"ROLE_SUPER_ADMIN"%')
-            ->orderBy('u.fullName', 'ASC')
-            ->getQuery()
-            ->getResult();
+            ->orderBy('u.fullName', 'ASC');
     }
 
     /**
@@ -69,6 +92,33 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      */
     public function findClients(): array
     {
+        return $this->clientsQueryBuilder()
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Clients paginés (LIMIT/OFFSET) — évite de charger toute la table en mémoire
+     * sur la liste d'administration. Retourne un Paginator itérable + comptable.
+     *
+     * @return Paginator<User>
+     */
+    public function findClientsPaginated(int $page = 1, int $perPage = 20): Paginator
+    {
+        $page = max(1, $page);
+        $query = $this->clientsQueryBuilder()
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage)
+            ->getQuery();
+
+        return new Paginator($query, fetchJoinCollection: false);
+    }
+
+    /**
+     * Filtre commun « comptes clients » : rôle USER pur (ni admin/éditeur/etc.).
+     */
+    private function clientsQueryBuilder(): QueryBuilder
+    {
         return $this->createQueryBuilder('u')
             ->andWhere('u.roles NOT LIKE :roleAdmin')
             ->andWhere('u.roles NOT LIKE :roleSuperAdmin')
@@ -80,7 +130,31 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->setParameter('roleEditor', '%"ROLE_EDITOR"%')
             ->setParameter('roleModerator', '%"ROLE_MODERATOR"%')
             ->setParameter('roleManager', '%"ROLE_MANAGER"%')
-            ->orderBy('u.fullName', 'ASC')
+            ->orderBy('u.fullName', 'ASC');
+    }
+
+    /**
+     * Candidatures freelance en attente de revue : inscrites via le formulaire
+     * public (donc avec des spécialités renseignées) mais pas encore promues
+     * ROLE_EDITOR par un administrateur — cf. AdminCollaboratorController.
+     *
+     * @return User[]
+     */
+    public function findFreelanceCandidates(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.roles NOT LIKE :roleAdmin')
+            ->andWhere('u.roles NOT LIKE :roleSuperAdmin')
+            ->andWhere('u.roles NOT LIKE :roleEditor')
+            ->andWhere('u.roles NOT LIKE :roleModerator')
+            ->andWhere('u.roles NOT LIKE :roleManager')
+            ->andWhere('u.specialties IS NOT NULL')
+            ->setParameter('roleAdmin', '%"ROLE_ADMIN"%')
+            ->setParameter('roleSuperAdmin', '%"ROLE_SUPER_ADMIN"%')
+            ->setParameter('roleEditor', '%"ROLE_EDITOR"%')
+            ->setParameter('roleModerator', '%"ROLE_MODERATOR"%')
+            ->setParameter('roleManager', '%"ROLE_MANAGER"%')
+            ->orderBy('u.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
     }

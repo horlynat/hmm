@@ -34,13 +34,22 @@ final class AdminArticleController extends AbstractController
     // 📌 LISTE DES ARTICLES
     // =========================================================================
 
+    private const PER_PAGE = 20;
+
     #[Route('/index', name: 'index', methods: ['GET'])]
-    public function index(ArticleRepository $articleRepository): Response
+    public function index(Request $request, ArticleRepository $articleRepository): Response
     {
         $this->denyAccessUnlessGranted(ArticleVoter::VIEW);
 
+        $page = max(1, $request->query->getInt('page', 1));
+        $paginator = $articleRepository->findPaginated($page, self::PER_PAGE);
+        $total = \count($paginator);
+
         return $this->render('admin/article/index.html.twig', [
-            'articles' => $articleRepository->findAll(),
+            'articles' => $paginator,
+            'total' => $total,
+            'currentPage' => $page,
+            'totalPages' => (int) ceil($total / self::PER_PAGE) ?: 1,
         ]);
     }
 

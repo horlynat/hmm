@@ -12,7 +12,7 @@
 		</nav>
 
 		<div class="relative flex-1 max-w-sm">
-			<span class="material-icons absolute left-3 top-2 text-gray-400 text-sm">search</span>
+			<span class="ti ti-search absolute left-3 top-2 text-gray-400 text-sm" aria-hidden="true"></span>
 			<input type="text" placeholder="Rechercher..." class="w-full pl-10 pr-4 py-1.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition text-sm shadow-sm">
 		</div>
 	</div>
@@ -20,12 +20,12 @@
 	<div class="flex items-center space-x-4">
 
 		<button class="relative p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition text-gray-600">
-			<span class="material-icons text-lg">event</span>
+			<span class="ti ti-calendar-event text-lg" aria-hidden="true"></span>
 			<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
 		</button>
 
 		<button class="relative p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition text-gray-600">
-			<span class="material-icons text-lg">request_quote</span>
+			<span class="ti ti-file-invoice text-lg" aria-hidden="true"></span>
 			<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
 		</button>
 
@@ -45,7 +45,7 @@
 					<p class="text-[10px] text-gray-500 uppercase tracking-wider">{{ userRole }}</p>
 				</div>
 
-				<span class="material-icons text-sm text-gray-400">expand_more</span>
+				<span class="ti ti-chevron-down text-sm text-gray-400" aria-hidden="true"></span>
 			</button>
 
 			<!-- Menu déroulant (visible si open est true) -->
@@ -53,19 +53,19 @@
 
 				<a href="{{ path('profile_read', {'id': app.user.id}) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition">
 
-					<span class="material-icons text-base mr-3 opacity-70">person</span>
+					<span class="ti ti-user text-base mr-3 opacity-70" aria-hidden="true"></span>
 					Mon profil
 				</a>
 
 				<a href="{{ path('profile_update', {'id': app.user.id}) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition">
-					<span class="material-icons text-base mr-3 opacity-70">edit</span>
+					<span class="ti ti-edit text-base mr-3 opacity-70" aria-hidden="true"></span>
 					Modifier mon profil
 				</a>
 
 				<hr class="my-1 border-gray-100">
 
 				<a href="{{ path('logout') }}" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">
-					<span class="material-icons text-base mr-3 opacity-70">logout</span>
+					<span class="ti ti-logout text-base mr-3 opacity-70" aria-hidden="true"></span>
 					Déconnexion
 				</a>
 			</div>

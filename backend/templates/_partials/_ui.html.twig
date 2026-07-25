@@ -1,0 +1,67 @@
+{#
+   Macros UI réutilisables du back-office (refonte).
+   Usage : {% import '_partials/_ui.html.twig' as ui %}
+   Puis : {{ ui.page_header('Titre', 'Sous-titre') }}, {{ ui.status_badge(...) }}, etc.
+   Icônes : Tabler (classe `ti ti-*`).
+#}
+
+{# En-tête de page simple : titre + sous-titre optionnel.
+   Pour un en-tête AVEC boutons d'action, utiliser directement la structure
+   `.page-header` dans la page (cf. .page-header / .page-title dans app.css). #}
+{% macro page_header(title, subtitle = null) %}
+	<div class="page-header">
+		<div class="min-w-0">
+			<h1 class="page-title">{{ title }}</h1>
+			{% if subtitle %}<p class="page-subtitle">{{ subtitle }}</p>{% endif %}
+		</div>
+	</div>
+{% endmacro %}
+
+{# Badge de statut sémantique. variant ∈ success|danger|warning|info|neutral. #}
+{% macro status_badge(label, variant = 'neutral', icon = null) %}
+	<span class="badge badge-{{ variant }}">
+		{%- if icon %}<span class="ti {{ icon }} text-sm mr-1" aria-hidden="true"></span>{% endif -%}
+		{{ label }}
+	</span>
+{% endmacro %}
+
+{# État vide pour les listes sans résultat. #}
+{% macro empty_state(text, icon = 'ti-inbox') %}
+	<div class="empty-state">
+		<span class="ti {{ icon }} empty-state__icon" aria-hidden="true"></span>
+		<p class="empty-state__text">{{ text }}</p>
+	</div>
+{% endmacro %}
+
+{# Pagination accessible et fenêtrée. Conserve les paramètres de route (filtres/tri). #}
+{% macro pagination(currentPage, totalPages, routeName, routeParams = {}) %}
+	{% if totalPages > 1 %}
+		<nav class="pagination" aria-label="Pagination">
+			{% if currentPage > 1 %}
+				<a href="{{ path(routeName, routeParams|merge({ page: currentPage - 1 })) }}" rel="prev" aria-label="Page précédente">
+					<span class="ti ti-chevron-left" aria-hidden="true"></span>
+				</a>
+			{% else %}
+				<span class="is-disabled" aria-hidden="true"><span class="ti ti-chevron-left"></span></span>
+			{% endif %}
+
+			{% for p in 1..totalPages %}
+				{% if p == currentPage %}
+					<span class="is-active" aria-current="page">{{ p }}</span>
+				{% elseif p == 1 or p == totalPages or (p >= currentPage - 2 and p <= currentPage + 2) %}
+					<a href="{{ path(routeName, routeParams|merge({ page: p })) }}" aria-label="Page {{ p }}">{{ p }}</a>
+				{% elseif p == currentPage - 3 or p == currentPage + 3 %}
+					<span class="is-disabled">…</span>
+				{% endif %}
+			{% endfor %}
+
+			{% if currentPage < totalPages %}
+				<a href="{{ path(routeName, routeParams|merge({ page: currentPage + 1 })) }}" rel="next" aria-label="Page suivante">
+					<span class="ti ti-chevron-right" aria-hidden="true"></span>
+				</a>
+			{% else %}
+				<span class="is-disabled" aria-hidden="true"><span class="ti ti-chevron-right"></span></span>
+			{% endif %}
+		</nav>
+	{% endif %}
+{% endmacro %}
