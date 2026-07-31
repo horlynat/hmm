@@ -27,6 +27,12 @@ class Skill
     #[Groups(['api_public', 'api_admin'])]
     private string $name = '';
 
+    /** Nom en anglais — optionnel, retombe sur `name` (FR) côté frontend si vide. */
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $nameEn = null;
+
     #[ORM\Column(type: Types::INTEGER)]
     #[Assert\NotNull(message: "Le niveau est obligatoire.")]
     #[Assert\Range(min: 1, max: 10)]
@@ -62,6 +68,17 @@ class Skill
     public function setName(string $name): static
     {
         $this->name = $name;
+        return $this;
+    }
+
+    public function getNameEn(): ?string
+    {
+        return $this->nameEn;
+    }
+
+    public function setNameEn(?string $nameEn): static
+    {
+        $this->nameEn = $nameEn;
         return $this;
     }
 

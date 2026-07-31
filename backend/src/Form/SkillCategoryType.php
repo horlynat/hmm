@@ -18,6 +18,14 @@ class SkillCategoryType extends AbstractType
                 'attr' => [
                     'placeholder' => 'Ex: Développement Web, Design, DevOps...',
                 ],
+            ])
+            ->add('nameEn', TextType::class, [
+                'label' => 'Nom de la catégorie (anglais)',
+                'required' => false,
+                'help' => 'Optionnel — reprend le nom français si laissé vide.',
+                'attr' => [
+                    'placeholder' => 'Ex: Web Development, Design, DevOps...',
+                ],
             ]);
     }
 

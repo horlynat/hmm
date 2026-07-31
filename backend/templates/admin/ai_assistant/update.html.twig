@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Assistant IA — Modifier l'entrée{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Modifier l'entrée" subtitle="{{ entry.chipLabel }}" icon="ti-edit">
+		<a href="{{ path('admin_ai_assistant_index') }}" class="btn btn-secondary gap-2">
+			<span class="ti ti-arrow-left" aria-hidden="true"></span>
+			<span>Retour à la liste</span>
+		</a>
+	</twig:PageHeader>
+
+	{% include 'admin/ai_assistant/_form.html.twig' %}
+{% endblock %}

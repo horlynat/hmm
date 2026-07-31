@@ -29,11 +29,22 @@ class Article
     #[Groups(['api_public', 'api_admin'])]
     private string $title = '';
 
+    /** Titre en anglais — optionnel, retombe sur `title` (FR) côté frontend si vide. */
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $titleEn = null;
+
     #[ORM\Column(type: Types::TEXT)]
     #[Assert\NotBlank(message: "Le contenu est obligatoire")]
     #[Assert\Length(min: 20, minMessage: "Le contenu doit contenir au moins {{ limit }} caractères")]
     #[Groups(['api_public', 'api_admin'])]
     private string $content = '';
+
+    /** Contenu en anglais — optionnel, retombe sur `content` (FR) côté frontend si vide. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $contentEn = null;
 
     #[ORM\Column]
     #[Assert\NotNull(message: "La date de publication est obligatoire")]
@@ -87,8 +98,14 @@ class Article
         return $this;
     }
 
+    public function getTitleEn(): ?string { return $this->titleEn; }
+    public function setTitleEn(?string $titleEn): static { $this->titleEn = $titleEn; return $this; }
+
     public function getContent(): string { return $this->content; }
     public function setContent(string $content): static { $this->content = $content; return $this; }
+
+    public function getContentEn(): ?string { return $this->contentEn; }
+    public function setContentEn(?string $contentEn): static { $this->contentEn = $contentEn; return $this; }
 
     public function getPublishedAt(): \DateTimeImmutable { return $this->publishedAt; }
     public function setPublishedAt(\DateTimeImmutable $publishedAt): static { $this->publishedAt = $publishedAt; return $this; }

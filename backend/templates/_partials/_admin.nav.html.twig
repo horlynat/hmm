@@ -1,6 +1,6 @@
 {# 📌 Détection automatique de la route actuelle pour ouvrir le bon accordéon au chargement #}
 {% set currentRoute = app.request.attributes.get('_route') %}
-{% set isContenuActive = currentRoute starts with 'admin_project' or currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_tag' or currentRoute starts with 'admin_article' or currentRoute starts with 'admin_course' or currentRoute starts with 'admin_experience' %}
+{% set isContenuActive = currentRoute starts with 'admin_project' or currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_tag' or currentRoute starts with 'admin_article' or currentRoute starts with 'admin_course' or currentRoute starts with 'admin_experience' or currentRoute starts with 'admin_home_content' or currentRoute starts with 'admin_about_content' or currentRoute starts with 'admin_ai_assistant' %}
 {% set isUtilisateursActive = currentRoute starts with 'admin_admins' or currentRoute starts with 'admin_user' or currentRoute starts with 'admin_collaborator' or currentRoute starts with 'admin_contact' or currentRoute starts with 'admin_request' or currentRoute starts with 'admin_testimonial' %}
 {% set isSecuriteActive = currentRoute starts with 'admin_security_' %}
 {% set isParametresActive = currentRoute starts with 'admin_config' or currentRoute starts with 'admin_notification' or currentRoute starts with 'admin_integration' or currentRoute starts with 'admin_backup' %}
@@ -54,9 +54,13 @@
 					<i class="ti ti-briefcase text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Projets
 				</a>
-				<a href="{{ path('admin_skill_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_skill_category' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+				<a href="{{ path('admin_skill_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_skill_' and not (currentRoute starts with 'admin_skill_category') %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-code text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Compétences
+				</a>
+				<a href="{{ path('admin_skill_category_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_skill_category' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+					<i class="ti ti-category text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Catégories de compétences
 				</a>
 				<a href="{{ path('admin_article_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_article' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-news text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
@@ -76,6 +80,18 @@
 				<a href="{{ path('admin_experience_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_experience' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 					<i class="ti ti-history text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 					Expériences
+				</a>
+				<a href="{{ path('admin_home_content_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_home_content' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+					<i class="ti ti-home text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Page d'accueil
+				</a>
+				<a href="{{ path('admin_about_content_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_about_content' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+					<i class="ti ti-user text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Page "À propos"
+				</a>
+				<a href="{{ path('admin_ai_assistant_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_ai_assistant' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+					<i class="ti ti-message-chatbot text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+					Assistant IA
 				</a>
 			</div>
 		</div>

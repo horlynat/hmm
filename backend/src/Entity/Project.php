@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Entity\Media;
 use App\Entity\ProjectExpense;
 use App\Entity\ProjectHistory;
+use App\Entity\ProjectInfo;
 use App\Entity\Skill;
 use App\Entity\Tag;
 use App\Entity\Traits\CreatedAtTrait;
@@ -45,11 +46,22 @@ class Project
     #[Groups(['api_public', 'api_admin'])]
     private string $title = '';
 
+    /** Titre en anglais — optionnel, retombe sur `title` (FR) côté frontend si vide. */
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $titleEn = null;
+
     #[ORM\Column(type: Types::TEXT)]
     #[Assert\NotBlank(message: "La description est obligatoire.")]
     #[Assert\Length(min: 20)]
     #[Groups(['api_public', 'api_admin'])]
     private string $description = '';
+
+    /** Description en anglais — optionnel, retombe sur `description` (FR) côté frontend si vide. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $descriptionEn = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le lien est obligatoire.")]
@@ -133,8 +145,12 @@ class Project
 
     /** @var Collection<int, Media> */
     #[ORM\OneToMany(mappedBy: 'project', targetEntity: Media::class, cascade: ['persist'], orphanRemoval: true)]
-    #[Groups(["api_detailed"])]
+    #[Groups(["api_public", "api_detailed"])]
     private Collection $media;
+
+    #[ORM\OneToOne(mappedBy: 'project', targetEntity: ProjectInfo::class, cascade: ['persist', 'remove'])]
+    #[Groups(['api_public'])]
+    private ?ProjectInfo $info = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'client_id', nullable: true, onDelete: 'SET NULL')]
@@ -184,6 +200,17 @@ class Project
         return $this;
     }
 
+    public function getTitleEn(): ?string
+    {
+        return $this->titleEn;
+    }
+
+    public function setTitleEn(?string $titleEn): static
+    {
+        $this->titleEn = $titleEn;
+        return $this;
+    }
+
     public function getDescription(): string
     {
         return $this->description;
@@ -192,6 +219,17 @@ class Project
     public function setDescription(string $description): static
     {
         $this->description = $description;
+        return $this;
+    }
+
+    public function getDescriptionEn(): ?string
+    {
+        return $this->descriptionEn;
+    }
+
+    public function setDescriptionEn(?string $descriptionEn): static
+    {
+        $this->descriptionEn = $descriptionEn;
         return $this;
     }
 
@@ -252,6 +290,20 @@ class Project
                 $media->setProject(null);
             }
         }
+        return $this;
+    }
+
+    public function getInfo(): ?ProjectInfo
+    {
+        return $this->info;
+    }
+
+    public function setInfo(?ProjectInfo $info): static
+    {
+        if ($info !== null) {
+            $info->setProject($this);
+        }
+        $this->info = $info;
         return $this;
     }
 

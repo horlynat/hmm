@@ -23,6 +23,12 @@ class Course
     #[Groups(['api_public', 'api_admin'])]
     private string $title = '';
 
+    /** Titre en anglais — optionnel, retombe sur `title` (FR) côté frontend si vide. */
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $titleEn = null;
+
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: "L'institution est obligatoire")]
     #[Assert\Length(max: 100, maxMessage: "Le nom de l'institution ne peut pas dépasser {{ limit }} caractères")]
@@ -47,6 +53,11 @@ class Course
     #[Assert\Length(min: 10, minMessage: "La description doit contenir au moins {{ limit }} caractères")]
     #[Groups(['api_public', 'api_admin'])]
     private string $description = '';
+
+    /** Description en anglais — optionnel, retombe sur `description` (FR) côté frontend si vide. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $descriptionEn = null;
 
     #[ORM\ManyToOne(inversedBy: 'course')]
     #[ORM\JoinColumn(nullable: false)]
@@ -73,6 +84,18 @@ class Course
     public function setTitle(string $title): static
     {
         $this->title = $title;
+
+        return $this;
+    }
+
+    public function getTitleEn(): ?string
+    {
+        return $this->titleEn;
+    }
+
+    public function setTitleEn(?string $titleEn): static
+    {
+        $this->titleEn = $titleEn;
 
         return $this;
     }
@@ -121,6 +144,18 @@ class Course
     public function setDescription(string $description): static
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function getDescriptionEn(): ?string
+    {
+        return $this->descriptionEn;
+    }
+
+    public function setDescriptionEn(?string $descriptionEn): static
+    {
+        $this->descriptionEn = $descriptionEn;
 
         return $this;
     }

@@ -24,6 +24,15 @@ class CourseType extends AbstractType
                     'placeholder' => 'Entrez le titre du cours'
                 ],
             ])
+            ->add('titleEn', TextType::class, [
+                'label' => 'Titre du cours (anglais)',
+                'required' => false,
+                'help' => 'Optionnel — reprend le titre français si laissé vide.',
+                'attr' => [
+                    'maxlength' => 255,
+                    'placeholder' => 'Enter the course title'
+                ],
+            ])
             ->add('institution', TextType::class, [
                 'label' => 'Institution',
                 'attr' => [
@@ -44,6 +53,15 @@ class CourseType extends AbstractType
                 'attr' => [
                     'rows' => 6,
                     'placeholder' => 'Décrivez le contenu du cours (min. 10 caractères)'
+                ],
+            ])
+            ->add('descriptionEn', TextareaType::class, [
+                'label' => 'Description (anglais)',
+                'required' => false,
+                'help' => 'Optionnel — reprend la description française si laissée vide.',
+                'attr' => [
+                    'rows' => 6,
+                    'placeholder' => 'Describe the course content in English'
                 ],
             ])
             ->add('user', EntityType::class, [

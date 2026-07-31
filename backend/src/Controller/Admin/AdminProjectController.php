@@ -6,6 +6,7 @@ use App\Entity\Comment;
 use App\Entity\Media;
 use App\Entity\Project;
 use App\Entity\ProjectExpense;
+use App\Entity\ProjectInfo;
 use App\Entity\ProjectTask;
 use App\Entity\Tag;
 use App\Entity\TimeEntry;
@@ -376,7 +377,10 @@ final class AdminProjectController extends AbstractController
         $project = new Project();
         $project->setOwner($this->getAuthenticatedUser());
 
-        $form = $this->createForm(ProjectType::class, $project, ['include_planning' => true]);
+        $form = $this->createForm(ProjectType::class, $project, [
+            'include_planning' => true,
+            'include_showcase' => true,
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -386,6 +390,13 @@ final class AdminProjectController extends AbstractController
 
             // Upload des médias
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
+
+            // Contenu vitrine (étape 2 de l'assistant) — ProjectInfo n'est créé
+            // que si l'admin a réellement renseigné au moins un champ.
+            $showcase = $this->buildProjectInfoFromForm($form);
+            if ($showcase !== null) {
+                $project->setInfo($showcase);
+            }
 
             // Journaliser la création
             $project->logCreation($this->getAuthenticatedUser());
@@ -402,6 +413,75 @@ final class AdminProjectController extends AbstractController
             'project' => $project,
             'form' => $form->createView(),
         ]);
+    }
+
+    /**
+     * Construit le ProjectInfo (contenu vitrine public) à partir des champs non
+     * mappés de l'étape 2 de l'assistant de création. Les textareas utilisent un
+     * mini-format "un par ligne" (et "clé | valeur" pour les listes à deux
+     * colonnes) plutôt que des CollectionType JS, pour rester simple à remplir.
+     */
+    private function buildProjectInfoFromForm(FormInterface $form): ?ProjectInfo
+    {
+        $role = trim((string) $form->get('role')->getData());
+        $repoUrl = trim((string) $form->get('repoUrl')->getData());
+        $objectives = $this->parseLines((string) $form->get('objectives')->getData());
+        $techStack = $this->parsePairs((string) $form->get('techStack')->getData(), 'name', 'rationale');
+        $challenges = $this->parsePairs((string) $form->get('challenges')->getData(), 'problem', 'solution');
+        $results = $this->parsePairs((string) $form->get('results')->getData(), 'label', 'value');
+
+        if ($role === '' && $repoUrl === '' && !$objectives && !$techStack && !$challenges && !$results) {
+            return null;
+        }
+
+        // Champs anglais — optionnels, mêmes mini-formats que leurs pendants FR.
+        $roleEn = trim((string) $form->get('roleEn')->getData());
+        $objectivesEn = $this->parseLines((string) $form->get('objectivesEn')->getData());
+        $techStackEn = $this->parsePairs((string) $form->get('techStackEn')->getData(), 'name', 'rationale');
+        $challengesEn = $this->parsePairs((string) $form->get('challengesEn')->getData(), 'problem', 'solution');
+        $resultsEn = $this->parsePairs((string) $form->get('resultsEn')->getData(), 'label', 'value');
+
+        $info = new ProjectInfo();
+        $info->setRole($role !== '' ? $role : null);
+        $info->setRepoUrl($repoUrl !== '' ? $repoUrl : null);
+        $info->setObjectives($objectives);
+        $info->setTechStack($techStack);
+        $info->setChallenges($challenges);
+        $info->setResults($results);
+        $info->setRoleEn($roleEn !== '' ? $roleEn : null);
+        $info->setObjectivesEn($objectivesEn ?: null);
+        $info->setTechStackEn($techStackEn ?: null);
+        $info->setChallengesEn($challengesEn ?: null);
+        $info->setResultsEn($resultsEn ?: null);
+
+        return $info;
+    }
+
+    /** @return string[] */
+    private function parseLines(string $raw): array
+    {
+        return array_values(array_filter(array_map('trim', preg_split('/\r?\n/', $raw) ?: [])));
+    }
+
+    /** @return array<int, array{0: string, 1: string|null}|array<string, string|null>> */
+    private function parsePairs(string $raw, string $keyA, string $keyB): array
+    {
+        $items = [];
+        foreach (preg_split('/\r?\n/', $raw) ?: [] as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+            [$a, $b] = array_pad(explode('|', $line, 2), 2, null);
+            $a = trim((string) $a);
+            if ($a === '') {
+                continue;
+            }
+            $b = $b !== null ? trim($b) : '';
+            $items[] = [$keyA => $a, $keyB => $b !== '' ? $b : null];
+        }
+
+        return $items;
     }
 
     // =========================================================================
