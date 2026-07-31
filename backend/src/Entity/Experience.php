@@ -29,6 +29,12 @@ class Experience
     #[Groups(['api_public', 'api_admin'])]
     private string $role = '';
 
+    /** Intitulé en anglais — optionnel, retombe sur `role` (FR) côté frontend si vide. */
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $roleEn = null;
+
     #[ORM\Column]
     #[Assert\NotNull(message: "La date de début est obligatoire.")]
     #[Assert\Type(\DateTimeImmutable::class)]
@@ -45,6 +51,11 @@ class Experience
     #[Assert\Length(min: 10)]
     #[Groups(['api_public', 'api_admin'])]
     private string $description = '';
+
+    /** Description en anglais — optionnel, retombe sur `description` (FR) côté frontend si vide. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $descriptionEn = null;
 
     #[ORM\ManyToOne(inversedBy: 'experience')]
     #[ORM\JoinColumn(nullable: false)]
@@ -86,6 +97,18 @@ class Experience
         return $this;
     }
 
+    public function getRoleEn(): ?string
+    {
+        return $this->roleEn;
+    }
+
+    public function setRoleEn(?string $roleEn): static
+    {
+        $this->roleEn = $roleEn;
+
+        return $this;
+    }
+
     public function getStartDate(): \DateTimeImmutable
     {
         return $this->startDate;
@@ -118,6 +141,18 @@ class Experience
     public function setDescription(string $description): static
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function getDescriptionEn(): ?string
+    {
+        return $this->descriptionEn;
+    }
+
+    public function setDescriptionEn(?string $descriptionEn): static
+    {
+        $this->descriptionEn = $descriptionEn;
 
         return $this;
     }

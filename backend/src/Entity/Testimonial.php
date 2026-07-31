@@ -31,6 +31,12 @@ class Testimonial
     #[Groups(['api_public', 'api_admin'])]
     private string $content = '';
 
+    /** Contenu en anglais — optionnel, retombe sur `content` (FR) côté frontend si vide. */
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $contentEn = null;
+
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 0, nullable: true)]
     #[Assert\PositiveOrZero]
     #[Assert\Range(min: 0, max: 5)]
@@ -77,6 +83,18 @@ class Testimonial
     public function setContent(string $content): static
     {
         $this->content = $content;
+
+        return $this;
+    }
+
+    public function getContentEn(): ?string
+    {
+        return $this->contentEn;
+    }
+
+    public function setContentEn(?string $contentEn): static
+    {
+        $this->contentEn = $contentEn;
 
         return $this;
     }

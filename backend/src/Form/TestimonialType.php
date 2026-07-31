@@ -32,6 +32,15 @@ class TestimonialType extends AbstractType
                     'placeholder' => 'Contenu du témoignage (10 à 255 caractères)',
                 ],
             ])
+            ->add('contentEn', TextareaType::class, [
+                'label' => 'Témoignage (anglais)',
+                'required' => false,
+                'help' => 'Optionnel — reprend le témoignage français si laissé vide.',
+                'attr' => [
+                    'rows' => 6,
+                    'placeholder' => 'English translation of the testimonial',
+                ],
+            ])
             ->add('rating', ChoiceType::class, [
                 'label' => 'Note',
                 'required' => false,

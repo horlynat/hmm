@@ -26,6 +26,12 @@ class SkillCategory
     #[Groups(['api_public', 'api_admin'])]
     private string $name = '';
 
+    /** Nom en anglais — optionnel, retombe sur `name` (FR) côté frontend si vide. */
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Assert\Length(max: 100)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $nameEn = null;
+
     /** @var Collection<int, Skill> */
     #[ORM\OneToMany(targetEntity: Skill::class, mappedBy: 'skillCategory')]
     #[Groups(['api_admin'])] // exposé seulement côté admin
@@ -49,6 +55,18 @@ class SkillCategory
     public function setName(string $name): static
     {
         $this->name = $name;
+
+        return $this;
+    }
+
+    public function getNameEn(): ?string
+    {
+        return $this->nameEn;
+    }
+
+    public function setNameEn(?string $nameEn): static
+    {
+        $this->nameEn = $nameEn;
 
         return $this;
     }

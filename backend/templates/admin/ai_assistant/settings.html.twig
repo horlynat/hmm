@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Assistant IA — Réglages{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Assistant IA — Réglages" subtitle="Message d'accueil et réponse par défaut du widget." icon="ti-message-chatbot">
+		<a href="{{ path('admin_ai_assistant_index') }}" class="btn btn-secondary gap-2">
+			<span class="ti ti-list" aria-hidden="true"></span>
+			<span>Entrées de FAQ</span>
+		</a>
+	</twig:PageHeader>
+
+	{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
+
+	<div class="panel">
+		<div class="panel-body space-y-4">
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<div class="field">
+					{{ form_label(form.greeting, null, {'label_attr': {'class': 'field-label'}}) }}
+					{{ form_widget(form.greeting, {'attr': {'class': 'input textarea w-full'}}) }}
+					{{ form_errors(form.greeting, {'attr': {'class': 'field-error'}}) }}
+				</div>
+				<div class="field">
+					{{ form_label(form.greetingEn, null, {'label_attr': {'class': 'field-label opacity-70'}}) }}
+					{{ form_widget(form.greetingEn, {'attr': {'class': 'input textarea w-full'}}) }}
+					{{ form_errors(form.greetingEn, {'attr': {'class': 'field-error'}}) }}
+				</div>
+			</div>
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<div class="field">
+					{{ form_label(form.fallback, null, {'label_attr': {'class': 'field-label'}}) }}
+					{{ form_widget(form.fallback, {'attr': {'class': 'input textarea w-full'}}) }}
+					{{ form_errors(form.fallback, {'attr': {'class': 'field-error'}}) }}
+				</div>
+				<div class="field">
+					{{ form_label(form.fallbackEn, null, {'label_attr': {'class': 'field-label opacity-70'}}) }}
+					{{ form_widget(form.fallbackEn, {'attr': {'class': 'input textarea w-full'}}) }}
+					{{ form_errors(form.fallbackEn, {'attr': {'class': 'field-error'}}) }}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-body flex items-center justify-between gap-4">
+			{% if settings.updatedAt %}
+				<p class="text-xs opacity-60">
+					Dernière mise à jour le {{ settings.updatedAt|date('d/m/Y à H:i') }}
+					{% if settings.updatedBy %}par {{ settings.updatedBy.fullName ?? settings.updatedBy.email }}{% endif %}
+				</p>
+			{% else %}
+				<span></span>
+			{% endif %}
+			<button type="submit" class="btn btn-primary gap-2">
+				<span class="ti ti-device-floppy" aria-hidden="true"></span>
+				<span>Enregistrer</span>
+			</button>
+		</div>
+	</div>
+
+	{{ form_end(form) }}
+{% endblock %}

@@ -23,6 +23,11 @@ class ExperienceType extends AbstractType
             ->add('role', TextType::class, [
                 'label' => 'Poste occupé',
             ])
+            ->add('roleEn', TextType::class, [
+                'label' => 'Poste occupé (anglais)',
+                'required' => false,
+                'help' => 'Optionnel — reprend le poste français si laissé vide.',
+            ])
             ->add('startDate', DateType::class, [
                 'widget' => 'single_text',
                 'label' => 'Date de début',
@@ -33,6 +38,12 @@ class ExperienceType extends AbstractType
             ])
             ->add('description', TextareaType::class, [
                 'label' => 'Description',
+                'attr' => ['rows' => 6],
+            ])
+            ->add('descriptionEn', TextareaType::class, [
+                'label' => 'Description (anglais)',
+                'required' => false,
+                'help' => 'Optionnel — reprend la description française si laissée vide.',
                 'attr' => ['rows' => 6],
             ])
             ->add('user', EntityType::class, [

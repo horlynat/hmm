@@ -23,6 +23,14 @@ class SkillType extends AbstractType
                     'placeholder' => 'Ex: Symfony, React, Docker...',
                 ],
             ])
+            ->add('nameEn', TextType::class, [
+                'label' => 'Nom de la compétence (anglais)',
+                'required' => false,
+                'help' => 'Optionnel — inutile pour un nom de technologie déjà identique en anglais.',
+                'attr' => [
+                    'placeholder' => 'Ex: REST API...',
+                ],
+            ])
             ->add('level', IntegerType::class, [
                 'label' => 'Niveau',
                 'attr' => [

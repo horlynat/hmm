@@ -25,11 +25,29 @@ class ArticleType extends AbstractType
                     'placeholder' => 'Entrez le titre de l’article'
                 ],
             ])
+            ->add('titleEn', TextType::class, [
+                'label' => 'Titre (anglais)',
+                'required' => false,
+                'help' => 'Optionnel — reprend le titre français si laissé vide.',
+                'attr' => [
+                    'maxlength' => 255,
+                    'placeholder' => 'Enter the article title'
+                ],
+            ])
             ->add('content', TextareaType::class, [
                 'label' => 'Contenu',
                 'attr' => [
                     'rows' => 8,
                     'placeholder' => 'Rédigez le contenu de l’article (min. 20 caractères)'
+                ],
+            ])
+            ->add('contentEn', TextareaType::class, [
+                'label' => 'Contenu (anglais)',
+                'required' => false,
+                'help' => 'Optionnel — reprend le contenu français si laissé vide.',
+                'attr' => [
+                    'rows' => 8,
+                    'placeholder' => 'Write the article content in English'
                 ],
             ])
             ->add('media', FileType::class, [
