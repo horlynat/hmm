@@ -29,6 +29,34 @@ export const routing = defineRouting({
       fr: "/mentions-legales",
       en: "/legal-notice",
     },
+    "/politique-de-confidentialite": {
+      fr: "/politique-de-confidentialite",
+      en: "/privacy-policy",
+    },
+    "/politique-de-cookies": {
+      fr: "/politique-de-cookies",
+      en: "/cookie-policy",
+    },
+    "/conditions-generales": {
+      fr: "/conditions-generales",
+      en: "/terms-of-service",
+    },
+    "/connexion": {
+      fr: "/connexion",
+      en: "/login",
+    },
+    "/inscription": {
+      fr: "/inscription",
+      en: "/register",
+    },
+    "/compte": {
+      fr: "/compte",
+      en: "/account",
+    },
+    "/compte/profil": {
+      fr: "/compte/profil",
+      en: "/account/profile",
+    },
   },
 });
 

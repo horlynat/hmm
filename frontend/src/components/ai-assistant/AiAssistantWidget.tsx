@@ -1,62 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import clsx from "clsx";
-
-/**
- * Widget purement local : réponses par mots-clés, sans appel à un backend IA
- * (aucun endpoint de ce type n'existe côté API — cf. plan). Portage direct du
- * comportement du prototype, gardé identique pour les deux locales.
- */
-type AnswerKey =
-  | "answerPresentation"
-  | "answerCompetences"
-  | "answerRealisations"
-  | "answerPhilosophie"
-  | "answerPourquoi"
-  | "answerProjet";
-
-const KEYWORDS: Record<"fr" | "en", Record<AnswerKey, string[]>> = {
-  fr: {
-    answerPresentation: ["qui", "présent", "present"],
-    answerCompetences: ["compét", "compet", "stack"],
-    answerRealisations: ["réalis", "realis", "projet"],
-    answerPhilosophie: ["vision", "philosoph", "futur", "demain"],
-    answerPourquoi: ["pourquoi"],
-    answerProjet: ["confier", "devis", "budget"],
-  },
-  en: {
-    answerPresentation: ["who", "introduc"],
-    answerCompetences: ["skill", "stack", "tech"],
-    answerRealisations: ["project", "work", "portfolio"],
-    answerPhilosophie: ["vision", "philosoph", "future", "tomorrow"],
-    answerPourquoi: ["why"],
-    answerProjet: ["start", "quote", "budget"],
-  },
-};
-
-const CHIPS: { chip: string; answer: AnswerKey }[] = [
-  { chip: "chipPresentation", answer: "answerPresentation" },
-  { chip: "chipCompetences", answer: "answerCompetences" },
-  { chip: "chipRealisations", answer: "answerRealisations" },
-  { chip: "chipPhilosophie", answer: "answerPhilosophie" },
-  { chip: "chipPourquoi", answer: "answerPourquoi" },
-  { chip: "chipProjet", answer: "answerProjet" },
-];
+import type { AiAssistantEntry, AiAssistantSettings } from "@/lib/types";
 
 interface Message {
   who: "bot" | "user";
   text: string;
 }
 
-export function AiAssistantWidget() {
+interface AiAssistantWidgetProps {
+  settings: AiAssistantSettings;
+  entries: AiAssistantEntry[];
+}
+
+/**
+ * Widget purement local : réponses par mots-clés, sans appel à un backend IA
+ * (aucun endpoint de ce type n'existe côté API). `settings`/`entries` sont
+ * résolus côté serveur (App\Entity\AiAssistantSettings/AiAssistantEntry, via
+ * src/lib/api/ai-assistant.ts) et passés en props depuis le layout, pour que
+ * l'assistant reste exact quand le profil change — plus de réponses figées
+ * dans le code frontend.
+ */
+export function AiAssistantWidget({ settings, entries }: AiAssistantWidgetProps) {
   const t = useTranslations("aiAssistant");
   const tc = useTranslations("common");
-  const locale = useLocale() as "fr" | "en";
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { who: "bot", text: t("greeting") },
+    { who: "bot", text: settings.greeting },
   ]);
   const [input, setInput] = useState("");
 
@@ -66,11 +38,10 @@ export function AiAssistantWidget() {
 
   function respond(userText: string) {
     const lower = userText.toLowerCase();
-    const keywordSet = KEYWORDS[locale] ?? KEYWORDS.fr;
-    const matched = (Object.keys(keywordSet) as AnswerKey[]).find((key) =>
-      keywordSet[key].some((kw) => lower.includes(kw)),
+    const matched = entries.find((entry) =>
+      entry.keywords.some((kw) => lower.includes(kw.toLowerCase())),
     );
-    const answer = matched ? t(matched) : t("fallback");
+    const answer = matched ? matched.answer : settings.fallback;
     window.setTimeout(() => addMessage(answer, "bot"), 350);
   }
 
@@ -82,10 +53,10 @@ export function AiAssistantWidget() {
     respond(value);
   }
 
-  function askChip(chip: { chip: string; answer: AnswerKey }) {
+  function askChip(entry: AiAssistantEntry) {
     setOpen(true);
-    addMessage(t(chip.chip), "user");
-    window.setTimeout(() => addMessage(t(chip.answer), "bot"), 350);
+    addMessage(entry.chipLabel, "user");
+    window.setTimeout(() => addMessage(entry.answer, "bot"), 350);
   }
 
   return (
@@ -97,7 +68,7 @@ export function AiAssistantWidget() {
         style={{
           fontFamily: "var(--font-heading)",
           background:
-            "linear-gradient(135deg, var(--color-brand-dark), var(--color-brand-primary) 70%)",
+            "linear-gradient(135deg, var(--cta-gradient-from), var(--cta-gradient-to) 70%)",
         }}
       >
         <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-brand-light motion-reduce:animate-none" />
@@ -116,7 +87,7 @@ export function AiAssistantWidget() {
           className="flex items-center justify-between gap-2 px-4 py-3.5 text-white"
           style={{
             background:
-              "linear-gradient(135deg, var(--color-brand-dark), var(--color-brand-primary) 70%)",
+              "linear-gradient(135deg, var(--cta-gradient-from), var(--cta-gradient-to) 70%)",
           }}
         >
           <div>
@@ -143,8 +114,8 @@ export function AiAssistantWidget() {
               className={clsx(
                 "max-w-[85%] rounded-[var(--radius-md)] px-3.5 py-2.5 text-sm leading-relaxed",
                 m.who === "bot"
-                  ? "self-start rounded-bl-[4px] bg-brand-light text-brand-dark"
-                  : "ml-auto rounded-br-[4px] bg-brand-primary text-white",
+                  ? "self-start rounded-bl-[4px] bg-brand-light text-[var(--color-on-brand-light)]"
+                  : "ml-auto rounded-br-[4px] bg-brand-primary text-[var(--color-on-brand-primary)]",
               )}
             >
               {m.text}
@@ -153,14 +124,14 @@ export function AiAssistantWidget() {
         </div>
 
         <div className="flex flex-wrap gap-1.5 px-4 pb-3">
-          {CHIPS.map((c) => (
+          {entries.map((entry) => (
             <button
-              key={c.chip}
+              key={entry.id}
               type="button"
-              onClick={() => askChip(c)}
+              onClick={() => askChip(entry)}
               className="rounded-full border border-[var(--border-soft)] px-2.5 py-1.5 font-mono text-[0.68rem] text-brand-primary"
             >
-              {t(c.chip)}
+              {entry.chipLabel}
             </button>
           ))}
         </div>
@@ -179,7 +150,7 @@ export function AiAssistantWidget() {
           <button
             type="button"
             onClick={send}
-            className="rounded-[var(--radius-sm)] bg-brand-primary px-4 text-sm font-semibold text-white"
+            className="rounded-[var(--radius-sm)] bg-brand-primary px-4 text-sm font-semibold text-[var(--color-on-brand-primary)]"
           >
             {t("send")}
           </button>

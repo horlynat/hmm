@@ -15,7 +15,7 @@ export function Field({ label, htmlFor, children, hint, error }: FieldProps) {
         {label}
       </label>
       {children}
-      {hint && <p className="mt-1.5 text-xs opacity-55">{hint}</p>}
+      {hint && <p className="mt-1.5 text-xs text-[var(--color-muted)]">{hint}</p>}
       {error && <p className="mt-1.5 text-xs text-danger">{error}</p>}
     </div>
   );

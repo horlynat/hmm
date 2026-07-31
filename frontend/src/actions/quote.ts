@@ -1,39 +1,39 @@
 "use server";
 
 import { apiPost, type ApiPostResult } from "@/lib/api/client";
-import type { QuoteWizardAnswers } from "@/lib/types";
+import { rateLimit } from "@/lib/rate-limit";
+import { quoteAnswersSchema, invalidInput } from "@/lib/validation/server";
+import type { QuoteRequestPayload, QuoteWizardAnswers } from "@/lib/types";
 
 /**
- * Le groupe `api_public` de QuoteRequest n'accepte que `{ name, message }`
- * (cf. plan — email/téléphone requis par l'entité mais absents du groupe
- * public, `user` requis sans valeur anonyme). On empaquette donc tout le
- * reste du wizard dans `message`, rien n'est perdu, juste non structuré côté
- * backend pour l'instant.
+ * Miroir 1:1 du schéma structuré de App\Entity\QuoteRequest (groupe
+ * `api_public`) — chaque réponse du wizard alimente son propre champ, plus
+ * de fourre-tout texte. `message` ne contient que la description libre du
+ * client, lisible sans reconstruction côté admin.
  */
-function formatQuoteMessage(answers: QuoteWizardAnswers): string {
-  const lines = [
-    `Prestation : ${answers.type || "—"}`,
-    `Trouvé via : ${answers.source || "—"}`,
-    `Budget : ${answers.budget ? `${answers.budget} ${answers.currency}` : "—"}`,
-    `Délai : ${answers.delai || "—"}`,
-    `Email : ${answers.email || "—"}`,
-    `Canal préféré : ${answers.canal || "—"}`,
-    answers.fileName ? `Pièce jointe mentionnée : ${answers.fileName}` : null,
-    answers.clarifications.length > 0
-      ? `Précisions (assistant) : ${answers.clarifications.join(" / ")}`
-      : null,
-    "---",
-    answers.description || "(aucune description fournie)",
-  ].filter((line): line is string => Boolean(line));
-
-  return lines.join("\n");
-}
-
 export async function submitQuoteRequest(
   answers: QuoteWizardAnswers,
 ): Promise<ApiPostResult> {
-  return apiPost("/quote_requests", {
+  if (!(await rateLimit("quote-request"))) return { ok: false, error: "rate_limited" };
+
+  const parsed = quoteAnswersSchema.safeParse(answers);
+  if (!parsed.success) return invalidInput;
+
+  const payload: QuoteRequestPayload = {
     name: answers.name,
-    message: formatQuoteMessage(answers),
-  });
+    email: answers.email,
+    phone: answers.phone || undefined,
+    category: answers.type,
+    categoryDetail: answers.categoryDetail || undefined,
+    source: answers.source || undefined,
+    budget: answers.budget ? `${answers.budget}` : undefined,
+    currency: answers.currency || undefined,
+    timeline: answers.delai || undefined,
+    channel: answers.canal,
+    attachmentName: answers.fileName || undefined,
+    clarifications: answers.clarifications.length > 0 ? answers.clarifications : undefined,
+    message: answers.description || "(aucune description fournie)",
+  };
+
+  return apiPost("/quote_requests", payload);
 }
