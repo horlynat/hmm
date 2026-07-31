@@ -1,14 +1,14 @@
 import { getTranslations } from "next-intl/server";
 import { siteConfig } from "@/config/site";
 
-export async function WhatsappFab() {
-  const t = await getTranslations("common");
+export async function WhatsappFab({ locale }: { locale: string }) {
+  const t = await getTranslations({ locale, namespace: "common" });
 
   return (
     <a
       href={siteConfig.whatsappUrl}
       target="_blank"
-      rel="noopener"
+      rel="noopener noreferrer"
       aria-label={t("whatsapp")}
       className="fixed bottom-24 right-6 z-40 flex h-13 w-13 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg"
     >

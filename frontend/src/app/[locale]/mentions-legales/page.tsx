@@ -1,58 +1,51 @@
 import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
+import { LegalPageLayout } from "@/components/sections/LegalPageLayout";
 
-export default async function LegalNoticePage() {
-  const t = await getTranslations("legal");
+export const dynamic = "force-static";
 
-  const sections: [string, string][] = [
-    [t("editorTitle"), t("editorText")],
-    [t("hostingTitle"), t("hostingText")],
-    [t("ipTitle"), t("ipText")],
-  ];
-
-  const privacySections: [string, string][] = [
-    [t("dataTitle"), t("dataText")],
-    [t("purposeTitle"), t("purposeText")],
-    [t("rightsTitle"), t("rightsText")],
-    [t("cookiesTitle"), t("cookiesText")],
-  ];
+export default async function LegalNoticePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "legal.mentions" });
 
   return (
-    <section className="px-6 py-16">
-      <div className="mx-auto max-w-[840px]">
-        <h1 className="mb-2 text-[clamp(1.7rem,3.5vw,2.3rem)]">{t("title")}</h1>
-        <p className="mb-10 font-mono text-sm opacity-65">{t("lastUpdate")}</p>
-
-        {sections.map(([title, text]) => (
-          <div key={title} className="mb-9 border-b border-[var(--border-softer)] pb-8">
-            <h2 className="mb-3 text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-              {title}
-            </h2>
-            <p className="text-sm opacity-78">{text}</p>
-          </div>
-        ))}
-
-        <div className="mb-9 border-b border-[var(--border-softer)] pb-8">
-          <h2 className="mb-3 text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("privacyTitle")}
-          </h2>
-          <p className="mb-5 text-sm opacity-78">{t("privacyText")}</p>
-          {privacySections.map(([title, text]) => (
-            <div key={title} className="mb-4">
-              <h3 className="mb-1.5 text-base font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-                {title}
-              </h3>
-              <p className="text-sm opacity-78">{text}</p>
-            </div>
-          ))}
-        </div>
-
-        <div>
-          <h2 className="mb-3 text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("aiTitle")}
-          </h2>
-          <p className="text-sm opacity-78">{t("aiText")}</p>
-        </div>
-      </div>
-    </section>
+    <LegalPageLayout
+      title={t("title")}
+      lastUpdate={t("lastUpdate")}
+      sections={[
+        { title: t("editorTitle"), body: <p>{t("editorText")}</p> },
+        { title: t("hostingTitle"), body: <p>{t("hostingText")}</p> },
+        { title: t("ipTitle"), body: <p>{t("ipText")}</p> },
+        {
+          title: t("moreTitle"),
+          body: (
+            <p>
+              {t.rich("moreText", {
+                privacy: (chunks) => (
+                  <Link
+                    href="/politique-de-confidentialite"
+                    className="font-semibold text-brand-primary hover:underline"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+                terms: (chunks) => (
+                  <Link
+                    href="/conditions-generales"
+                    className="font-semibold text-brand-primary hover:underline"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </p>
+          ),
+        },
+      ]}
+    />
   );
 }

@@ -1,8 +1,10 @@
 export const siteConfig = {
-  whatsappUrl: "https://wa.me/242000000000",
+  name: "Horlynat Mampassi Mbama",
+  whatsappUrl: "https://wa.me/242066429090",
   social: {
-    linkedin: "#",
-    github: "#",
+    linkedin: "https://www.linkedin.com/in/horlynat/",
+    github: "https://github.com/horlynat",
+    facebook: "https://facebook.com/horlynat92",
   },
 };
 
@@ -15,13 +17,15 @@ export type NavHref =
   | "/blog"
   | "/freelances"
   | "/contact"
-  | "/mentions-legales";
+  | "/mentions-legales"
+  | "/politique-de-confidentialite"
+  | "/politique-de-cookies"
+  | "/conditions-generales";
 
 export const navItems: { key: string; href: NavHref }[] = [
-  { key: "accueil", href: "/" },
   { key: "apropos", href: "/a-propos" },
   { key: "competences", href: "/competences" },
   { key: "realisations", href: "/realisations" },
   { key: "blog", href: "/blog" },
-  { key: "freelances", href: "/freelances" },
+  { key: "contact", href: "/contact" },
 ];

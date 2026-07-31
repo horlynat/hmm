@@ -3,12 +3,14 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-brand-dark: #03045e;
+  /* Encre neutre (texte/titres) plutôt que le navy de marque — la marque
+     (brand-primary/accent) reste l'accent ponctuel, cf. plan design. */
+  --color-brand-dark: #0b0e14;
   --color-brand-primary: #0077b6;
   --color-brand-accent: #00b4d8;
   --color-brand-light: #caf0f8;
 
-  --color-success: #16a34a;
+  --color-success: #0f7a37;
   --color-info: #0ea5e9;
   --color-warning: #facc15;
   --color-danger: #dc2626;
@@ -17,7 +19,7 @@
   --color-bg-card: #ffffff;
 
   --font-heading: var(--font-inter), system-ui, -apple-system, sans-serif;
-  --font-sans: var(--font-nunito), system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
   --radius-sm: 6px;
@@ -29,12 +31,45 @@
   --border-soft: rgba(3, 4, 94, 0.08);
   --border-softer: rgba(3, 4, 94, 0.06);
   --border-input: rgba(3, 4, 94, 0.15);
+
+  /* Texte secondaire garanti AA (4.5:1) sur bg-bg-default/bg-bg-card — à
+     utiliser à la place d'un opacity-* ad hoc dont le ratio varie selon le
+     fond (cf. audit axe-core). */
+  --color-muted: #5c6a86;
+  /* Texte des badges accent (bg-brand-primary/15) : brand-primary seul
+     n'atteint pas 4.5:1 sur ce fond teinté clair, cf. audit axe-core. */
+  --color-badge-accent-text: #065a82;
+  /* Texte sur bg-brand-light (badges, avatars, bulles de chat) — valeur fixe
+     (pas d'inversion .dark) : ce fond reste toujours relativement clair dans
+     les deux thèmes (pâle en clair, bleu moyen en sombre), donc un texte
+     marine foncé y reste lisible dans les deux cas. */
+  --color-on-brand-light: #03045e;
+  /* Bandeau du footer : toujours sombre par choix de design, quel que soit le
+     thème du site — on fixe ces couleurs plutôt que de réutiliser
+     brand-dark/brand-light (qui s'inversent en thème sombre et cassaient le
+     contraste, cf. audit axe-core en dark mode). */
+  --footer-bg: #03045e;
+  --footer-text: #caf0f8;
+  --color-footer-muted: #9aa7c7;
+  /* Dégradé des bandeaux CTA (freelance, newsletter, sélecteur de mode
+     contact, assistant IA...) : même raison — toujours foncé par design,
+     texte blanc, donc fixe plutôt que brand-dark/brand-primary qui s'inversent
+     en thème sombre. */
+  --cta-gradient-from: #03045e;
+  --cta-gradient-to: #0077b6;
+  /* Texte des états "sélectionné" solides sur bg-brand-primary (chips, tabs,
+     bulles de chat) — brand-primary est nettement plus clair en thème sombre,
+     donc du blanc fixe n'y suffit plus (cf. audit axe-core en dark mode). */
+  --color-on-brand-primary: #ffffff;
+  /* Texte de brand-accent en grand/gras sur bg-bg-card (chiffres-clés) :
+     brand-accent seul n'atteint pas 3:1 en thème clair, cf. audit axe-core. */
+  --color-accent-text: #006072;
 }
 
 .dark {
   --color-bg-default: #0b1220;
   --color-bg-card: #0f1724;
-  --color-brand-dark: #e6eefc;
+  --color-brand-dark: #f4f6fa;
   --color-brand-primary: #60a5fa;
   --color-brand-accent: #38bdf8;
   --color-brand-light: #0ea5e9;
@@ -45,6 +80,10 @@
   --border-soft: rgba(230, 238, 252, 0.08);
   --border-softer: rgba(230, 238, 252, 0.06);
   --border-input: rgba(230, 238, 252, 0.15);
+  --color-muted: #9aa7c7;
+  --color-badge-accent-text: #60a5fa;
+  --color-on-brand-primary: #03045e;
+  --color-accent-text: #38bdf8;
 }
 
 @layer base {
@@ -61,16 +100,40 @@
   h2,
   h3 {
     font-family: var(--font-heading);
-    @apply font-bold tracking-tight text-brand-dark;
+    @apply font-bold tracking-tighter text-brand-dark;
   }
   a {
     color: inherit;
+  }
+
+  /* Anneau de focus clavier cohérent sur tous les éléments interactifs.
+     `:focus-visible` n'apparaît qu'au clavier, jamais au clic souris. */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-brand-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Respect strict de la préférence système « animations réduites » :
+     on neutralise transitions, animations et défilement fluide. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] px-5 py-3 text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-br from-brand-dark to-brand-primary text-white shadow-sm hover:opacity-95;
+    @apply inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] px-5 py-3 text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 bg-gradient-to-br from-[var(--cta-gradient-from)] to-[var(--cta-gradient-to)] text-white shadow-sm hover:opacity-95 hover:-translate-y-0.5 hover:shadow-md;
     font-family: var(--font-heading);
   }
   .btn-secondary {
@@ -78,17 +141,17 @@
     font-family: var(--font-heading);
   }
   .card {
-    @apply rounded-[var(--radius-md)] bg-bg-card border border-[var(--border-softer)] shadow-sm p-6;
+    @apply rounded-[var(--radius-md)] bg-bg-card border border-[var(--border-softer)] shadow-sm p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-brand-accent/30;
   }
   .soft-card {
     @apply rounded-[var(--radius-lg)] bg-bg-card border border-[var(--border-soft)];
   }
   .badge {
-    @apply inline-flex items-center rounded-full px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-wide bg-brand-light text-brand-dark;
+    @apply inline-flex items-center rounded-full px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-wide bg-brand-light text-[var(--color-on-brand-light)];
     font-family: var(--font-mono);
   }
   .badge-accent {
-    @apply inline-flex items-center rounded-full px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-wide bg-brand-primary/15 text-brand-primary;
+    @apply inline-flex items-center rounded-full px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-wide bg-brand-primary/15 text-[var(--color-badge-accent-text)];
     font-family: var(--font-mono);
   }
   .badge-outline {
@@ -96,13 +159,98 @@
     font-family: var(--font-mono);
   }
   .input {
-    @apply w-full rounded-[var(--radius-sm)] border bg-bg-card px-4 py-3 text-[0.95rem] text-brand-dark placeholder:text-brand-dark/40 focus:outline-none focus:ring-2 focus:ring-brand-accent/40;
+    @apply w-full rounded-[var(--radius-md)] border bg-bg-card px-4 py-3 text-[0.95rem] text-brand-dark placeholder:text-brand-dark/40 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent;
     border-color: var(--border-input);
     font-family: var(--font-sans);
   }
+  /* État d'erreur d'un champ — couplé à aria-invalid pour l'accessibilité. */
+  .input-error,
+  .input[aria-invalid="true"] {
+    border-color: var(--color-danger);
+    @apply focus:ring-danger/30;
+  }
+  /* Squelette de chargement avec effet shimmer.
+     L'animation est automatiquement neutralisée par prefers-reduced-motion. */
+  .skeleton {
+    @apply relative overflow-hidden rounded-[var(--radius-sm)] bg-brand-dark/10;
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.25),
+      transparent
+    );
+    animation: skeleton-shimmer 1.5s infinite;
+  }
+  @keyframes skeleton-shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Lien d'évitement : masqué jusqu'au focus clavier (touche Tab). */
+  .skip-link {
+    @apply sr-only;
+  }
+  .skip-link:focus {
+    @apply not-sr-only fixed left-4 top-4 z-[100] rounded-[var(--radius-sm)] bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white shadow-lg;
+  }
   .field-label {
-    @apply mb-1.5 block text-[0.72rem] font-semibold uppercase tracking-wide text-brand-primary;
+    @apply mb-1.5 block text-[0.78rem] font-semibold tracking-wide text-brand-primary;
     font-family: var(--font-mono);
+  }
+
+  /* Entrée en cascade du hero : animation CSS pure (pas d'IntersectionObserver)
+     car ce contenu est visible dès le premier paint — une révélation pilotée
+     par JS (comme `Reveal`) le laisserait invisible jusqu'à l'hydratation,
+     ce qui dégraderait le LCP. `both` applique l'état 0% avant même que
+     l'animation ne démarre, donc aucune dépendance au JS. */
+  .hero-in {
+    animation: hero-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes hero-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Diagramme d'architecture du hero : flux animé le long des connecteurs
+     (dash qui défile) + ping radar sur le nœud central API Platform.
+     Automatiquement neutralisé par prefers-reduced-motion (règle globale
+     ci-dessus qui fige toutes les animations). */
+  .arch-flow {
+    stroke-dasharray: 8 6;
+    animation: arch-flow-dash 1s linear infinite;
+  }
+  @keyframes arch-flow-dash {
+    to {
+      stroke-dashoffset: -14;
+    }
+  }
+  .arch-pulse-ring {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: arch-pulse 2.4s ease-out infinite;
+  }
+  @keyframes arch-pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+    100% {
+      transform: scale(1.35);
+      opacity: 0;
+    }
   }
 
   /* Contenu HTML des articles (rédigé côté admin Symfony) */

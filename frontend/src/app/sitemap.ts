@@ -15,10 +15,19 @@ const STATIC_PATHNAMES = [
   "/freelances",
   "/contact",
   "/mentions-legales",
+  "/politique-de-confidentialite",
+  "/politique-de-cookies",
+  "/conditions-generales",
 ] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [projects, articles] = await Promise.all([getProjects(), getArticles()]);
+  // Seul `.slug` est utilisé ci-dessous (identique quelle que soit la
+  // locale) : la locale par défaut suffit, pas besoin de résoudre la vraie
+  // locale courante (ce fichier génère les URLs de TOUTES les locales).
+  const [projects, articles] = await Promise.all([
+    getProjects(routing.defaultLocale),
+    getArticles(routing.defaultLocale),
+  ]);
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_PATHNAMES.flatMap((pathname) =>
     routing.locales.map((locale) => ({

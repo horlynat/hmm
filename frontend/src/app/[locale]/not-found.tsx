@@ -1,8 +1,16 @@
 import { getTranslations } from "next-intl/server";
+import { routing } from "@/i18n/routing";
 import { ButtonLink } from "@/components/ui";
 
-export default async function NotFound() {
-  const t = await getTranslations("notFound");
+// `params` peut être `undefined` ici (fichier spécial, cf. loading.tsx) —
+// repli sur la locale par défaut plutôt qu'un `await params` non protégé.
+export default async function NotFound({
+  params,
+}: {
+  params?: Promise<{ locale?: string }>;
+}) {
+  const locale = (await params)?.locale ?? routing.defaultLocale;
+  const t = await getTranslations({ locale, namespace: "notFound" });
 
   return (
     <section className="px-6 py-24 text-center">
