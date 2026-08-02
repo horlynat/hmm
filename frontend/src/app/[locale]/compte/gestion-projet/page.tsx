@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
-import { EmptyState } from "@/components/ui";
+import { Briefcase, FolderKanban, Activity, CalendarClock } from "lucide-react";
+import { EmptyState, PageHeader, StatCard } from "@/components/ui";
 import { ProjectList } from "@/components/sections/AccountLists";
 import { redirect } from "@/i18n/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -37,30 +38,12 @@ export default async function GestionProjetPage({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="mb-2 text-[clamp(1.6rem,3vw,2.2rem)]">{tg("title")}</h1>
-        <p className="opacity-70">{tg("subtitle")}</p>
-      </div>
+      <PageHeader icon={Briefcase} title={tg("title")} subtitle={tg("subtitle")} />
 
-      <div className="grid grid-cols-1 divide-y divide-(--border-neutral) rounded-md border border-(--border-neutral) bg-bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-        <div className="p-4 text-center">
-          <p className="text-2xl font-semibold text-brand-primary" style={{ fontFamily: "var(--font-heading)" }}>
-            {projects.length}
-          </p>
-          <p className="text-xs opacity-60">{tg("statTotal")}</p>
-        </div>
-        <div className="p-4 text-center">
-          <p className="text-2xl font-semibold text-success" style={{ fontFamily: "var(--font-heading)" }}>
-            {activeCount}
-          </p>
-          <p className="text-xs opacity-60">{tg("statActive")}</p>
-        </div>
-        <div className="p-4 text-center">
-          <p className="text-2xl font-semibold text-info" style={{ fontFamily: "var(--font-heading)" }}>
-            {upcomingCount}
-          </p>
-          <p className="text-xs opacity-60">{tg("statUpcoming")}</p>
-        </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatCard icon={FolderKanban} label={tg("statTotal")} value={projects.length} />
+        <StatCard icon={Activity} label={tg("statActive")} value={activeCount} tone="success" />
+        <StatCard icon={CalendarClock} label={tg("statUpcoming")} value={upcomingCount} />
       </div>
 
       <section>
@@ -71,7 +54,7 @@ export default async function GestionProjetPage({
         )}
       </section>
 
-      <div className="rounded-md border-l-4 border-(--border-neutral) bg-bg-card p-4 text-sm opacity-80">
+      <div className="rounded-[var(--radius-lg)] border-l-4 border-(--border-neutral) bg-bg-card p-4 text-sm text-(--color-muted)">
         {tg("backOfficeHint")}
       </div>
     </div>

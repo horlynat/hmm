@@ -17,21 +17,24 @@ export function ProjectList({
         <Link
           key={project.id}
           href={{ pathname: "/compte/projets/[id]", params: { id: String(project.id) } }}
-          className="rounded-(--radius-md) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
+          className="group block rounded-(--radius-lg) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
         >
-          <Card variant="soft" className="p-4 transition hover:shadow-md">
-            <div className="mb-2 flex items-start justify-between gap-2">
+          <Card
+            variant="soft"
+            className="h-full p-5 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-brand-accent/30 group-hover:shadow-md"
+          >
+            <div className="mb-3 flex items-start justify-between gap-2">
               <span className="font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
                 {project.title}
               </span>
               <Badge variant={projectStatusVariant(project.status)}>{project.statusLabel}</Badge>
             </div>
-            <div className="mb-1 flex items-center justify-between text-xs opacity-60">
+            <div className="mb-1.5 flex items-center justify-between text-xs text-(--color-muted)">
               <span>{labels.progress}</span>
-              <span>{project.progress}%</span>
+              <span className="font-semibold text-brand-dark">{project.progress}%</span>
             </div>
             <div
-              className="h-1.5 w-full rounded-full bg-brand-light"
+              className="h-1.5 w-full overflow-hidden rounded-full bg-brand-light"
               role="progressbar"
               aria-valuenow={project.progress}
               aria-valuemin={0}
@@ -39,15 +42,15 @@ export function ProjectList({
               aria-label={labels.progress}
             >
               <div
-                className="h-1.5 rounded-full bg-brand-primary"
+                className="h-full rounded-full bg-gradient-to-r from-brand-primary to-brand-accent transition-[width] duration-300"
                 style={{ width: `${project.progress}%` }}
               />
             </div>
-            <p className="mt-2 text-xs opacity-60">
+            <p className="mt-3 text-xs text-(--color-muted)">
               {labels.deadline}:{" "}
-              {project.deadline
-                ? new Date(project.deadline).toLocaleDateString()
-                : labels.noDeadline}
+              <span className="font-medium text-brand-dark">
+                {project.deadline ? new Date(project.deadline).toLocaleDateString() : labels.noDeadline}
+              </span>
             </p>
           </Card>
         </Link>
@@ -72,10 +75,13 @@ export function QuoteList({
         <Link
           key={quote.id}
           href={{ pathname: "/compte/devis/[id]", params: { id: String(quote.id) } }}
-          className="rounded-(--radius-md) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
+          className="group block rounded-(--radius-lg) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
         >
-          <Card variant="soft" className="p-4 transition hover:shadow-md">
-            <div className="mb-1 flex items-start justify-between gap-2">
+          <Card
+            variant="soft"
+            className="h-full p-5 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-brand-accent/30 group-hover:shadow-md"
+          >
+            <div className="mb-1.5 flex items-start justify-between gap-2">
               <span className="font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
                 {quote.category}
               </span>
@@ -84,8 +90,11 @@ export function QuoteList({
               </Badge>
             </div>
             {quote.budget && (
-              <p className="text-sm opacity-70">
-                {statusLabel}: {quote.budget} {quote.currency ?? ""}
+              <p className="text-sm text-(--color-muted)">
+                {statusLabel}:{" "}
+                <span className="font-medium text-brand-dark">
+                  {quote.budget} {quote.currency ?? ""}
+                </span>
               </p>
             )}
           </Card>

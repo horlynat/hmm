@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
-import { EmptyState } from "@/components/ui";
+import { FileText } from "lucide-react";
+import { EmptyState, PageHeader } from "@/components/ui";
 import { QuoteList } from "@/components/sections/AccountLists";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -25,10 +26,7 @@ export default async function CompteDevisPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="mb-2 text-[clamp(1.6rem,3vw,2.2rem)]">{t("nav.myQuotes")}</h1>
-        <p className="opacity-70">{t("myQuotesPage.subtitle")}</p>
-      </div>
+      <PageHeader icon={FileText} title={t("nav.myQuotes")} subtitle={t("myQuotesPage.subtitle")} />
 
       {quoteRequests.length > 0 ? (
         <QuoteList

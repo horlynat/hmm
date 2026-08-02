@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
-import { SettingsSection, SettingsSectionGroup } from "@/components/ui";
+import { Download } from "lucide-react";
+import { PageHeader, SettingsSection, SettingsSectionGroup } from "@/components/ui";
 import { getCurrentUser } from "@/lib/auth/session";
 
 export default async function ExportPage({
@@ -15,15 +16,13 @@ export default async function ExportPage({
 
   return (
     <div className="max-w-160 space-y-6">
-      <div>
-        <h1 className="mb-2 text-[clamp(1.6rem,3vw,2.2rem)]">{t("title")}</h1>
-        <p className="opacity-70">{t("description")}</p>
-      </div>
+      <PageHeader icon={Download} title={t("title")} subtitle={t("description")} />
 
       <SettingsSectionGroup>
         <SettingsSection>
           <p className="mb-4 text-sm opacity-70">{t("contentHint")}</p>
-          <a href="/api/me/export" download className="btn-primary w-fit">
+          <a href="/api/me/export" download className="btn-primary w-fit gap-2">
+            <Download size={16} aria-hidden="true" />
             {t("downloadButton")}
           </a>
         </SettingsSection>

@@ -841,7 +841,8 @@
       }
     },
     "account": {
-      "welcome": "Hello {name}",
+      "welcome": "Welcome back, {name}!",
+      "dashboardTitle": "Dashboard",
       "roleClient": "Client account",
       "roleFreelance": "Collaborator account",
       "verifyWarning": "Your email address is not verified yet. Check your inbox to activate your account.",
@@ -884,13 +885,28 @@
         "viewAll": "View all →",
         "upcomingDeadlines": "Upcoming deadlines",
         "emptyDeadlines": "No upcoming deadlines.",
-        "overdue": "Overdue"
+        "overdue": "Overdue",
+        "activity": "Recent activity",
+        "emptyActivity": "No activity yet.",
+        "messages": "Recent messages",
+        "emptyMessages": "No messages yet."
+      },
+      "stats": {
+        "activeProjects": "Active projects",
+        "pendingQuotes": "Pending quotes",
+        "unpaidInvoices": "Unpaid invoices",
+        "assignedProjects": "Assigned projects"
       },
       "quoteStatus": {
         "pending": "Pending",
         "accepted": "Accepted",
         "suspended": "Suspended",
         "rejected": "Rejected"
+      },
+      "invoiceStatus": {
+        "pending": "Awaiting payment",
+        "paid": "Paid",
+        "cancelled": "Cancelled"
       },
       "project": {
         "progress": "Progress",
@@ -901,7 +917,15 @@
         "budgetLabel": "Budget used",
         "descriptionLabel": "Description",
         "notFoundTitle": "Project not found",
-        "notFoundText": "This project does not exist or is not linked to your account."
+        "notFoundText": "This project does not exist or is not linked to your account.",
+        "discussionLabel": "Discussion",
+        "emptyDiscussion": "No messages yet. Start the discussion.",
+        "messagePlaceholder": "Write a message…",
+        "send": "Send",
+        "sending": "Sending…",
+        "you": "You",
+        "closeDiscussion": "Close discussion",
+        "openDiscussion": "Open discussion"
       },
       "quoteDetail": {
         "messageLabel": "Message",
@@ -914,6 +938,11 @@
       },
       "myQuotesPage": {
         "subtitle": "The full history of your quote requests and their status."
+      },
+      "newQuotePage": {
+        "title": "New quote request",
+        "subtitle": "Describe your needs — we'll get back to you shortly.",
+        "successCta": "View my quote requests"
       }
     },
     "profile": {
@@ -921,6 +950,7 @@
       "subtitle": "Update your personal information.",
       "fullNameLabel": "Full name",
       "phoneLabel": "Phone",
+      "phoneLocked": "Not editable from your account. Contact us if this number has changed.",
       "bioLabel": "About / bio",
       "specialtiesLabel": "Specialties (comma-separated)",
       "specialtiesPlaceholder": "Backend, Cybersecurity, UI...",
@@ -986,10 +1016,15 @@
     },
     "invoices": {
       "title": "My invoices",
-      "subtitle": "Your projects currently in progress.",
+      "subtitle": "All invoices issued on your projects.",
       "viewProject": "View project",
-      "empty": "No projects in progress yet. Billed projects will appear here once work has started.",
-      "comingSoonNote": "Billing details (amounts, due dates) will appear here based on your payment plan (upfront, installments, or subscription)."
+      "empty": "No invoices yet. They will appear here once issued by the team.",
+      "totalUnpaid": "Total unpaid",
+      "dueDate": "Due date",
+      "noDueDate": "Not set",
+      "issuedOn": "Issued on",
+      "paidOn": "Paid on",
+      "overdue": "Overdue"
     },
     "settings": {
       "title": "Settings",

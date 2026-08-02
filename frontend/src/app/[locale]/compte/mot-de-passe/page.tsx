@@ -1,4 +1,6 @@
 import { getTranslations } from "next-intl/server";
+import { KeyRound } from "lucide-react";
+import { PageHeader } from "@/components/ui";
 import { PasswordChangeForm } from "@/components/sections/PasswordChangeForm";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -15,10 +17,7 @@ export default async function MotDePassePage({
 
   return (
     <div className="max-w-160 space-y-6">
-      <div>
-        <h1 className="mb-2 text-[clamp(1.6rem,3vw,2.2rem)]">{t("title")}</h1>
-        <p className="opacity-70">{t("subtitle")}</p>
-      </div>
+      <PageHeader icon={KeyRound} title={t("title")} subtitle={t("subtitle")} />
 
       <PasswordChangeForm />
     </div>

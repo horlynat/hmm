@@ -8,7 +8,7 @@ import {
   setSessionCookie,
 } from "./session";
 import type { ApiPostResult } from "@/lib/api/client";
-import type { ProfileUpdatePayload, SessionUser } from "@/lib/types";
+import type { ProfileUpdatePayload, SessionUser, SessionComment } from "@/lib/types";
 
 /**
  * Connexion : POST /api/login_check (lexik JWT). En cas de succès, le token est
@@ -265,6 +265,53 @@ export async function confirmPasswordReset(
     return { ok: true };
   } catch (error) {
     console.error("[auth] confirmPasswordReset failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+/**
+ * Poste un message dans le fil de discussion d'un projet : POST
+ * /api/me/projects/{id}/comments. Même périmètre d'accès que la lecture
+ * (client, responsable ou collaborateur du projet).
+ */
+export async function postProjectComment(
+  projectId: number,
+  content: string,
+): Promise<ApiPostResult & { comment?: SessionComment }> {
+  const token = await getToken();
+  if (!token) {
+    return { ok: false, error: "unauthenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/me/projects/${projectId}/comments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ content }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      const detail = await res
+        .json()
+        .then((body: unknown) =>
+          typeof body === "object" && body && "detail" in body
+            ? String((body as { detail: unknown }).detail)
+            : null,
+        )
+        .catch(() => null);
+      return { ok: false, error: detail ?? `HTTP ${res.status}` };
+    }
+
+    const comment = (await res.json()) as SessionComment;
+    return { ok: true, comment };
+  } catch (error) {
+    console.error("[auth] postProjectComment failed", error);
     return { ok: false, error: "network_error" };
   }
 }

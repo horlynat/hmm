@@ -6,7 +6,13 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { API_URL, SESSION_COOKIE } from "./config";
-import type { SessionUser, SessionProjectDetail, SessionQuoteDetail } from "@/lib/types";
+import type {
+  SessionUser,
+  SessionProjectDetail,
+  SessionQuoteDetail,
+  SessionActivity,
+  SessionComment,
+} from "@/lib/types";
 
 interface JwtPayload {
   exp?: number;
@@ -117,6 +123,61 @@ export async function getMyProject(id: number): Promise<SessionProjectDetail | n
   } catch (error) {
     console.error("[auth] GET /me/projects/:id failed", error);
     return null;
+  }
+}
+
+/**
+ * Flux d'activité agrégé (historique de projet + messages) sur tous les
+ * projets de l'utilisateur courant — GET /api/me/activity. Renvoie des
+ * listes vides si non authentifié plutôt que null : le tableau de bord
+ * peut afficher ces sections même en cas d'erreur réseau ponctuelle.
+ */
+export async function getMyActivity(): Promise<SessionActivity> {
+  const empty: SessionActivity = { history: [], messages: [] };
+  const token = await getToken();
+  if (!token) return empty;
+
+  try {
+    const res = await fetch(`${API_URL}/me/activity`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return empty;
+
+    return (await res.json()) as SessionActivity;
+  } catch (error) {
+    console.error("[auth] GET /me/activity failed", error);
+    return empty;
+  }
+}
+
+/** Fil de discussion complet d'un projet auquel l'utilisateur courant est rattaché. Renvoie [] si non authentifié, introuvable, ou non-rattaché. */
+export async function getProjectComments(projectId: number): Promise<SessionComment[]> {
+  const token = await getToken();
+  if (!token) return [];
+
+  try {
+    const res = await fetch(`${API_URL}/me/projects/${projectId}/comments`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return [];
+
+    const body = (await res.json()) as { comments: SessionComment[] };
+    return body.comments;
+  } catch (error) {
+    console.error("[auth] GET /me/projects/:id/comments failed", error);
+    return [];
   }
 }
 

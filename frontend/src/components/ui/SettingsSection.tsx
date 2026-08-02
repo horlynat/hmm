@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import type { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 
 /** Conteneur plat neutre regroupant une ou plusieurs `SettingsSection` (espace compte, style GitHub Settings). */
 export function SettingsSectionGroup({
@@ -24,16 +25,18 @@ export function SettingsSectionGroup({
 interface SettingsSectionProps {
   title?: string;
   description?: string;
+  icon?: LucideIcon;
   children: ReactNode;
   tone?: "default" | "danger";
   layout?: "stacked" | "row";
   className?: string;
 }
 
-/** Une ligne d'une `SettingsSectionGroup` : en-tête (titre + description) optionnel, puis contenu. */
+/** Une ligne d'une `SettingsSectionGroup` : en-tête (icône + titre + description) optionnel, puis contenu. */
 export function SettingsSection({
   title,
   description,
+  icon: Icon,
   children,
   tone = "default",
   layout = "stacked",
@@ -54,10 +57,11 @@ export function SettingsSection({
           {title && (
             <h2
               className={clsx(
-                "text-sm font-semibold",
+                "flex items-center gap-2 text-sm font-semibold",
                 tone === "danger" ? "text-danger" : "text-brand-dark",
               )}
             >
+              {Icon && <Icon size={16} aria-hidden="true" className="shrink-0 opacity-70" />}
               {title}
             </h2>
           )}

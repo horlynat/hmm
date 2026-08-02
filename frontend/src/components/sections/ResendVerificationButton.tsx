@@ -20,7 +20,12 @@ export function ResendVerificationButton() {
 
   return (
     <div>
-      <button type="button" className="btn-secondary btn-sm" disabled={pending} onClick={handleClick}>
+      <button
+        type="button"
+        className="btn-secondary !px-3.5 !py-2 text-xs"
+        disabled={pending}
+        onClick={handleClick}
+      >
         {pending ? t("resendPending") : t("resendButton")}
       </button>
       {status === "success" && (

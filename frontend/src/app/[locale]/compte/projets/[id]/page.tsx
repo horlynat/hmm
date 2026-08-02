@@ -1,8 +1,10 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { ArrowLeft } from "lucide-react";
 import { Badge, Card, ButtonLink, Breadcrumb } from "@/components/ui";
-import { getMyProject } from "@/lib/auth/session";
+import { ProjectDiscussion } from "@/components/sections/ProjectDiscussion";
+import { getMyProject, getProjectComments } from "@/lib/auth/session";
 import { getMediaUrl } from "@/lib/media";
 import { projectStatusVariant } from "@/lib/status";
 
@@ -22,10 +24,11 @@ export default async function CompteProjectDetailPage({
     notFound();
   }
 
-  const [t, td, tStatus] = await Promise.all([
+  const [t, td, tStatus, comments] = await Promise.all([
     getTranslations({ locale, namespace: "auth.account" }),
     getTranslations({ locale, namespace: "projects.detail" }),
     getTranslations({ locale, namespace: "projects.status" }),
+    getProjectComments(projectId),
   ]);
 
   const info = project.info;
@@ -39,7 +42,8 @@ export default async function CompteProjectDetailPage({
         ]}
       />
 
-      <ButtonLink href="/compte" variant="secondary" className="w-fit">
+      <ButtonLink href="/compte" variant="secondary" className="w-fit gap-1.5">
+        <ArrowLeft size={15} aria-hidden="true" />
         {t("backLink")}
       </ButtonLink>
 
@@ -58,16 +62,21 @@ export default async function CompteProjectDetailPage({
       </div>
 
       <Card variant="soft" className="p-5">
-        <div className="mb-1 flex items-center justify-between text-xs opacity-60">
+        <div className="mb-1.5 flex items-center justify-between text-xs text-(--color-muted)">
           <span>{t("project.progress")}</span>
-          <span>{project.progress}%</span>
+          <span className="font-semibold text-brand-dark">{project.progress}%</span>
         </div>
-        <div className="mb-4 h-1.5 w-full rounded-full bg-brand-light">
-          <div className="h-1.5 rounded-full bg-brand-primary" style={{ width: `${project.progress}%` }} />
+        <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-brand-light">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-brand-primary to-brand-accent transition-[width] duration-300"
+            style={{ width: `${project.progress}%` }}
+          />
         </div>
-        <p className="text-sm opacity-70">
+        <p className="text-sm text-(--color-muted)">
           {t("project.deadline")}:{" "}
-          {project.deadline ? new Date(project.deadline).toLocaleDateString() : t("project.noDeadline")}
+          <span className="font-medium text-brand-dark">
+            {project.deadline ? new Date(project.deadline).toLocaleDateString() : t("project.noDeadline")}
+          </span>
         </p>
       </Card>
 
@@ -227,6 +236,22 @@ export default async function CompteProjectDetailPage({
           )}
         </div>
       )}
+
+      <ProjectDiscussion
+        projectId={project.id}
+        initialComments={comments}
+        locale={locale}
+        labels={{
+          title: t("projectDetail.discussionLabel"),
+          empty: t("projectDetail.emptyDiscussion"),
+          placeholder: t("projectDetail.messagePlaceholder"),
+          send: t("projectDetail.send"),
+          sending: t("projectDetail.sending"),
+          you: t("projectDetail.you"),
+          close: t("projectDetail.closeDiscussion"),
+          open: t("projectDetail.openDiscussion"),
+        }}
+      />
     </div>
   );
 }

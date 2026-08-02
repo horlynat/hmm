@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
-import { Badge, SettingsSection, SettingsSectionGroup } from "@/components/ui";
+import { Mail, ShieldCheck, Clock } from "lucide-react";
+import { Badge, PageHeader, SettingsSection, SettingsSectionGroup } from "@/components/ui";
 import { ResendVerificationButton } from "@/components/sections/ResendVerificationButton";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -18,13 +19,10 @@ export default async function SecuritePage({
 
   return (
     <div className="max-w-160 space-y-6">
-      <div>
-        <h1 className="mb-2 text-[clamp(1.6rem,3vw,2.2rem)]">{t("title")}</h1>
-        <p className="opacity-70">{t("subtitle")}</p>
-      </div>
+      <PageHeader icon={ShieldCheck} title={t("title")} subtitle={t("subtitle")} />
 
       <SettingsSectionGroup>
-        <SettingsSection title={t("emailGroupTitle")}>
+        <SettingsSection icon={Mail} title={t("emailGroupTitle")}>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Badge variant="neutral">
               {user.isVerified ? t("emailVerified") : t("emailUnverified")}
@@ -33,14 +31,14 @@ export default async function SecuritePage({
           {!user.isVerified && <ResendVerificationButton />}
         </SettingsSection>
 
-        <SettingsSection title={t("twoFactorGroupTitle")} description={t("twoFactorHint")}>
+        <SettingsSection icon={ShieldCheck} title={t("twoFactorGroupTitle")} description={t("twoFactorHint")}>
           <Badge variant="neutral">
             {user.isTwoFactorEnabled ? t("twoFactorEnabled") : t("twoFactorDisabled")}
           </Badge>
         </SettingsSection>
 
         {hasLoginInfo && (
-          <SettingsSection title={t("lastLoginGroupTitle")}>
+          <SettingsSection icon={Clock} title={t("lastLoginGroupTitle")}>
             <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
               {user.lastLoginAt && (
                 <div>

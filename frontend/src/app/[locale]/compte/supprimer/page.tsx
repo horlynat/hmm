@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
+import { TriangleAlert } from "lucide-react";
 import { DeleteAccountSection } from "@/components/sections/DeleteAccountSection";
-import { SettingsSection, SettingsSectionGroup } from "@/components/ui";
+import { PageHeader, SettingsSection, SettingsSectionGroup } from "@/components/ui";
 import { redirect } from "@/i18n/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -22,10 +23,7 @@ export default async function SupprimerPage({
 
   return (
     <div className="max-w-160 space-y-6">
-      <div>
-        <h1 className="mb-2 text-[clamp(1.6rem,3vw,2.2rem)] text-danger">{t("title")}</h1>
-        <p className="opacity-70">{t("description")}</p>
-      </div>
+      <PageHeader icon={TriangleAlert} title={t("title")} subtitle={t("description")} tone="danger" />
 
       <SettingsSectionGroup>
         <SettingsSection tone="danger">

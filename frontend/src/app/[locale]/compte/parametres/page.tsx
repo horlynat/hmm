@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
-import { SettingsSection, SettingsSectionGroup } from "@/components/ui";
+import { Palette, Languages, Settings } from "lucide-react";
+import { PageHeader, SettingsSection, SettingsSectionGroup } from "@/components/ui";
 import { ThemeToggle, LocaleSwitcher } from "@/components/layout";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -16,16 +17,13 @@ export default async function ParametresPage({
 
   return (
     <div className="max-w-160 space-y-6">
-      <div>
-        <h1 className="mb-2 text-[clamp(1.6rem,3vw,2.2rem)]">{t("title")}</h1>
-        <p className="opacity-70">{t("subtitle")}</p>
-      </div>
+      <PageHeader icon={Settings} title={t("title")} subtitle={t("subtitle")} />
 
       <SettingsSectionGroup>
-        <SettingsSection layout="row" title={t("appearanceLabel")} description={t("appearanceHint")}>
+        <SettingsSection layout="row" icon={Palette} title={t("appearanceLabel")} description={t("appearanceHint")}>
           <ThemeToggle />
         </SettingsSection>
-        <SettingsSection layout="row" title={t("languageLabel")} description={t("languageHint")}>
+        <SettingsSection layout="row" icon={Languages} title={t("languageLabel")} description={t("languageHint")}>
           <LocaleSwitcher />
         </SettingsSection>
       </SettingsSectionGroup>

@@ -1,14 +1,16 @@
 import { getTranslations } from "next-intl/server";
-import { Badge, Card, ButtonLink, EmptyState } from "@/components/ui";
+import { FolderKanban, FileText, Receipt, Briefcase, History, MessageSquare, LayoutDashboard } from "lucide-react";
+import { Badge, Card, ButtonLink, EmptyState, PageHeader, StatCard } from "@/components/ui";
 import { ProjectList, QuoteList } from "@/components/sections/AccountLists";
-import { getCurrentUser } from "@/lib/auth/session";
-import { getAvatarUrl } from "@/lib/media";
+import { WelcomeBanner } from "@/components/sections/WelcomeBanner";
+import { getCurrentUser, getMyActivity } from "@/lib/auth/session";
 import { Link } from "@/i18n/navigation";
 import { projectStatusVariant } from "@/lib/status";
-import type { SessionProject } from "@/lib/types";
+import type { SessionProject, SessionActivityEntry, SessionComment } from "@/lib/types";
 
 const PREVIEW_COUNT = 4;
 const UPCOMING_COUNT = 5;
+const FEED_COUNT = 5;
 
 /**
  * Ni `SessionProject` ni `SessionQuote` ne portent de date de création/mise à
@@ -25,12 +27,106 @@ function upcomingDeadlines(projects: SessionProject[], limit: number): SessionPr
     .slice(0, limit);
 }
 
+function countActive(projects: SessionProject[]): number {
+  const seen = new Set<number>();
+  return projects.filter((p) => p.status === "en_cours" && !seen.has(p.id) && seen.add(p.id)).length;
+}
+
+function timeAgoLabel(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale, {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function ActivityFeed({
+  entries,
+  locale,
+  emptyMessage,
+}: {
+  entries: SessionActivityEntry[];
+  locale: string;
+  emptyMessage: string;
+}) {
+  if (entries.length === 0) {
+    return <EmptyState icon="📜" message={emptyMessage} />;
+  }
+
+  return (
+    <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
+      {entries.map((entry) => (
+        <Link
+          key={entry.id}
+          href={{ pathname: "/compte/projets/[id]", params: { id: String(entry.projectId) } }}
+          className="flex items-start gap-3 p-4 transition-colors hover:bg-(--color-surface-muted)"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
+            <History size={14} aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm">
+              <span className="font-semibold">{entry.actionLabel}</span>{" "}
+              <span className="text-(--color-muted)">— {entry.projectTitle}</span>
+            </p>
+            <p className="mt-0.5 text-xs text-(--color-muted)">{timeAgoLabel(entry.createdAt, locale)}</p>
+          </div>
+        </Link>
+      ))}
+    </Card>
+  );
+}
+
+function MessagesFeed({
+  messages,
+  locale,
+  emptyMessage,
+  youLabel,
+}: {
+  messages: SessionComment[];
+  locale: string;
+  emptyMessage: string;
+  youLabel: string;
+}) {
+  if (messages.length === 0) {
+    return <EmptyState icon="💬" message={emptyMessage} />;
+  }
+
+  return (
+    <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
+      {messages.map((message) => (
+        <Link
+          key={message.id}
+          href={{ pathname: "/compte/projets/[id]", params: { id: String(message.projectId) } }}
+          className="flex items-start gap-3 p-4 transition-colors hover:bg-(--color-surface-muted)"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
+            <MessageSquare size={14} aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm">
+              <span className="font-semibold">{message.isMine ? youLabel : (message.author.fullName ?? message.author.email)}</span>{" "}
+              <span className="text-(--color-muted)">— {message.projectTitle}</span>
+            </p>
+            <p className="mt-0.5 truncate text-sm text-(--color-muted)">{message.content}</p>
+            <p className="mt-0.5 text-xs text-(--color-muted)">{timeAgoLabel(message.createdAt, locale)}</p>
+          </div>
+        </Link>
+      ))}
+    </Card>
+  );
+}
+
 export default async function ComptePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ welcome?: string }>;
 }) {
   const { locale } = await params;
+  const { welcome } = await searchParams;
   const user = await getCurrentUser();
   const t = await getTranslations({ locale, namespace: "auth.account" });
 
@@ -61,38 +157,63 @@ export default async function ComptePage({
   const hasClientProjects = attributions.clientProjects.length > 0;
   const hasQuotes = attributions.quoteRequests.length > 0;
 
-  const deadlines = upcomingDeadlines(
-    [...collaboratingProjects, ...attributions.clientProjects],
-    UPCOMING_COUNT,
-  );
+  const allProjects = [...collaboratingProjects, ...attributions.clientProjects];
+  const deadlines = upcomingDeadlines(allProjects, UPCOMING_COUNT);
+  const activity = await getMyActivity();
+
+  const pendingQuotesCount = attributions.quoteRequests.filter((q) => q.status === "pending").length;
+  const unpaidInvoicesCount = attributions.invoices.filter((inv) => inv.status === "pending").length;
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-4">
-        {/* eslint-disable-next-line @next/next/no-img-element -- avatar externe (ui-avatars.com) ou média backend, hors domaines optimisables par next/image sans config supplémentaire */}
-        <img
-          src={getAvatarUrl(user)}
-          alt=""
-          className="h-16 w-16 shrink-0 rounded-full border border-[var(--border-soft)] object-cover"
-        />
-        <div>
-          <div className="mb-2 flex flex-wrap items-center gap-2">
+      {welcome === "1" && (
+        <WelcomeBanner message={t("welcome", { name: user.fullName ?? user.email })} />
+      )}
+
+      <PageHeader
+        icon={LayoutDashboard}
+        title={t("dashboardTitle")}
+        actions={
+          <>
             <Badge variant="neutral">{roleLabel}</Badge>
-            <Badge variant="neutral">
-              {user.isVerified ? t("verifiedBadge") : t("unverifiedBadge")}
-            </Badge>
-          </div>
-          <h1 className="text-[clamp(1.6rem,3vw,2.2rem)]">
-            {t("welcome", { name: user.fullName ?? user.email })}
-          </h1>
-        </div>
-      </div>
+            <Badge variant="neutral">{user.isVerified ? t("verifiedBadge") : t("unverifiedBadge")}</Badge>
+          </>
+        }
+      />
 
       {!user.isVerified && (
         <Card className="border-l-4 border-warning p-4 text-sm">
           {t("verifyWarning")}
         </Card>
       )}
+
+      {/* ---- Résumé ---- */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard icon={FolderKanban} label={t("stats.activeProjects")} value={countActive(allProjects)} />
+        <StatCard
+          icon={FileText}
+          label={t("stats.pendingQuotes")}
+          value={pendingQuotesCount}
+          href="/compte/devis"
+        />
+        {isCollaborator && (
+          <StatCard
+            icon={Briefcase}
+            label={t("stats.assignedProjects")}
+            value={collaboratingProjects.length}
+            href="/compte/gestion-projet"
+          />
+        )}
+        {attributions.invoices.length > 0 && (
+          <StatCard
+            icon={Receipt}
+            label={t("stats.unpaidInvoices")}
+            value={unpaidInvoicesCount}
+            href="/compte/factures"
+            tone={unpaidInvoicesCount > 0 ? "warning" : "default"}
+          />
+        )}
+      </div>
 
       {deadlines.length > 0 && (
         <section aria-labelledby="section-deadlines">
@@ -124,6 +245,32 @@ export default async function ComptePage({
           </Card>
         </section>
       )}
+
+      {/* ---- Activité & messages ---- */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <section aria-labelledby="section-activity">
+          <h2 id="section-activity" className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+            {t("sections.activity")}
+          </h2>
+          <ActivityFeed
+            entries={activity.history.slice(0, FEED_COUNT)}
+            locale={locale}
+            emptyMessage={t("sections.emptyActivity")}
+          />
+        </section>
+
+        <section aria-labelledby="section-messages">
+          <h2 id="section-messages" className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+            {t("sections.messages")}
+          </h2>
+          <MessagesFeed
+            messages={activity.messages.slice(0, FEED_COUNT)}
+            locale={locale}
+            emptyMessage={t("sections.emptyMessages")}
+            youLabel={t("projectDetail.you")}
+          />
+        </section>
+      </div>
 
       {isCollaborator && (
         <section aria-labelledby="section-collaborating">

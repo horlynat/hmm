@@ -103,6 +103,8 @@ export interface AccountNavCounts {
   myProjects: number;
   /** Total des projets affichés sur /compte/gestion-projet (collaborateurs uniquement). */
   managedProjects: number;
+  /** Factures au statut "pending" (cf. InvoiceStatusEnum côté backend). */
+  unpaidInvoices: number;
 }
 
 interface AccountNavProps {
@@ -129,7 +131,7 @@ export function AccountNav({
       {!isCollaborator && (
         <div className={clsx("pb-2", collapsed && "flex justify-center")}>
           <ButtonLink
-            href="/contact"
+            href="/compte/devis/nouveau"
             variant="secondary"
             title={collapsed ? t("newQuoteCta") : undefined}
             aria-label={collapsed ? t("newQuoteCta") : undefined}
@@ -171,7 +173,13 @@ export function AccountNav({
             badge={counts.managedProjects > 0 && <Badge variant="neutral">{counts.managedProjects}</Badge>}
           />
         )}
-        <NavLink href="/compte/factures" label={t("invoices")} icon={Receipt} collapsed={collapsed} />
+        <NavLink
+          href="/compte/factures"
+          label={t("invoices")}
+          icon={Receipt}
+          collapsed={collapsed}
+          badge={counts.unpaidInvoices > 0 && <Badge variant="warning">{counts.unpaidInvoices}</Badge>}
+        />
       </NavGroup>
 
       <NavGroup title={t("groupAccount")} collapsed={collapsed}>

@@ -841,7 +841,8 @@
       }
     },
     "account": {
-      "welcome": "Bonjour {name}",
+      "welcome": "Bonjour {name}, bon retour parmi nous !",
+      "dashboardTitle": "Tableau de bord",
       "roleClient": "Compte client",
       "roleFreelance": "Compte collaborateur",
       "verifyWarning": "Votre adresse email n'est pas encore vérifiée. Consultez votre boîte de réception pour activer votre compte.",
@@ -884,13 +885,28 @@
         "viewAll": "Voir tout →",
         "upcomingDeadlines": "Échéances à venir",
         "emptyDeadlines": "Aucune échéance à venir.",
-        "overdue": "En retard"
+        "overdue": "En retard",
+        "activity": "Activité récente",
+        "emptyActivity": "Aucune activité pour le moment.",
+        "messages": "Messages récents",
+        "emptyMessages": "Aucun message pour le moment."
+      },
+      "stats": {
+        "activeProjects": "Projets actifs",
+        "pendingQuotes": "Devis en attente",
+        "unpaidInvoices": "Factures impayées",
+        "assignedProjects": "Projets confiés"
       },
       "quoteStatus": {
         "pending": "En attente",
         "accepted": "Acceptée",
         "suspended": "Suspendue",
         "rejected": "Refusée"
+      },
+      "invoiceStatus": {
+        "pending": "En attente de paiement",
+        "paid": "Payée",
+        "cancelled": "Annulée"
       },
       "project": {
         "progress": "Avancement",
@@ -901,7 +917,15 @@
         "budgetLabel": "Budget utilisé",
         "descriptionLabel": "Description",
         "notFoundTitle": "Projet introuvable",
-        "notFoundText": "Ce projet n'existe pas ou ne vous est pas rattaché."
+        "notFoundText": "Ce projet n'existe pas ou ne vous est pas rattaché.",
+        "discussionLabel": "Discussion",
+        "emptyDiscussion": "Aucun message pour le moment. Démarrez la discussion.",
+        "messagePlaceholder": "Écrire un message…",
+        "send": "Envoyer",
+        "sending": "Envoi…",
+        "you": "Vous",
+        "closeDiscussion": "Fermer la discussion",
+        "openDiscussion": "Ouvrir la discussion"
       },
       "quoteDetail": {
         "messageLabel": "Message",
@@ -914,6 +938,11 @@
       },
       "myQuotesPage": {
         "subtitle": "L'historique complet de vos demandes de devis et leur statut."
+      },
+      "newQuotePage": {
+        "title": "Nouvelle demande de devis",
+        "subtitle": "Décrivez votre besoin — nous revenons vers vous rapidement.",
+        "successCta": "Voir mes demandes de devis"
       }
     },
     "profile": {
@@ -921,6 +950,7 @@
       "subtitle": "Mettez à jour vos informations personnelles.",
       "fullNameLabel": "Nom complet",
       "phoneLabel": "Téléphone",
+      "phoneLocked": "Non modifiable depuis votre espace. Contactez-nous si ce numéro a changé.",
       "bioLabel": "Présentation / bio",
       "specialtiesLabel": "Spécialités (séparées par des virgules)",
       "specialtiesPlaceholder": "Backend, Cybersécurité, UI...",
@@ -986,10 +1016,15 @@
     },
     "invoices": {
       "title": "Mes factures",
-      "subtitle": "Vos projets actuellement en cours.",
+      "subtitle": "L'ensemble des factures émises sur vos projets.",
       "viewProject": "Voir le projet",
-      "empty": "Aucun projet en cours pour le moment. Les projets facturés apparaîtront ici une fois le travail démarré.",
-      "comingSoonNote": "Le détail de facturation (montants, échéances) sera disponible ici selon votre mode de paiement (comptant, acompte ou abonnement)."
+      "empty": "Aucune facture pour le moment. Elles apparaîtront ici une fois émises par l'équipe.",
+      "totalUnpaid": "Total impayé",
+      "dueDate": "Échéance",
+      "noDueDate": "Non définie",
+      "issuedOn": "Émise le",
+      "paidOn": "Payée le",
+      "overdue": "En retard"
     },
     "settings": {
       "title": "Paramètres",

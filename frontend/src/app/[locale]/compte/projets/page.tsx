@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
-import { EmptyState } from "@/components/ui";
+import { FolderKanban } from "lucide-react";
+import { EmptyState, PageHeader } from "@/components/ui";
 import { ProjectList } from "@/components/sections/AccountLists";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -28,10 +29,7 @@ export default async function ComptProjetsPage({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="mb-2 text-[clamp(1.6rem,3vw,2.2rem)]">{t("nav.myProjects")}</h1>
-        <p className="opacity-70">{t("myProjectsPage.subtitle")}</p>
-      </div>
+      <PageHeader icon={FolderKanban} title={t("nav.myProjects")} subtitle={t("myProjectsPage.subtitle")} />
 
       <section aria-labelledby="section-client-projects">
         <h2 id="section-client-projects" className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>

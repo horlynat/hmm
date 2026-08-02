@@ -37,3 +37,14 @@ const QUOTE_STATUS_VARIANT: Record<string, BadgeVariant> = {
 export function quoteStatusVariant(status: string): BadgeVariant {
   return QUOTE_STATUS_VARIANT[status] ?? "neutral";
 }
+
+/** Couleur de badge par statut de facture — miroir de InvoiceStatusEnum côté backend. */
+const INVOICE_STATUS_VARIANT: Record<string, BadgeVariant> = {
+  pending: "warning",
+  paid: "success",
+  cancelled: "neutral",
+};
+
+export function invoiceStatusVariant(status: string): BadgeVariant {
+  return INVOICE_STATUS_VARIANT[status] ?? "neutral";
+}

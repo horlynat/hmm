@@ -5,6 +5,8 @@ export { Badge } from "./Badge";
 export { Breadcrumb } from "./Breadcrumb";
 export { EmptyState } from "./EmptyState";
 export { Field } from "./Field";
+export { PageHeader } from "./PageHeader";
+export { StatCard } from "./StatCard";
 export { SettingsSection, SettingsSectionGroup } from "./SettingsSection";
 export { Skeleton } from "./Skeleton";
 export { Reveal } from "./Reveal";

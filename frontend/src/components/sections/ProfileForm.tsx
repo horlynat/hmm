@@ -42,9 +42,10 @@ export function ProfileForm({ user }: { user: SessionUser }) {
     setServerStatus("idle");
     setServerError("");
 
+    // `phone` est volontairement exclu : le champ est désactivé côté UI
+    // (cf. TextInput disabled ci-dessous) et non modifiable en self-service.
     const payload: ProfileUpdatePayload = {
       fullName: (values.fullName ?? "").trim(),
-      phone: (values.phone ?? "").trim(),
       bio: (values.bio ?? "").trim(),
     };
     if (showCollaboratorFields) {
@@ -82,6 +83,8 @@ export function ProfileForm({ user }: { user: SessionUser }) {
             label={t("phoneLabel")}
             type="tel"
             autoComplete="tel"
+            disabled
+            hint={t("phoneLocked")}
             error={errors.phone?.message}
             {...register("phone")}
           />

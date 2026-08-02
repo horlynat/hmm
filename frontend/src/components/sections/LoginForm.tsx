@@ -35,7 +35,7 @@ export function LoginForm() {
       // en parallèle qui perturbait la remise à zéro du scroll de Next.js,
       // laissant la page arriver déjà défilée (le bouton du tiroir mobile,
       // tout en haut du contenu, se retrouvait hors écran).
-      router.push("/compte");
+      router.push({ pathname: "/compte", query: { welcome: "1" } });
     } else {
       setServerError(
         result.error === "invalid_credentials"

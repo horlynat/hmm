@@ -1,49 +1,75 @@
 import { getTranslations } from "next-intl/server";
-import { Badge, ButtonLink, Card } from "@/components/ui";
-import { getCurrentUser, getMyProject } from "@/lib/auth/session";
-import type { SessionProjectDetail } from "@/lib/types";
-import { projectStatusVariant } from "@/lib/status";
+import { Receipt, Wallet, ArrowRight } from "lucide-react";
+import { Badge, Card, ButtonLink, PageHeader } from "@/components/ui";
+import { getCurrentUser } from "@/lib/auth/session";
+import { invoiceStatusVariant } from "@/lib/status";
+import type { SessionInvoice } from "@/lib/types";
 
-/**
- * Volontairement sans montants pour l'instant : `Project.budget`/`spent` sont
- * des chiffres de gestion INTERNE (comment le budget alloué est consommé côté
- * prestataire), pas ce que le client a lui-même payé — les afficher ici
- * fuitait des données financières internes vers le client. En attendant un
- * vrai modèle de paiement (comptant / acompte / abonnement), cette carte se
- * limite au statut du projet.
- */
+/** Total impayé, groupé par devise — évite d'additionner des montants dans des devises différentes. */
+function unpaidTotals(invoices: SessionInvoice[]): { currency: string; total: number }[] {
+  const totals = new Map<string, number>();
+  for (const invoice of invoices) {
+    if (invoice.status !== "pending") continue;
+    totals.set(invoice.currency, (totals.get(invoice.currency) ?? 0) + Number(invoice.amount));
+  }
+  return [...totals.entries()].map(([currency, total]) => ({ currency, total }));
+}
+
 function InvoiceCard({
-  project,
+  invoice,
+  locale,
   labels,
 }: {
-  project: SessionProjectDetail;
+  invoice: SessionInvoice;
+  locale: string;
   labels: {
-    deadline: string;
-    noDeadline: string;
+    dueDate: string;
+    noDueDate: string;
+    issuedOn: string;
+    paidOn: string;
+    overdue: string;
     viewProject: string;
   };
 }) {
   return (
-    <Card variant="soft" className="p-5">
+    <Card
+      variant="soft"
+      className={
+        invoice.overdue
+          ? "border-l-4 border-l-danger p-5 transition-all duration-200 hover:shadow-md"
+          : "p-5 transition-all duration-200 hover:shadow-md hover:border-brand-accent/30"
+      }
+    >
       <div className="mb-3 flex items-start justify-between gap-2">
-        <div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-(--color-muted)">{invoice.number}</p>
           <span className="font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {project.title}
+            {invoice.label}
           </span>
-          <p className="mt-0.5 text-xs opacity-60">
-            {labels.deadline}:{" "}
-            {project.deadline ? new Date(project.deadline).toLocaleDateString() : labels.noDeadline}
-          </p>
+          <p className="mt-0.5 truncate text-xs text-(--color-muted)">{invoice.projectTitle}</p>
         </div>
-        <Badge variant={projectStatusVariant(project.status)}>{project.statusLabel}</Badge>
+        <Badge variant={invoiceStatusVariant(invoice.status)}>{invoice.statusLabel}</Badge>
+      </div>
+
+      <div className="mb-4 flex items-baseline justify-between">
+        <span className="text-2xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
+          {invoice.formattedAmount}
+        </span>
+        <span className={invoice.overdue ? "text-xs font-semibold text-danger" : "text-xs text-(--color-muted)"}>
+          {invoice.overdue && `${labels.overdue} — `}
+          {invoice.status === "paid" && invoice.paidAt
+            ? `${labels.paidOn} ${new Date(invoice.paidAt).toLocaleDateString(locale)}`
+            : `${labels.dueDate}: ${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString(locale) : labels.noDueDate}`}
+        </span>
       </div>
 
       <ButtonLink
-        href={{ pathname: "/compte/projets/[id]", params: { id: String(project.id) } }}
+        href={{ pathname: "/compte/projets/[id]", params: { id: String(invoice.projectId) } }}
         variant="secondary"
-        className="mt-2 w-fit text-xs"
+        className="w-fit gap-1 text-xs"
       >
         {labels.viewProject}
+        <ArrowRight size={13} aria-hidden="true" />
       </ButtonLink>
     </Card>
   );
@@ -58,35 +84,46 @@ export default async function FacturesPage({
   const user = await getCurrentUser();
   if (!user) return null;
 
-  const t = await getTranslations({ locale, namespace: "auth.account" });
   const tf = await getTranslations({ locale, namespace: "auth.invoices" });
 
-  const activeClientProjects = user.attributions.clientProjects.filter((p) => p.status === "en_cours");
-  const details = (
-    await Promise.all(activeClientProjects.map((p) => getMyProject(p.id)))
-  ).filter((p): p is SessionProjectDetail => p !== null);
+  const invoices = user.attributions.invoices;
+  const totals = unpaidTotals(invoices);
 
   const labels = {
-    deadline: t("project.deadline"),
-    noDeadline: t("project.noDeadline"),
+    dueDate: tf("dueDate"),
+    noDueDate: tf("noDueDate"),
+    issuedOn: tf("issuedOn"),
+    paidOn: tf("paidOn"),
+    overdue: tf("overdue"),
     viewProject: tf("viewProject"),
   };
 
   return (
     <div className="max-w-190 space-y-6">
-      <div>
-        <h1 className="mb-2 text-[clamp(1.6rem,3vw,2.2rem)]">{tf("title")}</h1>
-        <p className="opacity-70">{tf("subtitle")}</p>
-      </div>
+      <PageHeader icon={Receipt} title={tf("title")} subtitle={tf("subtitle")} />
 
-      <div className="rounded-md border-l-4 border-(--border-neutral) bg-bg-card p-4 text-sm opacity-80">
-        {tf("comingSoonNote")}
-      </div>
+      {totals.length > 0 && (
+        <div className="flex flex-wrap gap-3">
+          {totals.map(({ currency, total }) => (
+            <Card key={currency} variant="soft" className="flex items-center gap-3.5 p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-warning/15 text-(--color-badge-warning-text)">
+                <Wallet size={19} aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-(--color-muted)">{tf("totalUnpaid")}</p>
+                <p className="text-xl font-bold leading-tight" style={{ fontFamily: "var(--font-heading)" }}>
+                  {total.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}
+                </p>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      {details.length > 0 ? (
-        <div className="space-y-4">
-          {details.map((project) => (
-            <InvoiceCard key={project.id} project={project} labels={labels} />
+      {invoices.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {invoices.map((invoice) => (
+            <InvoiceCard key={invoice.id} invoice={invoice} locale={locale} labels={labels} />
           ))}
         </div>
       ) : (
