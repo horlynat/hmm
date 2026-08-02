@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\ProfileType;
+use App\Form\ResetPasswordFormType;
 use App\Security\Voter\UserVoter;
 use App\Service\GeolocationService;
 use App\Service\ProfileCompletionService;
@@ -25,7 +26,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 class ProfileController extends AbstractController
 {
-    #[Route('/{id}', name: 'read', methods: ['GET'])]
+    #[Route('/{id}', name: 'read', requirements: ['id' => '\d+'], methods: ['GET'])]
     public function read(
         User $user,
         ProfileCompletionService $completionService,
@@ -48,7 +49,7 @@ class ProfileController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/update', name: 'update', methods: ['GET', 'POST'])]
+    #[Route('/{id}/update', name: 'update', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
     public function update(
         Request $request,
         User $user,
@@ -57,7 +58,9 @@ class ProfileController extends AbstractController
     ): Response {
         $this->denyAccessUnlessSelfOrGranted(UserVoter::EDIT, $user);
 
-        $form = $this->createForm(ProfileType::class, $user);
+        $form = $this->createForm(ProfileType::class, $user, [
+            'isCollaborator' => \in_array('ROLE_EDITOR', $user->getRoles(), true),
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -91,7 +94,7 @@ class ProfileController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/change-password', name: 'change_password', methods: ['GET', 'POST'])]
+    #[Route('/{id}/change-password', name: 'change_password', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
     public function changePassword(
         Request $request,
         User $user,
@@ -100,9 +103,12 @@ class ProfileController extends AbstractController
     ): Response {
         $this->denyAccessUnlessSelfOrGranted(UserVoter::RESET_PASSWORD, $user);
 
-        $form = $this->createForm(ProfileType::class, $user, [
-            'validation_groups' => ['change_password'],
-        ]);
+        // Formulaire dédié (2 champs) plutôt que ProfileType + validation_groups :
+        // ProfileType a 10 champs mappés sur le même User, donc form_end(form)
+        // (sans render_rest:false) auto-rendait TOUS les autres champs
+        // (nom/email/téléphone/rôles système...) sur cette page censée ne
+        // montrer que le mot de passe.
+        $form = $this->createForm(ResetPasswordFormType::class);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

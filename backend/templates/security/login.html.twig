@@ -38,6 +38,17 @@
 						</div>
 					{% endif %}
 
+					{% for message in app.flashes('success') %}
+						<div class="mb-4 p-3 bg-green-100 text-green-700 rounded-lg border border-green-300 text-sm">
+							{{ message }}
+						</div>
+					{% endfor %}
+					{% for message in app.flashes('danger') %}
+						<div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg border border-red-300 text-sm">
+							{{ message }}
+						</div>
+					{% endfor %}
+
 					<form id="loginForm" method="post" class="space-y-6">
 						<!-- Email -->
 						<div class="relative">
@@ -63,9 +74,9 @@
 								<input type="checkbox" id="remember_me" name="_remember_me" class="input-checkbox "/>
 								<label for="remember_me" class="label">Se souvenir de moi</label>
 							</span>
-							<span class="text-sm font-semibold text-gray-400 cursor-not-allowed select-none" title="Réinitialisation du mot de passe — bientôt disponible">
+							<a href="{{ path('forgot_password_request') }}" class="text-sm font-semibold text-blue-900 hover:underline">
 								Mot de passe oublié ?
-							</span>
+							</a>
 						</div>
 
 						<!-- Bouton principal -->

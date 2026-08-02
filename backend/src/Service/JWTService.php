@@ -18,6 +18,7 @@ class JWTService
     private const DEFAULT_VALIDITY = 10800; // 3 heures en secondes
     private const AUTH_VALIDITY = 3600; // 1 heure pour les tokens d'authentification
     private const EMAIL_VERIFICATION_VALIDITY = 86400; // 24 heures pour la vérification d'email
+    private const PASSWORD_RESET_VALIDITY = 3600; // 1 heure pour la réinitialisation de mot de passe
 
     // Limite de taille pour éviter les attaques DoS
     private const MAX_PAYLOAD_SIZE = 4096; // 4 Ko
@@ -54,6 +55,42 @@ class JWTService
         $payload = [
             'user_id' => $userId,
             'purpose' => 'email_verification',
+        ];
+
+        return $this->generate($header, $payload, $validity);
+    }
+
+    /**
+     * Génère un JWT pour la réinitialisation de mot de passe.
+     *
+     * $requestedAt doit correspondre à la valeur stockée sur
+     * User::passwordResetRequestedAt au moment de l'émission : à la
+     * validation, SecurityController compare les deux pour garantir un usage
+     * unique (une nouvelle demande ou un changement de mot de passe par un
+     * autre biais invalide ce lien), sans avoir à faire du JWT un token à
+     * état côté serveur.
+     *
+     * @param int $userId ID de l'utilisateur
+     * @param int $requestedAt Timestamp Unix de la demande (User::getPasswordResetRequestedAt())
+     * @param int $validity Durée de validité en secondes (par défaut : 1h)
+     * @return string Token JWT
+     * @throws InvalidArgumentException Si l'ID utilisateur est invalide
+     */
+    public function generatePasswordResetToken(int $userId, int $requestedAt, int $validity = self::PASSWORD_RESET_VALIDITY): string
+    {
+        if ($userId <= 0) {
+            throw new InvalidArgumentException('L\'ID utilisateur doit être un entier positif.');
+        }
+
+        $header = [
+            'typ' => 'JWT',
+            'alg' => self::DEFAULT_ALGORITHM,
+        ];
+
+        $payload = [
+            'user_id' => $userId,
+            'purpose' => 'password_reset',
+            'requested_at' => $requestedAt,
         ];
 
         return $this->generate($header, $payload, $validity);

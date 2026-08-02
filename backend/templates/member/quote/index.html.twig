@@ -1,0 +1,42 @@
+{% extends 'member/base.html.twig' %}
+
+{% block title %}Mes devis{% endblock %}
+
+{% block body %}
+	<div class="mb-6">
+		<h1 class="text-2xl font-bold text-brand-dark">Mes devis</h1>
+		<p class="text-sm text-brand-dark/60">Suivez l'état de vos demandes de devis.</p>
+	</div>
+
+	{% if quotes is empty %}
+		<div class="panel"><div class="panel-body text-center py-12">
+			<span class="ti ti-file-off text-4xl block mb-3 opacity-40" aria-hidden="true"></span>
+			<p class="text-brand-dark/60 mb-0">Aucune demande de devis associée à votre compte pour le moment.</p>
+		</div></div>
+	{% else %}
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+			{% for quote in quotes %}
+				{% set variant = {
+					'pending': 'warning',
+					'accepted': 'success',
+					'suspended': 'neutral',
+					'rejected': 'danger',
+				}[quote.status.value] ?? 'neutral' %}
+				<a href="{{ path('member_quote_read', {id: quote.id}) }}" class="panel hover:shadow-md transition block">
+					<div class="panel-body">
+						<div class="flex items-start justify-between gap-2 mb-2">
+							<h2 class="font-bold text-brand-dark">{{ quote.category }}</h2>
+							<twig:Badge :variant="variant">{{ quote.status.label }}</twig:Badge>
+						</div>
+						{% if quote.categoryDetail %}
+							<p class="text-sm text-brand-dark/60 mb-1">{{ quote.categoryDetail }}</p>
+						{% endif %}
+						{% if quote.budget %}
+							<p class="text-xs text-brand-dark/50">Budget : {{ quote.budget }}{% if quote.currency %} {{ quote.currency }}{% endif %}</p>
+						{% endif %}
+					</div>
+				</a>
+			{% endfor %}
+		</div>
+	{% endif %}
+{% endblock %}

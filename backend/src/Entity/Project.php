@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\Invoice;
 use App\Entity\Media;
 use App\Entity\ProjectExpense;
 use App\Entity\ProjectHistory;
@@ -13,6 +14,7 @@ use App\Entity\Traits\SlugTrait;
 use App\Entity\Traits\UpdatedAtTrait;
 use App\Entity\User;
 use App\Enum\BillingTypeEnum;
+use App\Enum\InvoiceStatusEnum;
 use App\Enum\ProjectPriorityEnum;
 use App\Enum\ProjectStatusEnum;
 use App\Repository\ProjectRepository;
@@ -122,6 +124,12 @@ class Project
     #[Groups(['api_admin'])]
     private Collection $expenses;
 
+    /** @var Collection<int, Invoice> */
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Invoice::class, cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OrderBy(['issuedAt' => 'DESC'])]
+    #[Groups(['api_admin'])]
+    private Collection $invoices;
+
     /** @var Collection<int, ProjectTask> */
     #[ORM\OneToMany(mappedBy: 'project', targetEntity: ProjectTask::class, cascade: ['persist'], orphanRemoval: true)]
     #[ORM\OrderBy(['position' => 'ASC', 'id' => 'ASC'])]
@@ -176,6 +184,7 @@ class Project
         $this->collaborators = new ArrayCollection();
         $this->histories = new ArrayCollection();
         $this->expenses = new ArrayCollection();
+        $this->invoices = new ArrayCollection();
         $this->tags = new ArrayCollection();
         $this->tasks = new ArrayCollection();
         $this->comments = new ArrayCollection();
@@ -497,6 +506,40 @@ class Project
     {
         $this->expenses->removeElement($expense);
         return $this;
+    }
+
+    /**
+     * @return Collection<int, Invoice>
+     */
+    public function getInvoices(): Collection
+    {
+        return $this->invoices;
+    }
+
+    public function addInvoice(Invoice $invoice): static
+    {
+        if (!$this->invoices->contains($invoice)) {
+            $this->invoices->add($invoice);
+            $invoice->setProject($this);
+        }
+        return $this;
+    }
+
+    public function removeInvoice(Invoice $invoice): static
+    {
+        $this->invoices->removeElement($invoice);
+        return $this;
+    }
+
+    public function getUnpaidInvoicesTotal(): string
+    {
+        $total = '0.00';
+        foreach ($this->invoices as $invoice) {
+            if (!$invoice->isPaid() && InvoiceStatusEnum::CANCELLED !== $invoice->getStatus()) {
+                $total = bcadd($total, $invoice->getAmount(), 2);
+            }
+        }
+        return $total;
     }
 
     public function getClient(): ?User
@@ -852,10 +895,15 @@ class Project
 
     public function getBudgetPercentageUsed(): float
     {
-        if ($this->budget === '0.00') {
+        // bccomp() renvoie -1/0/1 (comparaison), pas un ratio : l'ancienne version
+        // affichait donc -100/0/100 au lieu d'un vrai pourcentage. bcdiv/bcmul
+        // calculent le vrai ratio dépensé/budget, cohérent avec le stockage
+        // bcmath (chaînes décimales) du reste de l'entité.
+        if (0 === bccomp($this->budget, '0.00', 2)) {
             return 0.0;
         }
-        return min(100.0, (float) bccomp($this->spent, $this->budget, 2) * 100);
+
+        return min(100.0, (float) bcmul(bcdiv($this->spent, $this->budget, 6), '100', 2));
     }
 
     public function getBudgetStatus(): string

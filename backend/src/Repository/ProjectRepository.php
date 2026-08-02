@@ -311,7 +311,8 @@ class ProjectRepository extends ServiceEntityRepository
     }
 
     /**
-     * 👤 Projets d'une partie prenante : ceux dont elle est le client OU un collaborateur.
+     * 👤 Projets d'une partie prenante : ceux dont elle est le client, le
+     * responsable (owner) OU un collaborateur.
      *
      * @return Project[]
      */
@@ -319,7 +320,7 @@ class ProjectRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('p')
             ->leftJoin('p.collaborators', 'c')
-            ->where('p.client = :user OR c = :user')
+            ->where('p.client = :user OR p.owner = :user OR c = :user')
             ->setParameter('user', $user)
             ->orderBy('p.createdAt', 'DESC')
             ->distinct()

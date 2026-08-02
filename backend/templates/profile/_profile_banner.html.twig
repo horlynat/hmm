@@ -1,0 +1,59 @@
+{# templates/profile/_profile_banner.html.twig
+   Bandeau d'identité pleine largeur (avatar, nom, badges, actions, complétion).
+   Remplace l'ancienne colonne "_profile_sidebar" empilée à côté de la nav admin. #}
+
+<div class="panel">
+	<div class="panel-body flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+		<div class="flex items-center gap-4 min-w-0">
+			{% if user.profileImage %}
+				<img src="{{ user.profileImage }}" alt="Photo de profil" class="w-16 h-16 rounded-full object-cover shrink-0 shadow-sm">
+			{% else %}
+				<div class="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold shrink-0 shadow-inner"
+					 style="background: linear-gradient(135deg, var(--color-brand-dark), var(--color-brand-primary) 70%);">
+					{{ (user.fullName ?? user.email)|slice(0, 1)|upper }}
+				</div>
+			{% endif %}
+
+			<div class="min-w-0">
+				<h1 class="text-xl font-bold text-(--brand-dark) truncate">{{ user.fullName ?? 'Utilisateur' }}</h1>
+				<p class="text-sm text-gray-500 truncate">
+					{{ user.email }}
+					<span class="text-gray-300 dark:text-gray-600">·</span>
+					<span class="font-mono text-xs text-gray-400">#{{ user.id }}</span>
+				</p>
+				<div class="flex flex-wrap items-center gap-1.5 mt-2.5">
+					{% set primaryRole = user.primaryRole %}
+					<twig:Badge :variant="primaryRole in ['ROLE_ADMIN', 'ROLE_SUPER_ADMIN'] ? 'info' : 'neutral'" :icon="primaryRole in ['ROLE_ADMIN', 'ROLE_SUPER_ADMIN'] ? 'ti-shield-lock' : 'ti-user'">
+						{{ primaryRole|replace({'ROLE_': ''})|capitalize }}
+					</twig:Badge>
+					<twig:Badge :variant="user.isActive ? 'success' : 'danger'" :icon="user.isActive ? 'ti-circle-check' : 'ti-circle-x'">
+						{{ user.isActive ? 'Actif' : 'Inactif' }}
+					</twig:Badge>
+					<twig:Badge :variant="user.isVerified ? 'success' : 'warning'" :icon="user.isVerified ? 'ti-circle-check' : 'ti-alert-triangle'">
+						{{ user.isVerified ? 'Vérifié' : 'Non vérifié' }}
+					</twig:Badge>
+				</div>
+			</div>
+		</div>
+
+		<div class="flex flex-col items-stretch gap-3 sm:items-end shrink-0">
+			<div class="flex gap-2">
+				<a href="{{ path('profile_update', {'id': user.id}) }}" class="btn btn-primary btn-sm gap-1.5">
+					<span class="ti ti-edit" aria-hidden="true"></span>Modifier
+				</a>
+				<a href="{{ path('profile_change_password', {'id': user.id}) }}" class="btn btn-secondary btn-sm gap-1.5">
+					<span class="ti ti-lock-cog" aria-hidden="true"></span>Mot de passe
+				</a>
+			</div>
+			<div class="w-full sm:w-44">
+				<div class="flex justify-between text-[11px] text-gray-400 mb-1">
+					<span>Profil complété</span>
+					<span>{{ completionPercentage|default(0) }}%</span>
+				</div>
+				<div class="h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+					<div class="h-full rounded-full" style="width: {{ completionPercentage|default(0) }}%; background: var(--color-brand-primary);"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

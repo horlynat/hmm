@@ -1,0 +1,83 @@
+{# templates/profile/_profile_collaborator.html.twig
+   Profil "collaborateur" (pro/freelance) en lecture seule — spécialités,
+   disponibilité, portfolio, bio, expérience et formations. Édition via
+   "Modifier le profil" (ProfileType, champs conditionnels isCollaborator). #}
+
+<div class="panel">
+	<div class="panel-header">
+		<h2 class="panel-title flex items-center gap-2">
+			<span class="ti ti-user-star" aria-hidden="true"></span>
+			Profil collaborateur
+		</h2>
+	</div>
+	<div class="panel-body space-y-5">
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+			<div>
+				<p class="text-xs text-gray-400 mb-1">Spécialités</p>
+				<p class="text-sm font-medium text-(--brand-dark)">
+					{{ user.specialties ? user.specialties|join(', ') : 'Non renseigné' }}
+				</p>
+			</div>
+			<div>
+				<p class="text-xs text-gray-400 mb-1">Disponibilité</p>
+				<p class="text-sm font-medium text-(--brand-dark)">{{ user.availability ?? 'Non renseigné' }}</p>
+			</div>
+			<div class="sm:col-span-2">
+				<p class="text-xs text-gray-400 mb-1">Portfolio</p>
+				{% if user.portfolioUrl %}
+					<a href="{{ user.portfolioUrl }}" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-(--brand-primary) hover:underline break-all">
+						{{ user.portfolioUrl }}
+					</a>
+				{% else %}
+					<p class="text-sm font-medium text-(--brand-dark)">Non renseigné</p>
+				{% endif %}
+			</div>
+			<div class="sm:col-span-2">
+				<p class="text-xs text-gray-400 mb-1">Présentation</p>
+				<p class="text-sm text-(--brand-dark) whitespace-pre-line">{{ user.bio ?? 'Non renseigné' }}</p>
+			</div>
+		</div>
+
+		<div class="pt-4 border-t border-gray-100 dark:border-gray-700">
+			<p class="panel-title mb-3">Expérience professionnelle</p>
+			{% if user.experience is defined and user.experience|length > 0 %}
+				<ul class="space-y-3">
+					{% for xp in user.experience %}
+						<li class="flex items-start gap-3">
+							<span class="ti ti-briefcase text-lg text-(--brand-primary) mt-0.5" aria-hidden="true"></span>
+							<div class="min-w-0">
+								<p class="text-sm font-semibold text-(--brand-dark)">{{ xp.role }} — {{ xp.company }}</p>
+								<p class="text-xs text-gray-400">
+									{{ xp.startDate|date('m/Y') }} – {{ xp.endDate ? xp.endDate|date('m/Y') : 'Présent' }}
+								</p>
+							</div>
+						</li>
+					{% endfor %}
+				</ul>
+			{% else %}
+				<twig:EmptyState text="Aucune expérience renseignée." icon="ti-briefcase" />
+			{% endif %}
+		</div>
+
+		<div class="pt-4 border-t border-gray-100 dark:border-gray-700">
+			<p class="panel-title mb-3">Formations</p>
+			{% if user.course is defined and user.course|length > 0 %}
+				<ul class="space-y-3">
+					{% for formation in user.course %}
+						<li class="flex items-start gap-3">
+							<span class="ti ti-school text-lg text-(--brand-primary) mt-0.5" aria-hidden="true"></span>
+							<div class="min-w-0">
+								<p class="text-sm font-semibold text-(--brand-dark)">{{ formation.title }} — {{ formation.institution }}</p>
+								<p class="text-xs text-gray-400">
+									{{ formation.startDate|date('m/Y') }} – {{ formation.endDate|date('m/Y') }}
+								</p>
+							</div>
+						</li>
+					{% endfor %}
+				</ul>
+			{% else %}
+				<twig:EmptyState text="Aucune formation renseignée." icon="ti-school" />
+			{% endif %}
+		</div>
+	</div>
+</div>

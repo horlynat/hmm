@@ -69,7 +69,7 @@ final class AdminCollaboratorController extends AbstractController
         $user->setRoles(['ROLE_EDITOR']);
         $user->setCreatedAt(new \DateTimeImmutable());
 
-        $form = $this->createForm(UserType::class, $user);
+        $form = $this->createForm(UserType::class, $user, ['context' => 'collaborator']);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -103,7 +103,7 @@ final class AdminCollaboratorController extends AbstractController
     {
         $this->denyAccessUnlessGranted(UserVoter::EDIT, $user);
 
-        $form = $this->createForm(UserType::class, $user);
+        $form = $this->createForm(UserType::class, $user, ['context' => 'collaborator']);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

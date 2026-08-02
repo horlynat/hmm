@@ -2,23 +2,6 @@
 
 {% block title %}Contenu — Page "À propos"{% endblock %}
 
-{% macro pair(fr, en, isTextarea = false) %}
-	{% set widgetClass = isTextarea ? 'input textarea w-full' : 'input w-full' %}
-	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-		<div class="field">
-			{{ form_label(fr, null, {'label_attr': {'class': 'field-label'}}) }}
-			{{ form_widget(fr, {'attr': {'class': widgetClass}}) }}
-			{{ form_errors(fr, {'attr': {'class': 'field-error'}}) }}
-		</div>
-		<div class="field">
-			{{ form_label(en, null, {'label_attr': {'class': 'field-label opacity-70'}}) }}
-			{% if en.vars.help is defined and en.vars.help %}<p class="text-[11px] opacity-40 mb-1">{{ en.vars.help }}</p>{% endif %}
-			{{ form_widget(en, {'attr': {'class': widgetClass}}) }}
-			{{ form_errors(en, {'attr': {'class': 'field-error'}}) }}
-		</div>
-	</div>
-{% endmacro %}
-
 {% block body %}
 	<twig:PageHeader title='Page "À propos"' subtitle="Hero, profil, bio, vision, différenciateurs, à-côtés — bilingue FR/EN." icon="ti-user" />
 
@@ -27,10 +10,10 @@
 	<div class="panel">
 		<div class="panel-header"><h2 class="panel-title">Hero</h2></div>
 		<div class="panel-body space-y-4">
-			{{ _self.pair(form.heroEyebrow, form.heroEyebrowEn) }}
-			{{ _self.pair(form.heroTitle, form.heroTitleEn) }}
-			{{ _self.pair(form.heroTitleAccent, form.heroTitleAccentEn) }}
-			{{ _self.pair(form.heroSub, form.heroSubEn, true) }}
+			<twig:FieldPair :fr="form.heroEyebrow" :en="form.heroEyebrowEn" />
+			<twig:FieldPair :fr="form.heroTitle" :en="form.heroTitleEn" />
+			<twig:FieldPair :fr="form.heroTitleAccent" :en="form.heroTitleAccentEn" />
+			<twig:FieldPair :fr="form.heroSub" :en="form.heroSubEn" :isTextarea="true" />
 		</div>
 	</div>
 
@@ -42,32 +25,32 @@
 				{{ form_widget(form.profileName, {'attr': {'class': 'input w-full'}}) }}
 				{{ form_errors(form.profileName, {'attr': {'class': 'field-error'}}) }}
 			</div>
-			{{ _self.pair(form.profileRole, form.profileRoleEn) }}
-			{{ _self.pair(form.profileAvailability, form.profileAvailabilityEn) }}
-			{{ _self.pair(form.profileAlso, form.profileAlsoEn) }}
-			{{ _self.pair(form.profileLocation, form.profileLocationEn) }}
-			{{ _self.pair(form.profileWorkMode, form.profileWorkModeEn) }}
-			{{ _self.pair(form.profileLanguages, form.profileLanguagesEn) }}
+			<twig:FieldPair :fr="form.profileRole" :en="form.profileRoleEn" />
+			<twig:FieldPair :fr="form.profileAvailability" :en="form.profileAvailabilityEn" />
+			<twig:FieldPair :fr="form.profileAlso" :en="form.profileAlsoEn" />
+			<twig:FieldPair :fr="form.profileLocation" :en="form.profileLocationEn" />
+			<twig:FieldPair :fr="form.profileWorkMode" :en="form.profileWorkModeEn" />
+			<twig:FieldPair :fr="form.profileLanguages" :en="form.profileLanguagesEn" />
 		</div>
 	</div>
 
 	<div class="panel">
 		<div class="panel-header"><h2 class="panel-title">Bio</h2></div>
 		<div class="panel-body space-y-4">
-			{{ _self.pair(form.bioTitle, form.bioTitleEn) }}
-			{{ _self.pair(form.bioP1, form.bioP1En, true) }}
-			{{ _self.pair(form.bioP2, form.bioP2En, true) }}
-			{{ _self.pair(form.bioP3, form.bioP3En, true) }}
+			<twig:FieldPair :fr="form.bioTitle" :en="form.bioTitleEn" />
+			<twig:FieldPair :fr="form.bioP1" :en="form.bioP1En" :isTextarea="true" />
+			<twig:FieldPair :fr="form.bioP2" :en="form.bioP2En" :isTextarea="true" />
+			<twig:FieldPair :fr="form.bioP3" :en="form.bioP3En" :isTextarea="true" />
 		</div>
 	</div>
 
 	<div class="panel">
 		<div class="panel-header"><h2 class="panel-title">Vision</h2></div>
 		<div class="panel-body space-y-4">
-			{{ _self.pair(form.visionTitle, form.visionTitleEn) }}
-			{{ _self.pair(form.visionLede, form.visionLedeEn, true) }}
-			{{ _self.pair(form.visionTodayText, form.visionTodayTextEn, true) }}
-			{{ _self.pair(form.visionTomorrowText, form.visionTomorrowTextEn, true) }}
+			<twig:FieldPair :fr="form.visionTitle" :en="form.visionTitleEn" />
+			<twig:FieldPair :fr="form.visionLede" :en="form.visionLedeEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.visionTodayText" :en="form.visionTodayTextEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.visionTomorrowText" :en="form.visionTomorrowTextEn" :isTextarea="true" />
 		</div>
 	</div>
 
@@ -75,33 +58,33 @@
 		<div class="panel-header"><h2 class="panel-title">Pourquoi moi (4 différenciateurs)</h2></div>
 		<div class="panel-body space-y-4">
 			<hr class="border-gray-100">
-			{{ _self.pair(form.why1Title, form.why1TitleEn) }}
-			{{ _self.pair(form.why1Desc, form.why1DescEn, true) }}
+			<twig:FieldPair :fr="form.why1Title" :en="form.why1TitleEn" />
+			<twig:FieldPair :fr="form.why1Desc" :en="form.why1DescEn" :isTextarea="true" />
 			<hr class="border-gray-100">
-			{{ _self.pair(form.why2Title, form.why2TitleEn) }}
-			{{ _self.pair(form.why2Desc, form.why2DescEn, true) }}
+			<twig:FieldPair :fr="form.why2Title" :en="form.why2TitleEn" />
+			<twig:FieldPair :fr="form.why2Desc" :en="form.why2DescEn" :isTextarea="true" />
 			<hr class="border-gray-100">
-			{{ _self.pair(form.why3Title, form.why3TitleEn) }}
-			{{ _self.pair(form.why3Desc, form.why3DescEn, true) }}
+			<twig:FieldPair :fr="form.why3Title" :en="form.why3TitleEn" />
+			<twig:FieldPair :fr="form.why3Desc" :en="form.why3DescEn" :isTextarea="true" />
 			<hr class="border-gray-100">
-			{{ _self.pair(form.why4Title, form.why4TitleEn) }}
-			{{ _self.pair(form.why4Desc, form.why4DescEn, true) }}
+			<twig:FieldPair :fr="form.why4Title" :en="form.why4TitleEn" />
+			<twig:FieldPair :fr="form.why4Desc" :en="form.why4DescEn" :isTextarea="true" />
 		</div>
 	</div>
 
 	<div class="panel">
 		<div class="panel-header"><h2 class="panel-title">Au-delà du code</h2></div>
 		<div class="panel-body space-y-4">
-			{{ _self.pair(form.beyondLanguages, form.beyondLanguagesEn, true) }}
-			{{ _self.pair(form.beyondInterests, form.beyondInterestsEn, true) }}
+			<twig:FieldPair :fr="form.beyondLanguages" :en="form.beyondLanguagesEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.beyondInterests" :en="form.beyondInterestsEn" :isTextarea="true" />
 		</div>
 	</div>
 
 	<div class="panel">
 		<div class="panel-header"><h2 class="panel-title">Appel à l'action final</h2></div>
 		<div class="panel-body space-y-4">
-			{{ _self.pair(form.ctaTitle, form.ctaTitleEn) }}
-			{{ _self.pair(form.ctaSub, form.ctaSubEn, true) }}
+			<twig:FieldPair :fr="form.ctaTitle" :en="form.ctaTitleEn" />
+			<twig:FieldPair :fr="form.ctaSub" :en="form.ctaSubEn" :isTextarea="true" />
 		</div>
 	</div>
 

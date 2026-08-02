@@ -1,0 +1,66 @@
+{% extends 'member/base.html.twig' %}
+
+{% block title %}Devis · {{ quoteRequest.category }}{% endblock %}
+
+{% block body %}
+	{% set variant = {
+		'pending': 'warning',
+		'accepted': 'success',
+		'suspended': 'neutral',
+		'rejected': 'danger',
+	}[quoteRequest.status.value] ?? 'neutral' %}
+
+	<nav class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider opacity-50 mb-3" aria-label="Fil d'Ariane">
+		<a href="{{ path('member_quote_index') }}" class="hover:text-(--brand-primary) transition-colors">Mes devis</a>
+		<span class="ti ti-chevron-right text-xs" aria-hidden="true"></span>
+		<span aria-current="page" class="truncate max-w-[30ch]">{{ quoteRequest.category }}</span>
+	</nav>
+
+	<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+		<h1 class="text-2xl font-bold text-brand-dark">{{ quoteRequest.category }}</h1>
+		<twig:Badge :variant="variant">{{ quoteRequest.status.label }}</twig:Badge>
+	</div>
+
+	<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-cash" aria-hidden="true"></span></div>
+			<div><div class="stat-tile__value text-base">{{ quoteRequest.budget ?? '—' }}{% if quoteRequest.currency %} {{ quoteRequest.currency }}{% endif %}</div><div class="stat-tile__label">Budget</div></div>
+		</div>
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-calendar-time" aria-hidden="true"></span></div>
+			<div><div class="stat-tile__value text-base">{{ quoteRequest.timeline ?? '—' }}</div><div class="stat-tile__label">Délai souhaité</div></div>
+		</div>
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-phone" aria-hidden="true"></span></div>
+			<div><div class="stat-tile__value text-base">{{ quoteRequest.channel ?? '—' }}</div><div class="stat-tile__label">Canal préféré</div></div>
+		</div>
+	</div>
+
+	{% if quoteRequest.categoryDetail %}
+		<div class="panel mb-6">
+			<div class="panel-header"><h3 class="panel-title">Besoin précis</h3></div>
+			<div class="panel-body"><p class="text-brand-dark/80 mb-0">{{ quoteRequest.categoryDetail }}</p></div>
+		</div>
+	{% endif %}
+
+	<div class="panel mb-6">
+		<div class="panel-header"><h3 class="panel-title">Votre message</h3></div>
+		<div class="panel-body"><p class="text-brand-dark/80 leading-relaxed whitespace-pre-line mb-0">{{ quoteRequest.message }}</p></div>
+	</div>
+
+	{% if quoteRequest.clarifications %}
+		<div class="panel">
+			<div class="panel-header"><h3 class="panel-title">Précisions apportées</h3></div>
+			<div class="panel-body">
+				<dl class="space-y-3">
+					{% for item in quoteRequest.clarifications %}
+						<div class="text-sm">
+							<dt class="opacity-60">{{ item.question }}</dt>
+							<dd class="font-semibold text-brand-dark">{{ item.answer }}</dd>
+						</div>
+					{% endfor %}
+				</dl>
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}

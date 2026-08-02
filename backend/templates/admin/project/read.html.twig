@@ -6,6 +6,7 @@
 {% block body %}
 	{% set canEdit = is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
 	{% set canManageTasks = is_granted(constant('App\\Security\\Voter\\ProjectVoter::MANAGE_TASK'), project) %}
+	{% set canManageInvoice = is_granted(constant('App\\Security\\Voter\\ProjectVoter::MANAGE_INVOICE'), project) %}
 	{% set isAdmin = is_granted('ROLE_ADMIN') %}
 	{% set isLocked = project.status.value in ['termine', 'suspendu'] %}
 
@@ -208,6 +209,7 @@
 				{% set tabBtn = 'group inline-flex items-center gap-2 px-4 py-2.5 -mb-px border-b-2 border-transparent text-sm font-semibold text-brand-dark/60 hover:text-brand-dark whitespace-nowrap cursor-pointer transition-colors aria-selected:border-(--brand-primary) aria-selected:text-(--brand-primary)' %}
 				<button type="button" role="tab" data-tab="overview" aria-selected="true" class="{{ tabBtn }}"><span class="ti ti-layout-dashboard" aria-hidden="true"></span> Vue d'ensemble</button>
 				<button type="button" role="tab" data-tab="budget" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-cash" aria-hidden="true"></span> Budget &amp; Dépenses</button>
+				<button type="button" role="tab" data-tab="invoices" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-file-invoice" aria-hidden="true"></span> Factures ({{ project.invoices|length }})</button>
 				<button type="button" role="tab" data-tab="tasks" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-checklist" aria-hidden="true"></span> Tâches ({{ project.doneTasksCount }}/{{ project.tasksCount }})</button>
 				<button type="button" role="tab" data-tab="team" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-users-group" aria-hidden="true"></span> Équipe &amp; parties prenantes</button>
 				<button type="button" role="tab" data-tab="time" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-clock" aria-hidden="true"></span> Temps ({{ project.formattedTotalTime }})</button>
@@ -474,6 +476,86 @@
 					<twig:project:expense_list :project="project"/>
 				</div>
 			</div>
+		</section>
+
+		{# ============================= FACTURES CLIENT ============================= #}
+		<section data-tab-panel="invoices" role="tabpanel" class="pt-6 space-y-6" hidden>
+			<div class="flex items-center justify-between">
+				<h3 class="panel-title mb-0">Factures ({{ project.invoices|length }})</h3>
+				{% if canManageInvoice %}
+					<a href="{{ path('admin_invoice_new', {id: project.id}) }}" class="btn btn-primary btn-sm gap-2">
+						<span class="ti ti-plus" aria-hidden="true"></span> Nouvelle facture
+					</a>
+				{% endif %}
+			</div>
+
+			{% for message in app.flashes('success') %}
+				<div class="p-3 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">{{ message }}</div>
+			{% endfor %}
+			{% for message in app.flashes('error') %}
+				<div class="p-3 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">{{ message }}</div>
+			{% endfor %}
+
+			{% if project.invoices is empty %}
+				<div class="text-center py-10 border-2 border-dashed border-gray-200 rounded-xl bg-white/50">
+					<span class="text-3xl block mb-2" role="img" aria-label="Facture vide">🧾</span>
+					<p class="text-gray-500 font-medium mb-0">Aucune facture émise sur ce projet.</p>
+					{% if canManageInvoice %}
+						<a href="{{ path('admin_invoice_new', {id: project.id}) }}" class="btn btn-primary mt-4 inline-flex items-center gap-2">Créer la première facture</a>
+					{% endif %}
+				</div>
+			{% else %}
+				<div class="overflow-x-auto rounded-xl border border-gray-100 shadow-xs bg-white">
+					<table class="table w-full text-left border-collapse mb-0">
+						<thead>
+							<tr class="bg-gray-50/75 border-b border-gray-100">
+								<th class="p-4 text-xs font-semibold text-gray-500 uppercase">N°</th>
+								<th class="p-4 text-xs font-semibold text-gray-500 uppercase">Libellé</th>
+								<th class="p-4 text-xs font-semibold text-gray-500 uppercase">Échéance</th>
+								<th class="p-4 text-xs font-semibold text-gray-500 uppercase text-right">Montant</th>
+								<th class="p-4 text-xs font-semibold text-gray-500 uppercase">Statut</th>
+								{% if canManageInvoice %}
+									<th class="p-4 text-xs font-semibold text-gray-500 uppercase text-center">Actions</th>
+								{% endif %}
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-100">
+							{% for invoice in project.invoices %}
+								<tr class="transition-colors hover:bg-gray-50/40">
+									<td class="p-4 whitespace-nowrap text-xs text-gray-500">{{ invoice.number }}</td>
+									<td class="p-4 font-medium text-brand-dark text-sm">{{ invoice.label }}</td>
+									<td class="p-4 whitespace-nowrap text-xs {{ invoice.overdue ? 'text-danger font-semibold' : 'text-gray-500' }}">
+										{{ invoice.dueDate ? invoice.dueDate|date('d/m/Y') : '—' }}
+										{% if invoice.overdue %} (en retard){% endif %}
+									</td>
+									<td class="p-4 text-right font-extrabold text-brand-dark text-sm whitespace-nowrap">{{ invoice.formattedAmount }}</td>
+									<td class="p-4"><twig:Badge :variant="invoice.status.variant" icon="{{ invoice.status.icon }}">{{ invoice.status.label }}</twig:Badge></td>
+									{% if canManageInvoice %}
+										<td class="p-4 text-center whitespace-nowrap">
+											<a href="{{ path('admin_invoice_edit', {id: project.id, invoiceId: invoice.id}) }}" class="text-(--brand-primary) hover:underline font-semibold text-xs">Modifier</a>
+											{% if invoice.status.value == 'pending' %}
+												<form method="POST" action="{{ path('admin_invoice_mark_paid', {id: project.id, invoiceId: invoice.id}) }}" class="inline">
+													<input type="hidden" name="_token" value="{{ csrf_token('invoice_' ~ invoice.id) }}">
+													<button type="submit" class="ml-2 text-success hover:underline font-semibold text-xs bg-transparent border-0 cursor-pointer">Marquer payée</button>
+												</form>
+											{% elseif invoice.status.value == 'paid' %}
+												<form method="POST" action="{{ path('admin_invoice_mark_unpaid', {id: project.id, invoiceId: invoice.id}) }}" class="inline">
+													<input type="hidden" name="_token" value="{{ csrf_token('invoice_' ~ invoice.id) }}">
+													<button type="submit" class="ml-2 text-amber-700 hover:underline font-semibold text-xs bg-transparent border-0 cursor-pointer">Remettre en attente</button>
+												</form>
+											{% endif %}
+											<form method="POST" action="{{ path('admin_invoice_delete', {id: project.id, invoiceId: invoice.id}) }}" class="inline" onsubmit="return confirm('Supprimer cette facture ?');">
+												<input type="hidden" name="_token" value="{{ csrf_token('delete_invoice_' ~ invoice.id) }}">
+												<button type="submit" class="ml-2 text-danger hover:underline font-semibold text-xs bg-transparent border-0 cursor-pointer">Supprimer</button>
+											</form>
+										</td>
+									{% endif %}
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			{% endif %}
 		</section>
 
 		{# ============================= TÂCHES / JALONS (tableau par statut) ============================= #}

@@ -96,6 +96,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $passwordChangedAt = null;
 
+    /**
+     * Horodatage de la dernière demande de réinitialisation de mot de passe
+     * (SecurityController::forgotPasswordRequest). Sert de jeton d'usage
+     * unique côté serveur pour le JWT envoyé par email : ce dernier embarque
+     * la même valeur dans son payload, donc un lien devient invalide dès
+     * qu'il a servi une fois (remis à null) ou qu'une demande plus récente a
+     * été faite (valeur remplacée) — sans avoir à stocker/révoquer le JWT
+     * lui-même, qui reste sans état.
+     */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $passwordResetRequestedAt = null;
+
     #[ORM\Column(length: 20, nullable: true)]
     #[Groups(["api_user", "api_admin", "collaborator_signup", "client_signup"])]
     #[Assert\Length(min: 7, max: 20, minMessage: "Le numéro doit contenir au moins {{ limit }} caractères.")]
@@ -215,6 +227,32 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
         return array_unique($roles);
     }
 
+    /**
+     * Rôle le plus élevé, pour l'affichage (un seul badge au lieu de lister
+     * toute la chaîne héritée). Ordre calqué sur role_hierarchy dans
+     * config/packages/security.yaml — à garder synchronisé si celle-ci change.
+     */
+    public function getPrimaryRole(): string
+    {
+        static $hierarchyLowToHigh = [
+            'ROLE_USER',
+            'ROLE_EDITOR',
+            'ROLE_MODERATOR',
+            'ROLE_MANAGER',
+            'ROLE_ADMIN',
+            'ROLE_SUPER_ADMIN',
+        ];
+
+        $roles = $this->getRoles();
+        foreach (array_reverse($hierarchyLowToHigh) as $role) {
+            if (in_array($role, $roles, true)) {
+                return $role;
+            }
+        }
+
+        return 'ROLE_USER';
+    }
+
     /** @param array<int, string> $roles */
     public function setRoles(array $roles): self
     {
@@ -230,6 +268,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     public function setPassword(string $password): self
     {
         $this->password = $password;
+        // Invalide tout lien de réinitialisation en attente : quel que soit le
+        // chemin par lequel le mot de passe change (profil, admin, commande de
+        // secours, ou ce flow de réinitialisation lui-même), un lien envoyé
+        // avant ce changement ne doit plus pouvoir servir.
+        $this->passwordResetRequestedAt = null;
         return $this;
     }
 
@@ -351,6 +394,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     public function setPasswordChangedAt(?\DateTimeImmutable $passwordChangedAt): self
     {
         $this->passwordChangedAt = $passwordChangedAt;
+        return $this;
+    }
+
+    public function getPasswordResetRequestedAt(): ?\DateTimeImmutable
+    {
+        return $this->passwordResetRequestedAt;
+    }
+
+    public function setPasswordResetRequestedAt(?\DateTimeImmutable $passwordResetRequestedAt): self
+    {
+        $this->passwordResetRequestedAt = $passwordResetRequestedAt;
         return $this;
     }
 

@@ -18,13 +18,15 @@ use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
  * Ce voter garantit que les règles métiers de sécurité sont appliquées uniformément.
  *
  * Règles implémentées :
- * - VIEW              : Le client à qui le projet est confié, les collaborateurs (équipe de réalisation) et toi (admin) pouvez consulter le projet.
+ * - VIEW              : Le client à qui le projet est confié, le responsable (owner), les collaborateurs (équipe de réalisation) et toi (admin) pouvez consulter le projet.
  * - EDIT               : Réservé à toi (admin), à condition que le projet soit actif (non terminé/suspendu).
  * - DELETE             : Réservé à toi (admin) — action critique.
  * - ADD_EXPENSE        : Manager et plus, ET affecté au projet (ou admin), projet actif uniquement.
  * - ADD_COLLABORATOR   : Modérateur et plus, ET affecté au projet (ou admin).
  * - CHANGE_STATUS      : Éditeur et plus, ET affecté au projet (ou admin).
  * - ARCHIVE            : Manager et plus, ET affecté au projet (ou admin).
+ * - LOG_TIME           : Owner ou collaborateur (équipe de réalisation) du projet, projet actif uniquement — le client ne saisit pas de temps.
+ * - MANAGE_INVOICE      : Admin, ET affecté au projet — créer/modifier/annuler une facture client, sans verrou d'état du projet.
  *
  * Le seuil de rôle donne le niveau d'autorité requis ; l'affectation au projet
  * (client ou collaborateur) donne le périmètre — un Manager n'a pas autorité sur
@@ -45,6 +47,8 @@ class ProjectVoter extends Voter
     public const ARCHIVE = 'PROJECT_ARCHIVE';
     public const APPROVE_EXPENSE = 'PROJECT_APPROVE_EXPENSE';
     public const MANAGE_TASK = 'PROJECT_MANAGE_TASK';
+    public const LOG_TIME = 'PROJECT_LOG_TIME';
+    public const MANAGE_INVOICE = 'PROJECT_MANAGE_INVOICE';
 
     /**
      * @param LoggerInterface $logger Service de journalisation (déclaré en readonly pour la sécurité d'exécution)
@@ -71,6 +75,7 @@ class ProjectVoter extends Voter
             self::ADD_EXPENSE, self::ADD_COLLABORATOR,
             self::CHANGE_STATUS, self::ARCHIVE,
             self::APPROVE_EXPENSE, self::MANAGE_TASK,
+            self::LOG_TIME, self::MANAGE_INVOICE,
         ], true)
             && $subject instanceof Project;
     }
@@ -115,6 +120,11 @@ class ProjectVoter extends Voter
             self::APPROVE_EXPENSE => $this->isProjectActive($project) && $this->hasRole($user, 'ROLE_ADMIN') && $this->isAssignedOrAdmin($project, $user),
             // Gérer les tâches (créer/éditer/cocher) = Éditeur+, projet actif.
             self::MANAGE_TASK => $this->isProjectActive($project) && $this->hasRole($user, 'ROLE_ADMIN') && $this->isAssignedOrAdmin($project, $user),
+            // Facturation client : décision de gestion (Admin+), pas de verrou d'état — une
+            // facture finale s'émet souvent une fois le projet terminé.
+            self::MANAGE_INVOICE => $this->hasRole($user, 'ROLE_ADMIN') && $this->isAssignedOrAdmin($project, $user),
+            // Saisie de temps : toute l'équipe de réalisation (owner ou collaborateur), sans palier de rôle — le client est exclu.
+            self::LOG_TIME => $this->isProjectActive($project) && ($project->isTeamMember($user) || $this->hasRole($user, 'ROLE_ADMIN')),
             default => false,
         };
 
@@ -141,14 +151,14 @@ class ProjectVoter extends Voter
 
     /**
      * Règle de lecture.
-     * Le projet est visible par le client à qui il est confié, par les
-     * collaborateurs qui participent à sa réalisation, ou par un
-     * administrateur (toi).
+     * Le projet est visible par le client à qui il est confié, par le
+     * responsable (owner) et les collaborateurs qui participent à sa
+     * réalisation, ou par un administrateur (toi).
      */
     private function canView(Project $project, User $user): bool
     {
         return $project->getClient() === $user
-            || $project->getCollaborators()->contains($user)
+            || $project->isTeamMember($user)
             || in_array('ROLE_ADMIN', $user->getRoles(), true);
     }
 

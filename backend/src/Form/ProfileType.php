@@ -4,10 +4,12 @@ namespace App\Form;
 
 use App\Entity\User;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -130,12 +132,47 @@ class ProfileType extends AbstractType
                 ],
             ])
         ;
+
+        // Profil "collaborateur" (pro/freelance) : uniquement pour les comptes
+        // ayant ROLE_EDITOR — un client simple n'a pas de spécialités/portfolio à
+        // renseigner. Même filtre que UserType::context='collaborator' côté admin.
+        if ($options['isCollaborator']) {
+            $builder
+                ->add('specialties', TextType::class, [
+                    'required' => false,
+                    'label' => 'Spécialités (séparées par des virgules)',
+                    'attr' => ['placeholder' => 'Backend, Cybersécurité...'],
+                ])
+                ->add('availability', TextType::class, [
+                    'required' => false,
+                    'label' => 'Disponibilité',
+                    'attr' => ['placeholder' => 'Immédiate, Sous 1 mois...'],
+                ])
+                ->add('portfolioUrl', TextType::class, [
+                    'required' => false,
+                    'label' => 'Portfolio / lien',
+                ])
+                ->add('bio', TextareaType::class, [
+                    'required' => false,
+                    'label' => 'Présentation / bio',
+                ])
+            ;
+
+            $builder->get('specialties')->addModelTransformer(new CallbackTransformer(
+                static fn (?array $specialties): string => $specialties ? implode(', ', $specialties) : '',
+                static fn (?string $specialties): ?array => $specialties
+                    ? array_values(array_filter(array_map('trim', explode(',', $specialties))))
+                    : null,
+            ));
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
             'data_class' => User::class,
+            'isCollaborator' => false,
         ]);
+        $resolver->setAllowedTypes('isCollaborator', 'bool');
     }
 }

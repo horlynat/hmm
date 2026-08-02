@@ -43,6 +43,7 @@ class UserType extends AbstractType
         /** @var User $user */
         $user = $builder->getData();
         $isNewUser = null === $user->getId();
+        $context = $options['context'];
 
         $builder
             ->add('email', EmailType::class, [
@@ -57,32 +58,43 @@ class UserType extends AbstractType
             ->add('phone', TextType::class, [
                 'required' => false,
                 'label' => 'Téléphone',
-            ])
+            ]);
 
-            // Profil "collaborateur" (pro/freelance) — renseigné à l'inscription
-            // publique, éditable ensuite ici (ex : revue d'une candidature).
-            ->add('specialties', TextType::class, [
-                'required' => false,
-                'label' => 'Spécialités (séparées par des virgules)',
-                'attr' => ['placeholder' => 'Backend, Cybersécurité...'],
-            ])
+        // Profil "collaborateur" (pro/freelance) : uniquement pertinent sur l'écran
+        // de gestion des collaborateurs, pas sur "Nouveau client" / "Nouvel admin".
+        if ('collaborator' === $context) {
+            $builder
+                ->add('specialties', TextType::class, [
+                    'required' => false,
+                    'label' => 'Spécialités (séparées par des virgules)',
+                    'attr' => ['placeholder' => 'Backend, Cybersécurité...'],
+                ])
 
-            ->add('availability', TextType::class, [
-                'required' => false,
-                'label' => 'Disponibilité',
-                'attr' => ['placeholder' => 'Immédiate, Sous 1 mois...'],
-            ])
+                ->add('availability', TextType::class, [
+                    'required' => false,
+                    'label' => 'Disponibilité',
+                    'attr' => ['placeholder' => 'Immédiate, Sous 1 mois...'],
+                ])
 
-            ->add('portfolioUrl', TextType::class, [
-                'required' => false,
-                'label' => 'Portfolio / lien',
-            ])
+                ->add('portfolioUrl', TextType::class, [
+                    'required' => false,
+                    'label' => 'Portfolio / lien',
+                ])
 
-            ->add('bio', TextareaType::class, [
-                'required' => false,
-                'label' => 'Présentation / bio',
-            ])
+                ->add('bio', TextareaType::class, [
+                    'required' => false,
+                    'label' => 'Présentation / bio',
+                ]);
 
+            $builder->get('specialties')->addModelTransformer(new CallbackTransformer(
+                static fn (?array $specialties): string => $specialties ? implode(', ', $specialties) : '',
+                static fn (?string $specialties): ?array => $specialties
+                    ? array_values(array_filter(array_map('trim', explode(',', $specialties))))
+                    : null,
+            ));
+        }
+
+        $builder
             ->add('plainPassword', PasswordType::class, [
                 'mapped' => false,
                 // Obligatoire à la création (sinon le hash reste vide) ; optionnel à
@@ -109,9 +121,13 @@ class UserType extends AbstractType
                 'mapped' => false,
                 'required' => false,
                 'label' => 'Image de profil',
-            ])
+            ]);
 
-            ->add('roles', ChoiceType::class, [
+        // Attribution de rôles : hors sujet sur "Nouveau client"/"Modifier le client"
+        // (comptes ROLE_USER simples, non gérés par cet écran) ; pertinent uniquement
+        // sur les écrans dédiés collaborateur/admin.
+        if ('client' !== $context) {
+            $builder->add('roles', ChoiceType::class, [
                 // Restreint aux rôles que l'utilisateur connecté possède déjà
                 // (via la hiérarchie) : un ROLE_ADMIN ne peut jamais s'auto-attribuer
                 // ni attribuer à un tiers un rôle plus élevé que le sien (ex: SUPER_ADMIN).
@@ -122,8 +138,10 @@ class UserType extends AbstractType
                 'multiple' => true,
                 'expanded' => true,
                 'label' => 'Rôles',
-            ])
+            ]);
+        }
 
+        $builder
             ->add('isActive', CheckboxType::class, [
                 'label' => 'Compte actif',
                 'required' => false,
@@ -142,20 +160,15 @@ class UserType extends AbstractType
                 // en libre-service (vérification d'un vrai code TOTP requise).
                 'disabled' => true,
             ]);
-
-        $builder->get('specialties')->addModelTransformer(new CallbackTransformer(
-            static fn (?array $specialties): string => $specialties ? implode(', ', $specialties) : '',
-            static fn (?string $specialties): ?array => $specialties
-                ? array_values(array_filter(array_map('trim', explode(',', $specialties))))
-                : null,
-        ));
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
             'data_class' => User::class,
+            'context' => 'client',
         ]);
+        $resolver->setAllowedValues('context', ['client', 'collaborator', 'admin']);
     }
 
     /** @return array<string, string> */

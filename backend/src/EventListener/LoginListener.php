@@ -32,6 +32,18 @@ class LoginListener
     private const SUSPICIOUS_WINDOW_HOURS = 1;
     private const SUSPICIOUS_MIN_ATTEMPTS = 3;
 
+    /**
+     * Firewalls sur lesquels un LoginSuccessEvent représente une vraie connexion
+     * interactive. Le firewall `api` (JWT stateless, cf. security.yaml) est
+     * volontairement exclu : sans session, Symfony ré-authentifie le Bearer
+     * token depuis zéro à CHAQUE requête, donc LoginSuccessEvent s'y déclenche
+     * sur chaque clic/rafraîchissement — pas seulement à la connexion. Sans ce
+     * garde-fou, __invoke() renvoyait un email de sécurité (et flushait
+     * lastIp/lastDevice/lastLoginAt) à chaque appel `/api/*` d'un client
+     * connecté, saturant le serveur SMTP.
+     */
+    private const INTERACTIVE_FIREWALLS = ['main', 'api_login'];
+
     public function __construct(
         private MessageBusInterface $bus,
         private RequestStack $requestStack,
@@ -44,6 +56,10 @@ class LoginListener
 
     public function __invoke(LoginSuccessEvent $event): void
     {
+        if (!\in_array($event->getFirewallName(), self::INTERACTIVE_FIREWALLS, true)) {
+            return;
+        }
+
         $user = $event->getUser();
         if (!$user instanceof User) {
             return;

@@ -1,39 +1,43 @@
-{% import 'profile/macros.html.twig' as macros %}
+{# templates/profile/_profile_security.html.twig #}
 
-<div class="bg-var(--surface-2) border-[0.5px] border-var(--border) rounded-xl py-4 px-4 card-hover">
-	<p class="flex items-center gap-2 text-xs font-medium text-var(--text-muted) uppercase tracking-wider mb-4">
-		<span class="ti ti-shield" aria-hidden="true"></span>
-		Sécurité
-	</p>
-
-	<div class="space-y-5">
+<div class="panel">
+	<div class="panel-header">
+		<h2 class="panel-title flex items-center gap-2">
+			<span class="ti ti-shield" aria-hidden="true"></span>
+			Sécurité
+		</h2>
+	</div>
+	<div class="panel-body space-y-5">
 		<div class="flex items-center justify-between">
-			<p class="text-sm text-var(--text-secondary)">Email vérifié</p>
-			{{ macros.badge(user.isVerified ? 'Oui' : 'Non', user.isVerified ? 'green' : 'red', user.isVerified ? 'circle-check' : 'circle-x') }}
+			<p class="text-sm text-gray-500">Email vérifié</p>
+			<twig:Badge :variant="user.isVerified ? 'success' : 'warning'" :icon="user.isVerified ? 'ti-circle-check' : 'ti-alert-triangle'">
+				{{ user.isVerified ? 'Oui' : 'Non' }}
+			</twig:Badge>
 		</div>
 
 		<div class="flex items-center justify-between">
-			<p class="text-sm text-var(--text-secondary)">2FA activé</p>
-			{{ macros.badge(user.isTwoFactorEnabled ? 'Oui' : 'Non', user.isTwoFactorEnabled ? 'green' : 'red', user.isTwoFactorEnabled ? 'circle-check' : 'circle-x') }}
+			<p class="text-sm text-gray-500">2FA activé</p>
+			<twig:Badge :variant="user.isTwoFactorEnabled ? 'success' : 'neutral'" :icon="user.isTwoFactorEnabled ? 'ti-circle-check' : 'ti-circle-x'">
+				{{ user.isTwoFactorEnabled ? 'Oui' : 'Non' }}
+			</twig:Badge>
 		</div>
 
 		<div>
-			<p class="text-sm text-var(--text-secondary) mb-1">Dernier changement de mot de passe</p>
-			<p class="text-sm font-medium text-var(--text-primary)">
+			<p class="text-sm text-gray-500 mb-1">Dernier changement de mot de passe</p>
+			<p class="text-sm font-medium text-(--brand-dark)">
 				{{ user.passwordChangedAt ? user.passwordChangedAt|date('d/m/Y à H:i') : 'Jamais' }}
 			</p>
 		</div>
 
-		<div class="pt-2 border-t border-var(--border) flex flex-wrap gap-2">
-			<a href="{{ path('profile_change_password', {'id': user.id}) }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white dark:bg-var(--surface-2) text-slate-600 dark:text-var(--text-secondary) text-sm font-medium hover:bg-slate-50 dark:hover:bg-var(--surface-1) transition-colors shadow-sm">
-				<span class="ti ti-lock-cog text-[16px]" aria-hidden="true"></span>
+		<div class="pt-2 border-t border-gray-100 dark:border-gray-700 flex flex-wrap gap-2">
+			<a href="{{ path('profile_change_password', {'id': user.id}) }}" class="btn btn-secondary btn-sm gap-1.5">
+				<span class="ti ti-lock-cog" aria-hidden="true"></span>
 				Changer le mot de passe
 			</a>
-			<a href="{{ path('profile_two_factor_index') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white dark:bg-var(--surface-2) text-slate-600 dark:text-var(--text-secondary) text-sm font-medium hover:bg-slate-50 dark:hover:bg-var(--surface-1) transition-colors shadow-sm">
-				<span class="ti ti-shield-lock text-[16px]" aria-hidden="true"></span>
+			<a href="{{ path('profile_two_factor_index') }}" class="btn btn-secondary btn-sm gap-1.5">
+				<span class="ti ti-shield-lock" aria-hidden="true"></span>
 				Gérer la 2FA
 			</a>
 		</div>
 	</div>
 </div>
-

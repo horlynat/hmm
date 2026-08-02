@@ -64,7 +64,7 @@ final class AdminAdminsController extends AbstractController
         $user->setRoles(['ROLE_ADMIN']);
         $user->setCreatedAt(new \DateTimeImmutable());
 
-        $form = $this->createForm(UserType::class, $user);
+        $form = $this->createForm(UserType::class, $user, ['context' => 'admin']);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -108,7 +108,7 @@ final class AdminAdminsController extends AbstractController
 
         $wasAdmin = \in_array('ROLE_ADMIN', $user->getRoles(), true) || \in_array('ROLE_SUPER_ADMIN', $user->getRoles(), true);
 
-        $form = $this->createForm(UserType::class, $user);
+        $form = $this->createForm(UserType::class, $user, ['context' => 'admin']);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

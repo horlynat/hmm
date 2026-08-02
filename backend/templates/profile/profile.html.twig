@@ -14,15 +14,21 @@
 
 {% block body %}
 
-	<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-		<div class="lg:col-span-1">
-			{% include 'profile/_profile_sidebar.html.twig' %}
+	{% include 'profile/_profile_banner.html.twig' %}
+
+	<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
+		{% include 'profile/_profile_info.html.twig' %}
+		{% include 'profile/_profile_security.html.twig' %}
+	</div>
+
+	{% if 'ROLE_EDITOR' in user.roles %}
+		<div class="mt-4">
+			{% include 'profile/_profile_collaborator.html.twig' %}
 		</div>
-		<div class="lg:col-span-2 flex flex-col gap-4">
-			{% include 'profile/_profile_info.html.twig' %}
-			{% include 'profile/_profile_security.html.twig' %}
-			{% include 'profile/_profile_activity.html.twig' %}
-		</div>
+	{% endif %}
+
+	<div class="mt-4">
+		{% include 'profile/_profile_activity.html.twig' %}
 	</div>
 
 {% endblock %}

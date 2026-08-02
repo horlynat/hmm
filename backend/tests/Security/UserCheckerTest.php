@@ -5,6 +5,8 @@ namespace App\Tests\Security;
 use App\Entity\User;
 use App\Security\UserChecker;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAccountStatusException;
 use Symfony\Component\Security\Core\User\InMemoryUser;
 
@@ -19,17 +21,26 @@ final class UserCheckerTest extends TestCase
         return $user;
     }
 
+    /** Requête factice sur une route neutre (ni /api/login_check, ni /login). */
+    private function createChecker(): UserChecker
+    {
+        $requestStack = new RequestStack();
+        $requestStack->push(Request::create('/'));
+
+        return new UserChecker($requestStack);
+    }
+
     public function testPreAuthNeverThrows(): void
     {
         // checkPreAuth ne doit jamais lever, même pour un compte bloqué :
         // les contrôles de statut appartiennent au post-auth (anti-énumération).
-        (new UserChecker())->checkPreAuth($this->createUser(false, false));
+        $this->createChecker()->checkPreAuth($this->createUser(false, false));
         $this->addToAssertionCount(1);
     }
 
     public function testActiveAndVerifiedUserPassesPostAuth(): void
     {
-        (new UserChecker())->checkPostAuth($this->createUser(true, true));
+        $this->createChecker()->checkPostAuth($this->createUser(true, true));
         $this->addToAssertionCount(1);
     }
 
@@ -38,7 +49,7 @@ final class UserCheckerTest extends TestCase
         $this->expectException(CustomUserMessageAccountStatusException::class);
         $this->expectExceptionMessageMatches('/vérifié/');
 
-        (new UserChecker())->checkPostAuth($this->createUser(true, false));
+        $this->createChecker()->checkPostAuth($this->createUser(true, false));
     }
 
     public function testDisabledUserIsRejectedPostAuth(): void
@@ -46,14 +57,14 @@ final class UserCheckerTest extends TestCase
         $this->expectException(CustomUserMessageAccountStatusException::class);
         $this->expectExceptionMessageMatches('/désactivé/');
 
-        (new UserChecker())->checkPostAuth($this->createUser(false, true));
+        $this->createChecker()->checkPostAuth($this->createUser(false, true));
     }
 
     public function testNonAppUserIsIgnored(): void
     {
         // Un UserInterface qui n'est pas notre entité (improbable, mais la
         // signature l'autorise) ne doit pas faire planter le checker.
-        (new UserChecker())->checkPostAuth(new InMemoryUser('x', 'y'));
+        $this->createChecker()->checkPostAuth(new InMemoryUser('x', 'y'));
         $this->addToAssertionCount(1);
     }
 }
