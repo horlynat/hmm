@@ -1,6 +1,7 @@
 "use server";
 
 import { apiPost, type ApiPostResult } from "@/lib/api/client";
+import { getToken } from "@/lib/auth/session";
 import { rateLimit } from "@/lib/rate-limit";
 import { quoteAnswersSchema, invalidInput } from "@/lib/validation/server";
 import type { QuoteRequestPayload, QuoteWizardAnswers } from "@/lib/types";
@@ -35,5 +36,11 @@ export async function submitQuoteRequest(
     message: answers.description || "(aucune description fournie)",
   };
 
-  return apiPost("/quote_requests", payload);
+  // Si l'auteur est connecté au moment de l'envoi, on rattache la demande à
+  // son compte (le backend l'associe via le Bearer token — cf.
+  // App\State\QuoteRequestCreateProcessor) pour qu'elle apparaisse dans « Mes
+  // devis » sans intervention manuelle d'un admin. Reste anonyme sinon.
+  const token = await getToken();
+
+  return apiPost("/quote_requests", payload, token ? { token } : {});
 }

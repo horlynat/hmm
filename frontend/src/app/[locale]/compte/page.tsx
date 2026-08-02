@@ -1,81 +1,132 @@
 import { getTranslations } from "next-intl/server";
-import { Badge, Card } from "@/components/ui";
-import { getCurrentUser } from "@/lib/auth/session";
-import type { SessionProject, SessionQuote } from "@/lib/types";
+import { FolderKanban, FileText, Receipt, Briefcase, History, MessageSquare, LayoutDashboard } from "lucide-react";
+import { Badge, Card, ButtonLink, EmptyState, PageHeader, StatCard } from "@/components/ui";
+import { ProjectList, QuoteList } from "@/components/sections/AccountLists";
+import { WelcomeBanner } from "@/components/sections/WelcomeBanner";
+import { getCurrentUser, getMyActivity } from "@/lib/auth/session";
+import { Link } from "@/i18n/navigation";
+import { projectStatusVariant } from "@/lib/status";
+import type { SessionProject, SessionActivityEntry, SessionComment } from "@/lib/types";
 
-function ProjectList({
-  projects,
-  labels,
+const PREVIEW_COUNT = 4;
+const UPCOMING_COUNT = 5;
+const FEED_COUNT = 5;
+
+/**
+ * Ni `SessionProject` ni `SessionQuote` ne portent de date de création/mise à
+ * jour côté API (`/api/me` ne les expose pas — cf. MeController) : impossible
+ * de construire un vrai flux d'activité récente sans changement backend. En
+ * attendant, cette section reste 100% honnête en s'appuyant sur la seule date
+ * réellement disponible : l'échéance des projets.
+ */
+function upcomingDeadlines(projects: SessionProject[], limit: number): SessionProject[] {
+  const seen = new Set<number>();
+  return projects
+    .filter((p) => p.deadline && p.status !== "termine" && !seen.has(p.id) && seen.add(p.id))
+    .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())
+    .slice(0, limit);
+}
+
+function countActive(projects: SessionProject[]): number {
+  const seen = new Set<number>();
+  return projects.filter((p) => p.status === "en_cours" && !seen.has(p.id) && seen.add(p.id)).length;
+}
+
+function timeAgoLabel(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale, {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function ActivityFeed({
+  entries,
+  locale,
+  emptyMessage,
 }: {
-  projects: SessionProject[];
-  labels: { progress: string; deadline: string; noDeadline: string };
+  entries: SessionActivityEntry[];
+  locale: string;
+  emptyMessage: string;
 }) {
+  if (entries.length === 0) {
+    return <EmptyState icon="📜" message={emptyMessage} />;
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {projects.map((project) => (
-        <Card key={project.id} variant="soft" className="p-4">
-          <div className="mb-2 flex items-start justify-between gap-2">
-            <span className="font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-              {project.title}
-            </span>
-            <Badge>{project.statusLabel}</Badge>
+    <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
+      {entries.map((entry) => (
+        <Link
+          key={entry.id}
+          href={{ pathname: "/compte/projets/[id]", params: { id: String(entry.projectId) } }}
+          className="flex items-start gap-3 p-4 transition-colors hover:bg-(--color-surface-muted)"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
+            <History size={14} aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm">
+              <span className="font-semibold">{entry.actionLabel}</span>{" "}
+              <span className="text-(--color-muted)">— {entry.projectTitle}</span>
+            </p>
+            <p className="mt-0.5 text-xs text-(--color-muted)">{timeAgoLabel(entry.createdAt, locale)}</p>
           </div>
-          <div className="mb-1 flex items-center justify-between text-xs opacity-60">
-            <span>{labels.progress}</span>
-            <span>{project.progress}%</span>
-          </div>
-          <div className="h-1.5 w-full rounded-full bg-brand-light">
-            <div
-              className="h-1.5 rounded-full bg-brand-primary"
-              style={{ width: `${project.progress}%` }}
-            />
-          </div>
-          <p className="mt-2 text-xs opacity-60">
-            {labels.deadline}:{" "}
-            {project.deadline
-              ? new Date(project.deadline).toLocaleDateString()
-              : labels.noDeadline}
-          </p>
-        </Card>
+        </Link>
       ))}
-    </div>
+    </Card>
   );
 }
 
-function QuoteList({
-  quotes,
-  statusLabel,
+function MessagesFeed({
+  messages,
+  locale,
+  emptyMessage,
+  youLabel,
 }: {
-  quotes: SessionQuote[];
-  statusLabel: string;
+  messages: SessionComment[];
+  locale: string;
+  emptyMessage: string;
+  youLabel: string;
 }) {
+  if (messages.length === 0) {
+    return <EmptyState icon="💬" message={emptyMessage} />;
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {quotes.map((quote) => (
-        <Card key={quote.id} variant="soft" className="p-4">
-          <div className="mb-1 flex items-start justify-between gap-2">
-            <span className="font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-              {quote.category}
-            </span>
-            <Badge>{quote.status}</Badge>
-          </div>
-          {quote.budget && (
-            <p className="text-sm opacity-70">
-              {statusLabel}: {quote.budget} {quote.currency ?? ""}
+    <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
+      {messages.map((message) => (
+        <Link
+          key={message.id}
+          href={{ pathname: "/compte/projets/[id]", params: { id: String(message.projectId) } }}
+          className="flex items-start gap-3 p-4 transition-colors hover:bg-(--color-surface-muted)"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
+            <MessageSquare size={14} aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm">
+              <span className="font-semibold">{message.isMine ? youLabel : (message.author.fullName ?? message.author.email)}</span>{" "}
+              <span className="text-(--color-muted)">— {message.projectTitle}</span>
             </p>
-          )}
-        </Card>
+            <p className="mt-0.5 truncate text-sm text-(--color-muted)">{message.content}</p>
+            <p className="mt-0.5 text-xs text-(--color-muted)">{timeAgoLabel(message.createdAt, locale)}</p>
+          </div>
+        </Link>
       ))}
-    </div>
+    </Card>
   );
 }
 
 export default async function ComptePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ welcome?: string }>;
 }) {
   const { locale } = await params;
+  const { welcome } = await searchParams;
   const user = await getCurrentUser();
   const t = await getTranslations({ locale, namespace: "auth.account" });
 
@@ -91,6 +142,13 @@ export default async function ComptePage({
     noDeadline: t("project.noDeadline"),
   };
 
+  const quoteStatusLabels = {
+    pending: t("quoteStatus.pending"),
+    accepted: t("quoteStatus.accepted"),
+    suspended: t("quoteStatus.suspended"),
+    rejected: t("quoteStatus.rejected"),
+  };
+
   const collaboratingProjects = [
     ...attributions.collaboratingProjects,
     ...attributions.ownedProjects,
@@ -99,16 +157,29 @@ export default async function ComptePage({
   const hasClientProjects = attributions.clientProjects.length > 0;
   const hasQuotes = attributions.quoteRequests.length > 0;
 
+  const allProjects = [...collaboratingProjects, ...attributions.clientProjects];
+  const deadlines = upcomingDeadlines(allProjects, UPCOMING_COUNT);
+  const activity = await getMyActivity();
+
+  const pendingQuotesCount = attributions.quoteRequests.filter((q) => q.status === "pending").length;
+  const unpaidInvoicesCount = attributions.invoices.filter((inv) => inv.status === "pending").length;
+
   return (
     <div className="space-y-8">
-      <div>
-        <Badge variant="accent" className="mb-3">
-          {roleLabel}
-        </Badge>
-        <h1 className="text-[clamp(1.6rem,3vw,2.2rem)]">
-          {t("welcome", { name: user.fullName ?? user.email })}
-        </h1>
-      </div>
+      {welcome === "1" && (
+        <WelcomeBanner message={t("welcome", { name: user.fullName ?? user.email })} />
+      )}
+
+      <PageHeader
+        icon={LayoutDashboard}
+        title={t("dashboardTitle")}
+        actions={
+          <>
+            <Badge variant="neutral">{roleLabel}</Badge>
+            <Badge variant="neutral">{user.isVerified ? t("verifiedBadge") : t("unverifiedBadge")}</Badge>
+          </>
+        }
+      />
 
       {!user.isVerified && (
         <Card className="border-l-4 border-warning p-4 text-sm">
@@ -116,38 +187,148 @@ export default async function ComptePage({
         </Card>
       )}
 
-      {isCollaborator && (
-        <section>
-          <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("sections.collaboratingProjects")}
+      {/* ---- Résumé ---- */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard icon={FolderKanban} label={t("stats.activeProjects")} value={countActive(allProjects)} />
+        <StatCard
+          icon={FileText}
+          label={t("stats.pendingQuotes")}
+          value={pendingQuotesCount}
+          href="/compte/devis"
+        />
+        {isCollaborator && (
+          <StatCard
+            icon={Briefcase}
+            label={t("stats.assignedProjects")}
+            value={collaboratingProjects.length}
+            href="/compte/gestion-projet"
+          />
+        )}
+        {attributions.invoices.length > 0 && (
+          <StatCard
+            icon={Receipt}
+            label={t("stats.unpaidInvoices")}
+            value={unpaidInvoicesCount}
+            href="/compte/factures"
+            tone={unpaidInvoicesCount > 0 ? "warning" : "default"}
+          />
+        )}
+      </div>
+
+      {deadlines.length > 0 && (
+        <section aria-labelledby="section-deadlines">
+          <h2 id="section-deadlines" className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+            {t("sections.upcomingDeadlines")}
           </h2>
+          <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
+            {deadlines.map((project) => {
+              const overdue = new Date(project.deadline!) < new Date();
+              return (
+                <Link
+                  key={project.id}
+                  href={{ pathname: "/compte/projets/[id]", params: { id: String(project.id) } }}
+                  className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-(--color-surface-muted)"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Badge variant={projectStatusVariant(project.status)}>{project.statusLabel}</Badge>
+                    <span className="truncate font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                      {project.title}
+                    </span>
+                  </div>
+                  <span className={overdue ? "shrink-0 text-sm font-semibold text-danger" : "shrink-0 text-sm opacity-70"}>
+                    {overdue && `${t("sections.overdue")} — `}
+                    {new Date(project.deadline!).toLocaleDateString(locale)}
+                  </span>
+                </Link>
+              );
+            })}
+          </Card>
+        </section>
+      )}
+
+      {/* ---- Activité & messages ---- */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <section aria-labelledby="section-activity">
+          <h2 id="section-activity" className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+            {t("sections.activity")}
+          </h2>
+          <ActivityFeed
+            entries={activity.history.slice(0, FEED_COUNT)}
+            locale={locale}
+            emptyMessage={t("sections.emptyActivity")}
+          />
+        </section>
+
+        <section aria-labelledby="section-messages">
+          <h2 id="section-messages" className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+            {t("sections.messages")}
+          </h2>
+          <MessagesFeed
+            messages={activity.messages.slice(0, FEED_COUNT)}
+            locale={locale}
+            emptyMessage={t("sections.emptyMessages")}
+            youLabel={t("projectDetail.you")}
+          />
+        </section>
+      </div>
+
+      {isCollaborator && (
+        <section aria-labelledby="section-collaborating">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 id="section-collaborating" className="text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+              {t("sections.collaboratingProjects")}
+            </h2>
+            {collaboratingProjects.length > PREVIEW_COUNT && (
+              <ButtonLink href="/compte/gestion-projet" variant="secondary" className="text-xs">
+                {t("sections.viewAll")}
+              </ButtonLink>
+            )}
+          </div>
           {hasCollaborating ? (
-            <ProjectList projects={collaboratingProjects} labels={projectLabels} />
+            <ProjectList projects={collaboratingProjects.slice(0, PREVIEW_COUNT)} labels={projectLabels} />
           ) : (
-            <p className="text-sm opacity-60">{t("sections.emptyProjects")}</p>
+            <EmptyState icon="🤝" message={t("sections.emptyProjects")} />
           )}
         </section>
       )}
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-          {t("sections.clientProjects")}
-        </h2>
+      <section aria-labelledby="section-client-projects">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 id="section-client-projects" className="text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+            {t("sections.clientProjects")}
+          </h2>
+          {attributions.clientProjects.length > PREVIEW_COUNT && (
+            <ButtonLink href="/compte/projets" variant="secondary" className="text-xs">
+              {t("sections.viewAll")}
+            </ButtonLink>
+          )}
+        </div>
         {hasClientProjects ? (
-          <ProjectList projects={attributions.clientProjects} labels={projectLabels} />
+          <ProjectList projects={attributions.clientProjects.slice(0, PREVIEW_COUNT)} labels={projectLabels} />
         ) : (
-          <p className="text-sm opacity-60">{t("sections.emptyProjects")}</p>
+          <EmptyState icon="📁" message={t("sections.emptyProjects")} />
         )}
       </section>
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-          {t("sections.quotes")}
-        </h2>
+      <section aria-labelledby="section-quotes">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 id="section-quotes" className="text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+            {t("sections.quotes")}
+          </h2>
+          {attributions.quoteRequests.length > PREVIEW_COUNT && (
+            <ButtonLink href="/compte/devis" variant="secondary" className="text-xs">
+              {t("sections.viewAll")}
+            </ButtonLink>
+          )}
+        </div>
         {hasQuotes ? (
-          <QuoteList quotes={attributions.quoteRequests} statusLabel={t("sections.quoteBudget")} />
+          <QuoteList
+            quotes={attributions.quoteRequests.slice(0, PREVIEW_COUNT)}
+            statusLabel={t("sections.quoteBudget")}
+            statusLabels={quoteStatusLabels}
+          />
         ) : (
-          <p className="text-sm opacity-60">{t("sections.emptyQuotes")}</p>
+          <EmptyState icon="📝" message={t("sections.emptyQuotes")} />
         )}
       </section>
     </div>

@@ -38,7 +38,8 @@
     "tooLong": "Ce texte est trop long ({max} caractères maximum).",
     "genericError": "Une erreur est survenue, merci de réessayer.",
     "networkError": "Connexion impossible. Vérifiez votre réseau et réessayez.",
-    "rateLimited": "Trop de tentatives. Merci de patienter une minute avant de réessayer."
+    "rateLimited": "Trop de tentatives. Merci de patienter une minute avant de réessayer.",
+    "passwordMismatch": "Les deux mots de passe ne correspondent pas."
   },
   "nav": {
     "apropos": "À propos",
@@ -788,7 +789,27 @@
       "invalidCredentials": "Email ou mot de passe incorrect.",
       "error": "Impossible de vous connecter. Veuillez réessayer.",
       "noAccount": "Pas encore de compte ?",
-      "registerLink": "Créer un compte"
+      "registerLink": "Créer un compte",
+      "forgotPasswordLink": "Mot de passe oublié ?"
+    },
+    "forgotPassword": {
+      "title": "Mot de passe oublié",
+      "subtitle": "Indiquez votre adresse email : si un compte existe, vous recevrez un lien pour réinitialiser votre mot de passe.",
+      "emailLabel": "Adresse email",
+      "emailPlaceholder": "vous@exemple.com",
+      "submit": "Envoyer le lien",
+      "success": "Si un compte existe pour cette adresse, un email contenant un lien de réinitialisation vient d'être envoyé.",
+      "error": "Impossible d'envoyer l'email pour le moment. Veuillez réessayer."
+    },
+    "resetPassword": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Choisissez un nouveau mot de passe pour votre compte.",
+      "passwordLabel": "Nouveau mot de passe",
+      "confirmPasswordLabel": "Confirmer le mot de passe",
+      "submit": "Réinitialiser",
+      "success": "Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter.",
+      "loginLink": "Aller à la connexion",
+      "error": "Ce lien est invalide ou a expiré. Merci d'en demander un nouveau."
     },
     "register": {
       "eyebrow": "Espace compte",
@@ -820,15 +841,39 @@
       }
     },
     "account": {
-      "welcome": "Bonjour {name}",
+      "welcome": "Bonjour {name}, bon retour parmi nous !",
+      "dashboardTitle": "Tableau de bord",
       "roleClient": "Compte client",
       "roleFreelance": "Compte collaborateur",
       "verifyWarning": "Votre adresse email n'est pas encore vérifiée. Consultez votre boîte de réception pour activer votre compte.",
+      "verifiedBadge": "Email vérifié",
+      "unverifiedBadge": "Email non vérifié",
+      "backLink": "← Retour à mon espace",
+      "header": {
+        "backToSite": "Retour au site",
+        "userMenu": "Menu du compte"
+      },
       "nav": {
         "title": "Mon espace",
         "dashboard": "Tableau de bord",
         "profile": "Mon profil",
-        "logout": "Se déconnecter"
+        "logout": "Se déconnecter",
+        "myProjects": "Mes projets",
+        "myQuotes": "Mes demandes de devis",
+        "projectManagement": "Gestion de projet",
+        "invoices": "Mes factures",
+        "changePassword": "Changer le mot de passe",
+        "security": "Sécurité et 2FA",
+        "settings": "Paramètres",
+        "dataExport": "Exporter mes données",
+        "deleteAccount": "Supprimer mon compte",
+        "groupActivity": "Mon activité",
+        "groupAccount": "Mon compte",
+        "groupDanger": "Zone sensible",
+        "newQuoteCta": "Nouvelle demande de devis",
+        "pendingQuotesBadge": "{count} en attente",
+        "collapseMenu": "Replier le menu",
+        "expandMenu": "Déplier le menu"
       },
       "sections": {
         "collaboratingProjects": "Projets qui me sont confiés",
@@ -836,32 +881,158 @@
         "quotes": "Mes demandes de devis",
         "emptyProjects": "Aucun projet pour le moment.",
         "emptyQuotes": "Aucune demande de devis pour le moment.",
-        "quoteBudget": "Budget"
+        "quoteBudget": "Budget",
+        "viewAll": "Voir tout →",
+        "upcomingDeadlines": "Échéances à venir",
+        "emptyDeadlines": "Aucune échéance à venir.",
+        "overdue": "En retard",
+        "activity": "Activité récente",
+        "emptyActivity": "Aucune activité pour le moment.",
+        "messages": "Messages récents",
+        "emptyMessages": "Aucun message pour le moment."
+      },
+      "stats": {
+        "activeProjects": "Projets actifs",
+        "pendingQuotes": "Devis en attente",
+        "unpaidInvoices": "Factures impayées",
+        "assignedProjects": "Projets confiés"
+      },
+      "quoteStatus": {
+        "pending": "En attente",
+        "accepted": "Acceptée",
+        "suspended": "Suspendue",
+        "rejected": "Refusée"
+      },
+      "invoiceStatus": {
+        "pending": "En attente de paiement",
+        "paid": "Payée",
+        "cancelled": "Annulée"
       },
       "project": {
         "progress": "Avancement",
         "deadline": "Échéance",
         "noDeadline": "Non définie"
+      },
+      "projectDetail": {
+        "budgetLabel": "Budget utilisé",
+        "descriptionLabel": "Description",
+        "notFoundTitle": "Projet introuvable",
+        "notFoundText": "Ce projet n'existe pas ou ne vous est pas rattaché.",
+        "discussionLabel": "Discussion",
+        "emptyDiscussion": "Aucun message pour le moment. Démarrez la discussion.",
+        "messagePlaceholder": "Écrire un message…",
+        "send": "Envoyer",
+        "sending": "Envoi…",
+        "you": "Vous",
+        "closeDiscussion": "Fermer la discussion",
+        "openDiscussion": "Ouvrir la discussion"
+      },
+      "quoteDetail": {
+        "messageLabel": "Message",
+        "clarificationsLabel": "Précisions échangées",
+        "notFoundTitle": "Devis introuvable",
+        "notFoundText": "Cette demande de devis n'existe pas ou ne vous appartient pas."
+      },
+      "myProjectsPage": {
+        "subtitle": "L'ensemble des projets qui vous sont rattachés, comme client ou comme membre de l'équipe."
+      },
+      "myQuotesPage": {
+        "subtitle": "L'historique complet de vos demandes de devis et leur statut."
+      },
+      "newQuotePage": {
+        "title": "Nouvelle demande de devis",
+        "subtitle": "Décrivez votre besoin — nous revenons vers vous rapidement.",
+        "successCta": "Voir mes demandes de devis"
       }
     },
     "profile": {
       "title": "Mon profil",
       "subtitle": "Mettez à jour vos informations personnelles.",
-      "appearanceLabel": "Apparence",
-      "appearanceHint": "Choisissez le thème clair ou sombre pour votre espace.",
       "fullNameLabel": "Nom complet",
       "phoneLabel": "Téléphone",
+      "phoneLocked": "Non modifiable depuis votre espace. Contactez-nous si ce numéro a changé.",
       "bioLabel": "Présentation / bio",
       "specialtiesLabel": "Spécialités (séparées par des virgules)",
       "specialtiesPlaceholder": "Backend, Cybersécurité, UI...",
       "availabilityLabel": "Disponibilité",
       "portfolioLabel": "Portfolio / lien",
-      "passwordLabel": "Nouveau mot de passe",
-      "passwordPlaceholder": "Laisser vide pour ne pas changer",
-      "passwordHint": "Au moins 8 caractères, avec majuscule, minuscule, chiffre et caractère spécial.",
       "submit": "Enregistrer les modifications",
       "success": "Profil mis à jour avec succès.",
-      "error": "La mise à jour a échoué. Veuillez réessayer."
+      "error": "La mise à jour a échoué. Veuillez réessayer.",
+      "security": {
+        "title": "Sécurité",
+        "emailVerified": "Adresse email vérifiée",
+        "emailUnverified": "Adresse email non vérifiée",
+        "twoFactorEnabled": "Double authentification activée",
+        "twoFactorDisabled": "Double authentification non activée",
+        "twoFactorHint": "Gérée depuis l'espace back-office pour l'instant.",
+        "resendButton": "Renvoyer l'email de vérification",
+        "resendPending": "Envoi en cours…",
+        "resendSuccess": "Un nouveau lien de vérification vous a été envoyé.",
+        "resendError": "Impossible d'envoyer l'email pour le moment. Réessayez plus tard.",
+        "subtitle": "Vérification d'identité, double authentification et historique de connexion.",
+        "emailGroupTitle": "Adresse email",
+        "twoFactorGroupTitle": "Double authentification (2FA)",
+        "lastLoginGroupTitle": "Dernière connexion",
+        "lastLoginAtLabel": "Date",
+        "lastLocationLabel": "Localisation approximative",
+        "lastDeviceLabel": "Appareil",
+        "lastIpLabel": "Adresse IP"
+      },
+      "dataExport": {
+        "title": "Exporter mes données",
+        "description": "Téléchargez une copie de vos informations personnelles et de votre activité (projets, devis).",
+        "downloadButton": "Télécharger (JSON)",
+        "contentHint": "Le fichier contient vos informations de profil ainsi que vos projets et demandes de devis."
+      },
+      "dangerZone": {
+        "title": "Supprimer mon compte",
+        "description": "Vos informations personnelles seront effacées et votre compte désactivé. Cette action est irréversible.",
+        "deleteButton": "Supprimer mon compte",
+        "confirmPrompt": "Êtes-vous sûr ? Cette action ne peut pas être annulée.",
+        "confirmButton": "Oui, supprimer définitivement",
+        "confirmPending": "Suppression…",
+        "cancelButton": "Annuler"
+      }
+    },
+    "changePassword": {
+      "title": "Changer le mot de passe",
+      "subtitle": "Choisissez un nouveau mot de passe pour sécuriser votre compte.",
+      "currentPasswordLabel": "Mot de passe actuel",
+      "newPasswordLabel": "Nouveau mot de passe",
+      "confirmPasswordLabel": "Confirmer le nouveau mot de passe",
+      "passwordHint": "Au moins 8 caractères, avec majuscule, minuscule, chiffre et caractère spécial.",
+      "submit": "Mettre à jour le mot de passe",
+      "success": "Votre mot de passe a été mis à jour.",
+      "error": "Impossible de mettre à jour le mot de passe. Vérifiez votre mot de passe actuel."
+    },
+    "projectManagement": {
+      "title": "Gestion de projet",
+      "subtitle": "Vue d'ensemble des projets qui vous sont confiés, réservée aux membres de l'équipe.",
+      "statTotal": "Projets au total",
+      "statActive": "En cours",
+      "statUpcoming": "À venir",
+      "backOfficeHint": "Pour le suivi du temps, des dépenses et de l'historique détaillé, rendez-vous dans l'espace back-office."
+    },
+    "invoices": {
+      "title": "Mes factures",
+      "subtitle": "L'ensemble des factures émises sur vos projets.",
+      "viewProject": "Voir le projet",
+      "empty": "Aucune facture pour le moment. Elles apparaîtront ici une fois émises par l'équipe.",
+      "totalUnpaid": "Total impayé",
+      "dueDate": "Échéance",
+      "noDueDate": "Non définie",
+      "issuedOn": "Émise le",
+      "paidOn": "Payée le",
+      "overdue": "En retard"
+    },
+    "settings": {
+      "title": "Paramètres",
+      "subtitle": "Personnalisez votre espace.",
+      "appearanceLabel": "Apparence",
+      "appearanceHint": "Choisissez le thème clair ou sombre pour votre espace.",
+      "languageLabel": "Langue",
+      "languageHint": "Choisissez la langue d'affichage du site."
     }
   }
 }

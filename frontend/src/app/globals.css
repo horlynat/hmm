@@ -64,6 +64,22 @@
   /* Texte de brand-accent en grand/gras sur bg-bg-card (chiffres-clés) :
      brand-accent seul n'atteint pas 3:1 en thème clair, cf. audit axe-core. */
   --color-accent-text: #006072;
+
+  /* Espace compte (refonte façon GitHub Settings) : bordure et fond neutres,
+     distincts du --border-soft teinté navy utilisé sur la vitrine — la marque
+     (brand-primary) y reste réservée aux actions/liens/état actif de la nav,
+     jamais aux surfaces. Valeurs alignées sur la palette GitHub réelle
+     puisque c'est la référence visuelle demandée. */
+  --border-neutral: #d0d7de;
+  --color-surface-muted: #f6f8fa;
+  /* Texte des badges neutres (statuts routiniers) sur --color-surface-muted :
+     #57606a y passe l'AA (4.5:1), même démarche que --color-badge-accent-text. */
+  --color-badge-neutral-text: #57606a;
+  /* Texte du badge "warning" (ex. devis en attente) sur bg-warning/15 : le jaune
+     --color-warning lui-même échoue l'AA en texte (cf. QuoteStatusEnum côté
+     backend, qui impose déjà du texte noir sur ce même jaune) — ambre foncé à
+     la place, même logique que --color-badge-accent-text. */
+  --color-badge-warning-text: #7a5b06;
 }
 
 .dark {
@@ -84,6 +100,14 @@
   --color-badge-accent-text: #60a5fa;
   --color-on-brand-primary: #03045e;
   --color-accent-text: #38bdf8;
+
+  --border-neutral: #30363d;
+  --color-surface-muted: #161b22;
+  --color-badge-neutral-text: #9198a1;
+  /* Sur fond sombre, --color-warning reste un jaune assez clair (#facc15,
+     identique aux deux thèmes) pour rester lisible directement, contrairement
+     au mode clair. */
+  --color-badge-warning-text: #facc15;
 }
 
 @layer base {
@@ -158,8 +182,30 @@
     @apply inline-flex items-center rounded-full px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-wide bg-transparent border border-[var(--border-soft)] text-brand-primary;
     font-family: var(--font-mono);
   }
+  .badge-neutral {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-wide bg-[var(--color-surface-muted)] border border-[var(--border-neutral)] text-[var(--color-badge-neutral-text)];
+    font-family: var(--font-mono);
+  }
+  /* Badges de statut sémantiques (projets, devis) — même schéma tinté que
+     .badge-accent/.badge-neutral, cf. plan design espace compte. */
+  .badge-success {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-wide bg-success/15 text-success;
+    font-family: var(--font-mono);
+  }
+  .badge-warning {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-wide bg-warning/15 text-[var(--color-badge-warning-text)];
+    font-family: var(--font-mono);
+  }
+  .badge-danger {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-wide bg-danger/15 text-danger;
+    font-family: var(--font-mono);
+  }
+  .badge-info {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-wide bg-info/15 text-info;
+    font-family: var(--font-mono);
+  }
   .input {
-    @apply w-full rounded-[var(--radius-md)] border bg-bg-card px-4 py-3 text-[0.95rem] text-brand-dark placeholder:text-brand-dark/40 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent;
+    @apply w-full rounded-[var(--radius-md)] border bg-bg-card px-4 py-3 text-[0.95rem] text-brand-dark placeholder:text-brand-dark/40 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-(--border-input);
     border-color: var(--border-input);
     font-family: var(--font-sans);
   }

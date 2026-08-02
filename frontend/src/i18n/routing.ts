@@ -45,6 +45,14 @@ export const routing = defineRouting({
       fr: "/connexion",
       en: "/login",
     },
+    "/mot-de-passe-oublie": {
+      fr: "/mot-de-passe-oublie",
+      en: "/forgot-password",
+    },
+    "/reinitialiser-mot-de-passe/[token]": {
+      fr: "/reinitialiser-mot-de-passe/[token]",
+      en: "/reset-password/[token]",
+    },
     "/inscription": {
       fr: "/inscription",
       en: "/register",
@@ -56,6 +64,54 @@ export const routing = defineRouting({
     "/compte/profil": {
       fr: "/compte/profil",
       en: "/account/profile",
+    },
+    "/compte/projets": {
+      fr: "/compte/projets",
+      en: "/account/projects",
+    },
+    "/compte/projets/[id]": {
+      fr: "/compte/projets/[id]",
+      en: "/account/projects/[id]",
+    },
+    "/compte/devis": {
+      fr: "/compte/devis",
+      en: "/account/quotes",
+    },
+    "/compte/devis/[id]": {
+      fr: "/compte/devis/[id]",
+      en: "/account/quotes/[id]",
+    },
+    "/compte/devis/nouveau": {
+      fr: "/compte/devis/nouveau",
+      en: "/account/quotes/new",
+    },
+    "/compte/gestion-projet": {
+      fr: "/compte/gestion-projet",
+      en: "/account/project-management",
+    },
+    "/compte/factures": {
+      fr: "/compte/factures",
+      en: "/account/invoices",
+    },
+    "/compte/mot-de-passe": {
+      fr: "/compte/mot-de-passe",
+      en: "/account/password",
+    },
+    "/compte/securite": {
+      fr: "/compte/securite",
+      en: "/account/security",
+    },
+    "/compte/parametres": {
+      fr: "/compte/parametres",
+      en: "/account/settings",
+    },
+    "/compte/export": {
+      fr: "/compte/export",
+      en: "/account/export",
+    },
+    "/compte/supprimer": {
+      fr: "/compte/supprimer",
+      en: "/account/delete",
     },
   },
 });

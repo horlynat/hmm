@@ -311,6 +311,8 @@ export interface SessionProject {
   statusLabel: string;
   progress: number;
   deadline: string | null;
+  /** Peut être `null` sur d'anciens projets jamais retouchés depuis l'ajout du champ. */
+  updatedAt: string | null;
 }
 
 /** Devis tel que renvoyé par GET /api/me. */
@@ -320,6 +322,117 @@ export interface SessionQuote {
   status: string;
   budget: string | null;
   currency: string | null;
+  /** Peut être `null` pour les demandes créées avant l'ajout de ce champ — cf. QuoteRequest::$createdAt. */
+  createdAt: string | null;
+}
+
+export type InvoiceStatus = "pending" | "paid" | "cancelled";
+
+/**
+ * Facture émise au client pour un projet — miroir de GET /api/me
+ * (App\Entity\Invoice). Uniquement pour les projets dont l'utilisateur est
+ * le client : jamais renvoyée à l'équipe (owner/collaborateur), même
+ * restriction de périmètre que budget/spent sur Project.
+ */
+export interface SessionInvoice {
+  id: number;
+  projectId: number;
+  projectTitle: string;
+  number: string;
+  label: string;
+  amount: string;
+  currency: string;
+  formattedAmount: string;
+  status: InvoiceStatus;
+  statusLabel: string;
+  issuedAt: string;
+  dueDate: string | null;
+  paidAt: string | null;
+  overdue: boolean;
+}
+
+/**
+ * Entrée d'historique de projet (ProjectHistory) — miroir de GET
+ * /api/me/activity. Le client ne voit qu'un sous-ensemble « sûr » de
+ * l'historique (cycle de vie du projet), l'équipe voit tout sauf les refus
+ * d'accès — cf. MeController::CLIENT_SAFE_HISTORY_ACTIONS.
+ */
+export interface SessionActivityEntry {
+  id: number;
+  projectId: number;
+  projectTitle: string;
+  action: string;
+  actionLabel: string;
+  details: string | null;
+  createdAt: string;
+}
+
+/** Message posté dans le fil de discussion d'un projet (Comment) — miroir de GET /api/me/activity et /api/me/projects/{id}/comments. */
+export interface SessionComment {
+  id: number;
+  projectId: number;
+  projectTitle: string;
+  content: string;
+  createdAt: string;
+  isMine: boolean;
+  author: {
+    id: number;
+    fullName: string | null;
+    email: string;
+  };
+}
+
+/** Miroir de GET /api/me/activity. */
+export interface SessionActivity {
+  history: SessionActivityEntry[];
+  messages: SessionComment[];
+}
+
+/**
+ * Détail complet d'un projet auquel l'utilisateur courant est rattaché —
+ * miroir de GET /api/me/projects/{id} (App\Controller\Api\MeController).
+ * `statusLabel`/`priorityLabel`/`billingTypeLabel` sont déjà résolus en
+ * français côté backend (pas d'i18n sur ces enums pour l'instant — même
+ * limitation déjà acceptée sur `SessionProject.statusLabel`).
+ *
+ * Volontairement sans `budget`/`spent` : ce sont des chiffres de gestion
+ * interne (`#[Groups(['api_admin'])]` côté entité), pas ce que le client a
+ * payé — ni le client ni le collaborateur ne doivent les voir ici.
+ */
+export interface SessionProjectDetail {
+  id: number;
+  slug: string;
+  title: string;
+  description: string;
+  link: string;
+  status: ProjectStatus;
+  statusLabel: string;
+  priority: ProjectPriority | null;
+  priorityLabel: string | null;
+  billingType: BillingType | null;
+  billingTypeLabel: string | null;
+  progress: number;
+  deadline: string | null;
+  skills: { id: number; name: string }[];
+  tags: Tag[];
+  media: Media[];
+  info: ProjectInfo | null;
+}
+
+/** Détail complet d'un devis appartenant à l'utilisateur courant — miroir de GET /api/me/quotes/{id}. */
+export interface SessionQuoteDetail {
+  id: number;
+  category: string;
+  categoryDetail: string | null;
+  status: string;
+  statusLabel: string;
+  budget: string | null;
+  currency: string | null;
+  timeline: string | null;
+  channel: string;
+  attachmentName: string | null;
+  clarifications: { question: string; answer: string }[] | null;
+  message: string;
 }
 
 /** Attributions de l'utilisateur courant selon son rôle (GET /api/me). */
@@ -328,6 +441,7 @@ export interface SessionAttributions {
   ownedProjects: SessionProject[];
   clientProjects: SessionProject[];
   quoteRequests: SessionQuote[];
+  invoices: SessionInvoice[];
 }
 
 /**
@@ -349,17 +463,21 @@ export interface SessionUser {
   isVerified: boolean;
   isTwoFactorEnabled: boolean;
   isCollaborator: boolean;
+  lastLoginAt: string | null;
+  lastIp: string | null;
+  lastLocation: string | null;
+  lastDevice: string | null;
   editableFields: string[];
   attributions: SessionAttributions;
 }
 
-/** Champs auto-modifiables via PATCH /api/me. */
+/** Champs auto-modifiables via PATCH /api/me. `phone` est volontairement absent : non modifiable en self-service (cf. MeController::EDITABLE_FIELDS). */
 export interface ProfileUpdatePayload {
   fullName?: string;
-  phone?: string;
   bio?: string;
   specialties?: string[];
   availability?: string;
   portfolioUrl?: string;
   plainPassword?: string;
+  currentPassword?: string;
 }

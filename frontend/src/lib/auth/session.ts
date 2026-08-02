@@ -3,9 +3,16 @@
  * Ne jamais importer depuis un Client Component.
  */
 
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { API_URL, SESSION_COOKIE } from "./config";
-import type { SessionUser } from "@/lib/types";
+import type {
+  SessionUser,
+  SessionProjectDetail,
+  SessionQuoteDetail,
+  SessionActivity,
+  SessionComment,
+} from "@/lib/types";
 
 interface JwtPayload {
   exp?: number;
@@ -61,9 +68,13 @@ export async function clearSessionCookie(): Promise<void> {
 /**
  * Récupère l'utilisateur courant via GET /api/me (Bearer token). Renvoie null
  * si non authentifié ou si le token est invalide/expiré (le backend répond 401).
- * `cache: "no-store"` : la session ne doit jamais être mise en cache.
+ * `cache: "no-store"` : jamais de cache HTTP entre requêtes. `React.cache()` :
+ * dédoublonne les appels au sein d'un même rendu serveur (le layout `/compte`
+ * ET chaque page appellent tous deux `getCurrentUser()` — sans ça, une seule
+ * navigation ré-authentifie plusieurs fois sur le firewall API stateless,
+ * ce qui rejoue tout effet de bord de l'authentification à chaque fois).
  */
-export async function getCurrentUser(): Promise<SessionUser | null> {
+export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const token = await getToken();
   if (!token) return null;
 
@@ -82,6 +93,114 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     return (await res.json()) as SessionUser;
   } catch (error) {
     console.error("[auth] GET /me failed", error);
+    return null;
+  }
+});
+
+/**
+ * Détail d'un projet auquel l'utilisateur courant est rattaché. Renvoie null
+ * si non authentifié, si le projet n'existe pas, ou si l'utilisateur n'y est
+ * pas rattaché (le backend renvoie 404 dans les deux derniers cas — aucune
+ * distinction n'est faite pour ne pas révéler l'existence d'un projet privé).
+ */
+export async function getMyProject(id: number): Promise<SessionProjectDetail | null> {
+  const token = await getToken();
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_URL}/me/projects/${id}`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return null;
+
+    return (await res.json()) as SessionProjectDetail;
+  } catch (error) {
+    console.error("[auth] GET /me/projects/:id failed", error);
+    return null;
+  }
+}
+
+/**
+ * Flux d'activité agrégé (historique de projet + messages) sur tous les
+ * projets de l'utilisateur courant — GET /api/me/activity. Renvoie des
+ * listes vides si non authentifié plutôt que null : le tableau de bord
+ * peut afficher ces sections même en cas d'erreur réseau ponctuelle.
+ */
+export async function getMyActivity(): Promise<SessionActivity> {
+  const empty: SessionActivity = { history: [], messages: [] };
+  const token = await getToken();
+  if (!token) return empty;
+
+  try {
+    const res = await fetch(`${API_URL}/me/activity`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return empty;
+
+    return (await res.json()) as SessionActivity;
+  } catch (error) {
+    console.error("[auth] GET /me/activity failed", error);
+    return empty;
+  }
+}
+
+/** Fil de discussion complet d'un projet auquel l'utilisateur courant est rattaché. Renvoie [] si non authentifié, introuvable, ou non-rattaché. */
+export async function getProjectComments(projectId: number): Promise<SessionComment[]> {
+  const token = await getToken();
+  if (!token) return [];
+
+  try {
+    const res = await fetch(`${API_URL}/me/projects/${projectId}/comments`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return [];
+
+    const body = (await res.json()) as { comments: SessionComment[] };
+    return body.comments;
+  } catch (error) {
+    console.error("[auth] GET /me/projects/:id/comments failed", error);
+    return [];
+  }
+}
+
+/** Détail d'un devis appartenant à l'utilisateur courant. Renvoie null si non authentifié, introuvable, ou non-propriétaire. */
+export async function getMyQuote(id: number): Promise<SessionQuoteDetail | null> {
+  const token = await getToken();
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_URL}/me/quotes/${id}`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return null;
+
+    return (await res.json()) as SessionQuoteDetail;
+  } catch (error) {
+    console.error("[auth] GET /me/quotes/:id failed", error);
     return null;
   }
 }

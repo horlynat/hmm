@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, type ComponentProps } from "react";
 import { useTranslations } from "next-intl";
 import clsx from "clsx";
-import { Card, LegalLink } from "@/components/ui";
+import { Card, ButtonLink, LegalLink } from "@/components/ui";
+import { Link } from "@/i18n/navigation";
 import { submitQuoteRequest } from "@/actions/quote";
 import type { QuoteWizardAnswers } from "@/lib/types";
 
@@ -198,10 +199,23 @@ function isValidPhone(value: string) {
   return /^\+?[0-9\s-]{7,20}$/.test(value.trim());
 }
 
-export function QuoteWizard() {
+interface QuoteWizardProps {
+  /** Pré-remplit le nom/email à l'étape 7 pour un utilisateur déjà connecté — évite de ressaisir des informations déjà connues. */
+  initialName?: string;
+  initialEmail?: string;
+  /** Si fourni, un bouton supplémentaire apparaît sur l'écran de succès (ex. retour vers /compte/devis). */
+  successHref?: ComponentProps<typeof Link>["href"];
+  successLabel?: string;
+}
+
+export function QuoteWizard({ initialName, initialEmail, successHref, successLabel }: QuoteWizardProps = {}) {
   const t = useTranslations("contact.wizard");
   const [current, setCurrent] = useState<number | "ia-qualif" | "success">(1);
-  const [answers, setAnswers] = useState<QuoteWizardAnswers>(emptyAnswers);
+  const [answers, setAnswers] = useState<QuoteWizardAnswers>({
+    ...emptyAnswers,
+    name: initialName ?? "",
+    email: initialEmail ?? "",
+  });
   const [categoryKey, setCategoryKey] = useState<TypeKey | "">("");
   const [showError, setShowError] = useState(false);
   const [honeypot, setHoneypot] = useState("");
@@ -903,6 +917,11 @@ export function QuoteWizard() {
               ))}
             </ol>
           </div>
+          {successHref && (
+            <ButtonLink href={successHref} variant="secondary" className="mt-6 w-fit">
+              {successLabel}
+            </ButtonLink>
+          )}
         </div>
       )}
     </Card>
