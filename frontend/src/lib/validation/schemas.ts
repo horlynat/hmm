@@ -98,17 +98,42 @@ export const profileSchema = (t: Translator) =>
     specialties: z.string().max(500, t("tooLong", { max: 500 })).optional().or(z.literal("")),
     availability: z.string().max(120, t("tooLong", { max: 120 })).optional().or(z.literal("")),
     portfolioUrl: optionalUrlField(t),
-    password: z
-      .string()
-      .refine((v) => v === "" || STRONG_PASSWORD_RE.test(v), t("passwordWeak"))
-      .optional()
-      .or(z.literal("")),
   });
 export type ProfileValues = z.infer<ReturnType<typeof profileSchema>>;
+
+/** Changement de mot de passe connecté : preuve de l'ancien mot de passe exigée côté backend. */
+export const changePasswordSchema = (t: Translator) =>
+  z
+    .object({
+      currentPassword: z.string().min(1, t("passwordRequired")),
+      password: strongPasswordField(t),
+      confirmPassword: z.string().min(1, t("passwordRequired")),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      path: ["confirmPassword"],
+      message: t("passwordMismatch"),
+    });
+export type ChangePasswordValues = z.infer<ReturnType<typeof changePasswordSchema>>;
 
 export const newsletterSchema = (t: Translator) =>
   z.object({ email: emailField(t) });
 export type NewsletterValues = z.infer<ReturnType<typeof newsletterSchema>>;
+
+export const forgotPasswordSchema = (t: Translator) =>
+  z.object({ email: emailField(t) });
+export type ForgotPasswordValues = z.infer<ReturnType<typeof forgotPasswordSchema>>;
+
+export const resetPasswordSchema = (t: Translator) =>
+  z
+    .object({
+      password: strongPasswordField(t),
+      confirmPassword: z.string().min(1, t("passwordRequired")),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      path: ["confirmPassword"],
+      message: t("passwordMismatch"),
+    });
+export type ResetPasswordValues = z.infer<ReturnType<typeof resetPasswordSchema>>;
 
 /** Rendez-vous : téléphone requis dynamiquement si canal WhatsApp/Appel. */
 export const appointmentSchema = (t: Translator) =>

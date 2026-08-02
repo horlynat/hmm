@@ -29,9 +29,13 @@ export function LoginForm() {
     setServerError("");
     const result = await login(values.email, values.password);
     if (result.ok) {
-      // Recharge les Server Components avec la nouvelle session (cookie serveur).
+      // push() vers /compte récupère déjà des données serveur fraîches pour
+      // cette nouvelle route (donc la session vient d'être posée). Un
+      // router.refresh() juste après faisait courir une seconde requête RSC
+      // en parallèle qui perturbait la remise à zéro du scroll de Next.js,
+      // laissant la page arriver déjà défilée (le bouton du tiroir mobile,
+      // tout en haut du contenu, se retrouvait hors écran).
       router.push("/compte");
-      router.refresh();
     } else {
       setServerError(
         result.error === "invalid_credentials"
@@ -69,23 +73,36 @@ export function LoginForm() {
           {...register("password")}
         />
 
-        <SubmitButton className="mt-2 w-full" pending={isSubmitting} pendingLabel={t("submit")}>
+        <SubmitButton
+          className="mt-2 w-full"
+          pending={isSubmitting}
+          pendingLabel={t("submit")}
+        >
           {t("submit")}
         </SubmitButton>
 
-        {serverError && <FormMessage variant="error">{serverError}</FormMessage>}
+        {serverError && (
+          <FormMessage variant="error">{serverError}</FormMessage>
+        )}
 
-        <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-[var(--color-muted)]">
-          <span aria-hidden="true">🔏</span>
-          {t("secureBadge3")}
+        <p className="mt-4 mb-4 text-right text-xs">
+          <Link
+            href="/mot-de-passe-oublie"
+            className="font-semibold text-brand-primary hover:underline"
+          >
+            {t("forgotPasswordLink")}
+          </Link>
         </p>
       </form>
 
-      <div className="my-6 border-t border-[var(--border-softer)]" />
+      {/* <div className="my-6 border-t border-[var(--border-softer)]" /> */}
 
       <p className="text-center text-sm opacity-70">
         {t("noAccount")}{" "}
-        <Link href="/inscription" className="font-semibold text-brand-primary hover:underline">
+        <Link
+          href="/inscription"
+          className="font-semibold text-brand-primary hover:underline"
+        >
           {t("registerLink")}
         </Link>
       </p>

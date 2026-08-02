@@ -6,12 +6,9 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
-import { Header, Footer, ScrollTopButton, WhatsappFab } from "@/components/layout";
-import { AiAssistantWidget } from "@/components/ai-assistant";
 import { InlineScript } from "@/components/ui";
 import { siteConfig } from "@/config/site";
 import { getHomeContent } from "@/lib/api/home-content";
-import { getAiAssistantEntries, getAiAssistantSettings } from "@/lib/api/ai-assistant";
 import { jsonLdScript } from "@/lib/json-ld";
 import "../globals.css";
 
@@ -75,11 +72,7 @@ export default async function LocaleLayout({
   const messages = await getMessages({ locale });
   const tc = await getTranslations({ locale, namespace: "common" });
   const th = await getTranslations({ locale, namespace: "home" });
-  const [homeContent, aiAssistantSettings, aiAssistantEntries] = await Promise.all([
-    getHomeContent(locale),
-    getAiAssistantSettings(locale),
-    getAiAssistantEntries(locale),
-  ]);
+  const homeContent = await getHomeContent(locale);
   // `undefined` sur les pages `force-static` : `headers()` y retourne des
   // valeurs vides (cf. doc dynamic="force-static"), pas d'erreur ni de perte
   // du rendu statique. Réel uniquement sur /contact (cf. src/proxy.ts).
@@ -118,18 +111,7 @@ export default async function LocaleLayout({
           <a href="#main-content" className="skip-link">
             {tc("skipToContent")}
           </a>
-          <Header />
-          <main id="main-content" className="flex-1">
-            {children}
-          </main>
-          <Footer locale={locale} />
-          <ScrollTopButton />
-          <WhatsappFab locale={locale} />
-          {/* Widget décoratif, présent sur toutes les pages : une panne API
-              le masque simplement plutôt que de faire échouer le rendu. */}
-          {aiAssistantSettings && (
-            <AiAssistantWidget settings={aiAssistantSettings} entries={aiAssistantEntries} />
-          )}
+          {children}
         </NextIntlClientProvider>
       </body>
     </html>

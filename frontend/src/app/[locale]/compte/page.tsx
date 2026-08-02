@@ -1,73 +1,28 @@
 import { getTranslations } from "next-intl/server";
-import { Badge, Card } from "@/components/ui";
+import { Badge, Card, ButtonLink, EmptyState } from "@/components/ui";
+import { ProjectList, QuoteList } from "@/components/sections/AccountLists";
 import { getCurrentUser } from "@/lib/auth/session";
-import type { SessionProject, SessionQuote } from "@/lib/types";
+import { getAvatarUrl } from "@/lib/media";
+import { Link } from "@/i18n/navigation";
+import { projectStatusVariant } from "@/lib/status";
+import type { SessionProject } from "@/lib/types";
 
-function ProjectList({
-  projects,
-  labels,
-}: {
-  projects: SessionProject[];
-  labels: { progress: string; deadline: string; noDeadline: string };
-}) {
-  return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {projects.map((project) => (
-        <Card key={project.id} variant="soft" className="p-4">
-          <div className="mb-2 flex items-start justify-between gap-2">
-            <span className="font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-              {project.title}
-            </span>
-            <Badge>{project.statusLabel}</Badge>
-          </div>
-          <div className="mb-1 flex items-center justify-between text-xs opacity-60">
-            <span>{labels.progress}</span>
-            <span>{project.progress}%</span>
-          </div>
-          <div className="h-1.5 w-full rounded-full bg-brand-light">
-            <div
-              className="h-1.5 rounded-full bg-brand-primary"
-              style={{ width: `${project.progress}%` }}
-            />
-          </div>
-          <p className="mt-2 text-xs opacity-60">
-            {labels.deadline}:{" "}
-            {project.deadline
-              ? new Date(project.deadline).toLocaleDateString()
-              : labels.noDeadline}
-          </p>
-        </Card>
-      ))}
-    </div>
-  );
-}
+const PREVIEW_COUNT = 4;
+const UPCOMING_COUNT = 5;
 
-function QuoteList({
-  quotes,
-  statusLabel,
-}: {
-  quotes: SessionQuote[];
-  statusLabel: string;
-}) {
-  return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {quotes.map((quote) => (
-        <Card key={quote.id} variant="soft" className="p-4">
-          <div className="mb-1 flex items-start justify-between gap-2">
-            <span className="font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-              {quote.category}
-            </span>
-            <Badge>{quote.status}</Badge>
-          </div>
-          {quote.budget && (
-            <p className="text-sm opacity-70">
-              {statusLabel}: {quote.budget} {quote.currency ?? ""}
-            </p>
-          )}
-        </Card>
-      ))}
-    </div>
-  );
+/**
+ * Ni `SessionProject` ni `SessionQuote` ne portent de date de création/mise à
+ * jour côté API (`/api/me` ne les expose pas — cf. MeController) : impossible
+ * de construire un vrai flux d'activité récente sans changement backend. En
+ * attendant, cette section reste 100% honnête en s'appuyant sur la seule date
+ * réellement disponible : l'échéance des projets.
+ */
+function upcomingDeadlines(projects: SessionProject[], limit: number): SessionProject[] {
+  const seen = new Set<number>();
+  return projects
+    .filter((p) => p.deadline && p.status !== "termine" && !seen.has(p.id) && seen.add(p.id))
+    .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())
+    .slice(0, limit);
 }
 
 export default async function ComptePage({
@@ -91,6 +46,13 @@ export default async function ComptePage({
     noDeadline: t("project.noDeadline"),
   };
 
+  const quoteStatusLabels = {
+    pending: t("quoteStatus.pending"),
+    accepted: t("quoteStatus.accepted"),
+    suspended: t("quoteStatus.suspended"),
+    rejected: t("quoteStatus.rejected"),
+  };
+
   const collaboratingProjects = [
     ...attributions.collaboratingProjects,
     ...attributions.ownedProjects,
@@ -99,15 +61,31 @@ export default async function ComptePage({
   const hasClientProjects = attributions.clientProjects.length > 0;
   const hasQuotes = attributions.quoteRequests.length > 0;
 
+  const deadlines = upcomingDeadlines(
+    [...collaboratingProjects, ...attributions.clientProjects],
+    UPCOMING_COUNT,
+  );
+
   return (
     <div className="space-y-8">
-      <div>
-        <Badge variant="accent" className="mb-3">
-          {roleLabel}
-        </Badge>
-        <h1 className="text-[clamp(1.6rem,3vw,2.2rem)]">
-          {t("welcome", { name: user.fullName ?? user.email })}
-        </h1>
+      <div className="flex items-center gap-4">
+        {/* eslint-disable-next-line @next/next/no-img-element -- avatar externe (ui-avatars.com) ou média backend, hors domaines optimisables par next/image sans config supplémentaire */}
+        <img
+          src={getAvatarUrl(user)}
+          alt=""
+          className="h-16 w-16 shrink-0 rounded-full border border-[var(--border-soft)] object-cover"
+        />
+        <div>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <Badge variant="neutral">{roleLabel}</Badge>
+            <Badge variant="neutral">
+              {user.isVerified ? t("verifiedBadge") : t("unverifiedBadge")}
+            </Badge>
+          </div>
+          <h1 className="text-[clamp(1.6rem,3vw,2.2rem)]">
+            {t("welcome", { name: user.fullName ?? user.email })}
+          </h1>
+        </div>
       </div>
 
       {!user.isVerified && (
@@ -116,38 +94,94 @@ export default async function ComptePage({
         </Card>
       )}
 
-      {isCollaborator && (
-        <section>
-          <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("sections.collaboratingProjects")}
+      {deadlines.length > 0 && (
+        <section aria-labelledby="section-deadlines">
+          <h2 id="section-deadlines" className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+            {t("sections.upcomingDeadlines")}
           </h2>
+          <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
+            {deadlines.map((project) => {
+              const overdue = new Date(project.deadline!) < new Date();
+              return (
+                <Link
+                  key={project.id}
+                  href={{ pathname: "/compte/projets/[id]", params: { id: String(project.id) } }}
+                  className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-(--color-surface-muted)"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Badge variant={projectStatusVariant(project.status)}>{project.statusLabel}</Badge>
+                    <span className="truncate font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                      {project.title}
+                    </span>
+                  </div>
+                  <span className={overdue ? "shrink-0 text-sm font-semibold text-danger" : "shrink-0 text-sm opacity-70"}>
+                    {overdue && `${t("sections.overdue")} — `}
+                    {new Date(project.deadline!).toLocaleDateString(locale)}
+                  </span>
+                </Link>
+              );
+            })}
+          </Card>
+        </section>
+      )}
+
+      {isCollaborator && (
+        <section aria-labelledby="section-collaborating">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 id="section-collaborating" className="text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+              {t("sections.collaboratingProjects")}
+            </h2>
+            {collaboratingProjects.length > PREVIEW_COUNT && (
+              <ButtonLink href="/compte/gestion-projet" variant="secondary" className="text-xs">
+                {t("sections.viewAll")}
+              </ButtonLink>
+            )}
+          </div>
           {hasCollaborating ? (
-            <ProjectList projects={collaboratingProjects} labels={projectLabels} />
+            <ProjectList projects={collaboratingProjects.slice(0, PREVIEW_COUNT)} labels={projectLabels} />
           ) : (
-            <p className="text-sm opacity-60">{t("sections.emptyProjects")}</p>
+            <EmptyState icon="🤝" message={t("sections.emptyProjects")} />
           )}
         </section>
       )}
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-          {t("sections.clientProjects")}
-        </h2>
+      <section aria-labelledby="section-client-projects">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 id="section-client-projects" className="text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+            {t("sections.clientProjects")}
+          </h2>
+          {attributions.clientProjects.length > PREVIEW_COUNT && (
+            <ButtonLink href="/compte/projets" variant="secondary" className="text-xs">
+              {t("sections.viewAll")}
+            </ButtonLink>
+          )}
+        </div>
         {hasClientProjects ? (
-          <ProjectList projects={attributions.clientProjects} labels={projectLabels} />
+          <ProjectList projects={attributions.clientProjects.slice(0, PREVIEW_COUNT)} labels={projectLabels} />
         ) : (
-          <p className="text-sm opacity-60">{t("sections.emptyProjects")}</p>
+          <EmptyState icon="📁" message={t("sections.emptyProjects")} />
         )}
       </section>
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-          {t("sections.quotes")}
-        </h2>
+      <section aria-labelledby="section-quotes">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 id="section-quotes" className="text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+            {t("sections.quotes")}
+          </h2>
+          {attributions.quoteRequests.length > PREVIEW_COUNT && (
+            <ButtonLink href="/compte/devis" variant="secondary" className="text-xs">
+              {t("sections.viewAll")}
+            </ButtonLink>
+          )}
+        </div>
         {hasQuotes ? (
-          <QuoteList quotes={attributions.quoteRequests} statusLabel={t("sections.quoteBudget")} />
+          <QuoteList
+            quotes={attributions.quoteRequests.slice(0, PREVIEW_COUNT)}
+            statusLabel={t("sections.quoteBudget")}
+            statusLabels={quoteStatusLabels}
+          />
         ) : (
-          <p className="text-sm opacity-60">{t("sections.emptyQuotes")}</p>
+          <EmptyState icon="📝" message={t("sections.emptyQuotes")} />
         )}
       </section>
     </div>

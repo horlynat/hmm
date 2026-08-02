@@ -38,7 +38,8 @@
     "tooLong": "This text is too long ({max} characters maximum).",
     "genericError": "Something went wrong, please try again.",
     "networkError": "Connection failed. Check your network and try again.",
-    "rateLimited": "Too many attempts. Please wait a minute before trying again."
+    "rateLimited": "Too many attempts. Please wait a minute before trying again.",
+    "passwordMismatch": "The two passwords do not match."
   },
   "nav": {
     "apropos": "About",
@@ -788,7 +789,27 @@
       "invalidCredentials": "Incorrect email or password.",
       "error": "Could not sign you in. Please try again.",
       "noAccount": "Don't have an account yet?",
-      "registerLink": "Create an account"
+      "registerLink": "Create an account",
+      "forgotPasswordLink": "Forgot your password?"
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email address: if an account exists, you'll receive a link to reset your password.",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send reset link",
+      "success": "If an account exists for this address, an email with a reset link has just been sent.",
+      "error": "Could not send the email right now. Please try again."
+    },
+    "resetPassword": {
+      "title": "Reset your password",
+      "subtitle": "Choose a new password for your account.",
+      "passwordLabel": "New password",
+      "confirmPasswordLabel": "Confirm password",
+      "submit": "Reset password",
+      "success": "Your password has been reset. You can now sign in.",
+      "loginLink": "Go to sign in",
+      "error": "This link is invalid or has expired. Please request a new one."
     },
     "register": {
       "eyebrow": "Account area",
@@ -824,11 +845,34 @@
       "roleClient": "Client account",
       "roleFreelance": "Collaborator account",
       "verifyWarning": "Your email address is not verified yet. Check your inbox to activate your account.",
+      "verifiedBadge": "Email verified",
+      "unverifiedBadge": "Email not verified",
+      "backLink": "← Back to my account",
+      "header": {
+        "backToSite": "Back to site",
+        "userMenu": "Account menu"
+      },
       "nav": {
         "title": "My space",
         "dashboard": "Dashboard",
         "profile": "My profile",
-        "logout": "Sign out"
+        "logout": "Sign out",
+        "myProjects": "My projects",
+        "myQuotes": "My quote requests",
+        "projectManagement": "Project management",
+        "invoices": "My invoices",
+        "changePassword": "Change password",
+        "security": "Security & 2FA",
+        "settings": "Settings",
+        "dataExport": "Export my data",
+        "deleteAccount": "Delete my account",
+        "groupActivity": "My activity",
+        "groupAccount": "My account",
+        "groupDanger": "Danger zone",
+        "newQuoteCta": "New quote request",
+        "pendingQuotesBadge": "{count} pending",
+        "collapseMenu": "Collapse menu",
+        "expandMenu": "Expand menu"
       },
       "sections": {
         "collaboratingProjects": "Projects assigned to me",
@@ -836,19 +880,45 @@
         "quotes": "My quote requests",
         "emptyProjects": "No projects yet.",
         "emptyQuotes": "No quote requests yet.",
-        "quoteBudget": "Budget"
+        "quoteBudget": "Budget",
+        "viewAll": "View all →",
+        "upcomingDeadlines": "Upcoming deadlines",
+        "emptyDeadlines": "No upcoming deadlines.",
+        "overdue": "Overdue"
+      },
+      "quoteStatus": {
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "suspended": "Suspended",
+        "rejected": "Rejected"
       },
       "project": {
         "progress": "Progress",
         "deadline": "Deadline",
         "noDeadline": "Not set"
+      },
+      "projectDetail": {
+        "budgetLabel": "Budget used",
+        "descriptionLabel": "Description",
+        "notFoundTitle": "Project not found",
+        "notFoundText": "This project does not exist or is not linked to your account."
+      },
+      "quoteDetail": {
+        "messageLabel": "Message",
+        "clarificationsLabel": "Clarifications exchanged",
+        "notFoundTitle": "Quote request not found",
+        "notFoundText": "This quote request does not exist or does not belong to you."
+      },
+      "myProjectsPage": {
+        "subtitle": "All projects linked to your account, as a client or as a team member."
+      },
+      "myQuotesPage": {
+        "subtitle": "The full history of your quote requests and their status."
       }
     },
     "profile": {
       "title": "My profile",
       "subtitle": "Update your personal information.",
-      "appearanceLabel": "Appearance",
-      "appearanceHint": "Choose the light or dark theme for your space.",
       "fullNameLabel": "Full name",
       "phoneLabel": "Phone",
       "bioLabel": "About / bio",
@@ -856,12 +926,78 @@
       "specialtiesPlaceholder": "Backend, Cybersecurity, UI...",
       "availabilityLabel": "Availability",
       "portfolioLabel": "Portfolio / link",
-      "passwordLabel": "New password",
-      "passwordPlaceholder": "Leave empty to keep unchanged",
-      "passwordHint": "At least 8 characters, with uppercase, lowercase, a digit and a special character.",
       "submit": "Save changes",
       "success": "Profile updated successfully.",
-      "error": "Update failed. Please try again."
+      "error": "Update failed. Please try again.",
+      "security": {
+        "title": "Security",
+        "emailVerified": "Email address verified",
+        "emailUnverified": "Email address not verified",
+        "twoFactorEnabled": "Two-factor authentication enabled",
+        "twoFactorDisabled": "Two-factor authentication not enabled",
+        "twoFactorHint": "Currently managed from the back-office.",
+        "resendButton": "Resend verification email",
+        "resendPending": "Sending…",
+        "resendSuccess": "A new verification link has been sent to you.",
+        "resendError": "Could not send the email right now. Please try again later.",
+        "subtitle": "Identity verification, two-factor authentication and login history.",
+        "emailGroupTitle": "Email address",
+        "twoFactorGroupTitle": "Two-factor authentication (2FA)",
+        "lastLoginGroupTitle": "Last login",
+        "lastLoginAtLabel": "Date",
+        "lastLocationLabel": "Approximate location",
+        "lastDeviceLabel": "Device",
+        "lastIpLabel": "IP address"
+      },
+      "dataExport": {
+        "title": "Export my data",
+        "description": "Download a copy of your personal information and activity (projects, quotes).",
+        "downloadButton": "Download (JSON)",
+        "contentHint": "The file contains your profile information as well as your projects and quote requests."
+      },
+      "dangerZone": {
+        "title": "Delete my account",
+        "description": "Your personal information will be erased and your account deactivated. This action cannot be undone.",
+        "deleteButton": "Delete my account",
+        "confirmPrompt": "Are you sure? This action cannot be undone.",
+        "confirmButton": "Yes, delete permanently",
+        "confirmPending": "Deleting…",
+        "cancelButton": "Cancel"
+      }
+    },
+    "changePassword": {
+      "title": "Change password",
+      "subtitle": "Choose a new password to secure your account.",
+      "currentPasswordLabel": "Current password",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "passwordHint": "At least 8 characters, with uppercase, lowercase, a digit and a special character.",
+      "submit": "Update password",
+      "success": "Your password has been updated.",
+      "error": "Could not update your password. Check your current password."
+    },
+    "projectManagement": {
+      "title": "Project management",
+      "subtitle": "Overview of the projects assigned to you, reserved for team members.",
+      "statTotal": "Total projects",
+      "statActive": "In progress",
+      "statUpcoming": "Upcoming",
+      "backOfficeHint": "For time tracking, expenses and detailed history, head to the back-office area."
+    },
+    "invoices": {
+      "title": "My invoices",
+      "subtitle": "Your projects currently in progress.",
+      "viewProject": "View project",
+      "empty": "No projects in progress yet. Billed projects will appear here once work has started.",
+      "comingSoonNote": "Billing details (amounts, due dates) will appear here based on your payment plan (upfront, installments, or subscription)."
+    },
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Personalize your space.",
+      "appearanceLabel": "Appearance",
+      "appearanceHint": "Choose the light or dark theme for your space.",
+      "languageLabel": "Language",
+      "languageHint": "Choose the display language for the site."
     }
   }
 }

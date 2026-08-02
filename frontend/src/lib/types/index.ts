@@ -322,6 +322,53 @@ export interface SessionQuote {
   currency: string | null;
 }
 
+/**
+ * Détail complet d'un projet auquel l'utilisateur courant est rattaché —
+ * miroir de GET /api/me/projects/{id} (App\Controller\Api\MeController).
+ * `statusLabel`/`priorityLabel`/`billingTypeLabel` sont déjà résolus en
+ * français côté backend (pas d'i18n sur ces enums pour l'instant — même
+ * limitation déjà acceptée sur `SessionProject.statusLabel`).
+ *
+ * Volontairement sans `budget`/`spent` : ce sont des chiffres de gestion
+ * interne (`#[Groups(['api_admin'])]` côté entité), pas ce que le client a
+ * payé — ni le client ni le collaborateur ne doivent les voir ici.
+ */
+export interface SessionProjectDetail {
+  id: number;
+  slug: string;
+  title: string;
+  description: string;
+  link: string;
+  status: ProjectStatus;
+  statusLabel: string;
+  priority: ProjectPriority | null;
+  priorityLabel: string | null;
+  billingType: BillingType | null;
+  billingTypeLabel: string | null;
+  progress: number;
+  deadline: string | null;
+  skills: { id: number; name: string }[];
+  tags: Tag[];
+  media: Media[];
+  info: ProjectInfo | null;
+}
+
+/** Détail complet d'un devis appartenant à l'utilisateur courant — miroir de GET /api/me/quotes/{id}. */
+export interface SessionQuoteDetail {
+  id: number;
+  category: string;
+  categoryDetail: string | null;
+  status: string;
+  statusLabel: string;
+  budget: string | null;
+  currency: string | null;
+  timeline: string | null;
+  channel: string;
+  attachmentName: string | null;
+  clarifications: { question: string; answer: string }[] | null;
+  message: string;
+}
+
 /** Attributions de l'utilisateur courant selon son rôle (GET /api/me). */
 export interface SessionAttributions {
   collaboratingProjects: SessionProject[];
@@ -349,6 +396,10 @@ export interface SessionUser {
   isVerified: boolean;
   isTwoFactorEnabled: boolean;
   isCollaborator: boolean;
+  lastLoginAt: string | null;
+  lastIp: string | null;
+  lastLocation: string | null;
+  lastDevice: string | null;
   editableFields: string[];
   attributions: SessionAttributions;
 }
@@ -362,4 +413,5 @@ export interface ProfileUpdatePayload {
   availability?: string;
   portfolioUrl?: string;
   plainPassword?: string;
+  currentPassword?: string;
 }

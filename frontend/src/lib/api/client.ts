@@ -89,6 +89,7 @@ export type ApiPostResult = { ok: true } | { ok: false; error: string };
 export async function apiPost<T extends object>(
   path: string,
   body: T,
+  options: { token?: string } = {},
 ): Promise<ApiPostResult> {
   try {
     const res = await fetch(`${API_URL}${path}`, {
@@ -96,6 +97,7 @@ export async function apiPost<T extends object>(
       headers: {
         "Content-Type": "application/ld+json",
         Accept: "application/ld+json",
+        ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
       },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(API_TIMEOUT_MS),
