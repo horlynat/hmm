@@ -2,8 +2,11 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\Comment;
+use App\Entity\Invoice;
 use App\Entity\Media;
 use App\Entity\Project;
+use App\Entity\ProjectHistory;
 use App\Entity\ProjectInfo;
 use App\Entity\QuoteRequest;
 use App\Entity\User;
@@ -42,8 +45,21 @@ final class MeController extends AbstractController
     /**
      * Champs que l'utilisateur peut modifier lui-même. Toute autre clé du corps
      * JSON est ignorée : liste blanche stricte contre l'élévation de privilèges.
+     * `phone` n'y figure pas volontairement : modification désactivée en
+     * self-service (changement de numéro géré hors de cet espace).
      */
-    private const EDITABLE_FIELDS = ['fullName', 'phone', 'bio', 'specialties', 'availability', 'portfolioUrl'];
+    private const EDITABLE_FIELDS = ['fullName', 'bio', 'specialties', 'availability', 'portfolioUrl'];
+
+    /**
+     * Actions d'historique visibles par un client (par opposition à un membre
+     * de l'équipe, qui voit tout sauf 'access_denied') : uniquement le cycle
+     * de vie du projet, jamais les mouvements internes (dépenses,
+     * collaborateurs) — même logique que la rétention de budget/spent.
+     */
+    private const CLIENT_SAFE_HISTORY_ACTIONS = ['created', 'status_changed'];
+
+    /** Nombre d'entrées renvoyées par /api/me/activity, toutes catégories confondues. */
+    private const ACTIVITY_LIMIT = 20;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -80,9 +96,8 @@ final class MeController extends AbstractController
         if (\array_key_exists('fullName', $payload)) {
             $user->setFullName($this->nullableString($payload['fullName']));
         }
-        if (\array_key_exists('phone', $payload)) {
-            $user->setPhone($this->nullableString($payload['phone']));
-        }
+        // `phone` est volontairement ignoré ici : absent de EDITABLE_FIELDS,
+        // non modifiable en self-service.
         if (\array_key_exists('bio', $payload)) {
             $user->setBio($this->nullableString($payload['bio']));
         }
@@ -264,6 +279,212 @@ final class MeController extends AbstractController
     }
 
     /**
+     * Flux d'activité de l'utilisateur courant : historique de projet
+     * (ProjectHistory) et messages (Comment) agrégés sur tous ses projets
+     * (owned/collaborating/client), triés du plus récent au plus ancien.
+     * Le client ne voit qu'un sous-ensemble « sûr » de l'historique — cf.
+     * CLIENT_SAFE_HISTORY_ACTIONS.
+     */
+    #[Route('/activity', name: 'activity', methods: ['GET'])]
+    public function activity(): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $projects = $this->getAllUserProjects($user);
+
+        $history = [];
+        $messages = [];
+        foreach ($projects as $project) {
+            $isTeamMember = $project->isTeamMember($user);
+            $isClient = $project->getClient() === $user;
+
+            foreach ($project->getHistories() as $entry) {
+                $visible = $isTeamMember
+                    ? 'access_denied' !== $entry->getAction()
+                    : ($isClient && \in_array($entry->getAction(), self::CLIENT_SAFE_HISTORY_ACTIONS, true));
+
+                if ($visible) {
+                    $history[] = $this->serializeHistoryEntry($entry, $project);
+                }
+            }
+
+            foreach ($project->getComments() as $comment) {
+                $messages[] = $this->serializeComment($comment, $project, $user);
+            }
+        }
+
+        usort($history, static fn (array $a, array $b) => $b['createdAt'] <=> $a['createdAt']);
+        usort($messages, static fn (array $a, array $b) => $b['createdAt'] <=> $a['createdAt']);
+
+        return $this->json([
+            'history' => \array_slice($history, 0, self::ACTIVITY_LIMIT),
+            'messages' => \array_slice($messages, 0, self::ACTIVITY_LIMIT),
+        ]);
+    }
+
+    /**
+     * Fil de discussion complet d'un projet auquel l'utilisateur est
+     * rattaché (client, responsable ou collaborateur) — ordre chronologique.
+     */
+    #[Route('/projects/{id}/comments', name: 'project_comments_read', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function readComments(int $id, ProjectRepository $projectRepository): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $project = $projectRepository->find($id);
+        if (!$project instanceof Project || (!$project->isTeamMember($user) && $project->getClient() !== $user)) {
+            return $this->json(['detail' => 'Projet introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $comments = array_map(
+            fn (Comment $c): array => $this->serializeComment($c, $project, $user),
+            $project->getComments()->toArray(),
+        );
+
+        return $this->json(['comments' => $comments]);
+    }
+
+    /**
+     * Poste un message dans le fil de discussion d'un projet — même
+     * périmètre d'accès que readComments().
+     */
+    #[Route('/projects/{id}/comments', name: 'project_comments_create', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function createComment(int $id, Request $request, ProjectRepository $projectRepository): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $project = $projectRepository->find($id);
+        if (!$project instanceof Project || (!$project->isTeamMember($user) && $project->getClient() !== $user)) {
+            return $this->json(['detail' => 'Projet introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        $content = \is_array($payload) ? $this->nullableString($payload['content'] ?? null) : null;
+        if (null === $content) {
+            return $this->json(['detail' => 'Le message ne peut pas être vide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $comment = new Comment();
+        $comment->setProject($project)->setAuthor($user)->setContent($content);
+
+        $violations = $this->validator->validate($comment);
+        if (\count($violations) > 0) {
+            return $this->json(['detail' => $violations[0]->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $project->addComment($comment);
+        $this->entityManager->persist($comment);
+        $this->entityManager->flush();
+
+        return $this->json($this->serializeComment($comment, $project, $user), Response::HTTP_CREATED);
+    }
+
+    /**
+     * Union dédupliquée des projets auxquels l'utilisateur est rattaché,
+     * tous rôles confondus (owner, collaborateur, client).
+     *
+     * @return Project[]
+     */
+    private function getAllUserProjects(User $user): array
+    {
+        $clientProjects = $this->projectRepository->findBy(['client' => $user]);
+
+        $byId = [];
+        foreach ([...$user->getOwnedProjects(), ...$user->getCollaboratingProjects(), ...$clientProjects] as $project) {
+            $byId[$project->getId()] = $project;
+        }
+
+        return array_values($byId);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeHistoryEntry(ProjectHistory $entry, Project $project): array
+    {
+        return [
+            'id' => $entry->getId(),
+            'projectId' => $project->getId(),
+            'projectTitle' => $project->getTitle(),
+            'action' => $entry->getAction(),
+            'actionLabel' => $entry->getActionLabel(),
+            'details' => $entry->getDetails(),
+            'createdAt' => $entry->getCreatedAt()->format(\DateTimeInterface::ATOM),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeComment(Comment $comment, Project $project, User $viewer): array
+    {
+        $author = $comment->getAuthor();
+
+        return [
+            'id' => $comment->getId(),
+            'projectId' => $project->getId(),
+            'projectTitle' => $project->getTitle(),
+            'content' => $comment->getContent(),
+            'createdAt' => $comment->getCreatedAt()->format(\DateTimeInterface::ATOM),
+            'isMine' => $author === $viewer,
+            'author' => [
+                'id' => $author->getId(),
+                'fullName' => $author->getFullName(),
+                'email' => $author->getEmail(),
+            ],
+        ];
+    }
+
+    /**
+     * @param Project[] $clientProjects
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function serializeClientInvoices(array $clientProjects): array
+    {
+        $invoices = [];
+        foreach ($clientProjects as $project) {
+            foreach ($project->getInvoices() as $invoice) {
+                $invoices[] = $this->serializeInvoice($invoice, $project);
+            }
+        }
+
+        return $invoices;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeInvoice(Invoice $invoice, Project $project): array
+    {
+        return [
+            'id' => $invoice->getId(),
+            'projectId' => $project->getId(),
+            'projectTitle' => $project->getTitle(),
+            'number' => $invoice->getNumber(),
+            'label' => $invoice->getLabel(),
+            'amount' => $invoice->getAmount(),
+            'currency' => $invoice->getCurrency(),
+            'formattedAmount' => $invoice->getFormattedAmount(),
+            'status' => $invoice->getStatus()->value,
+            'statusLabel' => $invoice->getStatus()->getLabel(),
+            'issuedAt' => $invoice->getIssuedAt()->format(\DateTimeInterface::ATOM),
+            'dueDate' => $invoice->getDueDate()?->format(\DateTimeInterface::ATOM),
+            'paidAt' => $invoice->getPaidAt()?->format(\DateTimeInterface::ATOM),
+            'overdue' => $invoice->isOverdue(),
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function serializeUser(User $user): array
@@ -300,6 +521,10 @@ final class MeController extends AbstractController
                 // Projets/devis rattachés au compte client.
                 'clientProjects' => array_map($this->serializeProject(...), $clientProjects),
                 'quoteRequests' => array_map($this->serializeQuote(...), $user->getQuoteRequest()->toArray()),
+                // Factures des projets dont l'utilisateur est le client — jamais
+                // pour l'équipe (owner/collaborateur), même restriction de
+                // périmètre que budget/spent sur Project.
+                'invoices' => $this->serializeClientInvoices($clientProjects),
             ],
         ];
     }
