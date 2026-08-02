@@ -4,8 +4,23 @@
 
 {% block body %}
 	<div class="mb-6">
-		<h1 class="text-2xl font-bold text-brand-dark">Mes projets</h1>
-		<p class="text-sm text-brand-dark/60">Suivez l'avancement des projets qui vous concernent.</p>
+		<h1 class="text-2xl font-bold text-brand-dark">Tableau de bord</h1>
+		<p class="text-sm text-brand-dark/60">Vue d'ensemble de vos projets et demandes de devis.</p>
+	</div>
+
+	<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-progress" aria-hidden="true"></span></div>
+			<div><div class="stat-tile__value">{{ activeProjectsCount }}</div><div class="stat-tile__label">Projet{{ activeProjectsCount > 1 ? 's' : '' }} actif{{ activeProjectsCount > 1 ? 's' : '' }}</div></div>
+		</div>
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-circle-check" aria-hidden="true"></span></div>
+			<div><div class="stat-tile__value">{{ completedProjectsCount }}</div><div class="stat-tile__label">Projet{{ completedProjectsCount > 1 ? 's' : '' }} terminé{{ completedProjectsCount > 1 ? 's' : '' }}</div></div>
+		</div>
+		<a href="{{ path('member_quote_index') }}" class="stat-tile hover:shadow-md transition">
+			<div class="stat-tile__icon"><span class="ti ti-file-invoice" aria-hidden="true"></span></div>
+			<div><div class="stat-tile__value">{{ pendingQuotesCount }}</div><div class="stat-tile__label">Devis en attente</div></div>
+		</a>
 	</div>
 
 	{% if projects is empty %}

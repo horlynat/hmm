@@ -1,0 +1,17 @@
+{#
+   Composant : statistique avec icône, alignée sur le système .stat-tile
+   partagé (assets/styles/app.css), déjà utilisé pour les KPI du dashboard.
+   Usage : <twig:profile:stat title="Adresse IP" :value="user.lastIp ?? 'N/A'" icon="device-desktop" />
+#}
+{% props title, value = null, icon = null %}
+<div class="stat-tile">
+	{% if icon %}
+		<div class="stat-tile__icon">
+			<span class="ti ti-{{ icon }}" aria-hidden="true"></span>
+		</div>
+	{% endif %}
+	<div>
+		<p class="stat-tile__label">{{ title }}</p>
+		<p class="stat-tile__value text-lg">{{ value ?? '—' }}</p>
+	</div>
+</div>

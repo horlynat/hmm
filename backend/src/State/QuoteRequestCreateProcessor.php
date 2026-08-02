@@ -6,8 +6,10 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\QuoteRequestApiResource;
 use App\Entity\QuoteRequest;
+use App\Entity\User;
 use App\Service\PublicSubmissionThrottler;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 
 /**
  * QuoteRequestApiResource n'étant pas lui-même mappé Doctrine (seul son
@@ -15,14 +17,18 @@ use Doctrine\ORM\EntityManagerInterface;
  * ne le reconnaît pas comme une entité gérable et ne persiste ni ne flush
  * rien (même défaut que ContactMessageCreateProcessor). On construit donc
  * explicitement une véritable QuoteRequest à partir des champs publics
- * reçus. Le champ `user` reste volontairement null : les demandes de devis
- * publiques sont anonymes, aucun compte n'est requis.
+ * reçus. Aucun compte n'est requis pour soumettre un devis (formulaire
+ * public) — mais si la requête porte un JWT valide (utilisateur déjà
+ * connecté sur le frontend Next.js), on rattache la demande à son compte
+ * pour qu'elle apparaisse dans « Mes devis » sans intervention manuelle d'un
+ * admin.
  */
 final class QuoteRequestCreateProcessor implements ProcessorInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly PublicSubmissionThrottler $throttler,
+        private readonly Security $security,
     ) {
     }
 
@@ -46,6 +52,11 @@ final class QuoteRequestCreateProcessor implements ProcessorInterface
         $entity->setAttachmentName($data->getAttachmentName());
         $entity->setClarifications($data->getClarifications());
         $entity->setMessage($data->getMessage());
+
+        $currentUser = $this->security->getUser();
+        if ($currentUser instanceof User) {
+            $entity->setUser($currentUser);
+        }
 
         $this->entityManager->persist($entity);
         $this->entityManager->flush();

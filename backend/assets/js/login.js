@@ -1,4 +1,11 @@
 import "../styles/login.css";
+// `authenticate` fait partie de framework.csrf_protection.stateless_token_ids
+// (config/packages/csrf.yaml) : le champ _csrf_token n'est rendu qu'avec une
+// valeur placeholder côté serveur (SameOriginCsrfTokenManager), ce script
+// remplace cette valeur par un vrai jeton double-submit à la soumission. Sans
+// cet import, la page /login (bundle Vite autonome, hors app.js/Stimulus)
+// soumettait le placeholder tel quel → "jeton CSRF invalide" au login.
+import "../controllers/csrf_protection_controller.js";
 
 // Révèle la page une fois que ce module (et son import CSS ci-dessus) a fini
 // de s'exécuter — voir templates/_partials/_vite_fouc_guard.html.twig pour

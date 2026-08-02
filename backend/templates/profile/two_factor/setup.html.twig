@@ -4,53 +4,48 @@
 {% block title %}Activer la 2FA{% endblock %}
 
 {% block body %}
-	<div class="max-w-2xl mx-auto">
+	<twig:PageHeader title="Activer la double authentification" icon="ti-qrcode"
+		subtitle="Scannez ce QR code avec votre application d'authentification, puis saisissez le code à 6 chiffres qu'elle affiche pour confirmer." />
 
-		<div class="mb-8">
-			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
-				<span class="ti ti-qrcode text-brand-primary" aria-hidden="true"></span>
-				<span>Activer la double authentification</span>
-			</h1>
-			<p class="text-sm opacity-60 mt-1">Scannez ce QR code avec votre application d'authentification, puis saisissez le code à 6 chiffres qu'elle affiche pour confirmer.</p>
-		</div>
-
+	<div class="max-w-2xl space-y-4">
 		{% if error %}
-			<div class="mb-6 p-3 bg-danger/10 text-danger rounded-lg border border-danger/30 text-sm">
-				{{ error }}
-			</div>
+			<div class="field-error">{{ error }}</div>
 		{% endif %}
 
-		<div class="soft-card p-6">
-			<div class="flex flex-col items-center gap-4 mb-6 pb-6 border-b border-gray-100">
-				<img src="{{ qrCodeDataUri }}" alt="QR code 2FA" class="rounded-lg border border-gray-100 shadow-sm">
+		<div class="panel">
+			<div class="panel-body">
+				<div class="flex flex-col items-center gap-4 mb-6 pb-6 border-b border-gray-100 dark:border-gray-700">
+					<img src="{{ qrCodeDataUri }}" alt="QR code 2FA" class="rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm">
 
-				<div class="text-center">
-					<p class="text-xs opacity-50 mb-1">Impossible de scanner ? Saisissez cette clé manuellement :</p>
-					<code class="text-sm font-mono bg-gray-50 px-3 py-1.5 rounded-md tracking-wider select-all">{{ secret|split('')|batch(4)|map(chunk => chunk|join(''))|join(' ') }}</code>
+					<div class="text-center">
+						<p class="field-hint mb-1">Impossible de scanner ? Saisissez cette clé manuellement :</p>
+						<code class="text-sm font-mono bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-md tracking-wider select-all">{{ secret|split('')|batch(4)|map(chunk => chunk|join(''))|join(' ') }}</code>
+					</div>
+
+					<a href="{{ path('profile_two_factor_setup', {regenerate: 1}) }}" class="text-xs text-(--brand-primary) hover:underline">
+						Générer une nouvelle clé
+					</a>
 				</div>
 
-				<a href="{{ path('profile_two_factor_setup', {regenerate: 1}) }}" class="text-xs text-brand-primary hover:underline">
-					Générer une nouvelle clé
-				</a>
+				<form method="post" class="space-y-4">
+					<input type="hidden" name="_token" value="{{ csrf_token('profile_two_factor_setup') }}">
+
+					<div class="field">
+						<label for="code" class="field-label">Code à 6 chiffres</label>
+						<input type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" required autofocus
+							class="input w-full text-center text-lg tracking-[0.5em] font-mono">
+					</div>
+
+					<button type="submit" class="btn btn-primary w-full gap-1.5">
+						<span class="ti ti-check" aria-hidden="true"></span>
+						Confirmer et activer
+					</button>
+				</form>
 			</div>
-
-			<form method="post" class="space-y-4">
-				<input type="hidden" name="_token" value="{{ csrf_token('profile_two_factor_setup') }}">
-
-				<div>
-					<label for="code" class="label block text-sm mb-1">Code à 6 chiffres</label>
-					<input type="text" id="code" name="code" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" maxlength="6" required autofocus class="input input-primary w-full text-center text-lg tracking-[0.5em] font-mono" placeholder="000000">
-				</div>
-
-				<button type="submit" class="btn btn-primary w-full">
-					<span class="ti ti-check text-base mr-1.5" aria-hidden="true"></span>
-					Confirmer et activer
-				</button>
-			</form>
 		</div>
 
-		<a href="{{ path('profile_two_factor_index') }}" class="inline-flex items-center gap-1.5 text-sm text-brand-dark opacity-60 hover:opacity-100 mt-4">
-			<span class="ti ti-arrow-left text-base" aria-hidden="true"></span>
+		<a href="{{ path('profile_two_factor_index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-(--brand-dark) transition">
+			<span class="ti ti-arrow-left" aria-hidden="true"></span>
 			Annuler
 		</a>
 	</div>

@@ -5,6 +5,46 @@
 {% set isSecuriteActive = currentRoute starts with 'admin_security_' %}
 {% set isParametresActive = currentRoute starts with 'admin_config' or currentRoute starts with 'admin_notification' or currentRoute starts with 'admin_integration' or currentRoute starts with 'admin_backup' %}
 
+{# 🔒 Visibilité par rôle : chaque booléen reflète EXACTEMENT le denyAccessUnlessGranted/Voter
+   de la méthode index() du contrôleur ciblé (voir routes admin_*), pas une approximation —
+   sinon on retombe dans le problème d'origine (des liens visibles qui 403ent). #}
+{% set canViewDashboard = is_granted(constant('App\\Security\\Voter\\DashboardVoter::VIEW')) %}
+
+{% set canViewProjects = is_granted('ROLE_ADMIN') %}
+{% set canViewSkills = is_granted('ROLE_EDITOR') %}
+{% set canViewSkillCategories = is_granted('ROLE_ADMIN') %}
+{% set canViewArticles = is_granted(constant('App\\Security\\Voter\\ArticleVoter::VIEW')) %}
+{% set canViewTags = is_granted('ROLE_ADMIN') %}
+{% set canViewCourses = is_granted('ROLE_EDITOR') %}
+{% set canViewExperiences = is_granted('ROLE_ADMIN') %}
+{% set canViewHomeContent = is_granted('ROLE_ADMIN') %}
+{% set canViewAboutContent = is_granted('ROLE_ADMIN') %}
+{% set canViewAiAssistant = is_granted('ROLE_ADMIN') %}
+{% set canViewContenuSection = canViewProjects or canViewSkills or canViewSkillCategories or canViewArticles or canViewTags or canViewCourses or canViewExperiences or canViewHomeContent or canViewAboutContent or canViewAiAssistant %}
+
+{% set canViewAdmins = is_granted('ROLE_ADMIN') %}
+{% set canViewCollaborators = is_granted('ROLE_ADMIN') %}
+{% set canViewClients = is_granted('ROLE_ADMIN') %}
+{% set canViewContacts = is_granted(constant('App\\Security\\Voter\\ContactVoter::VIEW')) %}
+{% set canViewQuoteRequests = is_granted(constant('App\\Security\\Voter\\QuoteVoter::VIEW')) %}
+{% set canViewTestimonials = is_granted(constant('App\\Security\\Voter\\TestimonialVoter::VIEW')) %}
+{% set canViewUtilisateursSection = canViewAdmins or canViewCollaborators or canViewClients or canViewContacts or canViewQuoteRequests or canViewTestimonials %}
+
+{% set canViewSecurityLogs = is_granted(constant('App\\Security\\Voter\\SecurityVoter::VIEW_LOGS')) %}
+{% set canViewSecuritySessions = is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_SESSIONS')) %}
+{% set canViewSecurityRoles = is_granted(constant('App\\Security\\Voter\\SecurityVoter::VIEW_ROLES')) %}
+{% set canViewSecurityAudit = is_granted(constant('App\\Security\\Voter\\SecurityVoter::VIEW_AUDIT')) %}
+{% set canViewSecurity2fa = is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_2FA')) %}
+{% set canViewSecurityPolicies = is_granted(constant('App\\Security\\Voter\\SecurityVoter::VIEW_POLICIES')) %}
+{% set canViewSecuriteSection = canViewSecurityLogs or canViewSecuritySessions or canViewSecurityRoles or canViewSecurityAudit or canViewSecurity2fa or canViewSecurityPolicies %}
+
+{% set canViewConfig = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_CONFIG')) %}
+{% set canViewNotifications = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_NOTIFICATIONS')) %}
+{% set canViewIntegrations = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_INTEGRATIONS')) %}
+{% set canViewBackups = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_BACKUPS')) %}
+{% set canViewParametresSection = canViewConfig or canViewNotifications or canViewIntegrations or canViewBackups %}
+
+{% if is_granted('ROLE_EDITOR') %}
 <aside class="fixed inset-y-0 left-0 z-50 w-64 h-full bg-(--bg-default) border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out
 			       md:translate-x-0 md:static md:h-screen shadow-xl md:shadow-none" :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'" aria-label="Navigation principale">
 	<!-- 🏢 LOGO & ENTÊTE (configurable : Paramètres > Configuration) -->
@@ -29,184 +69,245 @@
 		<!-- ==========================================
 				     📌 PRINCIPAL
 				     ========================================== -->
-		<div>
-			<p class="text-[10px] uppercase text-(--brand-dark) font-bold mb-1.5 ml-3 tracking-wider">Principal</p>
-			<a href="{{ path('admin_dashboard_index') }}" class="flex items-center px-3 py-2 rounded-xl transition gap-3 font-medium text-(--brand-dark) hover:bg-brand-light/20 hover:text-(--brand-primary) {% if currentRoute == 'admin_dashboard_index' %}bg-brand-light/30 text-(--brand-primary) font-semibold{% endif %}">
-				<i class="ti ti-layout-dashboard text-lg"></i>
-				<span>Dashboard</span>
-			</a>
-		</div>
+		{% if canViewDashboard %}
+			<div>
+				<p class="text-[10px] uppercase text-(--brand-dark) font-bold mb-1.5 ml-3 tracking-wider">Principal</p>
+				<a href="{{ path('admin_dashboard_index') }}" class="flex items-center px-3 py-2 rounded-xl transition gap-3 font-medium text-(--brand-dark) hover:bg-brand-light/20 hover:text-(--brand-primary) {% if currentRoute == 'admin_dashboard_index' %}bg-brand-light/30 text-(--brand-primary) font-semibold{% endif %}">
+					<i class="ti ti-layout-dashboard text-lg"></i>
+					<span>Dashboard</span>
+				</a>
+			</div>
+		{% endif %}
 
 		<!-- ==========================================
 				     📁 CONTENU (ACCORDÉON)
 				     ========================================== -->
-		<div x-data="{ open: {{ isContenuActive ? 'true' : 'false' }} }">
-			<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
-				<div class="flex items-center gap-3">
-					<i class="ti ti-folders text-lg text-(--brand-dark)"></i>
-					<span>Contenu</span>
+		{% if canViewContenuSection %}
+			<div x-data="{ open: {{ isContenuActive ? 'true' : 'false' }} }">
+				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
+					<div class="flex items-center gap-3">
+						<i class="ti ti-folders text-lg text-(--brand-dark)"></i>
+						<span>Contenu</span>
+					</div>
+					<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+				</button>
+
+				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
+					{% if canViewProjects %}
+						<a href="{{ path('admin_project_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_project' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-briefcase text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Projets
+						</a>
+					{% endif %}
+					{% if canViewSkills %}
+						<a href="{{ path('admin_skill_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_skill_' and not (currentRoute starts with 'admin_skill_category') %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-code text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Compétences
+						</a>
+					{% endif %}
+					{% if canViewSkillCategories %}
+						<a href="{{ path('admin_skill_category_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_skill_category' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-category text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Catégories de compétences
+						</a>
+					{% endif %}
+					{% if canViewArticles %}
+						<a href="{{ path('admin_article_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_article' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-news text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Articles
+						</a>
+					{% endif %}
+
+					{% if canViewTags %}
+						<a href="{{ path('admin_tag_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_tag' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-tag text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Tags
+						</a>
+					{% endif %}
+
+					{% if canViewCourses %}
+						<a href="{{ path('admin_course_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_course' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-school text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Formations
+						</a>
+					{% endif %}
+					{% if canViewExperiences %}
+						<a href="{{ path('admin_experience_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_experience' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-history text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Expériences
+						</a>
+					{% endif %}
+					{% if canViewHomeContent %}
+						<a href="{{ path('admin_home_content_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_home_content' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-home text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Page d'accueil
+						</a>
+					{% endif %}
+					{% if canViewAboutContent %}
+						<a href="{{ path('admin_about_content_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_about_content' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-user text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Page "À propos"
+						</a>
+					{% endif %}
+					{% if canViewAiAssistant %}
+						<a href="{{ path('admin_ai_assistant_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_ai_assistant' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-message-chatbot text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Assistant IA
+						</a>
+					{% endif %}
 				</div>
-				<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
-			</button>
-
-			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
-				<a href="{{ path('admin_project_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_project' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-briefcase text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Projets
-				</a>
-				<a href="{{ path('admin_skill_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_skill_' and not (currentRoute starts with 'admin_skill_category') %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-code text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Compétences
-				</a>
-				<a href="{{ path('admin_skill_category_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_skill_category' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-category text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Catégories de compétences
-				</a>
-				<a href="{{ path('admin_article_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_article' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-news text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Articles
-				</a>
-
-				<!-- 🏷️ NOUVEAU : AJOUT DES TAGS -->
-				<a href="{{ path('admin_tag_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_tag' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-tag text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Tags
-				</a>
-
-				<a href="{{ path('admin_course_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_course' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-school text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Formations
-				</a>
-				<a href="{{ path('admin_experience_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_experience' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-history text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Expériences
-				</a>
-				<a href="{{ path('admin_home_content_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_home_content' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-home text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Page d'accueil
-				</a>
-				<a href="{{ path('admin_about_content_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_about_content' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-user text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Page "À propos"
-				</a>
-				<a href="{{ path('admin_ai_assistant_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_ai_assistant' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-message-chatbot text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Assistant IA
-				</a>
 			</div>
-		</div>
+		{% endif %}
 
 		<!-- ==========================================
 				     👥 UTILISATEURS (ACCORDÉON)
 				     ========================================== -->
-		<div x-data="{ open: {{ isUtilisateursActive ? 'true' : 'false' }} }">
-			<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
-				<div class="flex items-center gap-3">
-					<i class="ti ti-users text-lg text-(--brand-dark)"></i>
-					<span>Utilisateurs</span>
-				</div>
-				<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
-			</button>
+		{% if canViewUtilisateursSection %}
+			<div x-data="{ open: {{ isUtilisateursActive ? 'true' : 'false' }} }">
+				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
+					<div class="flex items-center gap-3">
+						<i class="ti ti-users text-lg text-(--brand-dark)"></i>
+						<span>Utilisateurs</span>
+					</div>
+					<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+				</button>
 
-			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
-				<a href="{{ path('admin_admins_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_admins' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-user-shield text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Admins
-				</a>
-				<a href="{{ path('admin_collaborator_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_collaborator' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-users-group text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Collaborateurs
-				</a>
-				<a href="{{ path('admin_users_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_users' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-user-dollar text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Clients
-				</a>
-				<a href="{{ path('admin_contact_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_contact' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-mail text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Contacts
-				</a>
-				<a href="{{ path('admin_request_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_request' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-git-pull-request text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Requests
-				</a>
-				<a href="{{ path('admin_testimonial_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_testimonial' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-message-star text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Témoignages
-				</a>
+				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
+					{% if canViewAdmins %}
+						<a href="{{ path('admin_admins_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_admins' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-user-shield text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Admins
+						</a>
+					{% endif %}
+					{% if canViewCollaborators %}
+						<a href="{{ path('admin_collaborator_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_collaborator' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-users-group text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Collaborateurs
+						</a>
+					{% endif %}
+					{% if canViewClients %}
+						<a href="{{ path('admin_users_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_users' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-user-dollar text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Clients
+						</a>
+					{% endif %}
+					{% if canViewContacts %}
+						<a href="{{ path('admin_contact_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_contact' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-mail text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Contacts
+						</a>
+					{% endif %}
+					{% if canViewQuoteRequests %}
+						<a href="{{ path('admin_request_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_request' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-git-pull-request text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Requests
+						</a>
+					{% endif %}
+					{% if canViewTestimonials %}
+						<a href="{{ path('admin_testimonial_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_testimonial' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-message-star text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Témoignages
+						</a>
+					{% endif %}
+				</div>
 			</div>
-		</div>
+		{% endif %}
 
 		<!-- ==========================================
 				     🛡️ SÉCURITÉ (ACCORDÉON)
 				     ========================================== -->
-		<div x-data="{ open: {{ isSecuriteActive ? 'true' : 'false' }} }">
-			<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
-				<div class="flex items-center gap-3">
-					<i class="ti ti-shield-lock text-lg text-(--brand-dark)"></i>
-					<span>Sécurité</span>
-				</div>
-				<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
-			</button>
+		{% if canViewSecuriteSection %}
+			<div x-data="{ open: {{ isSecuriteActive ? 'true' : 'false' }} }">
+				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
+					<div class="flex items-center gap-3">
+						<i class="ti ti-shield-lock text-lg text-(--brand-dark)"></i>
+						<span>Sécurité</span>
+					</div>
+					<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+				</button>
 
-			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
-				<a href="{{ path('admin_security_log_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_log' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-file-text text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Logs système
-				</a>
-				<a href="{{ path('admin_security_session_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_session' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-device-desktop-analytics text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Sessions actives
-				</a>
-				<a href="{{ path('admin_security_role_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_role' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-key text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Rôles & Perms
-				</a>
-				<a href="{{ path('admin_security_audit_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_audit' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-eye text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Audit & Monitor
-				</a>
-				<a href="{{ path('admin_security_two_factor_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_two_factor' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-shield-check text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Double Facteur (2FA)
-				</a>
-				<a href="{{ path('admin_security_policy_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_policy' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-lock-square-rounded text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Politiques sécu
-				</a>
+				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
+					{% if canViewSecurityLogs %}
+						<a href="{{ path('admin_security_log_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_log' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-file-text text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Logs système
+						</a>
+					{% endif %}
+					{% if canViewSecuritySessions %}
+						<a href="{{ path('admin_security_session_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_session' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-device-desktop-analytics text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Sessions actives
+						</a>
+					{% endif %}
+					{% if canViewSecurityRoles %}
+						<a href="{{ path('admin_security_role_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_role' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-key text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Rôles & Perms
+						</a>
+					{% endif %}
+					{% if canViewSecurityAudit %}
+						<a href="{{ path('admin_security_audit_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_audit' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-eye text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Audit & Monitor
+						</a>
+					{% endif %}
+					{% if canViewSecurity2fa %}
+						<a href="{{ path('admin_security_two_factor_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_two_factor' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-shield-check text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Double Facteur (2FA)
+						</a>
+					{% endif %}
+					{% if canViewSecurityPolicies %}
+						<a href="{{ path('admin_security_policy_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_policy' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-lock-square-rounded text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Politiques sécu
+						</a>
+					{% endif %}
+				</div>
 			</div>
-		</div>
+		{% endif %}
 
 		<!-- ==========================================
 				     ⚙️ PARAMÈTRES (ACCORDÉON)
 				     ========================================== -->
-		<div x-data="{ open: {{ isParametresActive ? 'true' : 'false' }} }">
-			<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
-				<div class="flex items-center gap-3">
-					<i class="ti ti-settings text-lg text-(--brand-dark)"></i>
-					<span>Paramètres</span>
-				</div>
-				<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
-			</button>
+		{% if canViewParametresSection %}
+			<div x-data="{ open: {{ isParametresActive ? 'true' : 'false' }} }">
+				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
+					<div class="flex items-center gap-3">
+						<i class="ti ti-settings text-lg text-(--brand-dark)"></i>
+						<span>Paramètres</span>
+					</div>
+					<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+				</button>
 
-			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
-				<a href="{{ path('admin_config_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_config' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-adjustments text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Configuration
-				</a>
-				<a href="{{ path('admin_notification_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_notification' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-bell text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Notifications
-				</a>
-				<a href="{{ path('admin_integration_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_integration' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-plug text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Intégrations API
-				</a>
-				<a href="{{ path('admin_backup_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_backup' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-					<i class="ti ti-database-export text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Sauvegardes
-				</a>
+				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
+					{% if canViewConfig %}
+						<a href="{{ path('admin_config_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_config' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-adjustments text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Configuration
+						</a>
+					{% endif %}
+					{% if canViewNotifications %}
+						<a href="{{ path('admin_notification_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_notification' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-bell text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Notifications
+						</a>
+					{% endif %}
+					{% if canViewIntegrations %}
+						<a href="{{ path('admin_integration_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_integration' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-plug text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Intégrations API
+						</a>
+					{% endif %}
+					{% if canViewBackups %}
+						<a href="{{ path('admin_backup_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_backup' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-database-export text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Sauvegardes
+						</a>
+					{% endif %}
+				</div>
 			</div>
-		</div>
+		{% endif %}
 
 		<!-- ==========================================
 				     ❓ SUPPORT (ACCORDÉON)
@@ -243,3 +344,4 @@
 		<p class="text-[11px] text-(--brand-dark) tracking-wide font-medium">Soft UI Dashboard v1.2</p>
 	</div>
 </aside>
+{% endif %}

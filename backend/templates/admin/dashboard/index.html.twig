@@ -1,17 +1,5 @@
 {% extends 'base.html.twig' %}
 
-{% macro tile(route, routeParams, icon, count, label, warn) %}
-	<a href="{{ path(route, routeParams) }}" class="flex items-center gap-3 bg-gray-50/60 border border-gray-100 rounded-xl p-4 transition hover:bg-white hover:border-gray-200 {{ warn and count > 0 ? 'ring-1 ring-warning/40' : '' }}">
-		<div class="p-2 rounded-lg shrink-0 {{ warn and count > 0 ? 'bg-warning/10 text-warning' : 'bg-brand-light/20 text-brand-primary' }}">
-			<i class="ti {{ icon }} text-lg"></i>
-		</div>
-		<div class="min-w-0">
-			<div class="text-xl font-bold {{ warn and count > 0 ? 'text-warning' : 'text-brand-dark' }}">{{ count }}</div>
-			<div class="text-xs text-brand-dark/50 truncate">{{ label }}</div>
-		</div>
-	</a>
-{% endmacro %}
-
 {% block title %}Tableau de Bord Administration
 {% endblock %}
 
@@ -144,29 +132,29 @@
 
 			<p class="text-xs uppercase text-brand-dark/40 font-bold tracking-wider mb-2">Sécurité</p>
 			<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-				{{ _self.tile('admin_security_two_factor_index', {}, 'ti-shield-off', usersWithoutTwoFactorCount|default(0), 'Comptes sans 2FA', true) }}
-				{{ _self.tile('admin_security_log_index', {tab: 'failed'}, 'ti-alert-triangle', recentFailedLoginAttemptsCount|default(0), 'Connexions échouées (24h)', true) }}
-				{{ _self.tile('admin_security_session_index', {}, 'ti-device-desktop-analytics', activeSessionsCount|default(0), 'Sessions actives', false) }}
+				<twig:DashboardTile route="admin_security_two_factor_index" icon="ti-shield-off" :count="usersWithoutTwoFactorCount|default(0)" label="Comptes sans 2FA" :warn="true" />
+				<twig:DashboardTile route="admin_security_log_index" :params="{tab: 'failed'}" icon="ti-alert-triangle" :count="recentFailedLoginAttemptsCount|default(0)" label="Connexions échouées (24h)" :warn="true" />
+				<twig:DashboardTile route="admin_security_session_index" icon="ti-device-desktop-analytics" :count="activeSessionsCount|default(0)" label="Sessions actives" :warn="false" />
 			</div>
 
 			<p class="text-xs uppercase text-brand-dark/40 font-bold tracking-wider mb-2">Équipe & utilisateurs</p>
 			<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-				{{ _self.tile('admin_admins_index', {}, 'ti-user-shield', adminsCount|default(0), 'Admins', false) }}
-				{{ _self.tile('admin_collaborator_index', {}, 'ti-users-group', collaboratorsCount|default(0), 'Collaborateurs', false) }}
-				{{ _self.tile('admin_users_index', {}, 'ti-user-dollar', clientsCount|default(0), 'Clients', false) }}
+				<twig:DashboardTile route="admin_admins_index" icon="ti-user-shield" :count="adminsCount|default(0)" label="Admins" :warn="false" />
+				<twig:DashboardTile route="admin_collaborator_index" icon="ti-users-group" :count="collaboratorsCount|default(0)" label="Collaborateurs" :warn="false" />
+				<twig:DashboardTile route="admin_users_index" icon="ti-user-dollar" :count="clientsCount|default(0)" label="Clients" :warn="false" />
 			</div>
 
 			<p class="text-xs uppercase text-brand-dark/40 font-bold tracking-wider mb-2">Contenu</p>
 			<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-				{{ _self.tile('admin_article_index', {}, 'ti-news', articlesCount|default(0), 'Articles', false) }}
-				{{ _self.tile('admin_skill_index', {}, 'ti-code', skillsCount|default(0), 'Compétences', false) }}
-				{{ _self.tile('admin_course_index', {}, 'ti-school', coursesCount|default(0), 'Formations', false) }}
-				{{ _self.tile('admin_experience_index', {}, 'ti-history', experiencesCount|default(0), 'Expériences', false) }}
+				<twig:DashboardTile route="admin_article_index" icon="ti-news" :count="articlesCount|default(0)" label="Articles" :warn="false" />
+				<twig:DashboardTile route="admin_skill_index" icon="ti-code" :count="skillsCount|default(0)" label="Compétences" :warn="false" />
+				<twig:DashboardTile route="admin_course_index" icon="ti-school" :count="coursesCount|default(0)" label="Formations" :warn="false" />
+				<twig:DashboardTile route="admin_experience_index" icon="ti-history" :count="experiencesCount|default(0)" label="Expériences" :warn="false" />
 			</div>
 
 			<p class="text-xs uppercase text-brand-dark/40 font-bold tracking-wider mb-2">Modération</p>
 			<div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-				{{ _self.tile('admin_testimonial_index', {}, 'ti-message-star', pendingTestimonialsCount|default(0), 'Témoignages en attente', true) }}
+				<twig:DashboardTile route="admin_testimonial_index" icon="ti-message-star" :count="pendingTestimonialsCount|default(0)" label="Témoignages en attente" :warn="true" />
 			</div>
 		</div>
 

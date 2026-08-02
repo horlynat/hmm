@@ -65,7 +65,7 @@ final class AdminUsersController extends AbstractController
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
         $user = new User();
-        $form = $this->createForm(UserType::class, $user);
+        $form = $this->createForm(UserType::class, $user, ['context' => 'client']);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -124,7 +124,7 @@ final class AdminUsersController extends AbstractController
 
         $this->denyAccessUnlessGranted(UserVoter::EDIT, $user);
 
-        $form = $this->createForm(UserType::class, $user);
+        $form = $this->createForm(UserType::class, $user, ['context' => 'client']);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

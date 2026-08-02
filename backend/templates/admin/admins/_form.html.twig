@@ -36,52 +36,56 @@
 			</div>
 		</div>
 
-		<div class="panel">
-			<div class="panel-header">
-				<h2 class="panel-title flex items-center gap-2">
-					<span class="ti ti-user-star" aria-hidden="true"></span>
-					Profil collaborateur (pro / freelance)
-				</h2>
+		{% if form.specialties is defined %}
+			<div class="panel">
+				<div class="panel-header">
+					<h2 class="panel-title flex items-center gap-2">
+						<span class="ti ti-user-star" aria-hidden="true"></span>
+						Profil collaborateur (pro / freelance)
+					</h2>
+				</div>
+				<div class="panel-body grid grid-cols-1 md:grid-cols-2 gap-5">
+					<div class="field">
+						{{ form_label(form.specialties, null, {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.specialties, {'attr': {'class': 'input w-full'}}) }}
+						{{ form_errors(form.specialties, {'attr': {'class': 'field-error'}}) }}
+					</div>
+					<div class="field">
+						{{ form_label(form.availability, null, {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.availability, {'attr': {'class': 'input w-full'}}) }}
+						{{ form_errors(form.availability, {'attr': {'class': 'field-error'}}) }}
+					</div>
+					<div class="field">
+						{{ form_label(form.portfolioUrl, null, {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.portfolioUrl, {'attr': {'class': 'input w-full'}}) }}
+						{{ form_errors(form.portfolioUrl, {'attr': {'class': 'field-error'}}) }}
+					</div>
+					<div class="field md:col-span-2">
+						{{ form_label(form.bio, null, {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.bio, {'attr': {'class': 'input textarea w-full'}}) }}
+						{{ form_errors(form.bio, {'attr': {'class': 'field-error'}}) }}
+					</div>
+				</div>
 			</div>
-			<div class="panel-body grid grid-cols-1 md:grid-cols-2 gap-5">
-				<div class="field">
-					{{ form_label(form.specialties, null, {'label_attr': {'class': 'field-label'}}) }}
-					{{ form_widget(form.specialties, {'attr': {'class': 'input w-full'}}) }}
-					{{ form_errors(form.specialties, {'attr': {'class': 'field-error'}}) }}
-				</div>
-				<div class="field">
-					{{ form_label(form.availability, null, {'label_attr': {'class': 'field-label'}}) }}
-					{{ form_widget(form.availability, {'attr': {'class': 'input w-full'}}) }}
-					{{ form_errors(form.availability, {'attr': {'class': 'field-error'}}) }}
-				</div>
-				<div class="field">
-					{{ form_label(form.portfolioUrl, null, {'label_attr': {'class': 'field-label'}}) }}
-					{{ form_widget(form.portfolioUrl, {'attr': {'class': 'input w-full'}}) }}
-					{{ form_errors(form.portfolioUrl, {'attr': {'class': 'field-error'}}) }}
-				</div>
-				<div class="field md:col-span-2">
-					{{ form_label(form.bio, null, {'label_attr': {'class': 'field-label'}}) }}
-					{{ form_widget(form.bio, {'attr': {'class': 'input textarea w-full'}}) }}
-					{{ form_errors(form.bio, {'attr': {'class': 'field-error'}}) }}
-				</div>
-			</div>
-		</div>
+		{% endif %}
 	</div>
 
 	{# ── Colonne latérale ── #}
 	<div class="space-y-6">
-		<div class="panel">
-			<div class="panel-header">
-				<h2 class="panel-title flex items-center gap-2">
-					<span class="ti ti-shield-lock" aria-hidden="true"></span>
-					Rôles & permissions
-				</h2>
+		{% if form.roles is defined %}
+			<div class="panel">
+				<div class="panel-header">
+					<h2 class="panel-title flex items-center gap-2">
+						<span class="ti ti-shield-lock" aria-hidden="true"></span>
+						Rôles & permissions
+					</h2>
+				</div>
+				<div class="panel-body">
+					{{ form_widget(form.roles, {'attr': {'class': 'space-y-2'}}) }}
+					{{ form_errors(form.roles, {'attr': {'class': 'field-error'}}) }}
+				</div>
 			</div>
-			<div class="panel-body">
-				{{ form_widget(form.roles, {'attr': {'class': 'space-y-2'}}) }}
-				{{ form_errors(form.roles, {'attr': {'class': 'field-error'}}) }}
-			</div>
-		</div>
+		{% endif %}
 
 		<div class="panel">
 			<div class="panel-header">

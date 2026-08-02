@@ -11,6 +11,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: QuoteRequestRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class QuoteRequest
 {
     #[ORM\Id]
@@ -89,6 +90,18 @@ class QuoteRequest
     #[ORM\Column(length: 20, enumType: QuoteStatusEnum::class)]
     #[Groups(['api_admin'])]
     private QuoteStatusEnum $status = QuoteStatusEnum::PENDING;
+
+    /**
+     * Nullable (contrairement à CreatedAtTrait) : les demandes créées avant
+     * l'ajout de ce champ n'ont pas de date de soumission réelle connue —
+     * NULL plutôt qu'une date de migration fictive qui laisserait croire
+     * qu'elles datent d'aujourd'hui. `api_admin` uniquement (jamais
+     * `api_public`) : un visiteur ne doit pas pouvoir falsifier sa propre
+     * date de soumission via POST /api/quote_requests.
+     */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['api_admin'])]
+    private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'quoteRequest')]
     #[ORM\JoinColumn(nullable: true)]
@@ -283,6 +296,17 @@ class QuoteRequest
         $this->status = $status;
 
         return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    #[ORM\PrePersist]
+    public function setCreatedAtValue(): void
+    {
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     public function getUser(): ?User

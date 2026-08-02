@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\QuoteRequest;
+use App\Entity\User;
 use App\Enum\QuoteStatusEnum;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -25,6 +26,20 @@ class QuoteRequestRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('q')
             ->andWhere('q.status = :status')
             ->setParameter('status', $status)
+            ->orderBy('q.id', 'DESC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    /**
+     * @return QuoteRequest[]
+     */
+    public function findByUser(User $user): array
+    {
+        return $this->createQueryBuilder('q')
+            ->andWhere('q.user = :user')
+            ->setParameter('user', $user)
             ->orderBy('q.id', 'DESC')
             ->getQuery()
             ->getResult()

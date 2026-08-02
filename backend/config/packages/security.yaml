@@ -85,8 +85,11 @@ security:
     access_control:
         - { path: ^/admin, roles: ROLE_EDITOR }             # Back-office ouvert dès le rang Éditeur (le détail des actions est géré par les Voters)
         - { path: ^/projects, roles: ROLE_USER }            # Projets accessibles aux utilisateurs connectés
+        - { path: ^/mes-devis, roles: ROLE_USER }           # Devis (lecture seule, propriétaire uniquement) accessibles aux utilisateurs connectés
         - { path: ^/profile, roles: ROLE_USER }             # Profil accessible aux utilisateurs connectés
         - { path: ^/login, roles: PUBLIC_ACCESS }           # Page de connexion admin (doit rester atteignable sans être authentifié) — le back-office reste gardé par ^/admin
+        - { path: ^/mot-de-passe-oublie, roles: PUBLIC_ACCESS }        # Demande de réinitialisation, doit rester atteignable sans être authentifié
+        - { path: ^/reinitialiser-mot-de-passe, roles: PUBLIC_ACCESS } # Formulaire de réinitialisation via lien email, idem
         - { path: ^/register, roles: ROLE_ADMIN }           # Inscription réservée aux admins (création d'un compte administrateur). L'inscription publique passe par le frontend Next.js (ApiResource *Registration)
         - { path: ^/verify/email, roles: PUBLIC_ACCESS }    # Vérification email publique
         - { path: ^/api, roles: PUBLIC_ACCESS }              # Sécurité déléguée à API Platform (attribut `security` par opération, cf. *ApiResource)

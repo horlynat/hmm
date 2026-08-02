@@ -852,10 +852,15 @@ class Project
 
     public function getBudgetPercentageUsed(): float
     {
-        if ($this->budget === '0.00') {
+        // bccomp() renvoie -1/0/1 (comparaison), pas un ratio : l'ancienne version
+        // affichait donc -100/0/100 au lieu d'un vrai pourcentage. bcdiv/bcmul
+        // calculent le vrai ratio dépensé/budget, cohérent avec le stockage
+        // bcmath (chaînes décimales) du reste de l'entité.
+        if (0 === bccomp($this->budget, '0.00', 2)) {
             return 0.0;
         }
-        return min(100.0, (float) bccomp($this->spent, $this->budget, 2) * 100);
+
+        return min(100.0, (float) bcmul(bcdiv($this->spent, $this->budget, 6), '100', 2));
     }
 
     public function getBudgetStatus(): string

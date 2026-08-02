@@ -9,16 +9,29 @@
 		<span aria-current="page" class="truncate max-w-[30ch]">{{ project.title }}</span>
 	</nav>
 
-	<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+	<div class="flex flex-wrap items-center justify-between gap-3 mb-3">
 		<h1 class="text-2xl font-bold text-brand-dark">{{ project.title }}</h1>
 		<div class="flex items-center gap-2">
 			<span class="badge {{ project.status.badgeClass|default('bg-gray-400 text-white') }} text-xs">{{ project.status.label }}</span>
+			{% if project.priority %}<span class="badge {{ project.priority.badgeClass }} text-xs">{{ project.priority.label }}</span>{% endif %}
+			{% if project.billingType %}<span class="badge {{ project.billingType.badgeClass }} text-xs">{{ project.billingType.label }}</span>{% endif %}
 			{% if project.link %}<a href="{{ project.link }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm gap-1"><span class="ti ti-external-link" aria-hidden="true"></span> Voir en ligne</a>{% endif %}
 		</div>
 	</div>
 
+	{% if project.skills is not empty or project.tags is not empty %}
+		<div class="flex flex-wrap gap-1.5 mb-6">
+			{% for skill in project.skills %}
+				<span class="badge badge-info text-xs">{{ skill.name }}</span>
+			{% endfor %}
+			{% for tag in project.tags %}
+				<span class="badge badge-neutral text-xs">#{{ tag.name }}</span>
+			{% endfor %}
+		</div>
+	{% endif %}
+
 	{# Avancement + échéance #}
-	<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+	<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
 		<div class="stat-tile">
 			<div class="stat-tile__icon"><span class="ti ti-progress" aria-hidden="true"></span></div>
 			<div><div class="stat-tile__value">{{ project.progress }}%</div><div class="stat-tile__label">Avancement · {{ project.doneTasksCount }}/{{ project.tasksCount }} tâches</div></div>
@@ -33,11 +46,89 @@
 		</div>
 	</div>
 
+	{# Ni budget ni dépenses ne s'affichent ici, pour client comme pour
+	   collaborateur : ce sont des chiffres de gestion interne (combien de
+	   l'enveloppe allouée a été consommé en dépenses d'équipe approuvées),
+	   pas ce que le client a payé. Réservé à l'espace admin. #}
+
 	{# Description #}
 	<div class="panel mb-6">
 		<div class="panel-header"><h3 class="panel-title">Description</h3></div>
 		<div class="panel-body"><p class="text-brand-dark/80 leading-relaxed whitespace-pre-line mb-0">{{ project.description }}</p></div>
 	</div>
+
+	{# Présentation "vitrine" du projet (contenu éditorial : rôle, objectifs, stack, défis, résultats) #}
+	{% if project.info %}
+		{% set info = project.info %}
+		<div class="panel mb-6">
+			<div class="panel-header"><h3 class="panel-title">Présentation du projet</h3></div>
+			<div class="panel-body space-y-5">
+				{% if info.coverImage %}
+					<img src="/uploads/projects/{{ info.coverImage.filePath }}" alt="{{ info.coverImage.altText }}" class="w-full rounded-xl border border-gray-100 dark:border-gray-800 object-cover max-h-72">
+				{% endif %}
+
+				{% if info.role %}
+					<div>
+						<p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Rôle</p>
+						<p class="text-sm text-brand-dark/80">{{ info.role }}</p>
+					</div>
+				{% endif %}
+
+				{% if info.objectives is not empty %}
+					<div>
+						<p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Objectifs</p>
+						<ul class="list-disc list-inside text-sm text-brand-dark/80 space-y-1">
+							{% for objective in info.objectives %}<li>{{ objective }}</li>{% endfor %}
+						</ul>
+					</div>
+				{% endif %}
+
+				{% if info.techStack is not empty %}
+					<div>
+						<p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Stack technique</p>
+						<div class="flex flex-wrap gap-1.5">
+							{% for tech in info.techStack %}
+								<span class="badge badge-info text-xs" title="{{ tech.rationale ?? '' }}">{{ tech.name }}</span>
+							{% endfor %}
+						</div>
+					</div>
+				{% endif %}
+
+				{% if info.challenges is not empty %}
+					<div>
+						<p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Défis &amp; solutions</p>
+						<dl class="space-y-2">
+							{% for item in info.challenges %}
+								<div class="text-sm">
+									<dt class="font-semibold text-brand-dark">{{ item.problem }}</dt>
+									<dd class="text-brand-dark/70">{{ item.solution }}</dd>
+								</div>
+							{% endfor %}
+						</dl>
+					</div>
+				{% endif %}
+
+				{% if info.results is not empty %}
+					<div>
+						<p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Résultats</p>
+						<div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+							{% for result in info.results %}
+								<div class="stat-tile">
+									<div><div class="stat-tile__value text-lg">{{ result.value }}</div><div class="stat-tile__label">{{ result.label }}</div></div>
+								</div>
+							{% endfor %}
+						</div>
+					</div>
+				{% endif %}
+
+				{% if info.repoUrl %}
+					<a href="{{ info.repoUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm gap-1.5 w-fit">
+						<span class="ti ti-brand-github" aria-hidden="true"></span> Voir le dépôt
+					</a>
+				{% endif %}
+			</div>
+		</div>
+	{% endif %}
 
 	{# Avancement détaillé : tâches (lecture seule) #}
 	<div class="panel mb-6">
@@ -58,6 +149,62 @@
 			{% endif %}
 		</div>
 	</div>
+
+	{# Temps passé : total visible par tous, détail + saisie réservés à l'équipe (owner/collaborateurs) #}
+	<div class="panel mb-6">
+		<div class="panel-header flex items-center justify-between">
+			<h3 class="panel-title">Temps passé</h3>
+			<span class="badge badge-info text-xs">{{ project.formattedTotalTime }}</span>
+		</div>
+		{% if isTeamMember %}
+			<div class="panel-body space-y-4">
+				{% if project.timeEntries is empty %}
+					<p class="text-sm text-gray-500 mb-0">Aucune saisie de temps pour le moment.</p>
+				{% else %}
+					<ul class="space-y-2">
+						{% for entry in project.timeEntries %}
+							<li class="flex items-center gap-3 text-sm">
+								<span class="ti ti-clock text-lg opacity-50" aria-hidden="true"></span>
+								<span class="w-20 shrink-0 font-mono text-xs opacity-70">{{ entry.spentOn|date('d/m/Y') }}</span>
+								<span class="flex-1 min-w-0 truncate text-brand-dark/80">{{ entry.description ?: '—' }}</span>
+								<span class="shrink-0 text-xs opacity-60">{{ entry.user.fullName ?? entry.user.email }}</span>
+								<span class="shrink-0 font-bold text-brand-dark">{{ entry.formattedDuration }}</span>
+							</li>
+						{% endfor %}
+					</ul>
+				{% endif %}
+
+				{% if canLogTime %}
+					<form method="post" action="{{ path('member_project_add_time_entry', {id: project.id}) }}" class="flex flex-wrap items-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+						<input type="hidden" name="_token" value="{{ csrf_token('member_time_entry_add_' ~ project.id) }}">
+						<div>
+							<label class="block text-xs font-semibold mb-1 text-brand-dark">Durée (h)</label>
+							<input type="number" name="hours" min="0.25" step="0.25" required class="input w-24" placeholder="1.5">
+						</div>
+						<div>
+							<label class="block text-xs font-semibold mb-1 text-brand-dark">Date</label>
+							<input type="date" name="spentOn" value="{{ 'now'|date('Y-m-d') }}" class="input">
+						</div>
+						<div class="flex-1 min-w-[10rem]">
+							<label class="block text-xs font-semibold mb-1 text-brand-dark">Description</label>
+							<input type="text" name="description" class="input" placeholder="Sur quoi ?">
+						</div>
+						<button type="submit" class="btn btn-primary gap-1.5 shrink-0"><span class="ti ti-plus" aria-hidden="true"></span> Ajouter</button>
+					</form>
+				{% endif %}
+			</div>
+		{% endif %}
+	</div>
+
+	{# Dépenses : réservé à l'équipe (données financières internes au projet) #}
+	{% if isTeamMember %}
+		<div class="panel mb-6">
+			<div class="panel-header"><h3 class="panel-title">Dépenses</h3></div>
+			<div class="panel-body">
+				<twig:project:expense_list :project="project"/>
+			</div>
+		</div>
+	{% endif %}
 
 	{# Livrables (médias) #}
 	{% if project.media is not empty %}
@@ -80,6 +227,14 @@
 			</div>
 		</div>
 	{% endif %}
+
+	{# Activité récente : fil d'audit du projet, filtré des entrées purement internes #}
+	<div class="panel mb-6">
+		<div class="panel-header"><h3 class="panel-title">Activité récente</h3></div>
+		<div class="panel-body">
+			{% include 'admin/project/_history_list.html.twig' with { histories: histories, project: project } %}
+		</div>
+	</div>
 
 	{# Discussion #}
 	<div class="panel">

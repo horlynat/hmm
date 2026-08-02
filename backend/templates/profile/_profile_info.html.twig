@@ -1,27 +1,32 @@
 {# templates/profile/_profile_info.html.twig #}
-{% import 'profile/macros.html.twig' as macros %}
 
-<div class="bg-[var(--surface-2)] border-[0.5px] border-[var(--border)] rounded-xl py-4 px-4 card-hover">
-	<p class="flex items-center gap-2 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-4">
-		<span class="ti ti-user" aria-hidden="true"></span>
-		Informations personnelles
-	</p>
-	<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="panel">
+	<div class="panel-header">
+		<h2 class="panel-title flex items-center gap-2">
+			<span class="ti ti-user" aria-hidden="true"></span>
+			Informations personnelles
+		</h2>
+	</div>
+	<div class="panel-body grid grid-cols-1 sm:grid-cols-2 gap-4">
 		<div>
-			<p class="text-xs text-[var(--text-muted)] mb-1">Nom complet</p>
-			<p class="text-sm font-medium text-[var(--text-primary)]">{{ user.fullName ?? 'Non spécifié' }}</p>
+			<p class="text-xs text-gray-400 mb-1">Nom complet</p>
+			<p class="text-sm font-medium text-(--brand-dark)">{{ user.fullName ?? 'Non spécifié' }}</p>
 		</div>
 		<div>
-			<p class="text-xs text-[var(--text-muted)] mb-1">Adresse email</p>
-			<p class="text-sm font-medium text-[var(--text-primary)] break-all">{{ user.email }}</p>
+			<p class="text-xs text-gray-400 mb-1">Adresse email</p>
+			<p class="text-sm font-medium text-(--brand-dark) break-all">{{ user.email }}</p>
 		</div>
 		<div>
-			<p class="text-xs text-[var(--text-muted)] mb-1">Téléphone</p>
-			<p class="text-sm font-medium text-[var(--text-secondary)]">{{ user.phone ?? 'Non renseigné' }}</p>
+			<p class="text-xs text-gray-400 mb-1">Téléphone</p>
+			<p class="text-sm font-medium text-(--brand-dark)">{{ user.phone ?? 'Non renseigné' }}</p>
 		</div>
 		<div>
-			<p class="text-xs text-[var(--text-muted)] mb-1">Mot de passe</p>
-			<p class="text-sm font-medium text-[var(--text-muted)] tracking-widest">••••••••</p>
+			<p class="text-xs text-gray-400 mb-1">Mot de passe</p>
+			<p class="text-sm font-medium text-gray-400 tracking-widest">••••••••</p>
+		</div>
+		<div>
+			<p class="text-xs text-gray-400 mb-1">Membre depuis</p>
+			<p class="text-sm font-medium text-(--brand-dark)">{{ user.createdAt ? user.createdAt|date('d/m/Y') : 'Inconnu' }}</p>
 		</div>
 	</div>
 </div>
