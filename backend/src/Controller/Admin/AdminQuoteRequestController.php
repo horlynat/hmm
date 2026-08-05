@@ -2,16 +2,24 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\Invoice;
+use App\Entity\Media;
+use App\Entity\Project;
 use App\Entity\QuoteRequest;
+use App\Entity\User;
 use App\Enum\QuoteStatusEnum;
+use App\Form\ProjectType;
 use App\Repository\QuoteRequestRepository;
 use App\Security\Voter\QuoteVoter;
 use App\Service\AuditLogger;
+use App\Service\MediaUploader;
+use App\Service\ProjectNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 /**
  * Contrôleur pour la gestion des demandes de devis.
@@ -203,6 +211,171 @@ final class AdminQuoteRequestController extends AbstractController
         $this->addFlash('success', 'Les travaux ont repris.');
 
         return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
+    }
+
+    // =========================================================================
+    // 📌 CONVERSION EN PROJET (uniquement depuis "acceptée", une seule fois) —
+    //    ferme la boucle devis → projet suivi : crée un Project pré-rempli
+    //    depuis la demande, génère la facture initiale si un budget est défini,
+    //    et notifie le client par email.
+    // =========================================================================
+
+    #[Route('/{id}/convert', name: 'convert', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
+    public function convert(
+        QuoteRequest $quoteRequest,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        SluggerInterface $slugger,
+        MediaUploader $mediaUploader,
+        ProjectNotifier $projectNotifier,
+        AuditLogger $auditLogger,
+    ): Response {
+        $this->denyAccessUnlessGranted(QuoteVoter::APPROVE, $quoteRequest);
+
+        if (null !== $quoteRequest->getConvertedProject()) {
+            return $this->redirectToRoute('admin_project_read', ['id' => $quoteRequest->getConvertedProject()->getId()]);
+        }
+
+        if (QuoteStatusEnum::ACCEPTED !== $quoteRequest->getStatus()) {
+            $this->addFlash('error', 'Seule une demande acceptée peut être convertie en projet.');
+
+            return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
+        }
+
+        $client = $quoteRequest->getUser();
+        if (null === $client) {
+            $this->addFlash('error', 'Cette demande n\'est liée à aucun compte client — impossible de créer un projet suivi côté client. Le client doit être connecté au moment de sa demande pour que le lien se fasse automatiquement.');
+
+            return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
+        }
+
+        $project = new Project();
+        $project
+            ->setTitle($quoteRequest->getCategoryDetail() ?: $quoteRequest->getCategory())
+            ->setDescription($quoteRequest->getMessage())
+            ->setClient($client)
+            ->setOwner($this->getAuthenticatedUser())
+            ->setSourceQuoteRequest($quoteRequest);
+
+        $parsedBudget = $this->parseQuoteBudget($quoteRequest->getBudget());
+        if (null !== $parsedBudget) {
+            $project->setBudget($parsedBudget);
+        }
+
+        $form = $this->createForm(ProjectType::class, $project, [
+            'include_planning' => true,
+            'include_showcase' => false,
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $slug = $slugger->slug($project->getTitle())->lower();
+            $project->setSlug($slug);
+
+            $mediaFiles = $form->get('media')->getData();
+            if ($mediaFiles && count($mediaFiles) > 0) {
+                $results = $mediaUploader->uploadMultiple($mediaFiles, 'projects');
+                foreach ($results as $result) {
+                    $media = new Media();
+                    $media
+                        ->setFilePath($result['path'])
+                        ->setAltText($project->getTitle())
+                        ->setMimeType($result['mimeType'])
+                        ->setSize($result['size'])
+                        ->setType($result['type'])
+                        ->setUploadedAt($result['uploadedAt']);
+                    $entityManager->persist($media);
+                    $project->addMedia($media);
+                }
+            }
+
+            $project->logCreation($this->getAuthenticatedUser());
+            $project->addToHistory(
+                'converted_from_quote',
+                $this->getAuthenticatedUser(),
+                sprintf('Projet créé à partir de la demande de devis #%d', $quoteRequest->getId()),
+            );
+
+            // Facture initiale automatique — uniquement si un budget exploitable a
+            // été renseigné (Invoice::amount exige un montant strictement positif) ;
+            // sinon on ne fabrique pas un montant arbitraire, l'admin en créera une
+            // manuellement une fois le budget défini.
+            $invoice = null;
+            if (bccomp($project->getBudget(), '0.00', 2) > 0) {
+                $invoice = new Invoice();
+                $invoice
+                    ->setNumber($this->generateInvoiceNumber($entityManager))
+                    ->setLabel('Facture initiale — '.$project->getTitle())
+                    ->setAmount($project->getBudget())
+                    ->setCurrency($quoteRequest->getCurrency() ?: 'EUR')
+                    ->setDueDate((new \DateTimeImmutable())->modify('+14 days'));
+                $project->addInvoice($invoice);
+                $entityManager->persist($invoice);
+            }
+
+            $entityManager->persist($project);
+            $entityManager->flush();
+
+            $auditLogger->log(Project::class, $project->getId(), $project->getTitle(), 'created_from_quote');
+            $projectNotifier->projectAccepted($project, $invoice);
+
+            $this->addFlash('success', $invoice
+                ? sprintf('Projet créé et facture %s générée automatiquement. Le client a été notifié par email.', $invoice->getNumber())
+                : 'Projet créé. Aucune facture générée automatiquement (budget non défini) — le client a été notifié, pensez à créer une facture manuellement.');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
+        return $this->render('admin/request/convert.html.twig', [
+            'quoteRequest' => $quoteRequest,
+            'project' => $project,
+            'form' => $form->createView(),
+        ]);
+    }
+
+    /** Budget libre du devis (ex. "5000", "5 000 €", "5000-8000") → montant décimal exploitable, ou null si non interprétable. */
+    private function parseQuoteBudget(?string $raw): ?string
+    {
+        if (null === $raw || '' === trim($raw)) {
+            return null;
+        }
+
+        // Ne garde que le premier nombre trouvé (utile pour les fourchettes "5000-8000" → 5000).
+        if (!preg_match('/\d[\d\s]*(?:[.,]\d+)?/', $raw, $matches)) {
+            return null;
+        }
+
+        $normalized = str_replace([' ', ','], ['', '.'], $matches[0]);
+        if (!is_numeric($normalized) || (float) $normalized <= 0) {
+            return null;
+        }
+
+        return number_format((float) $normalized, 2, '.', '');
+    }
+
+    private function generateInvoiceNumber(EntityManagerInterface $entityManager): string
+    {
+        $year = date('Y');
+        $count = (int) $entityManager->createQuery(
+            'SELECT COUNT(i.id) FROM App\Entity\Invoice i WHERE i.issuedAt >= :start'
+        )->setParameter('start', new \DateTimeImmutable($year.'-01-01'))->getSingleScalarResult();
+
+        return sprintf('FA-%s-%03d', $year, $count + 1);
+    }
+
+    /**
+     * Récupère l'utilisateur authentifié en tant qu'App\Entity\User — cette route
+     * est protégée en amont (ROLE_MANAGER via QuoteVoter), donc un utilisateur
+     * non-User ne peut pas l'atteindre.
+     */
+    private function getAuthenticatedUser(): User
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            throw new \LogicException('Un utilisateur App\Entity\User authentifié est requis ici.');
+        }
+
+        return $user;
     }
 
     // =========================================================================

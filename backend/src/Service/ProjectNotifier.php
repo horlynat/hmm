@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Entity\Invoice;
 use App\Entity\Project;
 use App\Entity\ProjectExpense;
 use App\Entity\ProjectTask;
@@ -80,6 +81,65 @@ final class ProjectNotifier
             'Vous avez été ajouté à un projet',
             [
                 sprintf('Vous faites désormais partie de l\'équipe du projet « %s ».', $project->getTitle()),
+            ],
+            $project,
+        );
+    }
+
+    /**
+     * Notifie le client que sa demande a été validée et transformée en projet
+     * suivi — avec, le cas échéant, la facture initiale qui vient d'être émise.
+     */
+    public function projectAccepted(Project $project, ?Invoice $invoice): void
+    {
+        $client = $project->getClient();
+        if (null === $client) {
+            return;
+        }
+
+        $lines = [
+            sprintf('Bonne nouvelle : votre demande a été validée et votre projet « %s » est désormais suivi dans votre espace.', $project->getTitle()),
+        ];
+
+        if (null !== $invoice) {
+            $lines[] = sprintf(
+                'Une facture (%s) de %s vous a été émise, à régler avant le %s. Vous pouvez la consulter à tout moment dans votre espace, rubrique « Mes factures ».',
+                $invoice->getNumber(),
+                $invoice->getFormattedAmount(),
+                $invoice->getDueDate()?->format('d/m/Y') ?? 'la date indiquée dans votre espace',
+            );
+        }
+
+        $this->dispatch([$client], NotificationPriorityEnum::HIGH, 'Votre projet a été validé', $lines, $project);
+    }
+
+    /** Le client a confirmé être d'accord avec le montant d'une facture — notifie le pilote du projet. */
+    public function invoiceValidated(Invoice $invoice): void
+    {
+        $project = $invoice->getProject();
+        $this->dispatch(
+            [$project->getOwner()],
+            NotificationPriorityEnum::MEDIUM,
+            'Facture validée par le client',
+            [
+                sprintf('Le client a confirmé être d\'accord avec le montant de la facture %s (%s) sur le projet « %s ».', $invoice->getNumber(), $invoice->getFormattedAmount(), $project->getTitle()),
+            ],
+            $project,
+        );
+    }
+
+    /** Le client demande une révision du budget d'une facture — notifie le pilote du projet, message du client en pièce jointe du fil de discussion. */
+    public function invoiceRevisionRequested(Invoice $invoice, string $clientMessage): void
+    {
+        $project = $invoice->getProject();
+        $this->dispatch(
+            [$project->getOwner()],
+            NotificationPriorityEnum::HIGH,
+            'Révision de facture demandée',
+            [
+                sprintf('Le client demande une révision du montant de la facture %s (%s) sur le projet « %s ».', $invoice->getNumber(), $invoice->getFormattedAmount(), $project->getTitle()),
+                sprintf('Message du client : « %s »', $clientMessage),
+                'Le détail est aussi disponible dans le fil de discussion du projet.',
             ],
             $project,
         );

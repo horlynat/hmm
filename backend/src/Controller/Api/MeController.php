@@ -10,10 +10,12 @@ use App\Entity\ProjectHistory;
 use App\Entity\ProjectInfo;
 use App\Entity\QuoteRequest;
 use App\Entity\User;
+use App\Enum\InvoiceStatusEnum;
 use App\Repository\ProjectRepository;
 use App\Repository\QuoteRequestRepository;
 use App\Service\EmailManager;
 use App\Service\JWTService;
+use App\Service\ProjectNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -389,6 +391,98 @@ final class MeController extends AbstractController
     }
 
     /**
+     * Le client confirme être d'accord avec le montant d'une facture — ne
+     * change pas son statut de paiement, juste un signal envoyé à l'équipe.
+     */
+    #[Route('/invoices/{id}/validate', name: 'invoice_validate', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function validateInvoice(int $id, ProjectNotifier $projectNotifier): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $invoice = $this->findClientInvoice($id, $user);
+        if (!$invoice instanceof Invoice) {
+            return $this->json(['detail' => 'Facture introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (InvoiceStatusEnum::PENDING !== $invoice->getStatus() || $invoice->isValidated()) {
+            return $this->json(['detail' => 'Cette facture ne peut plus être validée dans son état actuel.'], Response::HTTP_CONFLICT);
+        }
+
+        $invoice->markValidated();
+        $this->entityManager->flush();
+
+        $projectNotifier->invoiceValidated($invoice);
+
+        return $this->json($this->serializeInvoice($invoice, $invoice->getProject()));
+    }
+
+    /**
+     * Le client demande une révision du montant d'une facture : le motif est
+     * posté comme message dans le fil de discussion du projet (historique
+     * partagé, visible par l'équipe), et le statut de la facture bascule pour
+     * signaler qu'elle est en discussion plutôt que simplement en attente.
+     */
+    #[Route('/invoices/{id}/request-revision', name: 'invoice_request_revision', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function requestInvoiceRevision(int $id, Request $request, ProjectNotifier $projectNotifier): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $invoice = $this->findClientInvoice($id, $user);
+        if (!$invoice instanceof Invoice) {
+            return $this->json(['detail' => 'Facture introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (InvoiceStatusEnum::PENDING !== $invoice->getStatus() || $invoice->isValidated()) {
+            return $this->json(['detail' => 'Une révision ne peut plus être demandée pour cette facture dans son état actuel.'], Response::HTTP_CONFLICT);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        $message = \is_array($payload) ? $this->nullableString($payload['message'] ?? null) : null;
+        if (null === $message) {
+            return $this->json(['detail' => 'Merci de préciser le motif de votre demande de révision.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $project = $invoice->getProject();
+
+        $comment = new Comment();
+        $comment
+            ->setProject($project)
+            ->setAuthor($user)
+            ->setContent(sprintf('💬 Demande de révision — Facture %s (%s) : %s', $invoice->getNumber(), $invoice->getFormattedAmount(), $message));
+
+        $violations = $this->validator->validate($comment);
+        if (\count($violations) > 0) {
+            return $this->json(['detail' => $violations[0]->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $invoice->markRevisionRequested();
+        $project->addComment($comment);
+        $this->entityManager->persist($comment);
+        $this->entityManager->flush();
+
+        $projectNotifier->invoiceRevisionRequested($invoice, $message);
+
+        return $this->json($this->serializeInvoice($invoice, $project));
+    }
+
+    /** Facture appartenant à un projet dont l'utilisateur courant est le client — null sinon. */
+    private function findClientInvoice(int $id, User $user): ?Invoice
+    {
+        $invoice = $this->entityManager->getRepository(Invoice::class)->find($id);
+        if (!$invoice instanceof Invoice || $invoice->getProject()->getClient() !== $user) {
+            return null;
+        }
+
+        return $invoice;
+    }
+
+    /**
      * Union dédupliquée des projets auxquels l'utilisateur est rattaché,
      * tous rôles confondus (owner, collaborateur, client).
      *
@@ -480,6 +574,7 @@ final class MeController extends AbstractController
             'issuedAt' => $invoice->getIssuedAt()->format(\DateTimeInterface::ATOM),
             'dueDate' => $invoice->getDueDate()?->format(\DateTimeInterface::ATOM),
             'paidAt' => $invoice->getPaidAt()?->format(\DateTimeInterface::ATOM),
+            'validatedAt' => $invoice->getValidatedAt()?->format(\DateTimeInterface::ATOM),
             'overdue' => $invoice->isOverdue(),
         ];
     }

@@ -68,6 +68,11 @@ class Invoice
     #[Groups(['api_admin'])]
     private ?\DateTimeImmutable $paidAt = null;
 
+    /** Date à laquelle le client a confirmé être d'accord avec le montant — indépendant du paiement lui-même. */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['api_admin'])]
+    private ?\DateTimeImmutable $validatedAt = null;
+
     public function __construct()
     {
         $this->issuedAt = new \DateTimeImmutable();
@@ -188,6 +193,31 @@ class Invoice
     {
         $this->status = InvoiceStatusEnum::PENDING;
         $this->paidAt = null;
+        return $this;
+    }
+
+    public function getValidatedAt(): ?\DateTimeImmutable
+    {
+        return $this->validatedAt;
+    }
+
+    public function isValidated(): bool
+    {
+        return null !== $this->validatedAt;
+    }
+
+    /** Le client confirme être d'accord avec le montant — ne change pas le statut de paiement. */
+    public function markValidated(): static
+    {
+        $this->validatedAt = new \DateTimeImmutable();
+        return $this;
+    }
+
+    /** Le client demande une révision du budget — remet à zéro une éventuelle validation précédente. */
+    public function markRevisionRequested(): static
+    {
+        $this->status = InvoiceStatusEnum::REVISION_REQUESTED;
+        $this->validatedAt = null;
         return $this;
     }
 

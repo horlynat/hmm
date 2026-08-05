@@ -543,6 +543,11 @@
 													<input type="hidden" name="_token" value="{{ csrf_token('invoice_' ~ invoice.id) }}">
 													<button type="submit" class="ml-2 text-amber-700 hover:underline font-semibold text-xs bg-transparent border-0 cursor-pointer">Remettre en attente</button>
 												</form>
+											{% elseif invoice.status.value == 'revision_requested' %}
+												<form method="POST" action="{{ path('admin_invoice_mark_unpaid', {id: project.id, invoiceId: invoice.id}) }}" class="inline" onsubmit="return confirm('Remettre cette facture en attente de paiement ? À faire après avoir ajusté le montant si besoin (bouton Modifier).');">
+													<input type="hidden" name="_token" value="{{ csrf_token('invoice_' ~ invoice.id) }}">
+													<button type="submit" class="ml-2 text-blue-700 hover:underline font-semibold text-xs bg-transparent border-0 cursor-pointer">Rouvrir après révision</button>
+												</form>
 											{% endif %}
 											<form method="POST" action="{{ path('admin_invoice_delete', {id: project.id, invoiceId: invoice.id}) }}" class="inline" onsubmit="return confirm('Supprimer cette facture ?');">
 												<input type="hidden" name="_token" value="{{ csrf_token('delete_invoice_' ~ invoice.id) }}">
