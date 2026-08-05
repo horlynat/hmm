@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { FolderKanban, FileText, Receipt, Briefcase, History, MessageSquare, LayoutDashboard } from "lucide-react";
-import { Badge, Card, ButtonLink, EmptyState, PageHeader, StatCard } from "@/components/ui";
+import { Badge, ButtonLink, Card, EmptyState, PageHeader, SectionHeading, StatCard } from "@/components/ui";
 import { ProjectList, QuoteList } from "@/components/sections/AccountLists";
 import { WelcomeBanner } from "@/components/sections/WelcomeBanner";
 import { getCurrentUser, getMyActivity } from "@/lib/auth/session";
@@ -217,9 +217,7 @@ export default async function ComptePage({
 
       {deadlines.length > 0 && (
         <section aria-labelledby="section-deadlines">
-          <h2 id="section-deadlines" className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("sections.upcomingDeadlines")}
-          </h2>
+          <SectionHeading id="section-deadlines" title={t("sections.upcomingDeadlines")} />
           <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
             {deadlines.map((project) => {
               const overdue = new Date(project.deadline!) < new Date();
@@ -249,9 +247,7 @@ export default async function ComptePage({
       {/* ---- Activité & messages ---- */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section aria-labelledby="section-activity">
-          <h2 id="section-activity" className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("sections.activity")}
-          </h2>
+          <SectionHeading id="section-activity" title={t("sections.activity")} />
           <ActivityFeed
             entries={activity.history.slice(0, FEED_COUNT)}
             locale={locale}
@@ -260,9 +256,7 @@ export default async function ComptePage({
         </section>
 
         <section aria-labelledby="section-messages">
-          <h2 id="section-messages" className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("sections.messages")}
-          </h2>
+          <SectionHeading id="section-messages" title={t("sections.messages")} />
           <MessagesFeed
             messages={activity.messages.slice(0, FEED_COUNT)}
             locale={locale}
@@ -274,16 +268,12 @@ export default async function ComptePage({
 
       {isCollaborator && (
         <section aria-labelledby="section-collaborating">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 id="section-collaborating" className="text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-              {t("sections.collaboratingProjects")}
-            </h2>
-            {collaboratingProjects.length > PREVIEW_COUNT && (
-              <ButtonLink href="/compte/gestion-projet" variant="secondary" className="text-xs">
-                {t("sections.viewAll")}
-              </ButtonLink>
-            )}
-          </div>
+          <SectionHeading
+            id="section-collaborating"
+            title={t("sections.collaboratingProjects")}
+            viewAllHref={collaboratingProjects.length > PREVIEW_COUNT ? "/compte/gestion-projet" : undefined}
+            viewAllLabel={t("sections.viewAll")}
+          />
           {hasCollaborating ? (
             <ProjectList projects={collaboratingProjects.slice(0, PREVIEW_COUNT)} labels={projectLabels} />
           ) : (
@@ -293,16 +283,12 @@ export default async function ComptePage({
       )}
 
       <section aria-labelledby="section-client-projects">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 id="section-client-projects" className="text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("sections.clientProjects")}
-          </h2>
-          {attributions.clientProjects.length > PREVIEW_COUNT && (
-            <ButtonLink href="/compte/projets" variant="secondary" className="text-xs">
-              {t("sections.viewAll")}
-            </ButtonLink>
-          )}
-        </div>
+        <SectionHeading
+          id="section-client-projects"
+          title={t("sections.clientProjects")}
+          viewAllHref={attributions.clientProjects.length > PREVIEW_COUNT ? "/compte/projets" : undefined}
+          viewAllLabel={t("sections.viewAll")}
+        />
         {hasClientProjects ? (
           <ProjectList projects={attributions.clientProjects.slice(0, PREVIEW_COUNT)} labels={projectLabels} />
         ) : (
@@ -311,16 +297,12 @@ export default async function ComptePage({
       </section>
 
       <section aria-labelledby="section-quotes">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 id="section-quotes" className="text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("sections.quotes")}
-          </h2>
-          {attributions.quoteRequests.length > PREVIEW_COUNT && (
-            <ButtonLink href="/compte/devis" variant="secondary" className="text-xs">
-              {t("sections.viewAll")}
-            </ButtonLink>
-          )}
-        </div>
+        <SectionHeading
+          id="section-quotes"
+          title={t("sections.quotes")}
+          viewAllHref={attributions.quoteRequests.length > PREVIEW_COUNT ? "/compte/devis" : undefined}
+          viewAllLabel={t("sections.viewAll")}
+        />
         {hasQuotes ? (
           <QuoteList
             quotes={attributions.quoteRequests.slice(0, PREVIEW_COUNT)}
@@ -328,7 +310,17 @@ export default async function ComptePage({
             statusLabels={quoteStatusLabels}
           />
         ) : (
-          <EmptyState icon="📝" message={t("sections.emptyQuotes")} />
+          <EmptyState
+            icon="📝"
+            message={t("sections.emptyQuotes")}
+            action={
+              !isCollaborator && (
+                <ButtonLink href="/compte/devis/nouveau" variant="secondary" className="text-xs">
+                  {t("nav.newQuoteCta")}
+                </ButtonLink>
+              )
+            }
+          />
         )}
       </section>
     </div>

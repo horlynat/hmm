@@ -2,7 +2,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
-import { Badge, Card, ButtonLink, Breadcrumb } from "@/components/ui";
+import { Badge, Card, ButtonLink, Breadcrumb, SectionHeading } from "@/components/ui";
 import { ProjectDiscussion } from "@/components/sections/ProjectDiscussion";
 import { getMyProject, getProjectComments } from "@/lib/auth/session";
 import { getMediaUrl } from "@/lib/media";
@@ -81,9 +81,7 @@ export default async function CompteProjectDetailPage({
       </Card>
 
       <div>
-        <h2 className="mb-2 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-          {t("projectDetail.descriptionLabel")}
-        </h2>
+        <SectionHeading title={t("projectDetail.descriptionLabel")} />
         <p className="whitespace-pre-line text-sm opacity-80">{project.description}</p>
       </div>
 
@@ -118,9 +116,7 @@ export default async function CompteProjectDetailPage({
 
       {info && info.objectives.length > 0 && (
         <div>
-          <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {td("objectivesLabel")}
-          </h2>
+          <SectionHeading title={td("objectivesLabel")} />
           <ul className="flex flex-col gap-2 text-sm opacity-80">
             {info.objectives.map((objective) => (
               <li key={objective}>• {objective}</li>
@@ -131,9 +127,7 @@ export default async function CompteProjectDetailPage({
 
       {info && info.techStack.length > 0 && (
         <div>
-          <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {td("stackLabel")}
-          </h2>
+          <SectionHeading title={td("stackLabel")} />
           <div className="flex flex-col gap-3">
             {info.techStack.map((tech) => (
               <Card key={tech.name} variant="soft" className="p-3.5">
@@ -149,9 +143,7 @@ export default async function CompteProjectDetailPage({
 
       {info && info.challenges.length > 0 && (
         <div>
-          <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {td("challengesLabel")}
-          </h2>
+          <SectionHeading title={td("challengesLabel")} />
           <div className="flex flex-col gap-3">
             {info.challenges.map((challenge) => (
               <Card key={challenge.problem} variant="soft" className="grid gap-3 p-5 sm:grid-cols-2">
@@ -175,9 +167,7 @@ export default async function CompteProjectDetailPage({
 
       {info && info.results.length > 0 && (
         <div>
-          <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {td("resultsLabel")}
-          </h2>
+          <SectionHeading title={td("resultsLabel")} />
           <div className="grid gap-3 sm:grid-cols-2">
             {info.results.map((result) => (
               <Card key={result.label} variant="soft" className="p-4 text-center">
@@ -196,9 +186,7 @@ export default async function CompteProjectDetailPage({
 
       {project.media.length > 0 && (
         <div>
-          <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {td("galleryLabel")}
-          </h2>
+          <SectionHeading title={td("galleryLabel")} />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {project.media.map((media) => (
               <div key={media.id} className="relative aspect-square overflow-hidden rounded-[var(--radius-md)] bg-bg-card">

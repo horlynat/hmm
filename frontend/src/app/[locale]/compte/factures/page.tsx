@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Receipt, Wallet, ArrowRight } from "lucide-react";
 import { Badge, Card, ButtonLink, PageHeader } from "@/components/ui";
+import { InvoiceActions } from "@/components/sections/InvoiceActions";
 import { getCurrentUser } from "@/lib/auth/session";
 import { invoiceStatusVariant } from "@/lib/status";
 import type { SessionInvoice } from "@/lib/types";
@@ -71,6 +72,8 @@ function InvoiceCard({
         {labels.viewProject}
         <ArrowRight size={13} aria-hidden="true" />
       </ButtonLink>
+
+      <InvoiceActions invoice={invoice} locale={locale} />
     </Card>
   );
 }

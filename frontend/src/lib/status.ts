@@ -41,6 +41,7 @@ export function quoteStatusVariant(status: string): BadgeVariant {
 /** Couleur de badge par statut de facture — miroir de InvoiceStatusEnum côté backend. */
 const INVOICE_STATUS_VARIANT: Record<string, BadgeVariant> = {
   pending: "warning",
+  revision_requested: "info",
   paid: "success",
   cancelled: "neutral",
 };

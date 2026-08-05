@@ -1024,7 +1024,18 @@
       "noDueDate": "Non définie",
       "issuedOn": "Émise le",
       "paidOn": "Payée le",
-      "overdue": "En retard"
+      "overdue": "En retard",
+      "validateButton": "Valider ce montant",
+      "validating": "Validation…",
+      "validatedOn": "Montant validé le {date}",
+      "requestRevisionButton": "Demander une révision",
+      "revisionPlaceholder": "Expliquez ce qui doit être révisé (montant, périmètre, délai…)",
+      "revisionSubmit": "Envoyer la demande",
+      "revisionSending": "Envoi…",
+      "revisionCancel": "Annuler",
+      "revisionRequiredError": "Merci de préciser le motif de votre demande.",
+      "revisionRequestedNote": "Révision demandée — en attente de retour de l'équipe. Le détail est dans la discussion du projet.",
+      "genericError": "Une erreur est survenue. Veuillez réessayer."
     },
     "settings": {
       "title": "Paramètres",

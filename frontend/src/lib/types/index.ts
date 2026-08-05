@@ -326,7 +326,7 @@ export interface SessionQuote {
   createdAt: string | null;
 }
 
-export type InvoiceStatus = "pending" | "paid" | "cancelled";
+export type InvoiceStatus = "pending" | "revision_requested" | "paid" | "cancelled";
 
 /**
  * Facture émise au client pour un projet — miroir de GET /api/me
@@ -348,6 +348,7 @@ export interface SessionInvoice {
   issuedAt: string;
   dueDate: string | null;
   paidAt: string | null;
+  validatedAt: string | null;
   overdue: boolean;
 }
 

@@ -8,7 +8,7 @@ import {
   setSessionCookie,
 } from "./session";
 import type { ApiPostResult } from "@/lib/api/client";
-import type { ProfileUpdatePayload, SessionUser, SessionComment } from "@/lib/types";
+import type { ProfileUpdatePayload, SessionUser, SessionComment, SessionInvoice } from "@/lib/types";
 
 /**
  * Connexion : POST /api/login_check (lexik JWT). En cas de succès, le token est
@@ -312,6 +312,96 @@ export async function postProjectComment(
     return { ok: true, comment };
   } catch (error) {
     console.error("[auth] postProjectComment failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+/**
+ * Le client confirme être d'accord avec le montant d'une facture :
+ * POST /api/me/invoices/{id}/validate.
+ */
+export async function validateInvoice(
+  invoiceId: number,
+): Promise<ApiPostResult & { invoice?: SessionInvoice }> {
+  const token = await getToken();
+  if (!token) {
+    return { ok: false, error: "unauthenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/me/invoices/${invoiceId}/validate`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      const detail = await res
+        .json()
+        .then((body: unknown) =>
+          typeof body === "object" && body && "detail" in body
+            ? String((body as { detail: unknown }).detail)
+            : null,
+        )
+        .catch(() => null);
+      return { ok: false, error: detail ?? `HTTP ${res.status}` };
+    }
+
+    const invoice = (await res.json()) as SessionInvoice;
+    return { ok: true, invoice };
+  } catch (error) {
+    console.error("[auth] validateInvoice failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+/**
+ * Le client demande une révision du montant d'une facture — le motif est
+ * posté dans le fil de discussion du projet : POST
+ * /api/me/invoices/{id}/request-revision.
+ */
+export async function requestInvoiceRevision(
+  invoiceId: number,
+  message: string,
+): Promise<ApiPostResult & { invoice?: SessionInvoice }> {
+  const token = await getToken();
+  if (!token) {
+    return { ok: false, error: "unauthenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/me/invoices/${invoiceId}/request-revision`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ message }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      const detail = await res
+        .json()
+        .then((body: unknown) =>
+          typeof body === "object" && body && "detail" in body
+            ? String((body as { detail: unknown }).detail)
+            : null,
+        )
+        .catch(() => null);
+      return { ok: false, error: detail ?? `HTTP ${res.status}` };
+    }
+
+    const invoice = (await res.json()) as SessionInvoice;
+    return { ok: true, invoice };
+  } catch (error) {
+    console.error("[auth] requestInvoiceRevision failed", error);
     return { ok: false, error: "network_error" };
   }
 }

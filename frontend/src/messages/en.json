@@ -1024,7 +1024,18 @@
       "noDueDate": "Not set",
       "issuedOn": "Issued on",
       "paidOn": "Paid on",
-      "overdue": "Overdue"
+      "overdue": "Overdue",
+      "validateButton": "Confirm this amount",
+      "validating": "Confirming…",
+      "validatedOn": "Amount confirmed on {date}",
+      "requestRevisionButton": "Request a revision",
+      "revisionPlaceholder": "Explain what needs revising (amount, scope, timeline…)",
+      "revisionSubmit": "Send request",
+      "revisionSending": "Sending…",
+      "revisionCancel": "Cancel",
+      "revisionRequiredError": "Please explain the reason for your request.",
+      "revisionRequestedNote": "Revision requested — waiting on the team. Details are in the project discussion.",
+      "genericError": "Something went wrong. Please try again."
     },
     "settings": {
       "title": "Settings",

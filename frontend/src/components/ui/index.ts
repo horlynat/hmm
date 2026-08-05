@@ -6,6 +6,7 @@ export { Breadcrumb } from "./Breadcrumb";
 export { EmptyState } from "./EmptyState";
 export { Field } from "./Field";
 export { PageHeader } from "./PageHeader";
+export { SectionHeading } from "./SectionHeading";
 export { StatCard } from "./StatCard";
 export { SettingsSection, SettingsSectionGroup } from "./SettingsSection";
 export { Skeleton } from "./Skeleton";

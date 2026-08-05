@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
-import { Badge, ButtonLink, SettingsSection, SettingsSectionGroup, Breadcrumb } from "@/components/ui";
+import { Badge, ButtonLink, SettingsSection, SettingsSectionGroup, Breadcrumb, SectionHeading } from "@/components/ui";
 import { getMyQuote } from "@/lib/auth/session";
 import { quoteStatusVariant } from "@/lib/status";
 
@@ -74,17 +74,13 @@ export default async function CompteQuoteDetailPage({
       </div>
 
       <div>
-        <h2 className="mb-2 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-          {t("quoteDetail.messageLabel")}
-        </h2>
+        <SectionHeading title={t("quoteDetail.messageLabel")} />
         <p className="whitespace-pre-line text-sm opacity-80">{quote.message}</p>
       </div>
 
       {quote.clarifications && quote.clarifications.length > 0 && (
         <div>
-          <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("quoteDetail.clarificationsLabel")}
-          </h2>
+          <SectionHeading title={t("quoteDetail.clarificationsLabel")} />
           <SettingsSectionGroup>
             {quote.clarifications.map((entry) => (
               <SettingsSection key={entry.question} title={entry.question}>
