@@ -65,13 +65,37 @@ start_mailhog() {
 }
 
 start_backend() {
-  local status_output
+  local status_output just_started=false
   status_output=$(symfony local:server:status --dir="$BACKEND_DIR" 2>/dev/null || true)
   if grep -qi "listening" <<< "$status_output"; then
     log backend "symfony server : déjà en cours"
   else
     log backend "symfony server : démarrage…"
     (cd "$BACKEND_DIR" && symfony server:start -d --no-tls)
+    just_started=true
+  fi
+
+  # Préchauffage : après un (re)démarrage, la toute première requête compile
+  # le container Symfony, les routes et les métadonnées API Platform — ça
+  # peut largement dépasser les 8s de timeout du frontend (TimeoutError
+  # récurrent sur /api/me juste après `dev.sh up`). On déclenche cette
+  # compilation ici, sur une requête qu'on jette, plutôt que de laisser le
+  # premier appel réel de l'utilisateur en payer le prix.
+  if [[ "$just_started" == true ]]; then
+    log backend "cache : préchauffage…"
+    local waited=0
+    while ! port_in_use 8000 && [[ "$waited" -lt 15 ]]; do
+      sleep 1
+      waited=$((waited + 1))
+    done
+    local warmup_start warmup_elapsed
+    warmup_start=$(date +%s)
+    if curl -sS -o /dev/null --max-time 90 "http://127.0.0.1:8000/api/me" 2>"$LOG_DIR/backend-warmup.log"; then
+      warmup_elapsed=$(( $(date +%s) - warmup_start ))
+      log backend "cache : prêt (${warmup_elapsed}s)"
+    else
+      log backend "cache : préchauffage échoué — voir $LOG_DIR/backend-warmup.log (le premier appel du frontend pourrait être lent)"
+    fi
   fi
 
   local dsn
