@@ -8,9 +8,16 @@ monolog:
 when@dev:
     monolog:
         handlers:
+            # rotating_file (pas stream) : un stream brut accumule sans jamais
+            # tourner — dev.log a fini par peser ~300 Mo, ce qui ralentissait
+            # chaque écriture (donc chaque requête, plusieurs dizaines de
+            # secondes) au point de déclencher des timeouts côté frontend.
+            # max_files borne définitivement le volume, quelle que soit la
+            # durée d'activité de dev.
             main:
-                type: stream
+                type: rotating_file
                 path: "%kernel.logs_dir%/%kernel.environment%.log"
+                max_files: 5
                 level: debug
                 channels: ["!event"]
             console:
