@@ -324,9 +324,12 @@ export interface SessionQuote {
   currency: string | null;
   /** Peut être `null` pour les demandes créées avant l'ajout de ce champ — cf. QuoteRequest::$createdAt. */
   createdAt: string | null;
+  /** Renseignés une fois le devis converti en projet suivi (cf. AdminQuoteRequestController::convert()). */
+  convertedProjectId: number | null;
+  convertedProjectTitle: string | null;
 }
 
-export type InvoiceStatus = "pending" | "paid" | "cancelled";
+export type InvoiceStatus = "pending" | "revision_requested" | "paid" | "cancelled";
 
 /**
  * Facture émise au client pour un projet — miroir de GET /api/me
@@ -348,6 +351,7 @@ export interface SessionInvoice {
   issuedAt: string;
   dueDate: string | null;
   paidAt: string | null;
+  validatedAt: string | null;
   overdue: boolean;
 }
 
@@ -433,6 +437,9 @@ export interface SessionQuoteDetail {
   attachmentName: string | null;
   clarifications: { question: string; answer: string }[] | null;
   message: string;
+  createdAt: string | null;
+  convertedProjectId: number | null;
+  convertedProjectTitle: string | null;
 }
 
 /** Attributions de l'utilisateur courant selon son rôle (GET /api/me). */
@@ -463,6 +470,8 @@ export interface SessionUser {
   isVerified: boolean;
   isTwoFactorEnabled: boolean;
   isCollaborator: boolean;
+  /** Peut être `null` pour les comptes créés avant l'ajout de ce champ. */
+  createdAt: string | null;
   lastLoginAt: string | null;
   lastIp: string | null;
   lastLocation: string | null;

@@ -39,7 +39,7 @@ export function StatCard({ icon: Icon, label, value, href, tone = "default" }: S
         <div className="text-2xl font-bold leading-none" style={{ fontFamily: "var(--font-heading)" }}>
           {value}
         </div>
-        <div className="mt-1.5 truncate text-xs font-medium text-(--color-muted)">{label}</div>
+        <div className="mt-1.5 line-clamp-2 text-xs font-medium text-(--color-muted)">{label}</div>
       </div>
     </Card>
   );

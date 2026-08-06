@@ -1,11 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { FolderKanban, FileText, Receipt, Briefcase, History, MessageSquare, LayoutDashboard } from "lucide-react";
-import { Badge, Card, ButtonLink, EmptyState, PageHeader, StatCard } from "@/components/ui";
+import { Badge, ButtonLink, Card, EmptyState, PageHeader, SectionHeading, StatCard } from "@/components/ui";
 import { ProjectList, QuoteList } from "@/components/sections/AccountLists";
 import { WelcomeBanner } from "@/components/sections/WelcomeBanner";
 import { getCurrentUser, getMyActivity } from "@/lib/auth/session";
 import { Link } from "@/i18n/navigation";
-import { projectStatusVariant } from "@/lib/status";
+import { projectStatusVariant, invoiceStatusVariant } from "@/lib/status";
 import type { SessionProject, SessionActivityEntry, SessionComment } from "@/lib/types";
 
 const PREVIEW_COUNT = 4;
@@ -163,6 +163,9 @@ export default async function ComptePage({
 
   const pendingQuotesCount = attributions.quoteRequests.filter((q) => q.status === "pending").length;
   const unpaidInvoicesCount = attributions.invoices.filter((inv) => inv.status === "pending").length;
+  const recentInvoices = [...attributions.invoices]
+    .sort((a, b) => new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime())
+    .slice(0, PREVIEW_COUNT);
 
   return (
     <div className="space-y-8">
@@ -188,7 +191,7 @@ export default async function ComptePage({
       )}
 
       {/* ---- Résumé ---- */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard icon={FolderKanban} label={t("stats.activeProjects")} value={countActive(allProjects)} />
         <StatCard
           icon={FileText}
@@ -217,9 +220,7 @@ export default async function ComptePage({
 
       {deadlines.length > 0 && (
         <section aria-labelledby="section-deadlines">
-          <h2 id="section-deadlines" className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("sections.upcomingDeadlines")}
-          </h2>
+          <SectionHeading id="section-deadlines" title={t("sections.upcomingDeadlines")} />
           <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
             {deadlines.map((project) => {
               const overdue = new Date(project.deadline!) < new Date();
@@ -227,11 +228,11 @@ export default async function ComptePage({
                 <Link
                   key={project.id}
                   href={{ pathname: "/compte/projets/[id]", params: { id: String(project.id) } }}
-                  className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-(--color-surface-muted)"
+                  className="flex flex-col gap-2 p-4 transition-colors hover:bg-(--color-surface-muted) sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     <Badge variant={projectStatusVariant(project.status)}>{project.statusLabel}</Badge>
-                    <span className="truncate font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                    <span className="min-w-0 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
                       {project.title}
                     </span>
                   </div>
@@ -249,9 +250,7 @@ export default async function ComptePage({
       {/* ---- Activité & messages ---- */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section aria-labelledby="section-activity">
-          <h2 id="section-activity" className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("sections.activity")}
-          </h2>
+          <SectionHeading id="section-activity" title={t("sections.activity")} />
           <ActivityFeed
             entries={activity.history.slice(0, FEED_COUNT)}
             locale={locale}
@@ -260,9 +259,7 @@ export default async function ComptePage({
         </section>
 
         <section aria-labelledby="section-messages">
-          <h2 id="section-messages" className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("sections.messages")}
-          </h2>
+          <SectionHeading id="section-messages" title={t("sections.messages")} />
           <MessagesFeed
             messages={activity.messages.slice(0, FEED_COUNT)}
             locale={locale}
@@ -274,16 +271,12 @@ export default async function ComptePage({
 
       {isCollaborator && (
         <section aria-labelledby="section-collaborating">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 id="section-collaborating" className="text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-              {t("sections.collaboratingProjects")}
-            </h2>
-            {collaboratingProjects.length > PREVIEW_COUNT && (
-              <ButtonLink href="/compte/gestion-projet" variant="secondary" className="text-xs">
-                {t("sections.viewAll")}
-              </ButtonLink>
-            )}
-          </div>
+          <SectionHeading
+            id="section-collaborating"
+            title={t("sections.collaboratingProjects")}
+            viewAllHref={collaboratingProjects.length > PREVIEW_COUNT ? "/compte/gestion-projet" : undefined}
+            viewAllLabel={t("sections.viewAll")}
+          />
           {hasCollaborating ? (
             <ProjectList projects={collaboratingProjects.slice(0, PREVIEW_COUNT)} labels={projectLabels} />
           ) : (
@@ -293,16 +286,12 @@ export default async function ComptePage({
       )}
 
       <section aria-labelledby="section-client-projects">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 id="section-client-projects" className="text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("sections.clientProjects")}
-          </h2>
-          {attributions.clientProjects.length > PREVIEW_COUNT && (
-            <ButtonLink href="/compte/projets" variant="secondary" className="text-xs">
-              {t("sections.viewAll")}
-            </ButtonLink>
-          )}
-        </div>
+        <SectionHeading
+          id="section-client-projects"
+          title={t("sections.clientProjects")}
+          viewAllHref={attributions.clientProjects.length > PREVIEW_COUNT ? "/compte/projets" : undefined}
+          viewAllLabel={t("sections.viewAll")}
+        />
         {hasClientProjects ? (
           <ProjectList projects={attributions.clientProjects.slice(0, PREVIEW_COUNT)} labels={projectLabels} />
         ) : (
@@ -311,26 +300,69 @@ export default async function ComptePage({
       </section>
 
       <section aria-labelledby="section-quotes">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 id="section-quotes" className="text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("sections.quotes")}
-          </h2>
-          {attributions.quoteRequests.length > PREVIEW_COUNT && (
-            <ButtonLink href="/compte/devis" variant="secondary" className="text-xs">
-              {t("sections.viewAll")}
-            </ButtonLink>
-          )}
-        </div>
+        <SectionHeading
+          id="section-quotes"
+          title={t("sections.quotes")}
+          viewAllHref={attributions.quoteRequests.length > PREVIEW_COUNT ? "/compte/devis" : undefined}
+          viewAllLabel={t("sections.viewAll")}
+        />
         {hasQuotes ? (
           <QuoteList
             quotes={attributions.quoteRequests.slice(0, PREVIEW_COUNT)}
             statusLabel={t("sections.quoteBudget")}
             statusLabels={quoteStatusLabels}
+            convertedLabel={t("sections.quoteConverted")}
           />
         ) : (
-          <EmptyState icon="📝" message={t("sections.emptyQuotes")} />
+          <EmptyState
+            icon="📝"
+            message={t("sections.emptyQuotes")}
+            action={
+              !isCollaborator && (
+                <ButtonLink href="/compte/devis/nouveau" variant="secondary" className="text-xs">
+                  {t("nav.newQuoteCta")}
+                </ButtonLink>
+              )
+            }
+          />
         )}
       </section>
+
+      {recentInvoices.length > 0 && (
+        <section aria-labelledby="section-invoices">
+          <SectionHeading
+            id="section-invoices"
+            title={t("sections.recentInvoices")}
+            viewAllHref={attributions.invoices.length > PREVIEW_COUNT ? "/compte/factures" : undefined}
+            viewAllLabel={t("sections.viewAll")}
+          />
+          <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
+            {recentInvoices.map((invoice) => (
+              <Link
+                key={invoice.id}
+                href="/compte/factures"
+                className="flex flex-col gap-3 p-4 transition-colors hover:bg-(--color-surface-muted) sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
+                    <Receipt size={14} aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                      {invoice.label}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-(--color-muted)">{invoice.projectTitle}</p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end">
+                  <span className="text-sm font-semibold">{invoice.formattedAmount}</span>
+                  <Badge variant={invoiceStatusVariant(invoice.status)}>{invoice.statusLabel}</Badge>
+                </div>
+              </Link>
+            ))}
+          </Card>
+        </section>
+      )}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { FolderCheck } from "lucide-react";
 import { Badge, Card } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 import type { SessionProject, SessionQuote } from "@/lib/types";
@@ -63,11 +64,14 @@ export function QuoteList({
   quotes,
   statusLabel,
   statusLabels,
+  convertedLabel,
 }: {
   quotes: SessionQuote[];
   statusLabel: string;
   /** Libellés traduits des statuts de devis (cf. auth.account.quoteStatus) — `SessionQuote.status` n'est pas pré-traduit côté backend, contrairement à `SessionQuoteDetail.statusLabel`. */
   statusLabels: Record<string, string>;
+  /** Affiché quand le devis a été converti en projet suivi — omis si non fourni. */
+  convertedLabel?: string;
 }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -91,10 +95,13 @@ export function QuoteList({
             </div>
             {quote.budget && (
               <p className="text-sm text-(--color-muted)">
-                {statusLabel}:{" "}
-                <span className="font-medium text-brand-dark">
-                  {quote.budget} {quote.currency ?? ""}
-                </span>
+                {statusLabel}: <span className="font-medium text-brand-dark">{quote.budget}</span>
+              </p>
+            )}
+            {convertedLabel && quote.convertedProjectId && (
+              <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-success">
+                <FolderCheck size={13} aria-hidden="true" />
+                {convertedLabel}
               </p>
             )}
           </Card>

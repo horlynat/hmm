@@ -304,7 +304,11 @@
       "resultsLabel": "Résultats",
       "repoLink": "Voir le code source",
       "architectureLabel": "Architecture",
-      "galleryLabel": "Aperçus"
+      "galleryLabel": "Aperçus",
+      "deadlineInDays": "{days, plural, one {Dans # jour} other {Dans # jours}}",
+      "deadlineOverdueDays": "{days, plural, one {En retard d'# jour} other {En retard de # jours}}",
+      "invoicesLabel": "Factures liées",
+      "viewAllInvoices": "Voir toutes mes factures"
     },
     "invite": {
       "badge": "Vous avez un projet à mettre en avant ?",
@@ -787,10 +791,14 @@
       "passwordPlaceholder": "Votre mot de passe",
       "submit": "Se connecter",
       "invalidCredentials": "Email ou mot de passe incorrect.",
+      "notVerifiedError": "Votre compte n'est pas encore vérifié.",
+      "notVerifiedHint": "Consultez vos emails ou demandez un nouveau lien de confirmation.",
+      "notVerifiedDismiss": "Fermer",
       "error": "Impossible de vous connecter. Veuillez réessayer.",
       "noAccount": "Pas encore de compte ?",
       "registerLink": "Créer un compte",
-      "forgotPasswordLink": "Mot de passe oublié ?"
+      "forgotPasswordLink": "Mot de passe oublié ?",
+      "resendVerificationLink": "Renvoyer le lien de vérification"
     },
     "forgotPassword": {
       "title": "Mot de passe oublié",
@@ -800,6 +808,22 @@
       "submit": "Envoyer le lien",
       "success": "Si un compte existe pour cette adresse, un email contenant un lien de réinitialisation vient d'être envoyé.",
       "error": "Impossible d'envoyer l'email pour le moment. Veuillez réessayer."
+    },
+    "verificationEmail": {
+      "title": "Vérifier mon email",
+      "subtitle": "Indiquez votre adresse email : si un compte existe et n'est pas encore vérifié, vous recevrez un nouveau lien de confirmation.",
+      "emailLabel": "Adresse email",
+      "emailPlaceholder": "vous@exemple.com",
+      "submit": "Envoyer le lien",
+      "success": "Si un compte existe pour cette adresse et n'est pas encore vérifié, un nouveau lien de confirmation vient d'être envoyé.",
+      "error": "Impossible d'envoyer l'email pour le moment. Veuillez réessayer.",
+      "confirmTitle": "Confirmation de votre email",
+      "confirmSubtitle": "Nous vérifions votre lien de confirmation.",
+      "verifying": "Vérification en cours…",
+      "confirmSuccess": "Votre compte a été activé. Vous pouvez maintenant vous connecter.",
+      "confirmError": "Ce lien de vérification est invalide ou a expiré.",
+      "loginLink": "Se connecter",
+      "requestNewLink": "Demander un nouveau lien"
     },
     "resetPassword": {
       "title": "Réinitialiser le mot de passe",
@@ -882,6 +906,7 @@
         "emptyProjects": "Aucun projet pour le moment.",
         "emptyQuotes": "Aucune demande de devis pour le moment.",
         "quoteBudget": "Budget",
+        "quoteConverted": "Projet en cours de suivi",
         "viewAll": "Voir tout →",
         "upcomingDeadlines": "Échéances à venir",
         "emptyDeadlines": "Aucune échéance à venir.",
@@ -889,7 +914,8 @@
         "activity": "Activité récente",
         "emptyActivity": "Aucune activité pour le moment.",
         "messages": "Messages récents",
-        "emptyMessages": "Aucun message pour le moment."
+        "emptyMessages": "Aucun message pour le moment.",
+        "recentInvoices": "Factures récentes"
       },
       "stats": {
         "activeProjects": "Projets actifs",
@@ -931,13 +957,23 @@
         "messageLabel": "Message",
         "clarificationsLabel": "Précisions échangées",
         "notFoundTitle": "Devis introuvable",
-        "notFoundText": "Cette demande de devis n'existe pas ou ne vous appartient pas."
+        "notFoundText": "Cette demande de devis n'existe pas ou ne vous appartient pas.",
+        "sentOnLabel": "Envoyée le",
+        "convertedBanner": "Bonne nouvelle : cette demande a été acceptée et suit désormais son cours en tant que projet suivi.",
+        "viewProjectCta": "Voir le projet"
       },
       "myProjectsPage": {
-        "subtitle": "L'ensemble des projets qui vous sont rattachés, comme client ou comme membre de l'équipe."
+        "subtitle": "L'ensemble des projets qui vous sont rattachés, comme client ou comme membre de l'équipe.",
+        "statTotal": "Projets au total",
+        "statActive": "En cours",
+        "statUpcoming": "À venir",
+        "statCompleted": "Terminés"
       },
       "myQuotesPage": {
-        "subtitle": "L'historique complet de vos demandes de devis et leur statut."
+        "subtitle": "L'historique complet de vos demandes de devis et leur statut.",
+        "statTotal": "Demandes au total",
+        "statPending": "En attente",
+        "statAccepted": "Acceptées"
       },
       "newQuotePage": {
         "title": "Nouvelle demande de devis",
@@ -948,6 +984,9 @@
     "profile": {
       "title": "Mon profil",
       "subtitle": "Mettez à jour vos informations personnelles.",
+      "roleClient": "Client",
+      "roleFreelance": "Freelance",
+      "memberSince": "Membre depuis {date}",
       "fullNameLabel": "Nom complet",
       "phoneLabel": "Téléphone",
       "phoneLocked": "Non modifiable depuis votre espace. Contactez-nous si ce numéro a changé.",
@@ -1024,7 +1063,35 @@
       "noDueDate": "Non définie",
       "issuedOn": "Émise le",
       "paidOn": "Payée le",
-      "overdue": "En retard"
+      "overdue": "En retard",
+      "validateButton": "Valider ce montant",
+      "validating": "Validation…",
+      "validatedOn": "Montant validé le {date}",
+      "requestRevisionButton": "Demander une révision",
+      "revisionPlaceholder": "Expliquez ce qui doit être révisé (montant, périmètre, délai…)",
+      "revisionSubmit": "Envoyer la demande",
+      "revisionSending": "Envoi…",
+      "revisionCancel": "Annuler",
+      "revisionRequiredError": "Merci de préciser le motif de votre demande.",
+      "revisionRequestedNote": "Révision demandée — en attente de retour de l'équipe. Le détail est dans la discussion du projet.",
+      "genericError": "Une erreur est survenue. Veuillez réessayer.",
+      "documentTitle": "Facture",
+      "billedTo": "Facturé à",
+      "descriptionLabel": "Description",
+      "amountLabel": "Montant",
+      "totalLabel": "Total",
+      "projectRefLabel": "Projet",
+      "qtyLabel": "Qté",
+      "unitPriceLabel": "Prix unitaire",
+      "contactNote": "Une question sur cette facture ?",
+      "contactCta": "Écrire sur WhatsApp",
+      "statTotalPaid": "Total payé",
+      "statCount": "{count, plural, one {# facture} other {# factures}}",
+      "filterAll": "Toutes",
+      "filterPending": "En attente",
+      "filterPaid": "Payées",
+      "filterRevision": "En révision",
+      "emptyFiltered": "Aucune facture ne correspond à ce filtre."
     },
     "settings": {
       "title": "Paramètres",

@@ -29,8 +29,14 @@ export default async function ProfilPage({
           <p className="mt-1 text-sm text-(--color-muted)">{t("subtitle")}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="text-sm text-(--color-muted)">{user.email}</span>
+            <Badge variant="neutral">{user.isCollaborator ? t("roleFreelance") : t("roleClient")}</Badge>
             <Badge variant="neutral">{user.isVerified ? t("security.emailVerified") : t("security.emailUnverified")}</Badge>
           </div>
+          {user.createdAt && (
+            <p className="mt-1.5 text-xs text-(--color-muted)">
+              {t("memberSince", { date: new Date(user.createdAt).toLocaleDateString(locale, { year: "numeric", month: "long" }) })}
+            </p>
+          )}
         </div>
       </div>
 
