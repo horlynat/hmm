@@ -7,6 +7,7 @@ use App\Enum\NotificationPriorityEnum;
 use App\Form\UserType;
 use App\Repository\UserRepository;
 use App\Security\Voter\UserVoter;
+use App\Service\AccountWelcomeNotifier;
 use App\Service\AdminAlertNotifier;
 use App\Service\AuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
@@ -33,6 +34,7 @@ final class AdminAdminsController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly UserRepository $userRepository,
         private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly AccountWelcomeNotifier $accountWelcomeNotifier,
     ) {
     }
 
@@ -75,8 +77,9 @@ final class AdminAdminsController extends AbstractController
 
             $auditLogger->log(User::class, $user->getId(), $user->getEmail(), 'created');
             $this->entityManager->flush();
+            $this->accountWelcomeNotifier->accountCreated($user, 'administrateur');
 
-            $this->addFlash('success', sprintf('Le compte administrateur #%d a été créé avec succès.', $user->getId()));
+            $this->addFlash('success', sprintf('Le compte administrateur #%d a été créé avec succès. Il a été notifié par email.', $user->getId()));
 
             return $this->redirectToRoute('admin_admins_index', [], Response::HTTP_SEE_OTHER);
         }

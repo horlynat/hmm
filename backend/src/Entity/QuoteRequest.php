@@ -108,6 +108,10 @@ class QuoteRequest
     #[Groups(['api_admin'])]
     private ?User $user = null;
 
+    /** Projet créé à partir de cette demande via "Convertir en projet", le cas échéant. */
+    #[ORM\OneToOne(mappedBy: 'sourceQuoteRequest', targetEntity: Project::class)]
+    private ?Project $convertedProject = null;
+
     /**
      * Le téléphone n'est pas obligatoire dans l'absolu (le champ reste nullable pour
      * les demandes par email), mais devient requis dès que le client choisit WhatsApp
@@ -319,5 +323,10 @@ class QuoteRequest
         $this->user = $user;
 
         return $this;
+    }
+
+    public function getConvertedProject(): ?Project
+    {
+        return $this->convertedProject;
     }
 }

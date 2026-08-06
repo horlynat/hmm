@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Enum\InvoiceStatusEnum;
+use App\Repository\InvoiceRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -13,7 +14,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * interne côté prestataire) : une Invoice représente ce que le client doit
  * payer, pas comment le budget alloué est consommé en interne.
  */
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: InvoiceRepository::class)]
 #[ORM\Table(name: 'invoice')]
 #[ORM\Index(columns: ['project_id'], name: 'idx_invoice_project')]
 #[ORM\HasLifecycleCallbacks]
@@ -67,6 +68,15 @@ class Invoice
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Groups(['api_admin'])]
     private ?\DateTimeImmutable $paidAt = null;
+
+    /** Date à laquelle le client a confirmé être d'accord avec le montant — indépendant du paiement lui-même. */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['api_admin'])]
+    private ?\DateTimeImmutable $validatedAt = null;
+
+    /** Dernière relance automatique envoyée pour retard de paiement — voir App\Command\RemindOverdueInvoicesCommand (throttle : une relance au plus tous les 7 jours). */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $reminderSentAt = null;
 
     public function __construct()
     {
@@ -191,6 +201,31 @@ class Invoice
         return $this;
     }
 
+    public function getValidatedAt(): ?\DateTimeImmutable
+    {
+        return $this->validatedAt;
+    }
+
+    public function isValidated(): bool
+    {
+        return null !== $this->validatedAt;
+    }
+
+    /** Le client confirme être d'accord avec le montant — ne change pas le statut de paiement. */
+    public function markValidated(): static
+    {
+        $this->validatedAt = new \DateTimeImmutable();
+        return $this;
+    }
+
+    /** Le client demande une révision du budget — remet à zéro une éventuelle validation précédente. */
+    public function markRevisionRequested(): static
+    {
+        $this->status = InvoiceStatusEnum::REVISION_REQUESTED;
+        $this->validatedAt = null;
+        return $this;
+    }
+
     public function isPaid(): bool
     {
         return InvoiceStatusEnum::PAID === $this->status;
@@ -202,6 +237,17 @@ class Invoice
         return InvoiceStatusEnum::PENDING === $this->status
             && null !== $this->dueDate
             && $this->dueDate < new \DateTimeImmutable('today');
+    }
+
+    public function getReminderSentAt(): ?\DateTimeImmutable
+    {
+        return $this->reminderSentAt;
+    }
+
+    public function markReminderSent(): static
+    {
+        $this->reminderSentAt = new \DateTimeImmutable();
+        return $this;
     }
 
     public function getFormattedAmount(): string

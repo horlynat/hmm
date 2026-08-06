@@ -10,6 +10,7 @@ namespace App\Enum;
 enum InvoiceStatusEnum: string
 {
     case PENDING = 'pending';
+    case REVISION_REQUESTED = 'revision_requested';
     case PAID = 'paid';
     case CANCELLED = 'cancelled';
 
@@ -23,6 +24,7 @@ enum InvoiceStatusEnum: string
     {
         return match ($this) {
             self::PENDING => 'En attente de paiement',
+            self::REVISION_REQUESTED => 'Révision demandée',
             self::PAID => 'Payée',
             self::CANCELLED => 'Annulée',
         };
@@ -33,6 +35,7 @@ enum InvoiceStatusEnum: string
     {
         return match ($this) {
             self::PENDING => 'warning',
+            self::REVISION_REQUESTED => 'info',
             self::PAID => 'success',
             self::CANCELLED => 'neutral',
         };
@@ -42,6 +45,7 @@ enum InvoiceStatusEnum: string
     {
         return match ($this) {
             self::PENDING => 'ti-clock',
+            self::REVISION_REQUESTED => 'ti-message-circle',
             self::PAID => 'ti-circle-check',
             self::CANCELLED => 'ti-ban',
         };

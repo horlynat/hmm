@@ -165,6 +165,12 @@ class Project
     #[Groups(['api_admin'])]
     private ?User $client = null;
 
+    /** Devis à l'origine de ce projet, s'il a été créé via "Convertir en projet". */
+    #[ORM\OneToOne(inversedBy: 'convertedProject', targetEntity: QuoteRequest::class)]
+    #[ORM\JoinColumn(name: 'source_quote_request_id', nullable: true, unique: true, onDelete: 'SET NULL')]
+    #[Groups(['api_admin'])]
+    private ?QuoteRequest $sourceQuoteRequest = null;
+
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Groups(['api_admin'])]
     private ?\DateTimeImmutable $deadline = null;
@@ -550,6 +556,17 @@ class Project
     public function setClient(?User $client): static
     {
         $this->client = $client;
+        return $this;
+    }
+
+    public function getSourceQuoteRequest(): ?QuoteRequest
+    {
+        return $this->sourceQuoteRequest;
+    }
+
+    public function setSourceQuoteRequest(?QuoteRequest $sourceQuoteRequest): static
+    {
+        $this->sourceQuoteRequest = $sourceQuoteRequest;
         return $this;
     }
 

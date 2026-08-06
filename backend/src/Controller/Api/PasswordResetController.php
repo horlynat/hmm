@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 use App\Entity\User;
 use App\Exception\TooManyRequestsException;
 use App\Repository\UserRepository;
+use App\Service\AccountLinkResolver;
 use App\Service\AuditLogger;
 use App\Service\EmailManager;
 use App\Service\JWTService;
@@ -39,6 +40,7 @@ final class PasswordResetController extends AbstractController
         EmailManager $emailManager,
         EntityManagerInterface $entityManager,
         PublicSubmissionThrottler $throttler,
+        AccountLinkResolver $accountLinkResolver,
     ): JsonResponse {
         try {
             $throttler->assertFormSubmissionAllowed();
@@ -63,8 +65,13 @@ final class PasswordResetController extends AbstractController
                     template: 'password_reset',
                     context: [
                         'user' => $user,
-                        'token' => $token,
                         'fullName' => $user->getFullName(),
+                        'resetUrl' => $accountLinkResolver->resolve(
+                            $user,
+                            'password_reset',
+                            ['token' => $token],
+                            '/reinitialiser-mot-de-passe/'.$token,
+                        ),
                     ],
                 );
             }

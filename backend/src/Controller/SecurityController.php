@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Form\ForgotPasswordRequestType;
 use App\Form\ResetPasswordFormType;
 use App\Repository\UserRepository;
+use App\Service\AccountLinkResolver;
 use App\Service\AuditLogger;
 use App\Service\EmailManager;
 use App\Service\JWTService;
@@ -57,6 +58,7 @@ class SecurityController extends AbstractController
         EmailManager $emailManager,
         EntityManagerInterface $entityManager,
         PublicSubmissionThrottler $throttler,
+        AccountLinkResolver $accountLinkResolver,
     ): Response {
         $form = $this->createForm(ForgotPasswordRequestType::class);
         $form->handleRequest($request);
@@ -80,8 +82,13 @@ class SecurityController extends AbstractController
                     template: 'password_reset',
                     context: [
                         'user' => $user,
-                        'token' => $token,
                         'fullName' => $user->getFullName(),
+                        'resetUrl' => $accountLinkResolver->resolve(
+                            $user,
+                            'password_reset',
+                            ['token' => $token],
+                            '/reinitialiser-mot-de-passe/'.$token,
+                        ),
                     ],
                 );
             }
