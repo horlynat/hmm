@@ -4,20 +4,23 @@ import { Link } from "@/i18n/navigation";
 import type { SessionProject, SessionQuote } from "@/lib/types";
 import { projectStatusVariant, quoteStatusVariant } from "@/lib/status";
 
-/** Cartes de projets réutilisées entre le tableau de bord (aperçu) et /compte/projets (liste complète). */
+/** Cartes de projets réutilisées entre le tableau de bord (aperçu), /compte/projets (liste complète) et /compte/gestion-projet (espace freelance). */
 export function ProjectList({
   projects,
   labels,
+  hrefPattern = "/compte/projets/[id]",
 }: {
   projects: SessionProject[];
   labels: { progress: string; deadline: string; noDeadline: string };
+  /** Route de destination des cartes — /compte/projets/[id] (vitrine, défaut) ou /compte/gestion-projet/[id] (espace de travail freelance). */
+  hrefPattern?: "/compte/projets/[id]" | "/compte/gestion-projet/[id]";
 }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {projects.map((project) => (
         <Link
           key={project.id}
-          href={{ pathname: "/compte/projets/[id]", params: { id: String(project.id) } }}
+          href={{ pathname: hrefPattern, params: { id: String(project.id) } }}
           className="group block rounded-(--radius-lg) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
         >
           <Card

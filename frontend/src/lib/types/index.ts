@@ -423,6 +423,62 @@ export interface SessionProjectDetail {
   info: ProjectInfo | null;
 }
 
+/** Membre de l'équipe d'un projet — miroir de GET /api/me/projects/{id}/team. */
+export interface SessionTeamMember {
+  id: number;
+  fullName: string | null;
+  email: string;
+  profileImage: string | null;
+  specialties: string[] | null;
+  availability: string | null;
+}
+
+/** Équipe complète d'un projet (jamais le client) — miroir de GET /api/me/projects/{id}/team. */
+export interface SessionProjectTeam {
+  owner: SessionTeamMember;
+  collaborators: SessionTeamMember[];
+}
+
+export type TaskStatus = "todo" | "in_progress" | "done" | "blocked";
+
+/** Tâche de projet — miroir de GET /api/me/projects/{id}/tasks. */
+export interface SessionTask {
+  id: number;
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  statusLabel: string;
+  statusVariant: string;
+  dueDate: string | null;
+  isOverdue: boolean;
+  position: number;
+  completedAt: string | null;
+  assignee: { id: number; fullName: string | null } | null;
+  /** La tâche est assignée à l'utilisateur courant — seule condition pour pouvoir en changer le statut en self-service. */
+  isMine: boolean;
+}
+
+/** Entrée de temps passé — miroir de GET /api/me/projects/{id}/time-entries. */
+export interface SessionTimeEntry {
+  id: number;
+  user: { id: number; fullName: string | null };
+  task: { id: number; title: string } | null;
+  minutes: number;
+  formattedDuration: string;
+  spentOn: string;
+  description: string | null;
+  isMine: boolean;
+}
+
+/** Suivi du temps d'un projet, visible par toute l'équipe. */
+export interface SessionTimeTracking {
+  entries: SessionTimeEntry[];
+  totalMinutes: number;
+  formattedTotalTime: string;
+  mineMinutes: number;
+  mineFormattedTime: string;
+}
+
 /** Détail complet d'un devis appartenant à l'utilisateur courant — miroir de GET /api/me/quotes/{id}. */
 export interface SessionQuoteDetail {
   id: number;
@@ -466,10 +522,19 @@ export interface SessionUser {
   specialties: string[] | null;
   availability: string | null;
   portfolioUrl: string | null;
+  yearsOfExperience: number | null;
+  city: string | null;
+  linkedinUrl: string | null;
+  githubUrl: string | null;
+  languages: string[] | null;
   roles: string[];
   isVerified: boolean;
   isTwoFactorEnabled: boolean;
   isCollaborator: boolean;
+  /** Complétude du profil "freelance" (0-100), pertinente seulement si isCollaborator. Voir User::getFreelanceProfileCompletionPercentage(). */
+  profileCompletion: number;
+  /** Clés (parmi FREELANCE_PROFILE_FIELD_KEYS, @see lib/profileFields) encore vides — voir User::getMissingFreelanceProfileFields(). */
+  missingProfileFields: string[];
   /** Peut être `null` pour les comptes créés avant l'ajout de ce champ. */
   createdAt: string | null;
   lastLoginAt: string | null;
@@ -487,6 +552,11 @@ export interface ProfileUpdatePayload {
   specialties?: string[];
   availability?: string;
   portfolioUrl?: string;
+  yearsOfExperience?: number | null;
+  city?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  languages?: string[];
   plainPassword?: string;
   currentPassword?: string;
 }

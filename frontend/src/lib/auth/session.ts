@@ -9,9 +9,12 @@ import { API_URL, SESSION_COOKIE } from "./config";
 import type {
   SessionUser,
   SessionProjectDetail,
+  SessionProjectTeam,
   SessionQuoteDetail,
   SessionActivity,
   SessionComment,
+  SessionTask,
+  SessionTimeTracking,
 } from "@/lib/types";
 
 interface JwtPayload {
@@ -123,6 +126,86 @@ export async function getMyProject(id: number): Promise<SessionProjectDetail | n
   } catch (error) {
     console.error("[auth] GET /me/projects/:id failed", error);
     return null;
+  }
+}
+
+/**
+ * Équipe d'un projet (owner + collaborateurs, jamais le client) — sert aussi
+ * de garde d'appartenance pour l'espace de travail freelance
+ * `/compte/gestion-projet/[id]` : le backend y exclut explicitement le
+ * client (contrairement à getMyProject), donc `null` ici doit déclencher un
+ * `notFound()`.
+ */
+export async function getMyProjectTeam(projectId: number): Promise<SessionProjectTeam | null> {
+  const token = await getToken();
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_URL}/me/projects/${projectId}/team`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return null;
+
+    return (await res.json()) as SessionProjectTeam;
+  } catch (error) {
+    console.error("[auth] GET /me/projects/:id/team failed", error);
+    return null;
+  }
+}
+
+/** Tâches d'un projet auquel l'utilisateur courant est rattaché. Renvoie [] si non authentifié, introuvable, ou non-rattaché. */
+export async function getMyProjectTasks(projectId: number): Promise<SessionTask[]> {
+  const token = await getToken();
+  if (!token) return [];
+
+  try {
+    const res = await fetch(`${API_URL}/me/projects/${projectId}/tasks`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return [];
+
+    const body = (await res.json()) as { tasks: SessionTask[] };
+    return body.tasks;
+  } catch (error) {
+    console.error("[auth] GET /me/projects/:id/tasks failed", error);
+    return [];
+  }
+}
+
+/** Suivi du temps d'un projet (toute l'équipe). Renvoie un objet vide si non authentifié, introuvable, ou non-rattaché. */
+export async function getMyProjectTimeTracking(projectId: number): Promise<SessionTimeTracking> {
+  const empty: SessionTimeTracking = { entries: [], totalMinutes: 0, formattedTotalTime: "0h00", mineMinutes: 0, mineFormattedTime: "0h00" };
+  const token = await getToken();
+  if (!token) return empty;
+
+  try {
+    const res = await fetch(`${API_URL}/me/projects/${projectId}/time-entries`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return empty;
+
+    return (await res.json()) as SessionTimeTracking;
+  } catch (error) {
+    console.error("[auth] GET /me/projects/:id/time-entries failed", error);
+    return empty;
   }
 }
 

@@ -311,8 +311,9 @@
       "viewAllInvoices": "Voir toutes mes factures"
     },
     "invite": {
-      "badge": "Vous avez un projet à mettre en avant ?",
-      "text": "Décrivez-le-moi — client, contexte, technologies utilisées et résultat obtenu — et je remplace ces emplacements par vos vraies réalisations."
+      "title": "Vous avez un projet à mettre en avant ?",
+      "text": "Décrivez-le-moi — client, contexte, technologies utilisées et résultat obtenu — et je remplace ces emplacements par vos vraies réalisations.",
+      "cta": "Proposer mon projet"
     },
     "cta": {
       "title": "Un projet en tête ?",
@@ -801,7 +802,9 @@
       "resendVerificationLink": "Renvoyer le lien de vérification"
     },
     "forgotPassword": {
-      "title": "Mot de passe oublié",
+      "eyebrow": "Récupération de compte",
+      "title": "Réinitialisez votre",
+      "titleAccent": "mot de passe.",
       "subtitle": "Indiquez votre adresse email : si un compte existe, vous recevrez un lien pour réinitialiser votre mot de passe.",
       "emailLabel": "Adresse email",
       "emailPlaceholder": "vous@exemple.com",
@@ -991,8 +994,8 @@
       "phoneLabel": "Téléphone",
       "phoneLocked": "Non modifiable depuis votre espace. Contactez-nous si ce numéro a changé.",
       "bioLabel": "Présentation / bio",
-      "specialtiesLabel": "Spécialités (séparées par des virgules)",
-      "specialtiesPlaceholder": "Backend, Cybersécurité, UI...",
+      "specialtiesLabel": "Compétences et technologies utilisées au quotidien",
+      "specialtiesPlaceholder": "Ex : React, Symfony, PostgreSQL, Docker...",
       "availabilityLabel": "Disponibilité",
       "portfolioLabel": "Portfolio / lien",
       "submit": "Enregistrer les modifications",
@@ -1032,7 +1035,26 @@
         "confirmButton": "Oui, supprimer définitivement",
         "confirmPending": "Suppression…",
         "cancelButton": "Annuler"
-      }
+      },
+      "overview": {
+        "completeBadge": "Profil complet",
+        "portfolioLink": "Voir le portfolio",
+        "checklistTitle": "Ce qu'il vous reste à compléter",
+        "experienceValue": "{count, plural, one {# an d'expérience} other {# ans d'expérience}}"
+      },
+      "yearsOfExperienceLabel": "Années d'expérience",
+      "cityLabel": "Ville",
+      "linkedinLabel": "LinkedIn",
+      "githubLabel": "GitHub",
+      "languagesLabel": "Langues parlées",
+      "languageFrench": "Français",
+      "languageEnglish": "Anglais",
+      "languageSpanish": "Espagnol",
+      "languagePortuguese": "Portugais",
+      "professionalLinksLabel": "Lien professionnel (LinkedIn ou GitHub)",
+      "fieldLocked": "Non modifiable depuis votre espace. Contactez-nous si cette information a changé.",
+      "allFieldsLocked": "Toutes vos informations sont verrouillées. Contactez-nous pour toute modification.",
+      "completeCta": "Compléter mon profil"
     },
     "changePassword": {
       "title": "Changer le mot de passe",
@@ -1051,7 +1073,55 @@
       "statTotal": "Projets au total",
       "statActive": "En cours",
       "statUpcoming": "À venir",
-      "backOfficeHint": "Pour le suivi du temps, des dépenses et de l'historique détaillé, rendez-vous dans l'espace back-office."
+      "profileBanner": {
+        "title": "Complétez votre profil",
+        "body": "Votre profil est complété à {percent} %. Tant qu'il n'est pas à 100 %, vous ne pouvez pas participer activement aux projets (lecture seule) — aucun projet ne peut vous être confié en toute confiance sans un profil complet. Il vous manque :",
+        "cta": "Compléter mon profil"
+      }
+    },
+    "workspace": {
+      "backLink": "← Retour à la gestion de projet",
+      "readOnlyBanner": {
+        "title": "Espace en lecture seule",
+        "body": "Complétez votre profil à 100 % pour pouvoir participer à ce projet : commenter, mettre à jour vos tâches et saisir votre temps.",
+        "cta": "Compléter mon profil",
+        "discussionHint": "Complétez votre profil pour pouvoir écrire ici."
+      },
+      "team": {
+        "title": "Équipe du projet",
+        "ownerLabel": "Responsable",
+        "collaboratorLabel": "Collaborateur"
+      },
+      "tasks": {
+        "title": "Tâches",
+        "empty": "Aucune tâche pour ce projet.",
+        "notAssigned": "Non assignée",
+        "updateError": "Impossible de mettre à jour le statut de la tâche.",
+        "dueLabel": "Échéance",
+        "overdueLabel": "En retard",
+        "status": {
+          "todo": "À faire",
+          "in_progress": "En cours",
+          "done": "Terminée",
+          "blocked": "Bloquée"
+        }
+      },
+      "time": {
+        "title": "Temps passé",
+        "totalLabel": "Total équipe",
+        "mineLabel": "Mon total",
+        "historyEmpty": "Aucune saisie de temps pour ce projet.",
+        "formTitle": "Saisir du temps",
+        "hoursLabel": "Heures",
+        "minutesLabel": "Minutes",
+        "descriptionLabel": "Description",
+        "dateLabel": "Date",
+        "taskLabel": "Tâche liée",
+        "noTask": "Aucune tâche liée",
+        "submit": "Enregistrer",
+        "submitting": "Enregistrement…",
+        "success": "Temps enregistré."
+      }
     },
     "invoices": {
       "title": "Mes factures",

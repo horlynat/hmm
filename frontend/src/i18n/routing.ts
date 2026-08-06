@@ -97,6 +97,10 @@ export const routing = defineRouting({
       fr: "/compte/gestion-projet",
       en: "/account/project-management",
     },
+    "/compte/gestion-projet/[id]": {
+      fr: "/compte/gestion-projet/[id]",
+      en: "/account/project-management/[id]",
+    },
     "/compte/factures": {
       fr: "/compte/factures",
       en: "/account/invoices",

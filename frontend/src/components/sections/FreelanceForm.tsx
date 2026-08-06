@@ -18,23 +18,8 @@ import {
 import { freelanceRegisterSchema, type FreelanceRegisterValues } from "@/lib/validation/schemas";
 import { mapActionError } from "@/lib/validation/errors";
 import { registerCollaborator } from "@/actions/collaborator";
+import { SPECIALTY_KEYS, SPECIALTY_ICONS } from "@/lib/profileFields";
 
-const SPECIALTY_KEYS = [
-  "specialtyBackend",
-  "specialtyFrontend",
-  "specialtyMobile",
-  "specialtyAi",
-  "specialtyCyber",
-  "specialtyDesign",
-] as const;
-const SPECIALTY_ICONS: Record<(typeof SPECIALTY_KEYS)[number], string> = {
-  specialtyBackend: "🗄️",
-  specialtyFrontend: "💻",
-  specialtyMobile: "📱",
-  specialtyAi: "🤖",
-  specialtyCyber: "🛡️",
-  specialtyDesign: "🎨",
-};
 const DISPO_KEYS = ["dispoImmediate", "dispo2Weeks", "dispo1Month", "dispoDiscuss"] as const;
 
 export function FreelanceForm() {
