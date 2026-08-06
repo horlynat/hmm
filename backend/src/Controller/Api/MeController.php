@@ -15,6 +15,7 @@ use App\Entity\User;
 use App\Enum\InvoiceStatusEnum;
 use App\Enum\ProjectStatusEnum;
 use App\Enum\TaskStatusEnum;
+use App\Exception\TooManyRequestsException;
 use App\Repository\ProjectRepository;
 use App\Repository\ProjectTaskRepository;
 use App\Repository\QuoteRequestRepository;
@@ -23,6 +24,7 @@ use App\Service\AccountLinkResolver;
 use App\Service\EmailManager;
 use App\Service\JWTService;
 use App\Service\ProjectNotifier;
+use App\Service\PublicSubmissionThrottler;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -354,7 +356,7 @@ final class MeController extends AbstractController
      * qui ne s'est jamais connecté qu'au frontend Next.js).
      */
     #[Route('/resend-verification', name: 'resend_verification', methods: ['POST'])]
-    public function resendVerification(JWTService $jwt, EmailManager $emailManager): JsonResponse
+    public function resendVerification(JWTService $jwt, EmailManager $emailManager, PublicSubmissionThrottler $throttler): JsonResponse
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -363,6 +365,16 @@ final class MeController extends AbstractController
 
         if ($user->isVerified()) {
             return $this->json(['detail' => 'Votre compte est déjà activé.'], Response::HTTP_CONFLICT);
+        }
+
+        // Contrairement à /api/resend-verification-email (anonyme), cet endpoint est
+        // authentifié — mais rien n'empêchait jusqu'ici un token intercepté (ou
+        // l'utilisateur lui-même) de déclencher un envoi en boucle. Même limiteur
+        // IP que les formulaires publics (cf. audit de sécurité).
+        try {
+            $throttler->assertFormSubmissionAllowed();
+        } catch (TooManyRequestsException $e) {
+            return $this->json(['detail' => $e->getMessage()], Response::HTTP_TOO_MANY_REQUESTS);
         }
 
         $token = $jwt->generateEmailVerificationToken($user->getId());

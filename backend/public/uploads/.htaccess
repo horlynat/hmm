@@ -1,0 +1,21 @@
+# Défense en profondeur : ce dossier ne doit jamais exécuter de code, même si
+# la validation MIME applicative (cf. App\Service\MediaUploader) échouait un
+# jour ou si la config du reverse-proxy change — cf. audit de sécurité.
+# Sans effet sous nginx : ajouter l'équivalent `location /uploads { }` côté
+# config serveur en production si le webserver n'est pas Apache.
+
+<FilesMatch "\.ph(p[3457]?|t|tml)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+
+Options -ExecCGI -Indexes
