@@ -13,6 +13,7 @@ use App\Entity\User;
 use App\Enum\InvoiceStatusEnum;
 use App\Repository\ProjectRepository;
 use App\Repository\QuoteRequestRepository;
+use App\Service\AccountLinkResolver;
 use App\Service\EmailManager;
 use App\Service\JWTService;
 use App\Service\ProjectNotifier;
@@ -68,6 +69,7 @@ final class MeController extends AbstractController
         private readonly ProjectRepository $projectRepository,
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly ValidatorInterface $validator,
+        private readonly AccountLinkResolver $accountLinkResolver,
     ) {
     }
 
@@ -231,8 +233,13 @@ final class MeController extends AbstractController
             template: 'confirmation_email',
             context: [
                 'user' => $user,
-                'token' => $token,
                 'fullName' => $user->getFullName(),
+                'verifyUrl' => $this->accountLinkResolver->resolve(
+                    $user,
+                    'verify_user',
+                    ['token' => $token],
+                    '/verification-email/'.$token,
+                ),
             ],
         );
 
@@ -357,7 +364,7 @@ final class MeController extends AbstractController
      * périmètre d'accès que readComments().
      */
     #[Route('/projects/{id}/comments', name: 'project_comments_create', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function createComment(int $id, Request $request, ProjectRepository $projectRepository): JsonResponse
+    public function createComment(int $id, Request $request, ProjectRepository $projectRepository, ProjectNotifier $projectNotifier): JsonResponse
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -386,6 +393,7 @@ final class MeController extends AbstractController
         $project->addComment($comment);
         $this->entityManager->persist($comment);
         $this->entityManager->flush();
+        $projectNotifier->commentPosted($comment);
 
         return $this->json($this->serializeComment($comment, $project, $user), Response::HTTP_CREATED);
     }
@@ -604,6 +612,8 @@ final class MeController extends AbstractController
             'isVerified' => $user->isVerified(),
             'isTwoFactorEnabled' => $user->isTwoFactorEnabled(),
             'isCollaborator' => $isCollaborator,
+            // Peut être `null` pour les comptes créés avant l'ajout de ce champ.
+            'createdAt' => $user->getCreatedAt()?->format(\DateTimeInterface::ATOM),
             'lastLoginAt' => $user->getLastLoginAt()?->format(\DateTimeInterface::ATOM),
             'lastIp' => $user->getLastIp(),
             'lastLocation' => $user->getLastLocation(),
@@ -645,6 +655,8 @@ final class MeController extends AbstractController
      */
     private function serializeQuote(QuoteRequest $quote): array
     {
+        $convertedProject = $quote->getConvertedProject();
+
         return [
             'id' => $quote->getId(),
             'category' => $quote->getCategory(),
@@ -654,6 +666,11 @@ final class MeController extends AbstractController
             // Peut être `null` pour les demandes créées avant l'ajout de ce
             // champ — cf. QuoteRequest::$createdAt.
             'createdAt' => $quote->getCreatedAt()?->format(\DateTimeInterface::ATOM),
+            // Renseigné une fois la demande convertie en projet suivi (cf.
+            // AdminQuoteRequestController::convert()) — permet au client de
+            // retrouver son projet depuis son devis d'origine.
+            'convertedProjectId' => $convertedProject?->getId(),
+            'convertedProjectTitle' => $convertedProject?->getTitle(),
         ];
     }
 
@@ -737,6 +754,8 @@ final class MeController extends AbstractController
      */
     private function serializeQuoteDetail(QuoteRequest $quote): array
     {
+        $convertedProject = $quote->getConvertedProject();
+
         return [
             'id' => $quote->getId(),
             'category' => $quote->getCategory(),
@@ -750,6 +769,9 @@ final class MeController extends AbstractController
             'attachmentName' => $quote->getAttachmentName(),
             'clarifications' => $quote->getClarifications(),
             'message' => $quote->getMessage(),
+            'createdAt' => $quote->getCreatedAt()?->format(\DateTimeInterface::ATOM),
+            'convertedProjectId' => $convertedProject?->getId(),
+            'convertedProjectTitle' => $convertedProject?->getTitle(),
         ];
     }
 

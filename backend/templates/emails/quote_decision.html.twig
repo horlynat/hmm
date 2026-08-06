@@ -1,0 +1,33 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block title %}{{ accepted ? 'Votre demande de devis a été acceptée' : 'Votre demande de devis' }}{% endblock %}
+{% block preheader %}{{ accepted ? 'Bonne nouvelle concernant votre demande de devis.' : 'Réponse à votre demande de devis.' }}{% endblock %}
+
+{% block body %}
+	<p style="margin:0 0 16px;">Bonjour <strong>{{ clientName }}</strong>,</p>
+
+	{% if accepted %}
+		<p style="margin:0 0 24px;">
+			Bonne nouvelle : votre demande de devis{% if category %} concernant « {{ category }} »{% endif %} a été acceptée. Nous allons revenir vers vous très prochainement pour la suite (planning, budget, démarrage).
+		</p>
+	{% else %}
+		<p style="margin:0 0 24px;">
+			Après étude de votre demande de devis{% if category %} concernant « {{ category }} »{% endif %}, nous ne sommes malheureusement pas en mesure d'y donner suite pour le moment.
+		</p>
+		<p style="margin:0 0 24px;">
+			N'hésitez pas à nous recontacter pour toute autre demande ou si votre projet évolue.
+		</p>
+	{% endif %}
+
+	{% if actionUrl %}
+		<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 8px;">
+			<tr>
+				<td align="center" bgcolor="#0077b6" style="background-color:#0077b6; border-radius:6px;">
+					<a href="{{ actionUrl }}" style="display:inline-block; padding:14px 28px; color:#ffffff; font-size:15px; font-weight:bold; text-decoration:none; font-family:Arial, Helvetica, sans-serif;">
+						Voir ma demande
+					</a>
+				</td>
+			</tr>
+		</table>
+	{% endif %}
+{% endblock %}

@@ -24,7 +24,7 @@ class SendEmailHandler
     {
         try {
             $email = (new TemplatedEmail())
-                ->from(new Address($this->defaultSender, 'Mon Portfolio'))
+                ->from(new Address($this->defaultSender, 'Horlynat | Portail Digital'))
                 ->to($message->to)
                 ->subject($message->subject)
                 ->htmlTemplate("emails/{$message->template}.html.twig")

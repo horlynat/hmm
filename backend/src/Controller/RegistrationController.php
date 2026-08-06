@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Enum\NotificationPriorityEnum;
 use App\Form\RegistrationFormType;
 use App\Repository\UserRepository;
+use App\Service\AccountLinkResolver;
 use App\Service\AdminAlertNotifier;
 use App\Service\EmailManager;
 use App\Service\JWTService;
@@ -27,6 +28,7 @@ class RegistrationController extends AbstractController
         private EmailManager $emailManager, // ✅ Un seul service, deux méthodes
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
+        private AccountLinkResolver $accountLinkResolver,
     ) {
     }
 
@@ -75,8 +77,13 @@ class RegistrationController extends AbstractController
                 template: 'confirmation_email',
                 context: [
                     'user' => $user,
-                    'token' => $token,
                     'fullName' => $user->getFullName(),
+                    'verifyUrl' => $this->accountLinkResolver->resolve(
+                        $user,
+                        'verify_user',
+                        ['token' => $token],
+                        '/verification-email/'.$token,
+                    ),
                 ]
             );
 
@@ -118,6 +125,7 @@ class RegistrationController extends AbstractController
                 context: [
                     'fullName' => $user->getFullName(),
                     'user' => $user, // ✅ Passez l'objet user complet au template
+                    'accountUrl' => $this->accountLinkResolver->resolve($user, 'profile_read', ['id' => $user->getId()], '/connexion'),
                 ]
             );
 
@@ -162,8 +170,13 @@ class RegistrationController extends AbstractController
             template: 'confirmation_email',
             context: [
                 'user' => $user,
-                'token' => $token,
                 'fullName' => $user->getFullName(),
+                'verifyUrl' => $this->accountLinkResolver->resolve(
+                    $user,
+                    'verify_user',
+                    ['token' => $token],
+                    '/verification-email/'.$token,
+                ),
             ]
         );
 

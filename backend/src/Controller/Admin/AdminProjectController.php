@@ -1052,6 +1052,7 @@ final class AdminProjectController extends AbstractController
         string $status,
         EntityManagerInterface $entityManager,
         Request $request,
+        \App\Service\ProjectNotifier $projectNotifier,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::MANAGE_TASK, $project);
 
@@ -1083,6 +1084,7 @@ final class AdminProjectController extends AbstractController
             sprintf('Tâche « %s » → %s', $task->getTitle(), $newStatus->getLabel()),
         );
         $entityManager->flush();
+        $projectNotifier->taskStatusChanged($task);
 
         return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
     }
@@ -1114,7 +1116,7 @@ final class AdminProjectController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/comments/add', name: 'add_comment', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function addComment(Project $project, Request $request, EntityManagerInterface $entityManager): Response
+    public function addComment(Project $project, Request $request, EntityManagerInterface $entityManager, \App\Service\ProjectNotifier $projectNotifier): Response
     {
         $this->denyAccessUnlessGranted(ProjectVoter::VIEW, $project);
 
@@ -1136,6 +1138,7 @@ final class AdminProjectController extends AbstractController
         $project->addComment($comment);
         $entityManager->persist($comment);
         $entityManager->flush();
+        $projectNotifier->commentPosted($comment);
 
         $this->addFlash('success', 'Commentaire ajouté.');
 
@@ -1389,6 +1392,7 @@ final class AdminProjectController extends AbstractController
         #[MapEntity(id: 'collaboratorId')] User $collaborator,
         EntityManagerInterface $entityManager,
         Request $request,
+        \App\Service\ProjectNotifier $projectNotifier,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::ADD_COLLABORATOR, $project);
 
@@ -1397,6 +1401,7 @@ final class AdminProjectController extends AbstractController
             $project->logCollaboratorRemoved($this->getAuthenticatedUser(), $collaborator);
 
             $entityManager->flush();
+            $projectNotifier->collaboratorRemoved($project, $collaborator);
             $this->addFlash('success', 'Collaborateur retiré avec succès.');
         } else {
             $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');

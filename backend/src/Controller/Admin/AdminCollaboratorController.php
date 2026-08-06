@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Form\UserType;
 use App\Repository\UserRepository;
 use App\Security\Voter\UserVoter;
+use App\Service\AccountWelcomeNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
@@ -30,6 +31,7 @@ final class AdminCollaboratorController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly UserRepository $userRepository,
         private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly AccountWelcomeNotifier $accountWelcomeNotifier,
     ) {
     }
 
@@ -77,8 +79,9 @@ final class AdminCollaboratorController extends AbstractController
 
             $this->entityManager->persist($user);
             $this->entityManager->flush();
+            $this->accountWelcomeNotifier->accountCreated($user, 'collaborateur');
 
-            $this->addFlash('success', sprintf('Le compte collaborateur #%d a été créé avec succès.', $user->getId()));
+            $this->addFlash('success', sprintf('Le compte collaborateur #%d a été créé avec succès. Il a été notifié par email.', $user->getId()));
             return $this->redirectToRoute('admin_collaborator_index', [], Response::HTTP_SEE_OTHER);
         }
 

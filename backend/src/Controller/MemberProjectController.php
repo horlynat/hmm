@@ -12,6 +12,7 @@ use App\Enum\QuoteStatusEnum;
 use App\Repository\ProjectRepository;
 use App\Repository\QuoteRequestRepository;
 use App\Security\Voter\ProjectVoter;
+use App\Service\ProjectNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -112,7 +113,7 @@ final class MemberProjectController extends AbstractController
     }
 
     #[Route('/{id}/comments/add', name: 'add_comment', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function addComment(Project $project, Request $request, EntityManagerInterface $entityManager): Response
+    public function addComment(Project $project, Request $request, EntityManagerInterface $entityManager, ProjectNotifier $projectNotifier): Response
     {
         $this->denyAccessUnlessGranted(ProjectVoter::VIEW, $project);
 
@@ -132,6 +133,7 @@ final class MemberProjectController extends AbstractController
             $project->addComment($comment);
             $entityManager->persist($comment);
             $entityManager->flush();
+            $projectNotifier->commentPosted($comment);
             $this->addFlash('success', 'Commentaire publié.');
         }
 

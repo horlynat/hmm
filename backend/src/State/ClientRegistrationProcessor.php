@@ -8,6 +8,7 @@ use App\ApiResource\ClientRegistrationApiResource;
 use App\Entity\User;
 use App\Enum\NotificationPriorityEnum;
 use App\Exception\ConflictException;
+use App\Service\AccountLinkResolver;
 use App\Service\AdminAlertNotifier;
 use App\Service\EmailManager;
 use App\Service\JWTService;
@@ -35,6 +36,7 @@ final class ClientRegistrationProcessor implements ProcessorInterface
         private readonly EmailManager $emailManager,
         private readonly AdminAlertNotifier $adminAlertNotifier,
         private readonly PublicSubmissionThrottler $throttler,
+        private readonly AccountLinkResolver $accountLinkResolver,
     ) {
     }
 
@@ -80,8 +82,13 @@ final class ClientRegistrationProcessor implements ProcessorInterface
             template: 'confirmation_email',
             context: [
                 'user' => $user,
-                'token' => $token,
                 'fullName' => $user->getFullName(),
+                'verifyUrl' => $this->accountLinkResolver->resolve(
+                    $user,
+                    'verify_user',
+                    ['token' => $token],
+                    '/verification-email/'.$token,
+                ),
             ],
         );
 

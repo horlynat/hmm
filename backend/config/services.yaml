@@ -2,6 +2,7 @@
 parameters:
     app.default_sender: '%env(APP_DEFAULT_SENDER)%'
     app.jwtsecret: '%env(APP_JWTSECRET)%'
+    app.frontend_url: '%env(FRONTEND_URL)%'
 
     # ✅ CORRECTION 1 : utiliser %kernel.project_dir% ici (paramètre Symfony)
     #    et non dans .env où cette syntaxe n'est pas supportée

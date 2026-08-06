@@ -58,7 +58,7 @@ class EmailManager
     ): bool {
         try {
             $email = (new TemplatedEmail())
-                ->from(new Address($this->defaultSender, 'Mon Portfolio'))
+                ->from(new Address($this->defaultSender, 'Horlynat | Portail Digital'))
                 ->to($to)
                 ->subject($subject)
                 ->htmlTemplate("emails/{$template}.html.twig")

@@ -11,7 +11,9 @@ use App\Enum\QuoteStatusEnum;
 use App\Form\ProjectType;
 use App\Repository\QuoteRequestRepository;
 use App\Security\Voter\QuoteVoter;
+use App\Service\AccountLinkResolver;
 use App\Service\AuditLogger;
+use App\Service\EmailManager;
 use App\Service\MediaUploader;
 use App\Service\ProjectNotifier;
 use Doctrine\ORM\EntityManagerInterface;
@@ -97,8 +99,14 @@ final class AdminQuoteRequestController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/accept', name: 'accept', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function accept(QuoteRequest $quoteRequest, EntityManagerInterface $entityManager, Request $request, AuditLogger $auditLogger): Response
-    {
+    public function accept(
+        QuoteRequest $quoteRequest,
+        EntityManagerInterface $entityManager,
+        Request $request,
+        AuditLogger $auditLogger,
+        EmailManager $emailManager,
+        AccountLinkResolver $accountLinkResolver,
+    ): Response {
         $this->denyAccessUnlessGranted(QuoteVoter::APPROVE, $quoteRequest);
 
         if (!$this->isCsrfTokenValid('request_status_'.$quoteRequest->getId(), $request->request->get('_token'))) {
@@ -116,8 +124,9 @@ final class AdminQuoteRequestController extends AbstractController
         $quoteRequest->setStatus(QuoteStatusEnum::ACCEPTED);
         $auditLogger->log(QuoteRequest::class, $quoteRequest->getId(), $quoteRequest->getName(), 'accepted');
         $entityManager->flush();
+        $this->notifyQuoteDecision($quoteRequest, true, $emailManager, $accountLinkResolver);
 
-        $this->addFlash('success', 'La demande a été acceptée.');
+        $this->addFlash('success', 'La demande a été acceptée. Le client a été notifié par email.');
 
         return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
     }
@@ -128,8 +137,14 @@ final class AdminQuoteRequestController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}/reject', name: 'reject', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function reject(QuoteRequest $quoteRequest, EntityManagerInterface $entityManager, Request $request, AuditLogger $auditLogger): Response
-    {
+    public function reject(
+        QuoteRequest $quoteRequest,
+        EntityManagerInterface $entityManager,
+        Request $request,
+        AuditLogger $auditLogger,
+        EmailManager $emailManager,
+        AccountLinkResolver $accountLinkResolver,
+    ): Response {
         $this->denyAccessUnlessGranted(QuoteVoter::REJECT, $quoteRequest);
 
         if (!$this->isCsrfTokenValid('request_status_'.$quoteRequest->getId(), $request->request->get('_token'))) {
@@ -147,10 +162,38 @@ final class AdminQuoteRequestController extends AbstractController
         $quoteRequest->setStatus(QuoteStatusEnum::REJECTED);
         $auditLogger->log(QuoteRequest::class, $quoteRequest->getId(), $quoteRequest->getName(), 'rejected');
         $entityManager->flush();
+        $this->notifyQuoteDecision($quoteRequest, false, $emailManager, $accountLinkResolver);
 
-        $this->addFlash('success', 'La demande a été refusée.');
+        $this->addFlash('success', 'La demande a été refusée. Le client a été notifié par email.');
 
         return $this->redirectToRoute('admin_request_read', ['id' => $quoteRequest->getId()]);
+    }
+
+    /**
+     * Notifie le client par email de la décision (acceptée/refusée) sur sa
+     * demande de devis. Envoyée à l'adresse renseignée sur la demande, qui
+     * reste valide que la demande soit liée à un compte ou non (prospect
+     * anonyme). Si un compte est lié, un lien vers l'espace concerné (front
+     * ou back-office, selon le rôle) est ajouté.
+     */
+    private function notifyQuoteDecision(QuoteRequest $quoteRequest, bool $accepted, EmailManager $emailManager, AccountLinkResolver $accountLinkResolver): void
+    {
+        $user = $quoteRequest->getUser();
+        $actionUrl = null !== $user
+            ? $accountLinkResolver->resolve($user, 'admin_request_read', ['id' => $quoteRequest->getId()], '/compte/devis/'.$quoteRequest->getId())
+            : null;
+
+        $emailManager->sendAsync(
+            to: $quoteRequest->getEmail(),
+            subject: $accepted ? 'Votre demande de devis a été acceptée' : 'Votre demande de devis',
+            template: 'quote_decision',
+            context: [
+                'clientName' => $quoteRequest->getName(),
+                'accepted' => $accepted,
+                'category' => $quoteRequest->getCategoryDetail() ?: $quoteRequest->getCategory(),
+                'actionUrl' => $actionUrl,
+            ],
+        );
     }
 
     // =========================================================================
