@@ -215,6 +215,38 @@ final class ProjectNotifier
         );
     }
 
+    /**
+     * Un collaborateur a mis à jour lui-même le statut d'une tâche qui lui
+     * est assignée (self-service, cf. MeController::updateTaskStatus) —
+     * distinct de taskStatusChanged() ci-dessus qui notifie l'assigné : ici
+     * l'assigné EST l'auteur du changement, donc on notifie le responsable
+     * du projet à la place.
+     */
+    public function taskStatusChangedByAssignee(ProjectTask $task): void
+    {
+        $project = $task->getProject();
+        $owner = $project->getOwner();
+        if ($owner === $task->getAssignee()) {
+            return;
+        }
+
+        $this->dispatch(
+            [$owner],
+            NotificationPriorityEnum::LOW,
+            'Mise à jour de tâche',
+            [
+                sprintf(
+                    '%s a mis à jour la tâche « %s » sur le projet « %s » → %s.',
+                    $task->getAssignee()?->getFullName() ?? $task->getAssignee()?->getEmail(),
+                    $task->getTitle(),
+                    $project->getTitle(),
+                    $task->getStatus()->getLabel(),
+                ),
+            ],
+            $project,
+        );
+    }
+
     /** Nouvelle facture transmise au client (hors facture initiale de conversion de devis, déjà couverte par projectAccepted()). */
     public function invoiceCreated(Invoice $invoice): void
     {

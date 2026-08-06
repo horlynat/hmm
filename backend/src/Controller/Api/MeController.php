@@ -8,15 +8,23 @@ use App\Entity\Media;
 use App\Entity\Project;
 use App\Entity\ProjectHistory;
 use App\Entity\ProjectInfo;
+use App\Entity\ProjectTask;
 use App\Entity\QuoteRequest;
+use App\Entity\TimeEntry;
 use App\Entity\User;
 use App\Enum\InvoiceStatusEnum;
+use App\Enum\ProjectStatusEnum;
+use App\Enum\TaskStatusEnum;
+use App\Exception\TooManyRequestsException;
 use App\Repository\ProjectRepository;
+use App\Repository\ProjectTaskRepository;
 use App\Repository\QuoteRequestRepository;
+use App\Security\Voter\ProjectVoter;
 use App\Service\AccountLinkResolver;
 use App\Service\EmailManager;
 use App\Service\JWTService;
 use App\Service\ProjectNotifier;
+use App\Service\PublicSubmissionThrottler;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,6 +32,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
@@ -51,7 +60,21 @@ final class MeController extends AbstractController
      * `phone` n'y figure pas volontairement : modification désactivée en
      * self-service (changement de numéro géré hors de cet espace).
      */
-    private const EDITABLE_FIELDS = ['fullName', 'bio', 'specialties', 'availability', 'portfolioUrl'];
+    private const EDITABLE_FIELDS = [
+        'fullName', 'bio', 'specialties', 'availability', 'portfolioUrl',
+        'yearsOfExperience', 'city', 'linkedinUrl', 'githubUrl', 'languages',
+    ];
+
+    /**
+     * Compétences autorisées — liste fermée plutôt que texte libre : un
+     * profil freelance sans CV doit être fiable, pas rempli avec n'importe
+     * quoi. Mêmes libellés que le formulaire d'inscription public (cf.
+     * SPECIALTY_KEYS dans FreelanceForm.tsx) — ne pas les faire diverger.
+     */
+    private const ALLOWED_SPECIALTIES = ['Backend', 'Frontend', 'Mobile', 'IA / Data', 'Cybersécurité', 'Design'];
+
+    /** Langues autorisées — même principe de liste fermée que les compétences. */
+    private const ALLOWED_LANGUAGES = ['Français', 'Anglais', 'Espagnol', 'Portugais'];
 
     /**
      * Actions d'historique visibles par un client (par opposition à un membre
@@ -97,27 +120,145 @@ final class MeController extends AbstractController
             return $this->json(['detail' => 'Corps de requête JSON invalide.'], Response::HTTP_BAD_REQUEST);
         }
 
+        // On ne fait pas confiance à ce qui arrive du client : chaque champ
+        // éditable en self-service est validé ici (longueur, format) avant
+        // d'être appliqué à l'entité — même principe que la validation du
+        // mot de passe plus bas, qui existait déjà seule sur cet endpoint.
         if (\array_key_exists('fullName', $payload)) {
-            $user->setFullName($this->nullableString($payload['fullName']));
+            if ($gate = $this->rejectIfLocked($user->getFullName(), 'Le nom complet')) {
+                return $gate;
+            }
+            $fullName = $this->nullableString($payload['fullName']);
+            if ($violation = $this->firstViolation($fullName, [
+                new Assert\Length(max: 255, maxMessage: 'Le nom complet ne peut pas dépasser {{ limit }} caractères.'),
+            ])) {
+                return $this->json(['detail' => $violation], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $user->setFullName($fullName);
         }
         // `phone` est volontairement ignoré ici : absent de EDITABLE_FIELDS,
         // non modifiable en self-service.
         if (\array_key_exists('bio', $payload)) {
-            $user->setBio($this->nullableString($payload['bio']));
+            if ($gate = $this->rejectIfLocked($user->getBio(), 'La présentation')) {
+                return $gate;
+            }
+            $bio = $this->nullableString($payload['bio']);
+            if ($violation = $this->firstViolation($bio, [
+                new Assert\Length(max: 2000, maxMessage: 'La présentation ne peut pas dépasser {{ limit }} caractères.'),
+            ])) {
+                return $this->json(['detail' => $violation], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $user->setBio($bio);
         }
         if (\array_key_exists('availability', $payload)) {
-            $user->setAvailability($this->nullableString($payload['availability']));
+            if ($gate = $this->rejectIfLocked($user->getAvailability(), 'La disponibilité')) {
+                return $gate;
+            }
+            $availability = $this->nullableString($payload['availability']);
+            if ($violation = $this->firstViolation($availability, [
+                // Aligné sur la longueur de colonne (User::$availability, length: 100).
+                new Assert\Length(max: 100, maxMessage: 'La disponibilité ne peut pas dépasser {{ limit }} caractères.'),
+            ])) {
+                return $this->json(['detail' => $violation], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $user->setAvailability($availability);
         }
         if (\array_key_exists('portfolioUrl', $payload)) {
-            $user->setPortfolioUrl($this->nullableString($payload['portfolioUrl']));
+            if ($gate = $this->rejectIfLocked($user->getPortfolioUrl(), 'Le lien portfolio')) {
+                return $gate;
+            }
+            $portfolioUrl = $this->nullableString($payload['portfolioUrl']);
+            if ($violation = $this->firstViolation($portfolioUrl, [
+                new Assert\Length(max: 255, maxMessage: 'Le lien portfolio ne peut pas dépasser {{ limit }} caractères.'),
+                new Assert\Url(message: 'Le lien portfolio doit être une URL valide.'),
+            ])) {
+                return $this->json(['detail' => $violation], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $user->setPortfolioUrl($portfolioUrl);
         }
         if (\array_key_exists('specialties', $payload)) {
-            $specialties = $payload['specialties'];
-            $user->setSpecialties(
-                \is_array($specialties)
-                    ? array_values(array_filter(array_map('trim', array_map('strval', $specialties))))
-                    : null,
-            );
+            if ($gate = $this->rejectIfLocked($user->getSpecialties(), 'Les compétences')) {
+                return $gate;
+            }
+            $raw = $payload['specialties'];
+            if (!\is_array($raw)) {
+                return $this->json(['detail' => 'Les compétences doivent être une liste.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $specialties = array_values(array_unique(array_map('strval', $raw)));
+            // Liste fermée (cf. ALLOWED_SPECIALTIES) : on ne fait pas confiance
+            // à un texte libre pour un profil censé remplacer un CV.
+            $invalid = array_diff($specialties, self::ALLOWED_SPECIALTIES);
+            if (\count($invalid) > 0) {
+                return $this->json(['detail' => 'Compétence(s) invalide(s) : '.implode(', ', $invalid).'.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $user->setSpecialties($specialties ?: null);
+        }
+        if (\array_key_exists('yearsOfExperience', $payload)) {
+            if ($gate = $this->rejectIfLocked($user->getYearsOfExperience(), 'Le nombre d\'années d\'expérience')) {
+                return $gate;
+            }
+            $years = $payload['yearsOfExperience'];
+            if (null !== $years && !is_numeric($years)) {
+                return $this->json(['detail' => 'Le nombre d\'années d\'expérience doit être un nombre.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $years = null !== $years ? (int) $years : null;
+            if (null !== $years && ($years < 0 || $years > 60)) {
+                return $this->json(['detail' => 'Le nombre d\'années d\'expérience doit être compris entre 0 et 60.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $user->setYearsOfExperience($years);
+        }
+        if (\array_key_exists('city', $payload)) {
+            if ($gate = $this->rejectIfLocked($user->getCity(), 'La ville')) {
+                return $gate;
+            }
+            $city = $this->nullableString($payload['city']);
+            if ($violation = $this->firstViolation($city, [
+                new Assert\Length(max: 100, maxMessage: 'La ville ne peut pas dépasser {{ limit }} caractères.'),
+            ])) {
+                return $this->json(['detail' => $violation], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $user->setCity($city);
+        }
+        if (\array_key_exists('linkedinUrl', $payload)) {
+            if ($gate = $this->rejectIfLocked($user->getLinkedinUrl(), 'Le lien LinkedIn')) {
+                return $gate;
+            }
+            $linkedinUrl = $this->nullableString($payload['linkedinUrl']);
+            if ($violation = $this->firstViolation($linkedinUrl, [
+                new Assert\Length(max: 255, maxMessage: 'Le lien LinkedIn ne peut pas dépasser {{ limit }} caractères.'),
+                new Assert\Url(message: 'Le lien LinkedIn doit être une URL valide.'),
+            ])) {
+                return $this->json(['detail' => $violation], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $user->setLinkedinUrl($linkedinUrl);
+        }
+        if (\array_key_exists('githubUrl', $payload)) {
+            if ($gate = $this->rejectIfLocked($user->getGithubUrl(), 'Le lien GitHub')) {
+                return $gate;
+            }
+            $githubUrl = $this->nullableString($payload['githubUrl']);
+            if ($violation = $this->firstViolation($githubUrl, [
+                new Assert\Length(max: 255, maxMessage: 'Le lien GitHub ne peut pas dépasser {{ limit }} caractères.'),
+                new Assert\Url(message: 'Le lien GitHub doit être une URL valide.'),
+            ])) {
+                return $this->json(['detail' => $violation], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $user->setGithubUrl($githubUrl);
+        }
+        if (\array_key_exists('languages', $payload)) {
+            if ($gate = $this->rejectIfLocked($user->getLanguages(), 'Les langues parlées')) {
+                return $gate;
+            }
+            $raw = $payload['languages'];
+            if (!\is_array($raw)) {
+                return $this->json(['detail' => 'Les langues doivent être une liste.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $languages = array_values(array_unique(array_map('strval', $raw)));
+            $invalid = array_diff($languages, self::ALLOWED_LANGUAGES);
+            if (\count($invalid) > 0) {
+                return $this->json(['detail' => 'Langue(s) invalide(s) : '.implode(', ', $invalid).'.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $user->setLanguages($languages ?: null);
         }
 
         // Mot de passe : la contrainte de robustesse est portée par les formulaires ;
@@ -215,7 +356,7 @@ final class MeController extends AbstractController
      * qui ne s'est jamais connecté qu'au frontend Next.js).
      */
     #[Route('/resend-verification', name: 'resend_verification', methods: ['POST'])]
-    public function resendVerification(JWTService $jwt, EmailManager $emailManager): JsonResponse
+    public function resendVerification(JWTService $jwt, EmailManager $emailManager, PublicSubmissionThrottler $throttler): JsonResponse
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -224,6 +365,16 @@ final class MeController extends AbstractController
 
         if ($user->isVerified()) {
             return $this->json(['detail' => 'Votre compte est déjà activé.'], Response::HTTP_CONFLICT);
+        }
+
+        // Contrairement à /api/resend-verification-email (anonyme), cet endpoint est
+        // authentifié — mais rien n'empêchait jusqu'ici un token intercepté (ou
+        // l'utilisateur lui-même) de déclencher un envoi en boucle. Même limiteur
+        // IP que les formulaires publics (cf. audit de sécurité).
+        try {
+            $throttler->assertFormSubmissionAllowed();
+        } catch (TooManyRequestsException $e) {
+            return $this->json(['detail' => $e->getMessage()], Response::HTTP_TOO_MANY_REQUESTS);
         }
 
         $token = $jwt->generateEmailVerificationToken($user->getId());
@@ -376,6 +527,10 @@ final class MeController extends AbstractController
             return $this->json(['detail' => 'Projet introuvable.'], Response::HTTP_NOT_FOUND);
         }
 
+        if ($gate = $this->denyIfFreelanceProfileIncomplete($user)) {
+            return $gate;
+        }
+
         $payload = json_decode($request->getContent(), true);
         $content = \is_array($payload) ? $this->nullableString($payload['content'] ?? null) : null;
         if (null === $content) {
@@ -396,6 +551,233 @@ final class MeController extends AbstractController
         $projectNotifier->commentPosted($comment);
 
         return $this->json($this->serializeComment($comment, $project, $user), Response::HTTP_CREATED);
+    }
+
+    /**
+     * Équipe d'un projet — réservé aux membres de l'équipe (owner +
+     * collaborateurs), jamais au client, contrairement à readProject() /
+     * readComments(). C'est l'espace de travail freelance, pas la vitrine.
+     */
+    #[Route('/projects/{id}/team', name: 'project_team_read', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function readTeam(int $id, ProjectRepository $projectRepository): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $project = $projectRepository->find($id);
+        if (!$project instanceof Project || !$project->isTeamMember($user)) {
+            return $this->json(['detail' => 'Projet introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        return $this->json([
+            'owner' => $this->serializeTeamMember($project->getOwner()),
+            'collaborators' => array_map($this->serializeTeamMember(...), $project->getCollaborators()->toArray()),
+        ]);
+    }
+
+    /**
+     * Tâches d'un projet — visibles par toute l'équipe (pour situer son
+     * propre travail dans l'ensemble), modifiables en self-service
+     * uniquement via updateTaskStatus() ci-dessous, et seulement les
+     * siennes.
+     */
+    #[Route('/projects/{id}/tasks', name: 'project_tasks_read', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function readTasks(int $id, ProjectRepository $projectRepository): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $project = $projectRepository->find($id);
+        if (!$project instanceof Project || !$project->isTeamMember($user)) {
+            return $this->json(['detail' => 'Projet introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $tasks = $project->getTasks()->toArray();
+        usort($tasks, static fn (ProjectTask $a, ProjectTask $b) => $a->getPosition() <=> $b->getPosition());
+
+        return $this->json([
+            'tasks' => array_map(fn (ProjectTask $task) => $this->serializeTask($task, $user), $tasks),
+        ]);
+    }
+
+    /**
+     * Changement de statut d'une tâche par le collaborateur lui-même —
+     * volontairement self-service uniquement (une tâche qui n'est pas la
+     * sienne reste en lecture seule ici) ; la gestion des tâches des autres
+     * reste au back-office via ProjectVoter::MANAGE_TASK.
+     */
+    #[Route('/projects/{id}/tasks/{taskId}/status', name: 'project_task_status_update', methods: ['POST'], requirements: ['id' => '\d+', 'taskId' => '\d+'])]
+    public function updateTaskStatus(
+        int $id,
+        int $taskId,
+        Request $request,
+        ProjectRepository $projectRepository,
+        ProjectTaskRepository $taskRepository,
+        EntityManagerInterface $entityManager,
+        ProjectNotifier $projectNotifier,
+    ): JsonResponse {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $project = $projectRepository->find($id);
+        if (!$project instanceof Project || !$project->isTeamMember($user)) {
+            return $this->json(['detail' => 'Projet introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($gate = $this->denyIfFreelanceProfileIncomplete($user)) {
+            return $gate;
+        }
+
+        $task = $taskRepository->find($taskId);
+        if (!$task instanceof ProjectTask || $task->getProject() !== $project) {
+            return $this->json(['detail' => 'Tâche introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($task->getAssignee()?->getId() !== $user->getId()) {
+            return $this->json(['detail' => 'Cette tâche ne vous est pas assignée.'], Response::HTTP_FORBIDDEN);
+        }
+
+        if (\in_array($project->getStatus(), [ProjectStatusEnum::COMPLETED, ProjectStatusEnum::SUSPENDED], true)) {
+            return $this->json(['detail' => 'Ce projet n\'est plus actif.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        $statusValue = \is_array($payload) ? $this->nullableString($payload['status'] ?? null) : null;
+
+        try {
+            $newStatus = null !== $statusValue ? TaskStatusEnum::from($statusValue) : throw new \ValueError();
+        } catch (\ValueError) {
+            return $this->json(['detail' => 'Statut de tâche invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $task->setStatus($newStatus);
+        $project->recalculateProgress();
+        $project->addToHistory(
+            $newStatus->isDone() ? 'task_completed' : 'task_updated',
+            $user,
+            sprintf('Tâche « %s » → %s', $task->getTitle(), $newStatus->getLabel()),
+        );
+        $entityManager->flush();
+        $projectNotifier->taskStatusChangedByAssignee($task);
+
+        return $this->json($this->serializeTask($task, $user));
+    }
+
+    /**
+     * Temps passé sur un projet — visible par toute l'équipe (transparence
+     * "qui fait quoi"), pas seulement ses propres saisies.
+     */
+    #[Route('/projects/{id}/time-entries', name: 'project_time_entries_read', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function readTimeEntries(int $id, ProjectRepository $projectRepository): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $project = $projectRepository->find($id);
+        if (!$project instanceof Project || !$project->isTeamMember($user)) {
+            return $this->json(['detail' => 'Projet introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $entries = $project->getTimeEntries()->toArray();
+        usort($entries, static fn (TimeEntry $a, TimeEntry $b) => $b->getSpentOn() <=> $a->getSpentOn());
+
+        $mineMinutes = array_sum(array_map(
+            static fn (TimeEntry $entry) => $entry->getUser() === $user ? $entry->getMinutes() : 0,
+            $entries,
+        ));
+
+        return $this->json([
+            'entries' => array_map(fn (TimeEntry $entry) => $this->serializeTimeEntry($entry, $user), $entries),
+            'totalMinutes' => $project->getTotalMinutes(),
+            'formattedTotalTime' => $project->getFormattedTotalTime(),
+            'mineMinutes' => $mineMinutes,
+            'mineFormattedTime' => $this->formatMinutes($mineMinutes),
+        ]);
+    }
+
+    /**
+     * Saisie de temps par le collaborateur lui-même — réutilise
+     * ProjectVoter::LOG_TIME (même règle que le formulaire legacy
+     * MemberProjectController::addTimeEntry : projet actif + membre de
+     * l'équipe), source unique de vérité plutôt que de redupliquer la
+     * condition ici.
+     */
+    #[Route('/projects/{id}/time-entries', name: 'project_time_entries_create', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function createTimeEntry(
+        int $id,
+        Request $request,
+        ProjectRepository $projectRepository,
+        EntityManagerInterface $entityManager,
+    ): JsonResponse {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $project = $projectRepository->find($id);
+        if (!$project instanceof Project || !$project->isTeamMember($user)) {
+            return $this->json(['detail' => 'Projet introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($gate = $this->denyIfFreelanceProfileIncomplete($user)) {
+            return $gate;
+        }
+
+        if (!$this->isGranted(ProjectVoter::LOG_TIME, $project)) {
+            return $this->json(['detail' => 'Vous ne pouvez pas saisir de temps sur ce projet.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        $payload = \is_array($payload) ? $payload : [];
+
+        $minutes = (int) ($payload['minutes'] ?? 0);
+        if ($minutes <= 0) {
+            return $this->json(['detail' => 'La durée doit être positive.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $task = null;
+        if (isset($payload['taskId'])) {
+            $task = $project->getTasks()->filter(
+                static fn (ProjectTask $t) => $t->getId() === (int) $payload['taskId'],
+            )->first() ?: null;
+            if (!$task) {
+                return $this->json(['detail' => 'Tâche introuvable pour ce projet.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+        }
+
+        $entry = new TimeEntry();
+        $entry->setUser($user)->setDescription($this->nullableString($payload['description'] ?? null));
+        if ($task instanceof ProjectTask) {
+            $entry->setTask($task);
+        }
+
+        $spentOn = $this->nullableString($payload['spentOn'] ?? null);
+        if (null !== $spentOn) {
+            $parsed = \DateTimeImmutable::createFromFormat('Y-m-d', $spentOn);
+            if (false === $parsed) {
+                return $this->json(['detail' => 'Date invalide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+            $entry->setSpentOn($parsed);
+        }
+
+        // setMinutes() après setSpentOn() : l'ordre n'a pas d'importance ici,
+        // mais on le fait après la validation de la date pour ne rien
+        // persister si le payload est invalide.
+        $entry->setMinutes($minutes);
+
+        $project->addTimeEntry($entry);
+        $entityManager->persist($entry);
+        $entityManager->flush();
+
+        return $this->json($this->serializeTimeEntry($entry, $user), Response::HTTP_CREATED);
     }
 
     /**
@@ -547,6 +929,73 @@ final class MeController extends AbstractController
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    private function serializeTeamMember(User $member): array
+    {
+        return [
+            'id' => $member->getId(),
+            'fullName' => $member->getFullName(),
+            'email' => $member->getEmail(),
+            'profileImage' => $member->getProfileImage(),
+            'specialties' => $member->getSpecialties(),
+            'availability' => $member->getAvailability(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeTask(ProjectTask $task, User $viewer): array
+    {
+        $assignee = $task->getAssignee();
+        $dueDate = $task->getDueDate();
+
+        return [
+            'id' => $task->getId(),
+            'title' => $task->getTitle(),
+            'description' => $task->getDescription(),
+            'status' => $task->getStatus()->value,
+            'statusLabel' => $task->getStatus()->getLabel(),
+            'statusVariant' => $task->getStatus()->getVariant(),
+            'dueDate' => $dueDate?->format(\DateTimeInterface::ATOM),
+            'isOverdue' => null !== $dueDate && !$task->getStatus()->isDone() && $dueDate < new \DateTimeImmutable('today'),
+            'position' => $task->getPosition(),
+            'completedAt' => $task->getCompletedAt()?->format(\DateTimeInterface::ATOM),
+            'assignee' => $assignee instanceof User ? ['id' => $assignee->getId(), 'fullName' => $assignee->getFullName()] : null,
+            'isMine' => $assignee?->getId() === $viewer->getId(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeTimeEntry(TimeEntry $entry, User $viewer): array
+    {
+        $task = $entry->getTask();
+        $entryUser = $entry->getUser();
+
+        return [
+            'id' => $entry->getId(),
+            'user' => ['id' => $entryUser->getId(), 'fullName' => $entryUser->getFullName()],
+            'task' => $task instanceof ProjectTask ? ['id' => $task->getId(), 'title' => $task->getTitle()] : null,
+            'minutes' => $entry->getMinutes(),
+            'formattedDuration' => $entry->getFormattedDuration(),
+            'spentOn' => $entry->getSpentOn()->format(\DateTimeInterface::ATOM),
+            'description' => $entry->getDescription(),
+            'isMine' => $entryUser === $viewer,
+        ];
+    }
+
+    private function formatMinutes(int $minutes): string
+    {
+        $hours = intdiv($minutes, 60);
+        $rest = $minutes % 60;
+
+        return sprintf('%dh%02d', $hours, $rest);
+    }
+
+    /**
      * @param Project[] $clientProjects
      *
      * @return array<int, array<string, mixed>>
@@ -608,10 +1057,21 @@ final class MeController extends AbstractController
             'specialties' => $user->getSpecialties(),
             'availability' => $user->getAvailability(),
             'portfolioUrl' => $user->getPortfolioUrl(),
+            'yearsOfExperience' => $user->getYearsOfExperience(),
+            'city' => $user->getCity(),
+            'linkedinUrl' => $user->getLinkedinUrl(),
+            'githubUrl' => $user->getGithubUrl(),
+            'languages' => $user->getLanguages(),
             'roles' => $roles,
             'isVerified' => $user->isVerified(),
             'isTwoFactorEnabled' => $user->isTwoFactorEnabled(),
             'isCollaborator' => $isCollaborator,
+            // Calculés pour tout le monde (inoffensif pour un client) — le
+            // frontend ne les affiche que si isCollaborator. Voir
+            // User::getFreelanceProfileCompletionPercentage() /
+            // getMissingFreelanceProfileFields().
+            'profileCompletion' => $user->getFreelanceProfileCompletionPercentage(),
+            'missingProfileFields' => $user->getMissingFreelanceProfileFields(),
             // Peut être `null` pour les comptes créés avant l'ajout de ce champ.
             'createdAt' => $user->getCreatedAt()?->format(\DateTimeInterface::ATOM),
             'lastLoginAt' => $user->getLastLoginAt()?->format(\DateTimeInterface::ATOM),
@@ -784,5 +1244,70 @@ final class MeController extends AbstractController
         $value = trim((string) $value);
 
         return '' === $value ? null : $value;
+    }
+
+    /**
+     * @param Assert\Length|Assert\Url ...$constraints
+     */
+    private function firstViolation(?string $value, array $constraints): ?string
+    {
+        if (null === $value) {
+            return null;
+        }
+
+        $violations = $this->validator->validate($value, $constraints);
+
+        return \count($violations) > 0 ? $violations[0]->getMessage() : null;
+    }
+
+    /** Un champ est considéré "renseigné" — 0 compte (années d'expérience), une chaîne vide ou un tableau vide non. */
+    private function isFilled(mixed $value): bool
+    {
+        if (\is_array($value)) {
+            return \count($value) > 0;
+        }
+        if (\is_int($value)) {
+            return true;
+        }
+
+        return null !== $value && '' !== $value;
+    }
+
+    /**
+     * Un champ de profil déjà renseigné ("validé") ne peut plus être modifié
+     * en self-service — même principe que `phone`, étendu à tous les champs
+     * éditables : on ne fait pas confiance à une donnée qui change en boucle,
+     * une information une fois soumise doit être stable (toute correction
+     * légitime passe par nous, hors self-service).
+     */
+    private function rejectIfLocked(mixed $currentValue, string $label): ?JsonResponse
+    {
+        if (!$this->isFilled($currentValue)) {
+            return null;
+        }
+
+        return $this->json([
+            'detail' => sprintf('%s est déjà validé(e) et ne peut plus être modifié(e) depuis votre espace. Contactez-nous si cette information a changé.', $label),
+            'code' => 'field_locked',
+        ], Response::HTTP_FORBIDDEN);
+    }
+
+    /**
+     * Bloque toute écriture d'un collaborateur (ROLE_EDITOR) au profil
+     * freelance incomplet — jamais un client, jamais un admin sans
+     * ROLE_EDITOR. Voir User::isFreelanceProfileComplete().
+     */
+    private function denyIfFreelanceProfileIncomplete(User $user): ?JsonResponse
+    {
+        if (!\in_array('ROLE_EDITOR', $user->getRoles(), true) || $user->isFreelanceProfileComplete()) {
+            return null;
+        }
+
+        return $this->json([
+            'detail' => 'Complétez votre profil freelance à 100 % pour pouvoir participer à ce projet.',
+            'code' => 'freelance_profile_incomplete',
+            'profileCompletion' => $user->getFreelanceProfileCompletionPercentage(),
+            'missingProfileFields' => $user->getMissingFreelanceProfileFields(),
+        ], Response::HTTP_FORBIDDEN);
     }
 }

@@ -77,6 +77,10 @@ final class MemberProjectController extends AbstractController
         $user = $this->getUser();
         \assert($user instanceof User);
 
+        if ($gate = $this->denyIfFreelanceProfileIncomplete($user, $project->getId())) {
+            return $gate;
+        }
+
         if (!$this->isCsrfTokenValid('member_time_entry_add_'.$project->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
 
@@ -120,6 +124,10 @@ final class MemberProjectController extends AbstractController
         $user = $this->getUser();
         \assert($user instanceof User);
 
+        if ($gate = $this->denyIfFreelanceProfileIncomplete($user, $project->getId())) {
+            return $gate;
+        }
+
         if (!$this->isCsrfTokenValid('member_comment_add_'.$project->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide.');
 
@@ -138,5 +146,26 @@ final class MemberProjectController extends AbstractController
         }
 
         return $this->redirectToRoute('member_project_read', ['id' => $project->getId()]);
+    }
+
+    /**
+     * Bloque toute écriture d'un collaborateur (ROLE_EDITOR) au profil
+     * freelance incomplet — même règle que App\Controller\Api\
+     * MeController::denyIfFreelanceProfileIncomplete(), dupliquée ici car
+     * cette interface web legacy contournait sinon totalement le garde-fou
+     * (cf. audit de sécurité) : un collaborateur peut se connecter sur
+     * /login avec le même compte que le frontend Next.js et atteindre ces
+     * routes sans jamais passer par /api/me. Jamais appliqué à un client
+     * (pas de ROLE_EDITOR).
+     */
+    private function denyIfFreelanceProfileIncomplete(User $user, int $projectId): ?Response
+    {
+        if (!\in_array('ROLE_EDITOR', $user->getRoles(), true) || $user->isFreelanceProfileComplete()) {
+            return null;
+        }
+
+        $this->addFlash('error', 'Complétez votre profil freelance à 100 % (rubrique Profil) pour pouvoir participer à ce projet.');
+
+        return $this->redirectToRoute('member_project_read', ['id' => $projectId]);
     }
 }

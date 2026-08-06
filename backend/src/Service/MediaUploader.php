@@ -71,7 +71,10 @@ class MediaUploader
         // Génération nom unique
         $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
         $safeFilename = $this->slugger->slug($originalFilename);
-        $hash = hash('sha256', $originalFilename . time());
+        // random_bytes() plutôt que time() : un hash résolu à la seconde est
+        // devinable (et source de collision sur deux uploads simultanés du
+        // même nom) — cf. audit de sécurité.
+        $hash = hash('sha256', $originalFilename . random_bytes(16));
         $newFilename = $safeFilename . '-' . substr($hash, 0, 12) . '.' . $file->guessExtension();
 
         // Répertoire cible
