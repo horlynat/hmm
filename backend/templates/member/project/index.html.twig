@@ -1,0 +1,55 @@
+{% extends 'member/base.html.twig' %}
+
+{% block title %}Mes projets{% endblock %}
+
+{% block body %}
+	<div class="mb-6">
+		<h1 class="text-2xl font-bold text-brand-dark">Tableau de bord</h1>
+		<p class="text-sm text-brand-dark/60">Vue d'ensemble de vos projets et demandes de devis.</p>
+	</div>
+
+	<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-progress" aria-hidden="true"></span></div>
+			<div><div class="stat-tile__value">{{ activeProjectsCount }}</div><div class="stat-tile__label">Projet{{ activeProjectsCount > 1 ? 's' : '' }} actif{{ activeProjectsCount > 1 ? 's' : '' }}</div></div>
+		</div>
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-circle-check" aria-hidden="true"></span></div>
+			<div><div class="stat-tile__value">{{ completedProjectsCount }}</div><div class="stat-tile__label">Projet{{ completedProjectsCount > 1 ? 's' : '' }} terminé{{ completedProjectsCount > 1 ? 's' : '' }}</div></div>
+		</div>
+		<a href="{{ path('member_quote_index') }}" class="stat-tile hover:shadow-md transition">
+			<div class="stat-tile__icon"><span class="ti ti-file-invoice" aria-hidden="true"></span></div>
+			<div><div class="stat-tile__value">{{ pendingQuotesCount }}</div><div class="stat-tile__label">Devis en attente</div></div>
+		</a>
+	</div>
+
+	{% if projects is empty %}
+		<div class="panel"><div class="panel-body text-center py-12">
+			<span class="ti ti-folder-off text-4xl block mb-3 opacity-40" aria-hidden="true"></span>
+			<p class="text-brand-dark/60 mb-0">Aucun projet ne vous est rattaché pour le moment.</p>
+		</div></div>
+	{% else %}
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+			{% for project in projects %}
+				<a href="{{ path('member_project_read', {id: project.id}) }}" class="panel hover:shadow-md transition block">
+					<div class="panel-body">
+						<div class="flex items-start justify-between gap-2 mb-2">
+							<h2 class="font-bold text-brand-dark">{{ project.title }}</h2>
+							<span class="badge {{ project.status.badgeClass|default('bg-gray-400 text-white') }} text-xs shrink-0">{{ project.status.label }}</span>
+						</div>
+						<div class="flex items-center justify-between text-sm mb-1">
+							<span class="text-brand-dark/60">Avancement</span>
+							<span class="font-bold text-brand-dark">{{ project.progress }}%</span>
+						</div>
+						<div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
+							<div class="h-2 rounded-full bg-(--brand-primary)" style="width: {{ project.progress }}%"></div>
+						</div>
+						{% if project.deadline %}
+							<div class="text-xs text-brand-dark/50 mt-2 flex items-center gap-1"><span class="ti ti-calendar-event" aria-hidden="true"></span> Échéance : {{ project.deadline|date('d/m/Y') }}</div>
+						{% endif %}
+					</div>
+				</a>
+			{% endfor %}
+		</div>
+	{% endif %}
+{% endblock %}

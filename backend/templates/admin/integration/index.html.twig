@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Intégrations externes{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Intégrations externes" subtitle="API, CRM, Slack, GitHub — les secrets sont chiffrés en base." icon="ti-plug">
+		<a href="{{ path('admin_integration_create') }}" class="btn btn-primary gap-2">
+			<span class="ti ti-plus" aria-hidden="true"></span>
+			<span>Ajouter une intégration</span>
+		</a>
+	</twig:PageHeader>
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Liste des intégrations externes</caption>
+			<thead>
+				<tr>
+					<th scope="col">Nom</th>
+					<th scope="col">Type</th>
+					<th scope="col" class="text-center">Statut</th>
+					<th scope="col" class="text-center">Dernier test</th>
+					<th scope="col" class="w-56 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for integration in integrations %}
+					<tr>
+						<td class="font-medium text-(--brand-dark)">{{ integration.name }}</td>
+						<td><twig:Badge variant="info" :icon="integration.type.icon">{{ integration.type.label }}</twig:Badge></td>
+						<td class="text-center">
+							{% if integration.active %}
+								<twig:Badge variant="success">Active</twig:Badge>
+							{% else %}
+								<twig:Badge variant="neutral">Inactive</twig:Badge>
+							{% endif %}
+						</td>
+						<td class="text-center text-xs">
+							{% if integration.lastTestedAt %}
+								<span class="{{ integration.lastTestSuccess ? 'text-success' : 'text-danger' }} font-bold">{{ integration.lastTestSuccess ? 'OK' : 'Échec' }}</span>
+								<span class="opacity-50 block">{{ integration.lastTestedAt|date('d/m/Y H:i') }}</span>
+							{% else %}
+								<span class="opacity-40">Jamais testé</span>
+							{% endif %}
+						</td>
+						<td>
+							<div class="flex items-center justify-end gap-1">
+								{% if integration.type.usesWebhook and integration.webhookUrl %}
+									<form method="post" action="{{ path('admin_integration_test', {'id': integration.id}) }}">
+										<input type="hidden" name="_token" value="{{ csrf_token('admin_integration_test_' ~ integration.id) }}">
+										<button type="submit" class="btn btn-ghost btn-icon" aria-label="Tester la connexion de {{ integration.name }}">
+											<span class="ti ti-wifi text-lg" aria-hidden="true"></span>
+										</button>
+									</form>
+								{% endif %}
+								<a href="{{ path('admin_integration_update', {'id': integration.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ integration.name }}">
+									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
+								</a>
+								<twig:DeleteModal :id="integration.id" :action="path('admin_integration_delete', {id: integration.id})" :token="csrf_token('admin_integration_delete_' ~ integration.id)" :label="integration.name" entity="cette intégration" />
+							</div>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="5"><twig:EmptyState text="Aucune intégration configurée." icon="ti-plug-off" /></td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock %}

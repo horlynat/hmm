@@ -1,0 +1,77 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des clients{% endblock %}
+
+{% block body %}
+	{% set sub = total ~ ' compte' ~ (total > 1 ? 's' : '') ~ ' client' ~ (total > 1 ? 's' : '') ~ '.' %}
+	<twig:PageHeader title="Clients" :subtitle="sub" icon="ti-users">
+		<a href="{{ path('admin_users_create') }}" class="btn btn-primary gap-2">
+			<span class="ti ti-user-plus" aria-hidden="true"></span>
+			<span>Ajouter un client</span>
+		</a>
+	</twig:PageHeader>
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Liste des comptes clients</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="w-16">Id</th>
+					<th scope="col">Compte</th>
+					<th scope="col">Statut</th>
+					<th scope="col">Inscrit le</th>
+					<th scope="col" class="w-40 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for user in users %}
+					<tr>
+						<td class="font-mono text-xs opacity-50">{{ user.id }}</td>
+						<td>
+							<div class="flex items-center gap-3">
+								<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style="background: var(--color-brand-primary)" aria-hidden="true">
+									{{ (user.fullName ?? user.email)|slice(0, 2)|upper }}
+								</span>
+								<div class="min-w-0">
+									<div class="font-bold text-(--brand-dark) truncate">{{ user.fullName ?? 'Non spécifié' }}</div>
+									<div class="text-xs opacity-60 truncate">{{ user.email }}</div>
+								</div>
+							</div>
+						</td>
+						<td>
+							{% if user.isActive %}
+								<twig:Badge variant="success" icon="ti-circle-check">Actif</twig:Badge>
+							{% else %}
+								<twig:Badge variant="danger" icon="ti-ban">Désactivé</twig:Badge>
+							{% endif %}
+						</td>
+						<td class="text-sm opacity-70 whitespace-nowrap">
+							{{ user.createdAt ? user.createdAt|date('d/m/Y') : '—' }}
+						</td>
+						<td>
+							<div class="flex items-center justify-end gap-1">
+								<a href="{{ path('admin_users_read', {'id': user.id}) }}" class="btn btn-ghost btn-icon" aria-label="Voir {{ user.fullName ?? user.email }}">
+									<span class="ti ti-eye text-lg" aria-hidden="true"></span>
+								</a>
+								<a href="{{ path('admin_users_update', {'id': user.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ user.fullName ?? user.email }}">
+									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
+								</a>
+								<twig:DeleteModal :id="user.id" :action="path('admin_users_delete', {id: user.id})" :token="csrf_token('delete' ~ user.id)" :label="user.fullName ?? user.email" entity="ce client" />
+							</div>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="5"><twig:EmptyState text="Aucun client trouvé." icon="ti-users" /></td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	{% if totalPages > 1 %}
+		<div class="flex justify-center mt-6">
+			<twig:Pagination :currentPage="currentPage" :totalPages="totalPages" route="admin_users_index" />
+		</div>
+	{% endif %}
+{% endblock %}

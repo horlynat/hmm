@@ -1,0 +1,12 @@
+{% extends '@Twig/Exception/_layout.html.twig' %}
+
+{#
+	Fallback générique pour tout code HTTP sans template dédié (ex : 400, 405,
+	409, 429...). status_code est fourni par TwigErrorRenderer.
+#}
+
+{% block page_title %}Erreur {{ status_code|default('') }}{% endblock %}
+{% block code_color %}text-gray-700{% endblock %}
+{% block code %}{{ status_code|default('?') }}{% endblock %}
+{% block title %}Une erreur est survenue{% endblock %}
+{% block message %}Merci de réessayer plus tard.{% endblock %}

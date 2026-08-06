@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Contenu — Page d'accueil{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Page d'accueil" subtitle="Hero, teaser à propos, pitch freelance et appel à l'action — bilingue FR/EN." icon="ti-home" />
+
+	{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Hero</h2></div>
+		<div class="panel-body space-y-4">
+			<twig:FieldPair :fr="form.heroEyebrow" :en="form.heroEyebrowEn" />
+			<twig:FieldPair :fr="form.heroTitle" :en="form.heroTitleEn" />
+			<twig:FieldPair :fr="form.heroTitleAccent" :en="form.heroTitleAccentEn" />
+			<twig:FieldPair :fr="form.heroSub" :en="form.heroSubEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.heroRoles" :en="form.heroRolesEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.founderBadge" :en="form.founderBadgeEn" />
+			<twig:FieldPair :fr="form.diagramCaption" :en="form.diagramCaptionEn" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Teaser "à propos"</h2></div>
+		<div class="panel-body space-y-4">
+			<twig:FieldPair :fr="form.aboutTitle" :en="form.aboutTitleEn" />
+			<twig:FieldPair :fr="form.aboutP1" :en="form.aboutP1En" :isTextarea="true" />
+			<twig:FieldPair :fr="form.aboutP2" :en="form.aboutP2En" :isTextarea="true" />
+			<twig:FieldPair :fr="form.aboutHighlightTitle" :en="form.aboutHighlightTitleEn" />
+			<twig:FieldPair :fr="form.aboutHighlightDesc" :en="form.aboutHighlightDescEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.aboutVisionText" :en="form.aboutVisionTextEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.aboutMissionText" :en="form.aboutMissionTextEn" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Pitch freelance</h2></div>
+		<div class="panel-body space-y-4">
+			<twig:FieldPair :fr="form.freelanceTitle" :en="form.freelanceTitleEn" />
+			<twig:FieldPair :fr="form.freelanceLede" :en="form.freelanceLedeEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.freelancePoint1" :en="form.freelancePoint1En" />
+			<twig:FieldPair :fr="form.freelancePoint2" :en="form.freelancePoint2En" />
+			<twig:FieldPair :fr="form.freelancePoint3" :en="form.freelancePoint3En" />
+			<twig:FieldPair :fr="form.freelanceCardDesc" :en="form.freelanceCardDescEn" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Appel à l'action final</h2></div>
+		<div class="panel-body space-y-4">
+			<twig:FieldPair :fr="form.contactCtaTitle" :en="form.contactCtaTitleEn" />
+			<twig:FieldPair :fr="form.contactCtaSub" :en="form.contactCtaSubEn" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-body flex items-center justify-between gap-4">
+			{% if content.updatedAt %}
+				<p class="text-xs opacity-60">
+					Dernière mise à jour le {{ content.updatedAt|date('d/m/Y à H:i') }}
+					{% if content.updatedBy %}par {{ content.updatedBy.fullName ?? content.updatedBy.email }}{% endif %}
+				</p>
+			{% else %}
+				<span></span>
+			{% endif %}
+			<button type="submit" class="btn btn-primary gap-2">
+				<span class="ti ti-device-floppy" aria-hidden="true"></span>
+				<span>Enregistrer</span>
+			</button>
+		</div>
+	</div>
+
+	{{ form_end(form) }}
+{% endblock %}

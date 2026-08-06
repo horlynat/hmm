@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Audit & Monitoring{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Audit & Monitoring" subtitle="Qui a fait quoi, quand — sur tout le back-office." icon="ti-eye" />
+
+	<form method="get" class="panel panel-body mb-4 flex flex-wrap items-end gap-3">
+		<div>
+			<label class="field-label" for="filter-action">Action</label>
+			<select id="filter-action" name="action" class="input input-select">
+				<option value="">Toutes</option>
+				{% for code, label in actionOptions %}<option value="{{ code }}" {{ code == actionFilter ? 'selected' }}>{{ label }}</option>{% endfor %}
+			</select>
+		</div>
+		<div>
+			<label class="field-label" for="filter-type">Type</label>
+			<select id="filter-type" name="type" class="input input-select">
+				<option value="">Tous</option>
+				{% for type in typeOptions %}<option value="{{ type }}" {{ type == typeFilter ? 'selected' }}>{{ type }}</option>{% endfor %}
+			</select>
+		</div>
+		<button type="submit" class="btn btn-primary gap-2"><span class="ti ti-filter" aria-hidden="true"></span> Filtrer</button>
+		{% if actionFilter or typeFilter %}
+			<a href="{{ path('admin_security_audit_index') }}" class="btn btn-secondary">Réinitialiser</a>
+		{% endif %}
+	</form>
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Journal d'audit</caption>
+			<thead>
+				<tr><th scope="col">Élément</th><th scope="col">Action</th><th scope="col">Par</th><th scope="col">Date</th></tr>
+			</thead>
+			<tbody>
+				{% for entry in entries %}
+					<tr>
+						<td class="font-medium text-(--brand-dark)">{{ entry.label }}</td>
+						<td><twig:Badge :variant="entry.source == 'project' ? 'info' : 'neutral'">{{ entry.actionLabel }}</twig:Badge></td>
+						<td class="text-sm opacity-70">{{ entry.user ? (entry.user.fullName ?? entry.user.email) : 'Système' }}</td>
+						<td class="text-sm opacity-70 whitespace-nowrap">{{ entry.date|date('d/m/Y H:i') }}</td>
+					</tr>
+				{% else %}
+					<tr><td colspan="4"><twig:EmptyState text="Aucune action enregistrée." icon="ti-eye-off" /></td></tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock %}

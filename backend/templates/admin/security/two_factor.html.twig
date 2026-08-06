@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Double Facteur (2FA){% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Double Facteur (2FA)" subtitle="Statut de la double authentification par compte. L'activation reste en libre-service ; seule la désactivation forcée se fait ici." icon="ti-shield-lock" />
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Statut 2FA par compte</caption>
+			<thead>
+				<tr><th scope="col">Compte</th><th scope="col">Rôles</th><th scope="col">2FA</th><th scope="col" class="w-40 text-right">Actions</th></tr>
+			</thead>
+			<tbody>
+				{% for user in users %}
+					<tr>
+						<td class="font-medium text-(--brand-dark)">{{ user.fullName ?? user.email }}</td>
+						<td class="text-sm opacity-70">{{ user.roles|join(', ') }}</td>
+						<td>
+							{% if user.isTotpAuthenticationEnabled %}
+								<twig:Badge variant="success" icon="ti-shield-check">Activée</twig:Badge>
+							{% else %}
+								<twig:Badge variant="neutral">Désactivée</twig:Badge>
+							{% endif %}
+						</td>
+						<td class="text-right">
+							{% if user.isTotpAuthenticationEnabled %}
+								<form method="post" action="{{ path('admin_security_two_factor_disable', {id: user.id}) }}" onsubmit="return confirm('Forcer la désactivation de la 2FA pour {{ user.email }} ?');">
+									<input type="hidden" name="_token" value="{{ csrf_token('admin_security_two_factor_disable_' ~ user.id) }}">
+									<button type="submit" class="btn btn-ghost btn-icon text-danger" aria-label="Forcer la désactivation de la 2FA pour {{ user.email }}">
+										<span class="ti ti-lock-open text-lg" aria-hidden="true"></span>
+									</button>
+								</form>
+							{% endif %}
+						</td>
+					</tr>
+				{% else %}
+					<tr><td colspan="4"><twig:EmptyState text="Aucun compte." icon="ti-shield-lock" /></td></tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock %}

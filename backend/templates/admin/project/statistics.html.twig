@@ -1,0 +1,192 @@
+{# templates/admin/project/statistics.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Statistiques Financières & Décisionnelles
+{% endblock %}
+
+{% block body %}
+	<div
+		class="container mx-auto px-4 py-8 space-y-8">
+
+		{# En-tête #}
+		<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+			<div>
+				<h1 class="text-3xl font-extrabold text-brand-dark tracking-tight mb-1">Analyses & Budgets</h1>
+				<p class="text-sm text-gray-500">Santé financière globale de votre portefeuille de projets.</p>
+			</div>
+			<a href="{{ path('admin_project_index') }}" class="btn-secondary text-sm">
+				Retour à la gestion des projets
+			</a>
+		</div>
+
+		{# =========================================================================
+				       1. CARTES DE KPI (Sécurisées via l'extraction de l'objet "stats")
+				       ========================================================================= #}
+		{% set totalBudget = stats.totalBudget|default(0) %}
+		{% set totalSpent = stats.totalSpent|default(0) %}
+		{% set remainingBudget = totalBudget - totalSpent %}
+		{% set globalRatio = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0 %}
+
+		<div
+			class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+			{# Budget Cumulé #}
+			<div class="soft-card p-6 bg-white border border-gray-100 rounded-xl shadow-sm">
+				<span class="text-xs font-bold text-gray-400 uppercase block mb-1">Enveloppe Globale</span>
+				<span class="text-2xl font-extrabold text-brand-dark">{{ totalBudget|number_format(2, ',', ' ') }}
+					€</span>
+				<div class="text-[10px] text-gray-400 mt-2">Somme des budgets alloués</div>
+			</div>
+
+			{# Dépenses Cumulées #}
+			<div class="soft-card p-6 bg-white border border-gray-100 rounded-xl shadow-sm">
+				<span class="text-xs font-bold text-gray-400 uppercase block mb-1">Dépenses Cumulées</span>
+				<span class="text-2xl font-extrabold text-brand-primary">{{ totalSpent|number_format(2, ',', ' ') }}
+					€</span>
+				<div class="text-[10px] text-gray-400 mt-2">Toutes dépenses confondues</div>
+			</div>
+
+			{# Solde Restant #}
+			<div class="soft-card p-6 bg-white border border-gray-100 rounded-xl shadow-sm">
+				<span class="text-xs font-bold text-gray-400 uppercase block mb-1">Trésorerie Restante</span>
+				<span class="text-2xl font-extrabold {% if remainingBudget < 0 %}text-danger{% else %}text-success{% endif %}">
+					{{ remainingBudget|number_format(2, ',', ' ') }}
+					€
+				</span>
+				<div class="text-[10px] text-gray-400 mt-2">Disponible pour exécution</div>
+			</div>
+
+			{# Taux de Consommation global #}
+			<div class="soft-card p-6 bg-white border border-gray-100 rounded-xl shadow-sm">
+				<span class="text-xs font-bold text-gray-400 uppercase block mb-1">Ratio d'engagement</span>
+				<span class="text-2xl font-extrabold text-brand-dark">{{ globalRatio|number_format(1) }}
+					%</span>
+
+				<div class="w-full bg-gray-100 h-1.5 rounded-full mt-3 overflow-hidden">
+					<div class="h-full bg-brand-primary rounded-full" style="width: {{ min(globalRatio, 100) }}%"></div>
+				</div>
+			</div>
+		</div>
+
+		{# =========================================================================
+				       2. SECTIONS ANALYTIQUES (Deux tables basées sur les données réelles du contrôleur)
+				       ========================================================================= #}
+		<div
+			class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+			{# A. PROJETS EN DÉPASSEMENT DE BUDGET (overBudgetProjects) #}
+			<div class="soft-card p-6 bg-white border border-gray-100 rounded-xl shadow-sm space-y-4">
+				<div class="flex items-center justify-between">
+					<div>
+						<h3 class="text-lg font-bold text-danger mb-1">Dépassements Budgétaires</h3>
+						<p class="text-xs text-gray-400">Projets dont les dépenses dépassent le budget alloué.</p>
+					</div>
+					<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-danger">
+						{{ overBudgetProjects|length }}
+					</span>
+				</div>
+
+				<div class="overflow-x-auto rounded-lg border border-gray-100">
+					<table class="table w-full text-left border-collapse mb-0">
+						<thead>
+							<tr class="bg-gray-50 border-b border-gray-100">
+								<th class="p-3 text-xs font-bold text-gray-500 uppercase">Projet</th>
+								<th class="p-3 text-xs font-bold text-gray-500 uppercase text-right">Budget</th>
+								<th class="p-3 text-xs font-bold text-gray-500 uppercase text-right">Dépensé</th>
+								<th class="p-3 text-xs font-bold text-gray-500 uppercase text-right">Dépassement</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-100">
+							{% for p in overBudgetProjects %}
+								{% set excess = p.spent - p.budget %}
+								<tr class="transition-colors hover:bg-gray-50/50">
+									<td class="p-3 font-bold text-brand-dark text-sm">
+										<a href="{{ path('admin_project_read', {id: p.id}) }}" class="hover:text-brand-primary transition-colors">
+											{{ p.title }}
+										</a>
+									</td>
+									<td class="p-3 text-right font-semibold text-sm text-gray-600">
+										{{ p.budget|number_format(2, ',', ' ') }}
+										€
+									</td>
+									<td class="p-3 text-right font-bold text-sm text-danger">
+										{{ p.spent|number_format(2, ',', ' ') }}
+										€
+									</td>
+									<td class="p-3 text-right font-bold text-sm text-danger bg-red-50/50">
+										+{{ excess|number_format(2, ',', ' ') }}
+										€
+									</td>
+								</tr>
+							{% else %}
+								<tr>
+									<td colspan="4" class="p-8 text-center text-sm text-gray-400">
+										🎉 Aucun projet en dépassement de budget.
+									</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			{# B. PROJETS À BUDGET CRITIQUE (lowBudgetProjects) #}
+			<div class="soft-card p-6 bg-white border border-gray-100 rounded-xl shadow-sm space-y-4">
+				<div class="flex items-center justify-between">
+					<div>
+						<h3 class="text-lg font-bold text-warning mb-1">Budgets Critiques</h3>
+						<p class="text-xs text-gray-400">Projets avec moins de 10% de marge financière restante.</p>
+					</div>
+					<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-warning">
+						{{ lowBudgetProjects|length }}
+					</span>
+				</div>
+
+				<div class="overflow-x-auto rounded-lg border border-gray-100">
+					<table class="table w-full text-left border-collapse mb-0">
+						<thead>
+							<tr class="bg-gray-50 border-b border-gray-100">
+								<th class="p-3 text-xs font-bold text-gray-500 uppercase">Projet</th>
+								<th class="p-3 text-xs font-bold text-gray-500 uppercase text-right">Budget</th>
+								<th class="p-3 text-xs font-bold text-gray-500 uppercase text-right">Dépensé</th>
+								<th class="p-3 text-xs font-bold text-gray-500 uppercase text-right">Disponible</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-100">
+							{% for p in lowBudgetProjects %}
+								{% set margin = p.budget - p.spent %}
+								<tr class="transition-colors hover:bg-gray-50/50">
+									<td class="p-3 font-bold text-brand-dark text-sm">
+										<a href="{{ path('admin_project_read', {id: p.id}) }}" class="hover:text-brand-primary transition-colors">
+											{{ p.title }}
+										</a>
+									</td>
+									<td class="p-3 text-right font-semibold text-sm text-gray-600">
+										{{ p.budget|number_format(2, ',', ' ') }}
+										€
+									</td>
+									<td class="p-3 text-right font-bold text-sm text-brand-dark">
+										{{ p.spent|number_format(2, ',', ' ') }}
+										€
+									</td>
+									<td class="p-3 text-right font-bold text-sm {% if margin < 0 %}text-danger{% else %}text-warning{% endif %}">
+										{{ margin|number_format(2, ',', ' ') }}
+										€
+									</td>
+								</tr>
+							{% else %}
+								<tr>
+									<td colspan="4" class="p-8 text-center text-sm text-gray-400">
+										✅ Aucun projet sous le seuil d'alerte des 10%.
+									</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+		</div>
+
+	</div>
+{% endblock %}

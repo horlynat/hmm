@@ -1,0 +1,109 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Contenu — Page "À propos"{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title='Page "À propos"' subtitle="Hero, profil, bio, vision, différenciateurs, à-côtés — bilingue FR/EN." icon="ti-user" />
+
+	{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Hero</h2></div>
+		<div class="panel-body space-y-4">
+			<twig:FieldPair :fr="form.heroEyebrow" :en="form.heroEyebrowEn" />
+			<twig:FieldPair :fr="form.heroTitle" :en="form.heroTitleEn" />
+			<twig:FieldPair :fr="form.heroTitleAccent" :en="form.heroTitleAccentEn" />
+			<twig:FieldPair :fr="form.heroSub" :en="form.heroSubEn" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Carte profil</h2></div>
+		<div class="panel-body space-y-4">
+			<div class="field">
+				{{ form_label(form.profileName, null, {'label_attr': {'class': 'field-label'}}) }}
+				{{ form_widget(form.profileName, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.profileName, {'attr': {'class': 'field-error'}}) }}
+			</div>
+			<twig:FieldPair :fr="form.profileRole" :en="form.profileRoleEn" />
+			<twig:FieldPair :fr="form.profileAvailability" :en="form.profileAvailabilityEn" />
+			<twig:FieldPair :fr="form.profileAlso" :en="form.profileAlsoEn" />
+			<twig:FieldPair :fr="form.profileLocation" :en="form.profileLocationEn" />
+			<twig:FieldPair :fr="form.profileWorkMode" :en="form.profileWorkModeEn" />
+			<twig:FieldPair :fr="form.profileLanguages" :en="form.profileLanguagesEn" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Bio</h2></div>
+		<div class="panel-body space-y-4">
+			<twig:FieldPair :fr="form.bioTitle" :en="form.bioTitleEn" />
+			<twig:FieldPair :fr="form.bioP1" :en="form.bioP1En" :isTextarea="true" />
+			<twig:FieldPair :fr="form.bioP2" :en="form.bioP2En" :isTextarea="true" />
+			<twig:FieldPair :fr="form.bioP3" :en="form.bioP3En" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Vision</h2></div>
+		<div class="panel-body space-y-4">
+			<twig:FieldPair :fr="form.visionTitle" :en="form.visionTitleEn" />
+			<twig:FieldPair :fr="form.visionLede" :en="form.visionLedeEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.visionTodayText" :en="form.visionTodayTextEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.visionTomorrowText" :en="form.visionTomorrowTextEn" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Pourquoi moi (4 différenciateurs)</h2></div>
+		<div class="panel-body space-y-4">
+			<hr class="border-gray-100">
+			<twig:FieldPair :fr="form.why1Title" :en="form.why1TitleEn" />
+			<twig:FieldPair :fr="form.why1Desc" :en="form.why1DescEn" :isTextarea="true" />
+			<hr class="border-gray-100">
+			<twig:FieldPair :fr="form.why2Title" :en="form.why2TitleEn" />
+			<twig:FieldPair :fr="form.why2Desc" :en="form.why2DescEn" :isTextarea="true" />
+			<hr class="border-gray-100">
+			<twig:FieldPair :fr="form.why3Title" :en="form.why3TitleEn" />
+			<twig:FieldPair :fr="form.why3Desc" :en="form.why3DescEn" :isTextarea="true" />
+			<hr class="border-gray-100">
+			<twig:FieldPair :fr="form.why4Title" :en="form.why4TitleEn" />
+			<twig:FieldPair :fr="form.why4Desc" :en="form.why4DescEn" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Au-delà du code</h2></div>
+		<div class="panel-body space-y-4">
+			<twig:FieldPair :fr="form.beyondLanguages" :en="form.beyondLanguagesEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.beyondInterests" :en="form.beyondInterestsEn" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Appel à l'action final</h2></div>
+		<div class="panel-body space-y-4">
+			<twig:FieldPair :fr="form.ctaTitle" :en="form.ctaTitleEn" />
+			<twig:FieldPair :fr="form.ctaSub" :en="form.ctaSubEn" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-body flex items-center justify-between gap-4">
+			{% if content.updatedAt %}
+				<p class="text-xs opacity-60">
+					Dernière mise à jour le {{ content.updatedAt|date('d/m/Y à H:i') }}
+					{% if content.updatedBy %}par {{ content.updatedBy.fullName ?? content.updatedBy.email }}{% endif %}
+				</p>
+			{% else %}
+				<span></span>
+			{% endif %}
+			<button type="submit" class="btn btn-primary gap-2">
+				<span class="ti ti-device-floppy" aria-hidden="true"></span>
+				<span>Enregistrer</span>
+			</button>
+		</div>
+	</div>
+
+	{{ form_end(form) }}
+{% endblock %}

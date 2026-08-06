@@ -1,0 +1,82 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Messages de contact{% endblock %}
+
+{% block body %}
+	<div class="page-header">
+		<div class="min-w-0">
+			<h1 class="page-title flex items-center gap-2">
+				<span class="ti ti-mail text-(--brand-primary)" aria-hidden="true"></span>
+				Messages de contact
+				{% if unreadCount > 0 %}<twig:Badge variant="info">{{ unreadCount }} nouveau{{ unreadCount > 1 ? 'x' : '' }}</twig:Badge>{% endif %}
+			</h1>
+			<p class="page-subtitle">Messages reçus via le formulaire de contact du site.</p>
+		</div>
+	</div>
+
+	<form method="get" role="search" class="panel panel-body mb-6 flex flex-col sm:flex-row gap-3 sm:items-end">
+		<div class="flex-1">
+			<label for="f-search" class="field-label">Recherche</label>
+			<input id="f-search" type="search" name="search" value="{{ filters.search }}" placeholder="Nom, email, sujet…" class="input w-full">
+		</div>
+		<div>
+			<label for="f-status" class="field-label">Statut</label>
+			<select id="f-status" name="status" class="input input-select">
+				<option value="">Tous</option>
+				{% for status in statuses %}
+					<option value="{{ status.value }}" {% if filters.status == status.value %}selected{% endif %}>{{ status.getLabel() }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<button type="submit" class="btn btn-primary gap-2"><span class="ti ti-filter" aria-hidden="true"></span> Filtrer</button>
+	</form>
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Messages de contact reçus</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="w-16">Id</th>
+					<th scope="col">Statut</th>
+					<th scope="col">Origine</th>
+					<th scope="col">Expéditeur</th>
+					<th scope="col">Sujet</th>
+					<th scope="col">Contact</th>
+					<th scope="col">Reçu le</th>
+					<th scope="col" class="w-24 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for message in messages %}
+					<tr class="{% if message.status.value == 'nouveau' %}font-semibold{% endif %}">
+						<td class="font-mono text-xs opacity-50">{{ message.id }}</td>
+						<td><span class="badge {{ message.status.getBadgeClass() }}">{{ message.status.getLabel() }}</span></td>
+						<td><twig:Badge variant="neutral">{{ message.source }}</twig:Badge></td>
+						<td>
+							<div>{{ message.name }}{% if message.company %} <span class="opacity-50">· {{ message.company }}</span>{% endif %}</div>
+							<div class="text-xs opacity-60">{{ message.email }}</div>
+						</td>
+						<td class="max-w-xs truncate">{{ message.subject }}</td>
+						<td class="text-sm opacity-70">
+							{% if message.channel %}<div>{{ message.channel }}</div>{% endif %}
+							{% if message.phone %}<div class="text-xs opacity-60">{{ message.phone }}</div>{% endif %}
+						</td>
+						<td class="text-sm opacity-70 whitespace-nowrap">{{ message.createdAt ? message.createdAt|date('d/m/Y H:i') : '—' }}</td>
+						<td>
+							<div class="flex items-center justify-end gap-1">
+								<a href="{{ path('admin_contact_read', {'id': message.id}) }}" class="btn btn-ghost btn-icon" aria-label="Voir le message de {{ message.name }}">
+									<span class="ti ti-eye text-lg" aria-hidden="true"></span>
+								</a>
+								<twig:DeleteModal :id="message.id" :action="path('admin_contact_delete', {id: message.id})" :token="csrf_token('admin_contact_delete_' ~ message.id)" :label="message.subject" entity="ce message" />
+							</div>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="8"><twig:EmptyState text="Aucun message pour le moment." icon="ti-mail-off" /></td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock %}

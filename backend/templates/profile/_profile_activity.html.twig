@@ -1,0 +1,65 @@
+{# templates/profile/_profile_activity.html.twig #}
+
+<div class="panel">
+	<div class="panel-header">
+		<h2 class="panel-title flex items-center gap-2">
+			<span class="ti ti-history" aria-hidden="true"></span>
+			Activité et connexions
+		</h2>
+	</div>
+	<div class="panel-body">
+		{% if user.lastLoginAt %}
+			<div class="stat-tile mb-4">
+				<div class="stat-tile__icon">
+					<span class="ti ti-login" aria-hidden="true"></span>
+				</div>
+				<div>
+					<p class="text-xs uppercase tracking-wider text-gray-400 mb-0.5">Dernière connexion</p>
+					<p class="text-sm font-medium text-(--brand-dark)">{{ user.lastLoginAt|date('d/m/Y à H:i') }}</p>
+				</div>
+			</div>
+		{% endif %}
+
+		{# GeolocationService::getLocationFromIp() renvoie un tableau brut
+		   (ville/pays/etc. de l'API ipapi.co), pas une chaîne — on en tire un
+		   libellé lisible ici, avec repli sur user.lastLocation si absent. #}
+		{% set locationLabel = (location is defined and location and location.city is defined and location.city)
+			? location.city ~ (location.country_name is defined and location.country_name ? ', ' ~ location.country_name : '')
+			: null %}
+
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+			<twig:profile:stat title="Adresse IP" :value="user.lastIp ?? 'N/A'" icon="device-desktop" />
+			<twig:profile:stat title="Localisation" :value="locationLabel ?? user.lastLocation ?? 'Inconnue'" icon="map-pin" />
+		</div>
+
+		<twig:profile:stat title="Dernier appareil" :value="user.lastDevice ?? 'Non enregistré'" icon="device-mobile" />
+
+		<div class="mt-6">
+			<p class="panel-title mb-3">Historique des connexions</p>
+			{% if user.loginHistory is defined and user.loginHistory|length > 0 %}
+				<div class="table-wrap">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Date</th>
+								<th>IP</th>
+								<th class="hidden md:table-cell">Localisation</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for login in user.loginHistory|slice(0, 5) %}
+								<tr>
+									<td class="whitespace-nowrap">{{ login.loginAt|date('d/m/Y à H:i') }}</td>
+									<td class="font-mono whitespace-nowrap">{{ login.ip }}</td>
+									<td class="hidden md:table-cell">{{ login.location ?? '—' }}</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			{% else %}
+				<twig:EmptyState text="Aucun historique de connexion disponible." icon="ti-history" />
+			{% endif %}
+		</div>
+	</div>
+</div>

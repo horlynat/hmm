@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Double authentification | Admin</title>
+
+		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+		{{ vite_entry_link_tags('login') }}
+		{{ vite_entry_script_tags('login') }}
+	</head>
+	<body class="h-screen bg-bg-default">
+
+		<div class="login-container">
+			<!-- Colonne gauche -->
+			<div class="flex items-center justify-center bg-linear-to-br from-blue-900 via-indigo-700 to-purple-600 relative overflow-hidden">
+				<div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.15),transparent_70%)] animate-pulse"></div>
+
+				<svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 128 128" class="w-full max-w-xl mx-auto drop-shadow-[0_0_25px_rgba(59,130,246,0.6)]">
+					<circle cx="64" cy="64" r="42" fill="none" stroke="#3b82f6" stroke-width="2" stroke-dasharray="6 5" opacity="0.5"/>
+					<rect x="40" y="50" width="48" height="50" rx="8" fill="#1e3a8a" stroke="#0f172a" stroke-width="2"/>
+					<path d="M48 50v-12a16 16 0 0 1 32 0v12" fill="none" stroke="#0f172a" stroke-width="3"/>
+					<text x="64" y="82" text-anchor="middle" font-size="22" fill="#fff" font-family="monospace">2FA</text>
+				</svg>
+			</div>
+
+			<!-- Colonne droite -->
+			<div class="flex items-center justify-center px-0 py-12 lg:px-8">
+				<div class="w-full max-w-md bg-white/80 backdrop-blur-xl shadow-2xl rounded-2xl p-10 border border-white/30">
+					<h1 class="text-center text-3xl font-extrabold tracking-tight text-blue-900 mb-2">
+						🔐 Vérification en deux étapes
+					</h1>
+					<p class="text-center text-sm text-gray-500 mb-8">Saisissez le code affiché par votre application d'authentification.</p>
+
+					{% if authenticationError %}
+						<div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg border border-red-300 text-sm">
+							{{ authenticationError|trans(authenticationErrorData, 'SchebTwoFactorBundle') }}
+						</div>
+					{% endif %}
+
+					<form action="{{ checkPathUrl ? checkPathUrl : path(checkPathRoute) }}" method="post" class="space-y-6">
+						<div class="relative">
+							<label for="_auth_code" class="label block">Code à 6 chiffres</label>
+							<input
+								id="_auth_code"
+								type="text"
+								name="{{ authCodeParameterName }}"
+								inputmode="numeric"
+								pattern="[0-9]*"
+								autocomplete="one-time-code"
+								autofocus
+								required
+								class="input input-primary w-full text-center text-lg tracking-[0.5em] font-mono"
+								placeholder="000000"
+							/>
+						</div>
+
+						{% if displayTrustedOption %}
+							<div class="flex items-center space-x-2">
+								<input type="checkbox" id="_trusted" name="{{ trustedParameterName }}" class="input-checkbox">
+								<label for="_trusted" class="label">Faire confiance à cet appareil</label>
+							</div>
+						{% endif %}
+
+						{% if isCsrfProtectionEnabled %}
+							<input type="hidden" name="{{ csrfParameterName }}" value="{{ csrf_token(csrfTokenId) }}">
+						{% endif %}
+
+						<button type="submit" class="btn btn-primary w-full">
+							🚀 Vérifier
+						</button>
+					</form>
+
+					<p class="mt-8 text-center text-sm text-gray-500">
+						<a href="{{ logoutPath }}" class="font-semibold text-blue-900 hover:underline">Annuler et se déconnecter</a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

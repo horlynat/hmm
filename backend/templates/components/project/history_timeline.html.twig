@@ -1,0 +1,37 @@
+{# templates/components/project/_history_timeline.html.twig #}
+<div class="relative pl-6 border-l-2 border-brand-light dark:border-brand-dark space-y-6" {{ attributes }}>
+	{% if this.sortedHistories is empty %}
+		<div class="text-center py-8 text-gray-500 border-2 border-dashed border-gray-100 rounded-xl bg-white/50">
+			<span class="text-2xl block mb-1">⏳</span>
+			<p class="italic text-sm mb-0">Aucun historique d'activité disponible pour ce projet.</p>
+		</div>
+	{% else %}
+		{% for history in this.sortedHistories %}
+			<div
+				class="relative group">
+
+				{# Point indicateur sur l'axe temporel #}
+				<div class="absolute -left-[31px] top-1.5 w-4.5 h-4.5 bg-brand-primary border-4 border-white dark:border-bg-default rounded-full shadow-xs transition-transform group-hover:scale-110"></div>
+
+				{# Boîtier d'information #}
+				<div class="bg-gray-50/75 dark:bg-gray-800/40 rounded-xl p-4 border border-gray-100/50 hover:border-gray-200 transition-all">
+					<div class="flex flex-wrap justify-between items-start gap-2 mb-2">
+						<span class="text-xs font-bold text-brand-dark">
+							{{ history.user ? history.user.fullName : 'Système' }}
+						</span>
+						<span class="text-[10px] text-gray-400 font-mono bg-white dark:bg-gray-800 px-2 py-0.5 rounded border border-gray-100">
+							{{ history.createdAt|date('d/m/Y H:i') }}
+						</span>
+					</div>
+					<p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-0">
+						<strong>{{ history.actionLabel }}</strong>
+						{% if history.details %}
+							<br>
+							<span class="text-gray-500">{{ history.details }}</span>
+						{% endif %}
+					</p>
+				</div>
+			</div>
+		{% endfor %}
+	{% endif %}
+</div>

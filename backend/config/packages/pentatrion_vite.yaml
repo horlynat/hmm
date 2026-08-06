@@ -1,0 +1,8 @@
+# config/packages/pentatrion_vite.yaml
+pentatrion_vite:
+    # Répertoire de sortie du build (relatif à public/)
+    build_directory: build
+    
+    # URL du serveur Vite en développement
+    proxy_origin: 'http://localhost:5173'
+  

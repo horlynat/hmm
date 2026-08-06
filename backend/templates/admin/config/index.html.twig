@@ -1,0 +1,80 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Configuration système{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Configuration système" subtitle="Branding, thème et langues du back-office." icon="ti-adjustments" />
+
+	{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
+	<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+		<div class="lg:col-span-2">
+			<div class="panel">
+				<div class="panel-header"><h2 class="panel-title">Apparence &amp; langues</h2></div>
+				<div class="panel-body space-y-5">
+					<div class="field">
+						{{ form_label(form.siteName, 'Nom du site', {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.siteName, {'attr': {'class': 'input w-full'}}) }}
+						{{ form_errors(form.siteName, {'attr': {'class': 'field-error'}}) }}
+					</div>
+
+					<div class="field">
+						<span class="field-label">Logo actuel</span>
+						{% if settings.logoPath %}
+							<img src="{{ settings.logoPath }}" alt="Logo" class="h-16 rounded-md border border-gray-200 dark:border-gray-700 mb-3">
+						{% else %}
+							<p class="text-xs opacity-50 mb-3">Aucun logo défini.</p>
+						{% endif %}
+						{{ form_label(form.logoFile, null, {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.logoFile, {'attr': {'class': 'input w-full'}}) }}
+						{{ form_errors(form.logoFile, {'attr': {'class': 'field-error'}}) }}
+					</div>
+
+					<div class="field">
+						{{ form_label(form.primaryColor, 'Couleur principale', {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.primaryColor, {'attr': {'class': 'input h-10 w-24'}}) }}
+						{{ form_errors(form.primaryColor, {'attr': {'class': 'field-error'}}) }}
+					</div>
+
+					<div class="field">
+						{{ form_label(form.theme, 'Thème', {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.theme, {'attr': {'class': 'input input-select w-full'}}) }}
+						{{ form_errors(form.theme, {'attr': {'class': 'field-error'}}) }}
+					</div>
+
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+						<div class="field">
+							{{ form_label(form.defaultLocale, 'Langue par défaut', {'label_attr': {'class': 'field-label'}}) }}
+							{{ form_widget(form.defaultLocale, {'attr': {'class': 'input input-select w-full'}}) }}
+							{{ form_errors(form.defaultLocale, {'attr': {'class': 'field-error'}}) }}
+						</div>
+						<div class="field">
+							{{ form_label(form.availableLocales, 'Langues disponibles', {'label_attr': {'class': 'field-label'}}) }}
+							{{ form_widget(form.availableLocales) }}
+							{{ form_errors(form.availableLocales, {'attr': {'class': 'field-error'}}) }}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="space-y-6">
+			<div class="panel">
+				<div class="panel-header"><h2 class="panel-title flex items-center gap-2"><span class="ti ti-bolt" aria-hidden="true"></span> Actions</h2></div>
+				<div class="panel-body space-y-4">
+					{% if settings.updatedAt %}
+						<p class="text-xs opacity-60">
+							Dernière mise à jour le {{ settings.updatedAt|date('d/m/Y à H:i') }}
+							{% if settings.updatedBy %}par {{ settings.updatedBy.fullName ?? settings.updatedBy.email }}{% endif %}
+						</p>
+					{% endif %}
+					<button type="submit" class="btn btn-primary w-full gap-2">
+						<span class="ti ti-device-floppy" aria-hidden="true"></span>
+						<span>Enregistrer</span>
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	{{ form_end(form) }}
+{% endblock %}

@@ -1,0 +1,26 @@
+{# templates/admin/skill_category/_form.html.twig #}
+{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
+
+<div class="card max-w-2xl">
+	<div>
+		{{ form_label(form.name, 'Nom de la catégorie', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+		{{ form_widget(form.name, {'attr': {'class': 'input w-full', 'placeholder': 'Ex: Front-end, Backend, Design...'}}) }}
+		{{ form_errors(form.name, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+	</div>
+
+	<div class="mt-4">
+		{{ form_label(form.nameEn, form.nameEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
+		<p class="text-[11px] opacity-40 mb-2">{{ form.nameEn.vars.help }}</p>
+		{{ form_widget(form.nameEn, {'attr': {'class': 'input w-full', 'placeholder': 'Ex: Front-end, Backend, Design...'}}) }}
+		{{ form_errors(form.nameEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+	</div>
+
+	<div class="flex justify-end pt-4">
+		<button type="submit" class="btn btn-primary gap-2">
+			<span class="ti ti-device-floppy text-sm" aria-hidden="true"></span>
+			<span>{{ button_label|default('Enregistrer') }}</span>
+		</button>
+	</div>
+</div>
+
+{{ form_end(form) }}

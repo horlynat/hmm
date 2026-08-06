@@ -1,0 +1,38 @@
+{# templates/profile/two_factor/disable.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Désactiver la 2FA{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Désactiver la 2FA" icon="ti-lock-open"
+		subtitle="Confirmez votre mot de passe pour désactiver la double authentification sur ce compte." />
+
+	<div class="max-w-md space-y-4">
+		{% if error %}
+			<div class="field-error">{{ error }}</div>
+		{% endif %}
+
+		<div class="panel">
+			<div class="panel-body">
+				<form method="post" class="space-y-4">
+					<input type="hidden" name="_token" value="{{ csrf_token('profile_two_factor_disable') }}">
+
+					<div class="field mb-0">
+						<label for="password" class="field-label">Mot de passe</label>
+						<input type="password" id="password" name="password" required autofocus autocomplete="current-password" class="input w-full">
+					</div>
+
+					<button type="submit" class="btn btn-danger w-full gap-1.5">
+						<span class="ti ti-alert-triangle" aria-hidden="true"></span>
+						Désactiver la double authentification
+					</button>
+				</form>
+			</div>
+		</div>
+
+		<a href="{{ path('profile_two_factor_index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-(--brand-dark) transition">
+			<span class="ti ti-arrow-left" aria-hidden="true"></span>
+			Annuler
+		</a>
+	</div>
+{% endblock %}

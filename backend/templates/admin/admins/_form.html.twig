@@ -1,0 +1,119 @@
+{# Formulaire partagé (UserType) : admins / clients / collaborateurs. Champs purs, sans référence de route. #}
+{{ form_start(form, { 'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'} }) }}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+	{# ── Colonne principale ── #}
+	<div class="lg:col-span-2 space-y-6">
+		<div class="panel">
+			<div class="panel-header"><h2 class="panel-title">Identité</h2></div>
+			<div class="panel-body grid grid-cols-1 md:grid-cols-2 gap-5">
+				<div class="field">
+					{{ form_label(form.email, 'Adresse email', {'label_attr': {'class': 'field-label'}}) }}
+					{{ form_widget(form.email, {'attr': {'class': 'input w-full'}}) }}
+					{{ form_errors(form.email, {'attr': {'class': 'field-error'}}) }}
+				</div>
+				<div class="field">
+					{{ form_label(form.fullName, 'Nom complet', {'label_attr': {'class': 'field-label'}}) }}
+					{{ form_widget(form.fullName, {'attr': {'class': 'input w-full'}}) }}
+					{{ form_errors(form.fullName, {'attr': {'class': 'field-error'}}) }}
+				</div>
+				<div class="field">
+					{{ form_label(form.phone, 'Téléphone', {'label_attr': {'class': 'field-label'}}) }}
+					{{ form_widget(form.phone, {'attr': {'class': 'input w-full'}}) }}
+					{{ form_errors(form.phone, {'attr': {'class': 'field-error'}}) }}
+				</div>
+				<div class="field">
+					{{ form_label(form.plainPassword, 'Mot de passe', {'label_attr': {'class': 'field-label'}}) }}
+					{{ form_widget(form.plainPassword, {'attr': {'class': 'input w-full', 'autocomplete': 'new-password'}}) }}
+					{{ form_errors(form.plainPassword, {'attr': {'class': 'field-error'}}) }}
+				</div>
+				<div class="field md:col-span-2">
+					{{ form_label(form.profileImageFile, 'Photo de profil', {'label_attr': {'class': 'field-label'}}) }}
+					{{ form_widget(form.profileImageFile, {'attr': {'class': 'input w-full'}}) }}
+					{{ form_errors(form.profileImageFile, {'attr': {'class': 'field-error'}}) }}
+				</div>
+			</div>
+		</div>
+
+		{% if form.specialties is defined %}
+			<div class="panel">
+				<div class="panel-header">
+					<h2 class="panel-title flex items-center gap-2">
+						<span class="ti ti-user-star" aria-hidden="true"></span>
+						Profil collaborateur (pro / freelance)
+					</h2>
+				</div>
+				<div class="panel-body grid grid-cols-1 md:grid-cols-2 gap-5">
+					<div class="field">
+						{{ form_label(form.specialties, null, {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.specialties, {'attr': {'class': 'input w-full'}}) }}
+						{{ form_errors(form.specialties, {'attr': {'class': 'field-error'}}) }}
+					</div>
+					<div class="field">
+						{{ form_label(form.availability, null, {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.availability, {'attr': {'class': 'input w-full'}}) }}
+						{{ form_errors(form.availability, {'attr': {'class': 'field-error'}}) }}
+					</div>
+					<div class="field">
+						{{ form_label(form.portfolioUrl, null, {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.portfolioUrl, {'attr': {'class': 'input w-full'}}) }}
+						{{ form_errors(form.portfolioUrl, {'attr': {'class': 'field-error'}}) }}
+					</div>
+					<div class="field md:col-span-2">
+						{{ form_label(form.bio, null, {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.bio, {'attr': {'class': 'input textarea w-full'}}) }}
+						{{ form_errors(form.bio, {'attr': {'class': 'field-error'}}) }}
+					</div>
+				</div>
+			</div>
+		{% endif %}
+	</div>
+
+	{# ── Colonne latérale ── #}
+	<div class="space-y-6">
+		{% if form.roles is defined %}
+			<div class="panel">
+				<div class="panel-header">
+					<h2 class="panel-title flex items-center gap-2">
+						<span class="ti ti-shield-lock" aria-hidden="true"></span>
+						Rôles & permissions
+					</h2>
+				</div>
+				<div class="panel-body">
+					{{ form_widget(form.roles, {'attr': {'class': 'space-y-2'}}) }}
+					{{ form_errors(form.roles, {'attr': {'class': 'field-error'}}) }}
+				</div>
+			</div>
+		{% endif %}
+
+		<div class="panel">
+			<div class="panel-header">
+				<h2 class="panel-title flex items-center gap-2">
+					<span class="ti ti-adjustments" aria-hidden="true"></span>
+					Options du compte
+				</h2>
+			</div>
+			<div class="panel-body space-y-3">
+				<div class="flex items-center justify-between gap-3">
+					{{ form_label(form.isActive, 'Compte actif', {'label_attr': {'class': 'text-sm font-medium'}}) }}
+					{{ form_widget(form.isActive, {'attr': {'class': 'input-checkbox'}}) }}
+				</div>
+				<div class="flex items-center justify-between gap-3">
+					{{ form_label(form.isVerified, 'Email vérifié', {'label_attr': {'class': 'text-sm font-medium'}}) }}
+					{{ form_widget(form.isVerified, {'attr': {'class': 'input-checkbox'}}) }}
+				</div>
+				<div class="flex items-center justify-between gap-3">
+					{{ form_label(form.isTwoFactorEnabled, '2FA activé', {'label_attr': {'class': 'text-sm font-medium'}}) }}
+					{{ form_widget(form.isTwoFactorEnabled, {'attr': {'class': 'input-checkbox'}}) }}
+				</div>
+			</div>
+		</div>
+
+		<button type="submit" class="btn btn-primary w-full gap-2">
+			<span class="ti ti-device-floppy" aria-hidden="true"></span>
+			<span>{{ button_label|default('Enregistrer') }}</span>
+		</button>
+	</div>
+</div>
+{{ form_end(form) }}

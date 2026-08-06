@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Rôles & Permissions{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Rôles & Permissions" subtitle="Hiérarchie des rôles et matrice des permissions appliquées par les Voters." icon="ti-key" />
+
+	<div class="panel mb-8">
+		<div class="panel-header"><h2 class="panel-title">Hiérarchie des rôles</h2></div>
+		<div class="panel-body">
+			<div class="flex flex-wrap items-center gap-2">
+				{% for role in roles %}
+					<span class="badge badge-info">{{ role }} <span class="opacity-60">({{ roleCounts[role] }})</span></span>
+					{% if not loop.last %}<span class="ti ti-chevron-right text-sm opacity-40" aria-hidden="true"></span>{% endif %}
+				{% endfor %}
+			</div>
+			<p class="text-xs opacity-50 mt-3">Chaque rôle hérite de tous les droits du rôle précédent (cf. <code>security.yaml</code> → <code>role_hierarchy</code>).</p>
+		</div>
+	</div>
+
+	{% for group, permissions in permissionGroups %}
+		<div class="panel mb-6">
+			<div class="panel-header"><h3 class="panel-title">{{ group }}</h3></div>
+			<div class="table-wrap border-0">
+				<table class="table">
+					<caption class="sr-only">Matrice des permissions — {{ group }}</caption>
+					<thead>
+						<tr>
+							<th scope="col">Permission</th>
+							{% for role in roles %}<th scope="col" class="text-center">{{ role|replace({'ROLE_': ''}) }}</th>{% endfor %}
+						</tr>
+					</thead>
+					<tbody>
+						{% for permission, minRoleIndex in permissions %}
+							<tr>
+								<td class="font-mono text-xs">{{ permission }}</td>
+								{% for role in roles %}
+									<td class="text-center">
+										{% if loop.index0 >= minRoleIndex %}
+											<span class="ti ti-circle-check text-success text-base" aria-label="Autorisé"></span>
+										{% else %}
+											<span class="ti ti-circle-x text-gray-300 dark:text-gray-600 text-base" aria-label="Refusé"></span>
+										{% endif %}
+									</td>
+								{% endfor %}
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	{% endfor %}
+{% endblock %}

@@ -1,0 +1,15 @@
+framework:
+    notifier:
+        chatter_transports:
+        texter_transports:
+            # Canal "push" (Paramètres > Notifications). Le transport SMS et le
+            # transport push partagent le même pool (texter_transports) côté
+            # Symfony Notifier ; celui-ci ne gère que PushMessage (cf.
+            # vendor/symfony/ntfy-notifier). Voir .env pour NTFY_DSN.
+            push: '%env(NTFY_DSN)%'
+        # channel_policy n'est plus utilisée : le service "notifier.channel_policy"
+        # est redéfini dans services.yaml (App\Notifier\DatabaseChannelPolicy), qui lit
+        # NotificationPreference en base (piloté depuis l'admin) et ne retombe sur
+        # app.notifier.fallback_policy (services.yaml) qu'en cas d'indisponibilité de la base.
+        admin_recipients:
+            - { email: contact@horlynat.com }

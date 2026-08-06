@@ -1,0 +1,86 @@
+{# Liste réactive des dépenses (LiveComponent App\Twig\Components\Project\ExpenseList) #}
+<div class="space-y-4" {{ attributes }}>
+
+	{% for message in app.flashes('success') %}
+		<div class="flex items-center gap-2 border rounded-xl p-3 text-sm bg-emerald-50 border-emerald-200 text-emerald-800" role="alert">
+			<span class="ti ti-circle-check" aria-hidden="true"></span> {{ message }}
+		</div>
+	{% endfor %}
+	{% for message in app.flashes('error') %}
+		<div class="flex items-center gap-2 border rounded-xl p-3 text-sm bg-rose-50 border-rose-200 text-rose-800" role="alert">
+			<span class="ti ti-alert-octagon" aria-hidden="true"></span> {{ message }}
+		</div>
+	{% endfor %}
+
+	{% if project.expenses is empty %}
+		<twig:EmptyState text="Aucune dépense enregistrée sur ce projet." icon="ti-cash" />
+	{% else %}
+		<div class="table-wrap">
+			<table class="table">
+				<caption class="sr-only">Dépenses du projet</caption>
+				<thead>
+					<tr>
+						<th scope="col">Date</th>
+						<th scope="col">Description</th>
+						<th scope="col">Catégorie</th>
+						<th scope="col">Statut</th>
+						<th scope="col" class="text-right">Montant</th>
+						{% if this.canApprove %}<th scope="col" class="text-right w-48">Actions</th>{% endif %}
+					</tr>
+				</thead>
+				<tbody>
+					{% for expense in project.expenses %}
+						<tr>
+							<td class="text-xs opacity-70 whitespace-nowrap">{{ expense.effectiveDate|date('d/m/Y') }}</td>
+							<td class="text-sm">
+								{{ expense.description ?: '—' }}
+								{% if expense.receiptPath %}
+									<a href="{{ expense.receiptPath }}" target="_blank" rel="noopener noreferrer" class="ml-1 text-(--brand-primary) hover:underline inline-flex items-center gap-0.5 text-xs" title="Justificatif">
+										<span class="ti ti-paperclip" aria-hidden="true"></span>
+									</a>
+								{% endif %}
+							</td>
+							<td>
+								<span class="inline-flex items-center gap-1 text-xs opacity-80">
+									<span class="ti {{ expense.category.icon }}" aria-hidden="true"></span>{{ expense.category.label }}
+								</span>
+							</td>
+							<td><twig:Badge :variant="expense.status.variant" icon="{{ expense.status.icon }}">{{ expense.status.label }}</twig:Badge></td>
+							<td class="text-right font-extrabold text-(--brand-dark) whitespace-nowrap">{{ expense.formattedAmount }}</td>
+							{% if this.canApprove %}
+								<td class="text-right">
+									<div class="flex items-center justify-end gap-1">
+										{% if not this.isProjectLocked %}
+											{% if expense.pending %}
+												<button type="button" data-action="live#action" data-live-action-param="approveExpense" data-live-expense-id-param="{{ expense.id }}" class="btn btn-ghost btn-sm text-success" title="Approuver">
+													<span class="ti ti-circle-check" aria-hidden="true"></span>
+												</button>
+												<button type="button" data-action="live#action" data-live-action-param="rejectExpense" data-live-expense-id-param="{{ expense.id }}" class="btn btn-ghost btn-sm text-amber-600" title="Refuser">
+													<span class="ti ti-circle-x" aria-hidden="true"></span>
+												</button>
+											{% elseif expense.approved %}
+												<button type="button" data-action="live#action" data-live-action-param="rejectExpense" data-live-expense-id-param="{{ expense.id }}" data-confirm="Révoquer cette dépense approuvée ? Le budget sera libéré." class="btn btn-ghost btn-sm text-amber-600" title="Révoquer l'approbation">
+													<span class="ti ti-arrow-back-up" aria-hidden="true"></span>
+												</button>
+											{% elseif expense.rejected %}
+												<button type="button" data-action="live#action" data-live-action-param="approveExpense" data-live-expense-id-param="{{ expense.id }}" class="btn btn-ghost btn-sm text-success" title="Ré-approuver">
+													<span class="ti ti-circle-check" aria-hidden="true"></span>
+												</button>
+											{% endif %}
+											<a href="{{ path('admin_project_update_expense', {id: project.id, expenseId: expense.id}) }}" class="btn btn-ghost btn-sm" title="Modifier">
+												<span class="ti ti-pencil" aria-hidden="true"></span>
+											</a>
+											<button type="button" data-action="live#action" data-live-action-param="removeExpense" data-live-expense-id-param="{{ expense.id }}" data-confirm="Supprimer définitivement cette dépense ?" class="btn btn-ghost btn-sm text-danger" title="Supprimer">
+												<span class="ti ti-trash" aria-hidden="true"></span>
+											</button>
+										{% endif %}
+									</div>
+								</td>
+							{% endif %}
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	{% endif %}
+</div>

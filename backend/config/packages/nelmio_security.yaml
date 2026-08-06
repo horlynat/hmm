@@ -1,0 +1,102 @@
+nelmio_security:
+    # prevents framing of the entire site
+    clickjacking:
+        paths:
+            '^/.*': DENY
+
+    # disables content type sniffing for script resources
+    content_type:
+        nosniff: true
+
+    # Send a full URL in the `Referer` header when performing a same-origin request,
+    # only send the origin of the document to secure destination (HTTPS->HTTPS),
+    # and send no header to a less secure destination (HTTPS->HTTP).
+    # If `strict-origin-when-cross-origin` is not supported, use `no-referrer` policy,
+    # no referrer information is sent along with requests.
+    referrer_policy:
+        enabled: true
+        policies:
+            - 'no-referrer'
+            - 'strict-origin-when-cross-origin'
+
+    # Défense en profondeur contre le XSS : bloque le chargement de script/style/
+    # image/police depuis un hôte tiers non listé (ex : un payload XSS stocké qui
+    # tenterait de charger un script depuis un domaine attaquant). 'unsafe-inline'
+    # reste nécessaire pour script-src/style-src tant que l'app s'appuie sur des
+    # attributs onclick, des <script>/<style> inline (ex: base.html.twig, cf. les
+    # bandeaux "flash de thème" et account_blocked) plutôt que des nonces — ça
+    # n'empêche pas un payload inline injecté de s'exécuter, mais ça bloque toute
+    # exfiltration/chargement de ressource vers un hôte externe non whitelisté, ce
+    # qui est déjà un gain réel. Liste d'hôtes tiers réellement utilisés confirmée
+    # par grep sur templates/ et assets/.
+    #
+    # ⚠️ 'unsafe-eval' est volontairement ABSENT de script-src. Alpine.js (utilisé
+    # pour x-data/x-show/@click) a besoin d'évaluer ses expressions en JS : le
+    # build standard (alpinejs@3.x.x) le fait via `new Function()`, qui exige
+    # 'unsafe-eval' et casse silencieusement (pas d'erreur serveur, juste des
+    # violations CSP en console) dès que ce header est actif sans ce mot-clé.
+    # C'est pour ça que templates/base.html.twig charge le build @alpinejs/csp
+    # (évaluateur sûr, sans eval) au lieu du build standard. Si un jour Alpine.js
+    # est remplacé/mis à jour, NE PAS revenir au build standard sans ajouter
+    # 'unsafe-eval' ici — sinon tous les x-data de l'admin (menu mobile,
+    # accordéons du nav, dropdowns) se figent à nouveau.
+    csp:
+        enforce:
+            default-src:
+                - 'self'
+            script-src:
+                - 'self'
+                - 'unsafe-inline'
+                - 'https://cdn.jsdelivr.net'
+            style-src:
+                - 'self'
+                - 'unsafe-inline'
+                - 'https://fonts.googleapis.com'
+                - 'https://cdn.jsdelivr.net'
+                - 'https://cdnjs.cloudflare.com'
+            font-src:
+                - 'self'
+                - 'data:'
+                - 'https://fonts.gstatic.com'
+                - 'https://cdn.jsdelivr.net'
+                - 'https://cdnjs.cloudflare.com'
+            img-src:
+                - 'self'
+                - 'data:'
+                - 'https://ui-avatars.com'
+            connect-src:
+                - 'self'
+            object-src:
+                - 'none'
+            base-uri:
+                - 'self'
+            frame-ancestors:
+                - 'none'
+
+when@dev:
+    nelmio_security:
+        csp:
+            enforce:
+                # Le serveur de dev Vite (`npm run dev`) sert les entrées JS (et injecte
+                # le CSS via JS, cf. login.js/register.js) depuis http://127.0.0.1:5173,
+                # avec un client HMR connecté en WebSocket. Sans ces autorisations, le
+                # CSP ci-dessus bloque ce script -> le CSS ne s'applique plus du tout sur
+                # les pages login/register en dev. Inutile en prod : les assets y sont
+                # servis en 'self' depuis public/build (fichiers compilés par `vite build`).
+                script-src:
+                    - 'http://127.0.0.1:5173'
+                style-src:
+                    - 'http://127.0.0.1:5173'
+                connect-src:
+                    - 'http://127.0.0.1:5173'
+                    - 'ws://127.0.0.1:5173'
+
+when@prod:
+    nelmio_security:
+        # HSTS + redirection forcée vers HTTPS : uniquement en prod, jamais en
+        # dev/test où le serveur local tourne en HTTP simple (activer ceci
+        # hors prod casserait l'accès au site en local).
+        forced_ssl:
+            enabled: true
+            hsts_max_age: 31536000
+            hsts_subdomains: true

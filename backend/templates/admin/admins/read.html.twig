@@ -1,0 +1,175 @@
+{# templates/admin/users/read.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Détails :
+	{{ user.fullName ?? user.email }}
+{% endblock %}
+
+{% block body %}
+	<div>
+
+		<div class="mb-6">
+			<a href="{{ path('admin_admins_index') }}" class="btn btn-secondary gap-2 px-3 py-2 text-sm w-fit">
+				<span class="ti ti-arrow-left text-base" aria-hidden="true"></span>
+				<span>Retour à la liste</span>
+			</a>
+		</div>
+
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+			<!-- 📖 CONTENU (70%) -->
+			<div class="lg:col-span-2 card">
+				<div class="flex items-center gap-4">
+					<img class="h-16 w-16 rounded-full" src="{{ user.profileImage ?? 'https://ui-avatars.com/api/?name=' ~ (user.fullName ?? user.email)|url_encode }}" alt="{{ user.fullName ?? user.email }}">
+					<div>
+						<span class="badge bg-brand-light text-brand-primary">ID : #{{ user.id }}</span>
+						<h1 class="text-2xl font-heading font-bold mt-1 text-brand-dark">
+							{{ user.fullName ?? 'Non spécifié' }}
+						</h1>
+						<p class="text-sm opacity-60">{{ user.email }}</p>
+					</div>
+				</div>
+
+				<div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-6 mt-6">
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Téléphone</p>
+						<p class="text-brand-dark font-bold">{{ user.phone ?? 'Non renseigné' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Rôles</p>
+						<div class="flex flex-wrap gap-1 mt-1">
+							{% for role in user.roles %}
+								<span class="badge bg-brand-light text-brand-primary">{{ role|replace({'ROLE_': ''})|capitalize }}</span>
+							{% endfor %}
+						</div>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Statut</p>
+						<p class="text-brand-dark font-bold">{{ user.isActive ? 'Actif' : 'Désactivé' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Email vérifié</p>
+						<p class="text-brand-dark font-bold">{{ user.isVerified ? 'Oui' : 'Non' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">2FA</p>
+						<p class="text-brand-dark font-bold">{{ user.isTwoFactorEnabled ? 'Activé' : 'Désactivé' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Dernière connexion</p>
+						<p class="text-brand-dark font-bold">{{ user.lastLoginAt ? user.lastLoginAt|date('d/m/Y H:i') : 'Jamais' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Dernière IP</p>
+						<p class="text-brand-dark font-bold">{{ user.lastIp ?? '—' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Inscrit le</p>
+						<p class="text-brand-dark font-bold">{{ user.createdAt ? user.createdAt|date('d/m/Y H:i') : '—' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Mot de passe modifié le</p>
+						<p class="text-brand-dark font-bold">{{ user.passwordChangedAt ? user.passwordChangedAt|date('d/m/Y H:i') : '—' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Dernier appareil</p>
+						<p class="text-brand-dark font-bold">{{ user.lastDevice ?? '—' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Localisation</p>
+						<p class="text-brand-dark font-bold">{{ user.lastLocation ?? '—' }}</p>
+					</div>
+				</div>
+
+				{# Profil complet : présentation + champs collaborateur (pro/freelance) #}
+				<div class="border-t border-gray-100 pt-6 mt-6 space-y-4">
+					<div>
+						<div class="flex items-center justify-between">
+							<p class="text-xs opacity-60 uppercase font-bold">Complétion du profil</p>
+							<p class="text-brand-dark font-bold text-sm">{{ user.profileCompletionPercentage }}%</p>
+						</div>
+						<div class="w-full bg-gray-100 rounded-full h-2 mt-2">
+							<div class="bg-brand-primary h-2 rounded-full" style="width: {{ user.profileCompletionPercentage }}%"></div>
+						</div>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Présentation / bio</p>
+						<p class="text-brand-dark whitespace-pre-line">{{ user.bio ?: 'Non renseignée' }}</p>
+					</div>
+					<div class="grid grid-cols-2 gap-4">
+						<div>
+							<p class="text-xs opacity-60 uppercase font-bold">Spécialités</p>
+							{% if user.specialties %}
+								<div class="flex flex-wrap gap-1 mt-1">
+									{% for specialty in user.specialties %}
+										<span class="badge bg-brand-light text-brand-primary">{{ specialty }}</span>
+									{% endfor %}
+								</div>
+							{% else %}
+								<p class="text-brand-dark font-bold">—</p>
+							{% endif %}
+						</div>
+						<div>
+							<p class="text-xs opacity-60 uppercase font-bold">Disponibilité</p>
+							<p class="text-brand-dark font-bold">{{ user.availability ?? '—' }}</p>
+						</div>
+						<div class="col-span-2">
+							<p class="text-xs opacity-60 uppercase font-bold">Portfolio</p>
+							{% if user.portfolioUrl %}
+								<a href="{{ user.portfolioUrl }}" target="_blank" rel="noopener noreferrer" class="text-brand-primary font-bold break-all hover:underline">{{ user.portfolioUrl }}</a>
+							{% else %}
+								<p class="text-brand-dark font-bold">—</p>
+							{% endif %}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- ⚙️ INFOS LATÉRALES (30%) -->
+			<div class="space-y-6">
+				<div class="card space-y-4">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">
+						Fiche compte
+					</h3>
+					<div class="pt-4 flex flex-col gap-3">
+						<a href="{{ path('profile_read', {'id': user.id}) }}" class="btn btn-secondary w-full text-sm gap-2">
+							<span class="ti ti-id-badge text-sm" aria-hidden="true"></span>
+							<span>Voir le profil complet</span>
+						</a>
+						<a href="{{ path('admin_admins_update', {'id': user.id}) }}" class="btn btn-primary w-full text-sm gap-2">
+							<span class="ti ti-edit text-sm" aria-hidden="true"></span>
+							<span>Modifier</span>
+						</a>
+						{% if user.id != app.user.id %}
+							<div class="w-full [&>div]:w-full [&_.btn]:w-full text-center">
+								<twig:DeleteModal :id="user.id" :action="path('admin_admins_delete', {id: user.id})" :token="csrf_token('admin_admins_delete_' ~ user.id)" :label="user.fullName ?? user.email" entity="cet administrateur" />
+							</div>
+						{% endif %}
+					</div>
+				</div>
+
+				{# Historique de connexion récent — traçabilité du compte administrateur #}
+				<div class="card space-y-4">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">
+						Connexions récentes
+					</h3>
+					{% set recentLogins = user.loginHistory|reverse|slice(0, 5) %}
+					{% if recentLogins is empty %}
+						<p class="text-sm opacity-60 pt-2">Aucune connexion enregistrée.</p>
+					{% else %}
+						<ul class="pt-2 space-y-3">
+							{% for entry in recentLogins %}
+								<li class="text-sm border-l-2 border-brand-light pl-3">
+									<p class="font-bold text-brand-dark">{{ entry.loginAt|date('d/m/Y H:i') }}</p>
+									<p class="opacity-60">{{ entry.ip ?? '—' }}{% if entry.location %} · {{ entry.location }}{% endif %}</p>
+									{% if entry.device %}<p class="opacity-60 truncate">{{ entry.device }}</p>{% endif %}
+								</li>
+							{% endfor %}
+						</ul>
+					{% endif %}
+				</div>
+			</div>
+
+		</div>
+	</div>
+{% endblock %}

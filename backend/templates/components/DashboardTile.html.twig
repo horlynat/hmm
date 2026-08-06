@@ -1,0 +1,14 @@
+{#
+   Composant : tuile de statistique du tableau de bord admin (compteur + lien).
+   Usage : <twig:DashboardTile route="admin_admins_index" icon="ti-user-shield" :count="adminsCount|default(0)" label="Admins" />
+#}
+{% props route, params = {}, icon, count, label, warn = false %}
+<a href="{{ path(route, params) }}" class="flex items-center gap-3 bg-gray-50/60 border border-gray-100 rounded-xl p-4 transition hover:bg-white hover:border-gray-200 {{ warn and count > 0 ? 'ring-1 ring-warning/40' : '' }}">
+	<div class="p-2 rounded-lg shrink-0 {{ warn and count > 0 ? 'bg-warning/10 text-warning' : 'bg-brand-light/20 text-brand-primary' }}">
+		<i class="ti {{ icon }} text-lg"></i>
+	</div>
+	<div class="min-w-0">
+		<div class="text-xl font-bold {{ warn and count > 0 ? 'text-warning' : 'text-brand-dark' }}">{{ count }}</div>
+		<div class="text-xs text-brand-dark/50 truncate">{{ label }}</div>
+	</div>
+</a>

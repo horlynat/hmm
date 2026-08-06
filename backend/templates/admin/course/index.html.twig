@@ -1,0 +1,59 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des formations{% endblock %}
+
+{% block body %}
+	{% set n = courses|length %}
+	<twig:PageHeader title="Formations" :subtitle="n ~ ' formation' ~ (n > 1 ? 's' : '') ~ ' — diplômes & certifications.'" icon="ti-school">
+		<a href="{{ path('admin_course_create') }}" class="btn btn-primary gap-2">
+			<span class="ti ti-plus" aria-hidden="true"></span>
+			<span>Ajouter une formation</span>
+		</a>
+	</twig:PageHeader>
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Liste des formations</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="w-16">Id</th>
+					<th scope="col">Formation &amp; institution</th>
+					<th scope="col" class="w-48">Période</th>
+					<th scope="col" class="w-40 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for course in courses %}
+					<tr>
+						<td class="font-mono text-xs opacity-50">{{ course.id }}</td>
+						<td>
+							<div class="font-bold truncate text-(--brand-dark)">{{ course.title }}</div>
+							<div class="text-xs opacity-70 flex items-center gap-1 mt-0.5">
+								<span class="ti ti-building-bank text-sm" aria-hidden="true"></span>
+								{{ course.institution }}
+							</div>
+						</td>
+						<td class="text-xs opacity-80 whitespace-nowrap">
+							{{ course.startDate ? course.startDate|date('m/Y') : '—' }} — {{ course.endDate ? course.endDate|date('m/Y') : 'En cours' }}
+						</td>
+						<td>
+							<div class="flex items-center justify-end gap-1">
+								<a href="{{ path('admin_course_read', {'id': course.id}) }}" class="btn btn-ghost btn-icon" aria-label="Voir {{ course.title }}">
+									<span class="ti ti-eye text-lg" aria-hidden="true"></span>
+								</a>
+								<a href="{{ path('admin_course_update', {'id': course.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ course.title }}">
+									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
+								</a>
+								<twig:DeleteModal :id="course.id" :action="path('admin_course_delete', {id: course.id})" :token="csrf_token('delete' ~ course.id)" :label="course.title" entity="cette formation" />
+							</div>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="4"><twig:EmptyState text="Aucune formation pour le moment." icon="ti-school" /></td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock %}

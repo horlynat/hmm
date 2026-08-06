@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Assistant IA — Entrées de FAQ{% endblock %}
+
+{% block body %}
+	{% set n = entries|length %}
+	<twig:PageHeader title="Assistant IA — Entrées de FAQ" :subtitle="n ~ ' entrée' ~ (n > 1 ? 's' : '') ~ '.'" icon="ti-message-chatbot">
+		<div class="flex items-center gap-2">
+			<a href="{{ path('admin_ai_assistant_settings') }}" class="btn btn-secondary gap-2">
+				<span class="ti ti-settings" aria-hidden="true"></span>
+				<span>Réglages</span>
+			</a>
+			<a href="{{ path('admin_ai_assistant_create') }}" class="btn btn-primary gap-2">
+				<span class="ti ti-plus" aria-hidden="true"></span>
+				<span>Nouvelle entrée</span>
+			</a>
+		</div>
+	</twig:PageHeader>
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Liste des entrées de l'assistant IA</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="w-16">Ordre</th>
+					<th scope="col">Suggestion</th>
+					<th scope="col">Mots-clés (FR)</th>
+					<th scope="col" class="w-40 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for entry in entries %}
+					<tr>
+						<td class="font-mono text-xs opacity-50">{{ entry.sortOrder }}</td>
+						<td class="font-bold text-(--brand-dark)">{{ entry.chipLabel }}</td>
+						<td class="text-xs opacity-70">{{ entry.keywords|join(', ') }}</td>
+						<td>
+							<div class="flex items-center justify-end gap-1">
+								<a href="{{ path('admin_ai_assistant_update', {'id': entry.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ entry.chipLabel }}">
+									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
+								</a>
+								<twig:DeleteModal :id="entry.id" :action="path('admin_ai_assistant_delete', {id: entry.id})" :token="csrf_token('admin_ai_assistant_delete_' ~ entry.id)" :label="entry.chipLabel" entity="cette entrée" />
+							</div>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="4"><twig:EmptyState text="Aucune entrée trouvée." icon="ti-message-chatbot" /></td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock %}

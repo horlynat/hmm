@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Convertir en projet : {{ quoteRequest.name }}{% endblock %}
+
+{% block body %}
+<div class="container mx-auto max-w-5xl px-4 py-8 text-brand-dark">
+
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center space-x-2">
+                <span class="ti ti-transform text-blue-600" aria-hidden="true"></span>
+                <span>Convertir en projet</span>
+            </h1>
+            <p class="mt-1 text-sm opacity-60">
+                Demande de <strong>{{ quoteRequest.name }}</strong> ({{ quoteRequest.email }}) — les champs ci-dessous
+                sont pré-remplis depuis le devis, à compléter avant enregistrement.
+            </p>
+        </div>
+        <a href="{{ path('admin_request_read', {id: quoteRequest.id}) }}"
+           class="px-5 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg shadow-sm hover:bg-gray-50 transition flex items-center space-x-2">
+            <span class="ti ti-arrow-left text-sm" aria-hidden="true"></span>
+            <span>Retour à la demande</span>
+        </a>
+    </div>
+
+    <div class="mb-6 rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900 flex items-start gap-2">
+        <span class="ti ti-info-circle text-base mt-0.5" aria-hidden="true"></span>
+        <p>
+            Le client (<strong>{{ quoteRequest.user.fullName ?? quoteRequest.user.email }}</strong>) sera automatiquement
+            assigné à ce projet. Si un budget positif est défini ci-dessous, une facture initiale sera générée et une
+            confirmation lui sera envoyée par email avec les détails de sa facture.
+        </p>
+    </div>
+
+    {% include 'admin/project/_form.html.twig' with {'button_label': 'Créer le projet et notifier le client', 'cancel_path': path('admin_request_read', {id: quoteRequest.id})} %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{# templates/profile/_profile_security.html.twig #}
+
+<div class="panel">
+	<div class="panel-header">
+		<h2 class="panel-title flex items-center gap-2">
+			<span class="ti ti-shield" aria-hidden="true"></span>
+			Sécurité
+		</h2>
+	</div>
+	<div class="panel-body space-y-5">
+		<div class="flex items-center justify-between">
+			<p class="text-sm text-gray-500">Email vérifié</p>
+			<twig:Badge :variant="user.isVerified ? 'success' : 'warning'" :icon="user.isVerified ? 'ti-circle-check' : 'ti-alert-triangle'">
+				{{ user.isVerified ? 'Oui' : 'Non' }}
+			</twig:Badge>
+		</div>
+
+		<div class="flex items-center justify-between">
+			<p class="text-sm text-gray-500">2FA activé</p>
+			<twig:Badge :variant="user.isTwoFactorEnabled ? 'success' : 'neutral'" :icon="user.isTwoFactorEnabled ? 'ti-circle-check' : 'ti-circle-x'">
+				{{ user.isTwoFactorEnabled ? 'Oui' : 'Non' }}
+			</twig:Badge>
+		</div>
+
+		<div>
+			<p class="text-sm text-gray-500 mb-1">Dernier changement de mot de passe</p>
+			<p class="text-sm font-medium text-(--brand-dark)">
+				{{ user.passwordChangedAt ? user.passwordChangedAt|date('d/m/Y à H:i') : 'Jamais' }}
+			</p>
+		</div>
+
+		<div class="pt-2 border-t border-gray-100 dark:border-gray-700 flex flex-wrap gap-2">
+			<a href="{{ path('profile_change_password', {'id': user.id}) }}" class="btn btn-secondary btn-sm gap-1.5">
+				<span class="ti ti-lock-cog" aria-hidden="true"></span>
+				Changer le mot de passe
+			</a>
+			<a href="{{ path('profile_two_factor_index') }}" class="btn btn-secondary btn-sm gap-1.5">
+				<span class="ti ti-shield-lock" aria-hidden="true"></span>
+				Gérer la 2FA
+			</a>
+		</div>
+	</div>
+</div>

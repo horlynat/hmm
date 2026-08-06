@@ -1,0 +1,181 @@
+{# 🛠️ COLONNE DROITE (xl:col-span-4) : Le Panneau Super-Filtres #}
+<div class="xl:col-span-4 space-y-4">
+	<div class="soft-card p-5 border border-gray-100 bg-white sticky top-6 max-h-[90vh] overflow-y-auto shadow-sm">
+		<div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
+			<h3 class="text-xs font-bold text-brand-dark uppercase tracking-wider m-0">Super Filtres Avancés</h3>
+			<button type="button" data-action="live#reset" class="text-[10px] text-gray-400 hover:text-brand-primary uppercase font-bold tracking-tight bg-transparent border-0 cursor-pointer">Effacer Tout</button>
+		</div>
+
+		<div class="space-y-4">
+			{# Section Recherche #}
+			<div>
+				<label class="block text-xs font-bold text-gray-500 uppercase mb-1">Recherche Globale</label>
+				<input type="text" data-model="debounce(150)|search" placeholder="Titre, description..." class="input w-full text-sm">
+			</div>
+
+			<hr class="border-gray-100">
+
+			{# 📅 GROUPE 1 : TEMPOREL & DÉLAIS #}
+			<div class="space-y-2">
+				<h4 class="text-[11px] font-extrabold text-brand-primary uppercase tracking-wide">Plannings & Délais</h4>
+				<div class="grid grid-cols-2 gap-2">
+					<div>
+						<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Du</label>
+						<input type="date" data-model="date_start" class="input w-full text-xs p-1.5">
+					</div>
+					<div>
+						<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Au</label>
+						<input type="date" data-model="date_end" class="input w-full text-xs p-1.5">
+					</div>
+				</div>
+				<div>
+					<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Urgence Échéances</label>
+					<select data-model="time_urgency" class="input input-select w-full text-xs">
+						<option value="">Toutes les échéances</option>
+						<option value="overdue">⚠️ En retard critique</option>
+						<option value="imminent">⏳ Livraison sous 7 jours</option>
+					</select>
+				</div>
+				<div>
+					<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Inactivité (jours sans modif.)</label>
+					<input type="number" data-model="debounce(300)|inactive_days" placeholder="Ex: 30 jours dormant" class="input w-full text-xs">
+				</div>
+			</div>
+
+			<hr class="border-gray-100">
+
+			{# 📊 GROUPE 2 : BUDGETS & FACTURATION #}
+			<div class="space-y-2">
+				<h4 class="text-[11px] font-extrabold text-brand-primary uppercase tracking-wide">Finances & Budgets</h4>
+				<div class="grid grid-cols-2 gap-2">
+					<div>
+						<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Budget Min (€)</label>
+						<input type="number" data-model="debounce(200)|budget_min" class="input w-full text-xs" placeholder="0">
+					</div>
+					<div>
+						<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Budget Max (€)</label>
+						<input type="number" data-model="debounce(200)|budget_max" class="input w-full text-xs" placeholder="100k">
+					</div>
+				</div>
+				<div
+					class="grid grid-cols-2 gap-2">
+					{# ✅ Dynamisation Santé Financière #}
+					<div>
+						<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Santé Financière</label>
+						<select data-model="budget_status" class="input input-select w-full text-xs">
+							<option value="">Tous les budgets</option>
+							{% for bStatus in this.budgetStatuses %}
+								<option value="{{ bStatus.value }}">{{ bStatus.getLabel }}</option>
+							{% endfor %}
+						</select>
+					</div>
+					{# ✅ Dynamisation Type Facturation #}
+					<div>
+						<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Type Facturation</label>
+						<select data-model="billing_type" class="input input-select w-full text-xs">
+							<option value="">Tous les types</option>
+							{% for bType in this.billingTypes %}
+								<option value="{{ bType.value }}">{{ bType.getLabel }}</option>
+							{% endfor %}
+						</select>
+					</div>
+				</div>
+			</div>
+
+			<hr class="border-gray-100">
+
+			{# 👥 GROUPE 3 : ASSIGNATION & NATURE #}
+			<div class="space-y-2">
+				<h4 class="text-[11px] font-extrabold text-brand-primary uppercase tracking-wide">Ressources & Structure</h4>
+				<div>
+					<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Client Propriétaire</label>
+					<select data-model="client" class="input input-select w-full text-xs">
+						<option value="">Tous les clients</option>
+						{% for u in this.users %}
+							<option value="{{ u.id }}">{{ u.fullName }}</option>
+						{% endfor %}
+					</select>
+				</div>
+				<div>
+					<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Membre de l'Équipe</label>
+					<select data-model="collaborator" class="input input-select w-full text-xs">
+						<option value="">Tout le staff</option>
+						{% for u in this.users %}
+							<option value="{{ u.id }}">{{ u.fullName }}</option>
+						{% endfor %}
+					</select>
+				</div>
+				<div class="grid grid-cols-2 gap-2">
+					<div>
+						<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Taille d'Équipe</label>
+						<select data-model="team_size" class="input input-select w-full text-xs">
+							<option value="">Peu importe</option>
+							<option value="solo">Projet Solo (0 staff)</option>
+							<option value="small">Petite Équipe (1-3)</option>
+							<option value="large">Grosse Équipe (>3)</option>
+						</select>
+					</div>
+					<div>
+						<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Anomalie / Alerte</label>
+						<select data-model="orphan" class="input input-select w-full text-xs">
+							<option value="">Aucune alerte</option>
+							<option value="no_client">Sans client lié</option>
+							<option value="no_team">Sans équipe affectée</option>
+						</select>
+					</div>
+				</div>
+			</div>
+
+			<hr
+			class="border-gray-100">
+
+			{# 🚀 GROUPE 4 : PRIORITÉ & AVANCEMENT #}
+			<div class="space-y-2">
+				<h4 class="text-[11px] font-extrabold text-brand-primary uppercase tracking-wide">Priorités & Complétion</h4>
+
+				<div>
+					<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Statut Actuel</label>
+					<select data-model="status" class="input input-select w-full text-xs">
+						<option value="">Tous les statuts</option>
+						{% for statusCase in this.statuses %}
+							<option value="{{ statusCase.value }}">{{ statusCase.getLabel|default(statusCase.label) }}</option>
+						{% endfor %}
+					</select>
+				</div>
+
+				<div
+					class="grid grid-cols-2 gap-2">
+					{# ✅ Dynamisation Niveau de Priorité #}
+					<div>
+						<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Priorité</label>
+						<select data-model="priority" class="input input-select w-full text-xs">
+							<option value="">Toutes</option>
+							{% for priorityCase in this.priorities %}
+								<option value="{{ priorityCase.value }}">{{ priorityCase.getLabel }}</option>
+							{% endfor %}
+						</select>
+					</div>
+					<div>
+						<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Techno / Tag</label>
+						<select data-model="tag" class="input input-select w-full text-xs">
+							<option value="">Toutes les technos</option>
+							{% for t in this.tags %}
+								<option value="{{ t.id }}">{{ t.name }}</option>
+							{% endfor %}
+						</select>
+					</div>
+				</div>
+				<div class="grid grid-cols-2 gap-2">
+					<div>
+						<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Complétion Min (%)</label>
+						<input type="number" data-model="debounce(200)|progress_min" placeholder="0" class="input w-full text-xs">
+					</div>
+					<div>
+						<label class="block text-[10px] font-bold text-gray-400 uppercase mb-0.5">Complétion Max (%)</label>
+						<input type="number" data-model="debounce(200)|progress_max" placeholder="100" class="input w-full text-xs">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

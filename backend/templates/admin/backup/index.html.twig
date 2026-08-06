@@ -1,0 +1,93 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Sauvegardes{% endblock %}
+
+{% block body %}
+	<div class="page-header">
+		<div class="min-w-0">
+			<h1 class="page-title flex items-center gap-2">
+				<span class="ti ti-database text-(--brand-primary)" aria-hidden="true"></span>
+				Sauvegardes &amp; restauration
+			</h1>
+			<p class="page-subtitle">Sauvegardes complètes de la base de données (mysqldump).</p>
+		</div>
+		{% if is_granted('SETTINGS_CREATE_BACKUP') %}
+			<form method="post" action="{{ path('admin_backup_create') }}">
+				<input type="hidden" name="_token" value="{{ csrf_token('admin_backup_create') }}">
+				<button type="submit" class="btn btn-primary gap-2">
+					<span class="ti ti-database-plus" aria-hidden="true"></span>
+					<span>Créer une sauvegarde</span>
+				</button>
+			</form>
+		{% endif %}
+	</div>
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Liste des sauvegardes disponibles</caption>
+			<thead>
+				<tr>
+					<th scope="col">Fichier</th>
+					<th scope="col">Taille</th>
+					<th scope="col">Créée le</th>
+					<th scope="col" class="w-56 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for backup in backups %}
+					<tr>
+						<td class="font-mono text-xs">{{ backup.filename }}</td>
+						<td class="text-xs opacity-70 whitespace-nowrap">{{ (backup.size / 1024 / 1024)|number_format(2) }} Mo</td>
+						<td class="text-xs opacity-70 whitespace-nowrap">{{ backup.createdAt|date('d/m/Y H:i:s') }}</td>
+						<td>
+							<div class="flex items-center justify-end gap-1">
+								<a href="{{ path('admin_backup_download', {'filename': backup.filename}) }}" class="btn btn-ghost btn-icon" aria-label="Télécharger {{ backup.filename }}">
+									<span class="ti ti-download text-lg" aria-hidden="true"></span>
+								</a>
+								{% if is_granted('SETTINGS_RESTORE_BACKUP') %}
+									<button type="button" onclick="document.getElementById('restore-modal-{{ loop.index }}').showModal()" class="btn btn-ghost btn-icon text-amber-600" aria-label="Restaurer {{ backup.filename }}">
+										<span class="ti ti-refresh text-lg" aria-hidden="true"></span>
+									</button>
+								{% endif %}
+								{% if is_granted('SETTINGS_DELETE_BACKUP') %}
+									<twig:DeleteModal :id="loop.index" :action="path('admin_backup_delete', {filename: backup.filename})" :token="csrf_token('admin_backup_delete_' ~ backup.filename)" :label="backup.filename" entity="cette sauvegarde" />
+								{% endif %}
+							</div>
+						</td>
+					</tr>
+
+					{% if is_granted('SETTINGS_RESTORE_BACKUP') %}
+						{# Restauration : confirmation forte (saisie du nom de fichier). #}
+						<dialog id="restore-modal-{{ loop.index }}" class="panel p-6 max-w-lg w-full backdrop:bg-brand-dark/40 backdrop:backdrop-blur-sm shadow-2xl">
+							<div class="text-center">
+								<div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-danger/10 text-danger mb-4">
+									<span class="ti ti-alert-triangle text-2xl" aria-hidden="true"></span>
+								</div>
+								<h3 class="text-lg font-heading font-bold text-(--brand-dark)">Restaurer la base de données ?</h3>
+								<p class="text-sm opacity-80 mt-2 px-2">
+									Cette action va <span class="font-bold text-danger">écraser toutes les données actuelles</span>
+									avec le contenu de <span class="font-bold text-(--brand-dark)">« {{ backup.filename }} »</span>. Irréversible.
+								</p>
+								<form method="post" action="{{ path('admin_backup_restore', {'filename': backup.filename}) }}" class="mt-4 text-left">
+									<input type="hidden" name="_token" value="{{ csrf_token('admin_backup_restore_' ~ backup.filename) }}">
+									<label for="confirm-{{ loop.index }}" class="field-label">Tapez le nom exact du fichier pour confirmer :</label>
+									<input id="confirm-{{ loop.index }}" type="text" name="confirm_filename" class="input w-full font-mono text-xs" placeholder="{{ backup.filename }}" required>
+									<div class="mt-6 flex flex-col sm:flex-row-reverse gap-3">
+										<button type="submit" onclick="this.disabled=true; this.form.submit();" class="btn btn-danger w-full gap-2">
+											<span class="ti ti-refresh" aria-hidden="true"></span> Confirmer la restauration
+										</button>
+										<button type="button" onclick="document.getElementById('restore-modal-{{ loop.index }}').close()" class="btn btn-secondary w-full sm:w-auto flex-1">Annuler</button>
+									</div>
+								</form>
+							</div>
+						</dialog>
+					{% endif %}
+				{% else %}
+					<tr>
+						<td colspan="4"><twig:EmptyState text="Aucune sauvegarde disponible." icon="ti-database-off" /></td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock %}

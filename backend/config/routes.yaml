@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../vendor/symfony/routing/Loader/schema/routing.schema.json
+
+# This file is the entry point to configure the routes of your app.
+# Methods with the #[Route] attribute are automatically imported.
+# See also https://symfony.com/doc/current/routing.html
+
+# To list all registered routes, run the following command:
+#   bin/console debug:router
+
+controllers:
+    resource: routing.controllers
+
+# La route n'a pas besoin de controller : le firewall `api_login` (json_login)
+# intercepte la requête avant la résolution du controller, dès que le path
+# correspond à `check_path`. Sans cette route, le routeur 404 avant même que
+# le firewall ait sa chance d'intervenir.
+api_login_check:
+    path: /api/login_check
+    methods: [POST]

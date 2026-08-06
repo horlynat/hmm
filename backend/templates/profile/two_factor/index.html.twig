@@ -1,0 +1,71 @@
+{# templates/profile/two_factor/index.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Double authentification{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Double authentification (2FA)" icon="ti-shield-lock"
+		subtitle="Sécurisez votre compte avec un code à usage unique généré par une application d'authentification (Google Authenticator, Authy, etc.)." />
+
+	<div class="max-w-2xl space-y-6">
+		<div class="panel">
+			<div class="panel-body flex items-center justify-between gap-4">
+				<div>
+					<p class="text-sm text-gray-500 mb-1.5">Statut</p>
+					{% if user.isTotpAuthenticationEnabled %}
+						<twig:Badge variant="success" icon="ti-circle-check">Activée</twig:Badge>
+					{% else %}
+						<twig:Badge variant="neutral" icon="ti-circle-x">Désactivée</twig:Badge>
+					{% endif %}
+				</div>
+
+				{% if user.isTotpAuthenticationEnabled %}
+					<a href="{{ path('profile_two_factor_disable') }}" class="btn btn-secondary gap-1.5">
+						<span class="ti ti-lock-open" aria-hidden="true"></span>Désactiver
+					</a>
+				{% else %}
+					<a href="{{ path('profile_two_factor_setup') }}" class="btn btn-primary gap-1.5">
+						<span class="ti ti-qrcode" aria-hidden="true"></span>Activer la 2FA
+					</a>
+				{% endif %}
+			</div>
+
+			{% if user.isTotpAuthenticationEnabled %}
+				<div class="px-5 pb-5 pt-3 border-t border-gray-100 dark:border-gray-700">
+					<p class="field-hint">Un code sera demandé à chaque connexion, en plus de votre mot de passe.</p>
+				</div>
+			{% endif %}
+		</div>
+
+		{% if user.isTotpAuthenticationEnabled %}
+			{% set remaining = user.backupCodes|length %}
+			<div class="panel">
+				<div class="panel-header flex items-center justify-between">
+					<h2 class="panel-title flex items-center gap-2">
+						<span class="ti ti-key" aria-hidden="true"></span>
+						Codes de récupération
+					</h2>
+					<twig:Badge :variant="remaining > 2 ? 'success' : 'danger'">{{ remaining }} restant{{ remaining > 1 ? 's' : '' }}</twig:Badge>
+				</div>
+				<div class="panel-body">
+					<p class="field-hint mb-4">
+						Ils vous permettent de vous connecter si vous perdez l'accès à votre application d'authentification.
+						{% if remaining <= 2 %}<strong class="text-danger">Il vous en reste peu — pensez à en générer de nouveaux.</strong>{% endif %}
+					</p>
+
+					<form method="post" action="{{ path('profile_two_factor_recovery_codes_regenerate') }}" class="flex flex-wrap items-end gap-3">
+						<input type="hidden" name="_token" value="{{ csrf_token('profile_two_factor_recovery_regenerate') }}">
+						<div class="field flex-1 min-w-[12rem] mb-0">
+							<label for="regen_password" class="field-label">Confirmez votre mot de passe</label>
+							<input type="password" id="regen_password" name="password" required autocomplete="current-password" class="input w-full">
+						</div>
+						<button type="submit" class="btn btn-secondary gap-1.5">
+							<span class="ti ti-refresh" aria-hidden="true"></span>Générer de nouveaux codes
+						</button>
+					</form>
+					<p class="field-hint mt-3">Générer de nouveaux codes invalide immédiatement les anciens.</p>
+				</div>
+			</div>
+		{% endif %}
+	</div>
+{% endblock %}

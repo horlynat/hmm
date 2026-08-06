@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des catégories{% endblock %}
+
+{% block body %}
+	{% set n = skill_categories|length %}
+	<twig:PageHeader title="Catégories de compétences" :subtitle="n ~ ' catégorie' ~ (n > 1 ? 's' : '') ~ '.'" icon="ti-category">
+		<a href="{{ path('admin_skill_category_create') }}" class="btn btn-primary gap-2">
+			<span class="ti ti-plus" aria-hidden="true"></span>
+			<span>Nouvelle catégorie</span>
+		</a>
+	</twig:PageHeader>
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Liste des catégories de compétences</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="w-16">Id</th>
+					<th scope="col">Nom de la catégorie</th>
+					<th scope="col" class="w-40 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for skill_category in skill_categories %}
+					<tr>
+						<td class="font-mono text-xs opacity-50">{{ skill_category.id }}</td>
+						<td class="font-bold text-(--brand-dark)">{{ skill_category.name }}</td>
+						<td>
+							<div class="flex items-center justify-end gap-1">
+								<a href="{{ path('admin_skill_category_read', {'id': skill_category.id}) }}" class="btn btn-ghost btn-icon" aria-label="Voir {{ skill_category.name }}">
+									<span class="ti ti-eye text-lg" aria-hidden="true"></span>
+								</a>
+								<a href="{{ path('admin_skill_category_update', {'id': skill_category.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ skill_category.name }}">
+									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
+								</a>
+								<twig:DeleteModal :id="skill_category.id" :action="path('admin_skill_category_delete', {id: skill_category.id})" :token="csrf_token('delete' ~ skill_category.id)" :label="skill_category.name" entity="cette catégorie" />
+							</div>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="3"><twig:EmptyState text="Aucune catégorie trouvée." icon="ti-category" /></td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock %}

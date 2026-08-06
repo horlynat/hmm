@@ -1,0 +1,28 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block title %}Confirmez votre adresse email{% endblock %}
+{% block preheader %}Confirmez votre adresse email pour activer votre compte.{% endblock %}
+
+{% block body %}
+	<p style="margin:0 0 16px;">Bonjour <strong>{{ fullName }}</strong>,</p>
+	<p style="margin:0 0 24px;">
+		Merci de vous être inscrit sur Horlynat | Portail Digital. Pour activer votre compte et accéder à votre espace, veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous :
+	</p>
+
+	<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+		<tr>
+			<td align="center" bgcolor="#0077b6" style="background-color:#0077b6; border-radius:6px;">
+				<a href="{{ verifyUrl }}" style="display:inline-block; padding:14px 28px; color:#ffffff; font-size:15px; font-weight:bold; text-decoration:none; font-family:Arial, Helvetica, sans-serif;">
+					Confirmer mon email
+				</a>
+			</td>
+		</tr>
+	</table>
+
+	<p style="margin:0 0 8px; font-size:13px; color:#57606a;">
+		Ce lien est personnel et expire dans 24 heures. Ne le partagez avec personne.
+	</p>
+	<p style="margin:0; font-size:13px; color:#57606a;">
+		Si vous n'êtes pas à l'origine de cette inscription, ignorez simplement cet email.
+	</p>
+{% endblock %}

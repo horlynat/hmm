@@ -1,0 +1,42 @@
+{#
+   Composant : bouton + modale native <dialog> de confirmation de suppression.
+   Réutilisable pour toute entité (route + jeton CSRF passés en props).
+   Usage :
+     <twig:DeleteModal
+        :id="admin.id"
+        :action="path('admin_admins_delete', {id: admin.id})"
+        :token="csrf_token('admin_admins_delete_' ~ admin.id)"
+        :label="admin.fullName ?? admin.email"
+        entity="cet administrateur" />
+#}
+{% props id, action, token, label, entity = 'cet élément' %}
+<div class="inline-block">
+	<button type="button" onclick="document.getElementById('delete-modal-{{ id }}').showModal()"
+			class="btn btn-ghost btn-icon text-danger" aria-label="Supprimer {{ label }}">
+		<span class="ti ti-trash text-lg" aria-hidden="true"></span>
+	</button>
+
+	<dialog id="delete-modal-{{ id }}" class="panel p-6 max-w-md w-full backdrop:bg-brand-dark/40 backdrop:backdrop-blur-sm shadow-2xl">
+		<div class="text-center">
+			<div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-danger/10 text-danger mb-4">
+				<span class="ti ti-alert-triangle text-2xl" aria-hidden="true"></span>
+			</div>
+			<h3 class="text-lg font-heading font-bold text-(--brand-dark)">Supprimer {{ entity }} ?</h3>
+			<p class="text-sm opacity-80 mt-2 px-2">
+				Êtes-vous sûr de vouloir supprimer
+				<span class="font-bold text-(--brand-dark)">« {{ label }} »</span> ? Cette action est irréversible.
+			</p>
+			<div class="mt-6 flex flex-col sm:flex-row-reverse gap-3">
+				<form method="post" action="{{ action }}" class="w-full sm:w-auto flex-1">
+					<input type="hidden" name="_token" value="{{ token }}">
+					<button type="submit" onclick="this.disabled=true; this.form.submit();" class="btn btn-danger w-full gap-2">
+						<span class="ti ti-trash" aria-hidden="true"></span> Confirmer
+					</button>
+				</form>
+				<button type="button" onclick="document.getElementById('delete-modal-{{ id }}').close()" class="btn btn-secondary w-full sm:w-auto flex-1">
+					Annuler
+				</button>
+			</div>
+		</div>
+	</dialog>
+</div>

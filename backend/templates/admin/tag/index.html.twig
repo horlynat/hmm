@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des tags{% endblock %}
+
+{% block body %}
+	{% set n = tags|length %}
+	<twig:PageHeader title="Tags" :subtitle="n ~ ' étiquette' ~ (n > 1 ? 's' : '') ~ ' de classification.'" icon="ti-tag">
+		<a href="{{ path('admin_tag_create') }}" class="btn btn-primary gap-2">
+			<span class="ti ti-plus" aria-hidden="true"></span>
+			<span>Nouveau tag</span>
+		</a>
+	</twig:PageHeader>
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Liste des tags</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="w-24">Id</th>
+					<th scope="col">Nom du tag</th>
+					<th scope="col" class="w-40 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for tag in tags %}
+					<tr>
+						<td class="font-mono text-xs opacity-50">{{ tag.id }}</td>
+						<td><twig:Badge variant="info" icon="ti-tag">{{ tag.name }}</twig:Badge></td>
+						<td>
+							<div class="flex items-center justify-end gap-1">
+								<a href="{{ path('admin_tag_read', {'id': tag.id}) }}" class="btn btn-ghost btn-icon" aria-label="Voir {{ tag.name }}">
+									<span class="ti ti-eye text-lg" aria-hidden="true"></span>
+								</a>
+								<a href="{{ path('admin_tag_update', {'id': tag.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ tag.name }}">
+									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
+								</a>
+								<twig:DeleteModal :id="tag.id" :action="path('admin_tag_delete', {id: tag.id})" :token="csrf_token('delete' ~ tag.id)" :label="tag.name" entity="ce tag" />
+							</div>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="3"><twig:EmptyState text="Aucun tag pour le moment." icon="ti-tag" /></td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock %}

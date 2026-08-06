@@ -1,0 +1,97 @@
+<?php
+
+namespace App\State;
+
+use ApiPlatform\Metadata\Operation;
+use ApiPlatform\State\ProcessorInterface;
+use App\ApiResource\ClientRegistrationApiResource;
+use App\Entity\User;
+use App\Enum\NotificationPriorityEnum;
+use App\Exception\ConflictException;
+use App\Service\AccountLinkResolver;
+use App\Service\AdminAlertNotifier;
+use App\Service\EmailManager;
+use App\Service\JWTService;
+use App\Service\PublicSubmissionThrottler;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+
+/**
+ * Crée un vrai compte User (ROLE_USER) à partir de l'inscription publique
+ * client — même mécanique que CollaboratorRegistrationProcessor (hash du mot de
+ * passe, email de vérification via JWTService/EmailManager, alerte admin,
+ * throttling), sans les champs de profil collaborateur. Un client n'obtient
+ * jamais automatiquement de rôle d'édition : ses droits découlent de ses
+ * attributions (Project.client, quoteRequest).
+ *
+ * @implements ProcessorInterface<ClientRegistrationApiResource, User>
+ */
+final class ClientRegistrationProcessor implements ProcessorInterface
+{
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager,
+        private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly JWTService $jwt,
+        private readonly EmailManager $emailManager,
+        private readonly AdminAlertNotifier $adminAlertNotifier,
+        private readonly PublicSubmissionThrottler $throttler,
+        private readonly AccountLinkResolver $accountLinkResolver,
+    ) {
+    }
+
+    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): User
+    {
+        $this->throttler->assertRegistrationAllowed();
+
+        $user = new User();
+        $user->setEmail($data->getEmail());
+        $user->setFullName($data->getFullName());
+        $user->setPhone($data->getPhone());
+        $user->setPassword($this->passwordHasher->hashPassword($user, $data->getPlainPassword()));
+        $user->setRoles(['ROLE_USER']);
+        $user->setCreatedAt(new \DateTimeImmutable());
+
+        $this->entityManager->persist($user);
+
+        try {
+            $this->entityManager->flush();
+        } catch (UniqueConstraintViolationException $e) {
+            // Le validator (UniqueEntity sur User::email) a déjà été passé avant
+            // d'arriver ici : ce cas ne survient qu'en cas de course entre deux
+            // requêtes concurrentes sur le même email (double clic, retry après
+            // timeout réseau...). On évite de laisser fuiter une erreur SQL brute.
+            throw new ConflictException('Un compte existe déjà avec cet email.', context: ['email' => $user->getEmail()], previous: $e);
+        }
+
+        $this->adminAlertNotifier->alert(
+            NotificationPriorityEnum::LOW,
+            'Nouvelle inscription client',
+            sprintf(
+                '%s <%s> vient de créer un compte client.',
+                $user->getFullName() ?? $user->getEmail(),
+                $user->getEmail(),
+            ),
+        );
+
+        $token = $this->jwt->generateEmailVerificationToken($user->getId());
+
+        $this->emailManager->sendNow(
+            to: $user->getEmail(),
+            subject: 'Confirmez votre adresse email',
+            template: 'confirmation_email',
+            context: [
+                'user' => $user,
+                'fullName' => $user->getFullName(),
+                'verifyUrl' => $this->accountLinkResolver->resolve(
+                    $user,
+                    'verify_user',
+                    ['token' => $token],
+                    '/verification-email/'.$token,
+                ),
+            ],
+        );
+
+        return $user;
+    }
+}

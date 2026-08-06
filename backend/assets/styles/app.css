@@ -1,0 +1,397 @@
+/* Importation des styles globaux pour l'application */
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   @theme — Tailwind v4 : Source unique de vérité pour tes tokens de design
+   Génère automatiquement les utilitaires ET les variables globales (ex: var(--color-brand-primary))
+───────────────────────────────────────────────────────────────────────────── */
+@theme {
+    /* Couleurs de marque */
+    --color-brand-dark:    #03045E;
+    --color-brand-primary: #0077B6;
+    --color-brand-accent:  #00B4D8;
+    --color-brand-light:   #CAF0F8;
+
+    /* États */
+    --color-success: #16A34A;
+    --color-info:    #0EA5E9;
+    --color-warning: #FACC15;
+    --color-danger:  #DC2626;
+
+    /* Backgrounds */
+    --color-bg-default: #F9FAFB;
+    --color-bg-card:    #FFFFFF;
+    --color-bg-dark:    #1F2937;
+
+    /* Typographie */
+    --font-heading: "Inter", system-ui, -apple-system, sans-serif;
+    --font-sans:    "Nunito", system-ui, -apple-system, sans-serif;
+    --font-mono:    "JetBrains Mono", ui-monospace, monospace;
+
+    /* Border radius sémanitques */
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Gestion du Mode Sombre par surcharge propre des tokens natifs de Tailwind v4
+───────────────────────────────────────────────────────────────────────────── */
+.dark {
+    --color-bg-default:    #0b1220;
+    --color-bg-card:       #0f1724;
+    --color-brand-dark:    #e6eefc;
+    --color-brand-primary: #60a5fa;
+    --color-brand-accent:  #38bdf8;
+    --color-brand-light:   #0ea5e9;
+    --color-success:       #86efac;
+    --color-info:          #7dd3fc;
+    --color-warning:       #facc15;
+    --color-danger:        #fca5a5;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Configuration de Base
+───────────────────────────────────────────────────────────────────────────── */
+/* Alpine.js : masque les éléments x-cloak jusqu'à l'initialisation (anti-flash) */
+[x-cloak] { display: none !important; }
+
+html, body {
+    height: 100%;
+}
+body {
+    font-family: var(--font-sans);
+    background-color: var(--color-bg-default);
+    color: var(--color-brand-dark);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.45;
+    margin: 0;
+}
+h1, h2, h3, .heading {
+    font-family: var(--font-heading);
+    color: var(--color-brand-dark);
+    @apply font-bold tracking-tight;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Composants d'Interface Épurés
+───────────────────────────────────────────────────────────────────────────── */
+
+/* Card Structurelle standard */
+.card {
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-card);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    @apply shadow-sm p-6 transition-transform duration-200 ease-in-out;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .card:hover { 
+        @apply scale-[1.01] shadow-md;
+    }
+}
+
+/* Soft UI Card dédiée aux tableaux et filtres de ton Dashboard */
+.soft-card {
+    background-color: var(--color-bg-card);
+    border: 1px solid rgba(3, 4, 94, 0.08);
+    border-radius: var(--radius-lg);
+    @apply shadow-xs transition-all duration-200 ease-in-out;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .soft-card:hover {
+        @apply -translate-y-0.5 shadow-md;
+    }
+}
+
+/* Tableaux Administratifs */
+.table { 
+    @apply w-full border-collapse text-left text-sm; 
+}
+.table th {
+    background-color: var(--color-brand-dark);
+    color: var(--color-bg-card);
+    padding: 0.75rem 1rem;
+    font-family: var(--font-heading);
+    @apply font-semibold tracking-wide uppercase text-xs;
+}
+.table td { 
+    border-top: 1px solid rgba(3, 4, 94, 0.06); 
+    padding: 0.75rem 1rem; 
+}
+.table tr:hover { 
+    background-color: rgba(0, 119, 182, 0.04); 
+}
+
+/* Formulaires & Éléments de Saisie */
+.input {
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(3, 4, 94, 0.15);
+    background-color: var(--color-bg-card);
+    color: inherit;
+    @apply px-4 py-2 text-base transition-all duration-150 ease-in-out focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/20;
+}
+.input::placeholder {
+    @apply text-gray-400;
+}
+
+/* États des champs obligatoires ou contextuels */
+.input-primary   { border-color: var(--color-brand-primary); }
+.input-success   { border-color: var(--color-success); color: var(--color-success); }
+.input-danger    { border-color: var(--color-danger);  color: var(--color-danger); }
+.input-warning   { border-color: var(--color-warning); color: var(--color-warning); }
+
+/* Textes d'aide sous les champs (login/register) */
+.helper-success  { color: var(--color-success); }
+.helper-danger   { color: var(--color-danger); }
+
+.input-disabled  { 
+    @apply bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed dark:bg-gray-800/50; 
+}
+.textarea { 
+    @apply h-32 resize-y; 
+}
+
+/* Checkbox & Radios harmonisés */
+.input-checkbox, .input-radio {
+    @apply h-4 w-4 rounded border-gray-300 transition-colors;
+    accent-color: var(--color-brand-primary);
+}
+
+/* Select customisé avec flèche dynamique */
+.input-select {
+    @apply appearance-none pr-10 bg-no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='gray' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+}
+
+/* Boutons d'Action Clairs */
+.btn {
+    font-family: var(--font-heading);
+    border-radius: var(--radius-sm);
+    @apply inline-flex items-center justify-center font-semibold text-sm px-4 py-2.5 transition-all duration-150 shadow-xs focus:outline-none focus:ring-2 focus:ring-brand-primary/40 focus:ring-offset-2 active:scale-98 cursor-pointer;
+}
+.btn-primary { 
+    background: linear-gradient(135deg, var(--color-brand-dark), var(--color-brand-primary) 70%); 
+    @apply text-white hover:opacity-95 hover:shadow-sm;
+}
+.btn-secondary { 
+    @apply bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-700; 
+}
+
+/* Badges de Statuts Complets */
+.badge { 
+    border-radius: var(--radius-lg);
+    @apply inline-flex items-center px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase; 
+}
+
+/* Utilitaires structurels légers */
+.text-truncate {
+    @apply truncate;
+}
+
+.center {
+    @apply flex items-center justify-center;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Refonte — Couche composants harmonisée (Tailwind v4)
+   Ajouts non destructifs : complètent .card/.soft-card/.table/.input/.btn/.badge.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* Accessibilité : lien d'évitement (masqué jusqu'au focus clavier) */
+.skip-link {
+    @apply sr-only;
+}
+.skip-link:focus {
+    @apply not-sr-only fixed left-4 top-4 z-[100] rounded-md px-4 py-2 text-sm font-semibold text-white shadow-lg;
+    background: var(--color-brand-primary);
+}
+
+/* Anneau de focus cohérent sur TOUS les interactifs (clavier uniquement) */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+    @apply outline-none ring-2 ring-offset-2;
+    --tw-ring-color: color-mix(in srgb, var(--color-brand-primary) 60%, transparent);
+    --tw-ring-offset-color: var(--color-bg-default);
+}
+
+/* Animation d'entrée du contenu (référencée par base.html.twig, était manquante) */
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+    animation: fade-in 0.28s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade-in { animation: none; }
+}
+
+/* En-tête de page standard : titre + sous-titre + actions */
+.page-header {
+    @apply flex flex-col gap-4 pb-5 mb-6 border-b sm:flex-row sm:items-center sm:justify-between;
+    border-color: color-mix(in srgb, var(--color-brand-dark) 8%, transparent);
+}
+.page-title {
+    font-family: var(--font-heading);
+    @apply text-2xl font-bold tracking-tight;
+    color: var(--color-brand-dark);
+}
+.page-subtitle {
+    @apply text-sm mt-1;
+    color: color-mix(in srgb, var(--color-brand-dark) 55%, transparent);
+}
+
+/* Panneau de contenu neutre (sans effet hover, pour les sections de formulaire/détail) */
+.panel {
+    background-color: var(--color-bg-card);
+    border: 1px solid color-mix(in srgb, var(--color-brand-dark) 8%, transparent);
+    border-radius: var(--radius-lg);
+    @apply shadow-xs;
+}
+.panel-header {
+    @apply px-5 py-4 border-b;
+    border-color: color-mix(in srgb, var(--color-brand-dark) 8%, transparent);
+}
+.panel-title {
+    font-family: var(--font-heading);
+    @apply text-sm font-bold uppercase tracking-wider;
+    color: color-mix(in srgb, var(--color-brand-dark) 65%, transparent);
+}
+.panel-body { @apply p-5; }
+
+/* Tuile de statistique (KPI dashboard) */
+.stat-tile {
+    background-color: var(--color-bg-card);
+    border: 1px solid color-mix(in srgb, var(--color-brand-dark) 8%, transparent);
+    border-radius: var(--radius-md);
+    @apply p-4 flex items-center gap-4 transition-all duration-200;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .stat-tile:hover { @apply -translate-y-0.5 shadow-md; }
+}
+.stat-tile__icon {
+    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl;
+    background: color-mix(in srgb, var(--color-brand-primary) 12%, transparent);
+    color: var(--color-brand-primary);
+}
+.stat-tile__value {
+    font-family: var(--font-heading);
+    @apply text-2xl font-extrabold leading-none;
+    color: var(--color-brand-dark);
+}
+.stat-tile__label {
+    @apply text-[11px] font-semibold uppercase tracking-wide mt-1;
+    color: color-mix(in srgb, var(--color-brand-dark) 50%, transparent);
+}
+
+/* Table responsive : conteneur à défilement horizontal isolé */
+.table-wrap {
+    @apply w-full overflow-x-auto rounded-xl border;
+    border-color: color-mix(in srgb, var(--color-brand-dark) 8%, transparent);
+}
+.table-wrap .table { @apply mb-0; }
+.table tbody tr:last-child td { @apply border-b-0; }
+.table--compact th,
+.table--compact td { @apply px-3 py-2; }
+
+/* État vide (listes sans résultat) */
+.empty-state {
+    @apply flex flex-col items-center justify-center text-center py-14 px-6;
+}
+.empty-state__icon {
+    @apply text-4xl mb-3 opacity-60;
+    color: var(--color-brand-primary);
+}
+.empty-state__text {
+    @apply text-sm font-medium;
+    color: color-mix(in srgb, var(--color-brand-dark) 55%, transparent);
+}
+
+/* Pagination */
+.pagination { @apply flex flex-wrap items-center gap-1; }
+.pagination a,
+.pagination span {
+    @apply inline-flex h-9 min-w-9 items-center justify-center rounded-md px-3 text-sm font-medium transition-colors;
+}
+.pagination a {
+    color: var(--color-brand-dark);
+    @apply hover:bg-gray-100 dark:hover:bg-gray-800;
+}
+.pagination .is-active {
+    background: var(--color-brand-primary);
+    @apply text-white;
+}
+.pagination .is-disabled {
+    @apply opacity-40 pointer-events-none;
+}
+
+/* Groupe de champ de formulaire cohérent */
+.field { @apply mb-4; }
+.field-label {
+    @apply block text-sm font-semibold mb-2;
+    color: var(--color-brand-dark);
+}
+.field-error {
+    @apply mt-1.5 text-xs font-medium;
+    color: var(--color-danger);
+}
+.field-hint {
+    @apply mt-1.5 text-xs;
+    color: color-mix(in srgb, var(--color-brand-dark) 50%, transparent);
+}
+
+/* Champ de recherche (référencé dans le header, était manquant) */
+.input-search {
+    @apply pl-9 bg-no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z'/%3E%3C/svg%3E");
+    background-position: left 0.65rem center;
+    background-size: 1rem;
+}
+
+/* Variantes de boutons complémentaires */
+.btn-danger {
+    background: linear-gradient(135deg, #b91c1c, var(--color-danger) 70%);
+    @apply text-white hover:opacity-95 hover:shadow-sm;
+}
+.btn-ghost {
+    @apply bg-transparent text-gray-600 hover:bg-gray-100 shadow-none dark:text-gray-300 dark:hover:bg-gray-800;
+}
+.btn-icon {
+    @apply p-2 aspect-square;
+}
+.btn-sm {
+    @apply px-3 py-1.5 text-xs;
+}
+
+/* Badges sémantiques (remplacent les couleurs inline).
+   Texte assombri en clair pour le contraste AA ; éclairci en dark mode. */
+.badge-success { background: color-mix(in srgb, var(--color-success) 16%, transparent); color: #15803d; }
+.badge-danger  { background: color-mix(in srgb, var(--color-danger) 16%, transparent);  color: #b91c1c; }
+.badge-warning { background: color-mix(in srgb, #f59e0b 20%, transparent);               color: #92400e; }
+.badge-info    { background: color-mix(in srgb, var(--color-info) 16%, transparent);     color: #0369a1; }
+.badge-neutral { background: color-mix(in srgb, var(--color-brand-dark) 8%, transparent); color: var(--color-brand-dark); }
+.dark .badge-success { color: #86efac; }
+.dark .badge-danger  { color: #fca5a5; }
+.dark .badge-warning { color: #fcd34d; }
+.dark .badge-info    { color: #7dd3fc; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Accessibilité & Performance (Respect des préférences système)
+───────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-delay: -1ms !important;
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+        scroll-behavior: auto !important;
+    }
+}

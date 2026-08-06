@@ -1,0 +1,122 @@
+{{ form_start(form, {'attr': {'class': 'space-y-4', 'novalidate': 'novalidate'}}) }}
+
+{% if form_errors(form) %}
+	<div class="field-error mb-4">{{ form_errors(form) }}</div>
+{% endif %}
+
+<div class="panel">
+	<div class="panel-header"><h2 class="panel-title">Informations personnelles</h2></div>
+	<div class="panel-body grid grid-cols-1 md:grid-cols-2 gap-4">
+		<div class="field">
+			{{ form_label(form.fullName, null, {'label_attr': {'class': 'field-label'}}) }}
+			{{ form_widget(form.fullName, {'attr': {'class': 'input w-full'}}) }}
+			{{ form_errors(form.fullName, {'attr': {'class': 'field-error'}}) }}
+		</div>
+		<div class="field">
+			{{ form_label(form.email, null, {'label_attr': {'class': 'field-label'}}) }}
+			{{ form_widget(form.email, {'attr': {'class': 'input w-full'}}) }}
+			{{ form_errors(form.email, {'attr': {'class': 'field-error'}}) }}
+		</div>
+		<div class="field">
+			{{ form_label(form.phone, null, {'label_attr': {'class': 'field-label'}}) }}
+			{{ form_widget(form.phone, {'attr': {'class': 'input w-full'}}) }}
+			{{ form_errors(form.phone, {'attr': {'class': 'field-error'}}) }}
+		</div>
+	</div>
+</div>
+
+<div class="panel">
+	<div class="panel-header"><h2 class="panel-title">Mot de passe</h2></div>
+	<div class="panel-body grid grid-cols-1 md:grid-cols-2 gap-4">
+		<div class="field">
+			{{ form_label(form.plainPassword, null, {'label_attr': {'class': 'field-label'}}) }}
+			{{ form_widget(form.plainPassword, {'attr': {'class': 'input w-full'}}) }}
+			<p class="field-hint">Laisser vide pour ne pas changer.</p>
+			{{ form_errors(form.plainPassword, {'attr': {'class': 'field-error'}}) }}
+		</div>
+		<div class="field">
+			{{ form_label(form.confirmPassword, null, {'label_attr': {'class': 'field-label'}}) }}
+			{{ form_widget(form.confirmPassword, {'attr': {'class': 'input w-full'}}) }}
+			{{ form_errors(form.confirmPassword, {'attr': {'class': 'field-error'}}) }}
+		</div>
+	</div>
+</div>
+
+{% if form.specialties is defined %}
+	<div class="panel">
+		<div class="panel-header">
+			<h2 class="panel-title flex items-center gap-2">
+				<span class="ti ti-user-star" aria-hidden="true"></span>
+				Profil collaborateur (pro / freelance)
+			</h2>
+		</div>
+		<div class="panel-body grid grid-cols-1 md:grid-cols-2 gap-4">
+			<div class="field">
+				{{ form_label(form.specialties, null, {'label_attr': {'class': 'field-label'}}) }}
+				{{ form_widget(form.specialties, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.specialties, {'attr': {'class': 'field-error'}}) }}
+			</div>
+			<div class="field">
+				{{ form_label(form.availability, null, {'label_attr': {'class': 'field-label'}}) }}
+				{{ form_widget(form.availability, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.availability, {'attr': {'class': 'field-error'}}) }}
+			</div>
+			<div class="field">
+				{{ form_label(form.portfolioUrl, null, {'label_attr': {'class': 'field-label'}}) }}
+				{{ form_widget(form.portfolioUrl, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.portfolioUrl, {'attr': {'class': 'field-error'}}) }}
+			</div>
+			<div class="field md:col-span-2">
+				{{ form_label(form.bio, null, {'label_attr': {'class': 'field-label'}}) }}
+				{{ form_widget(form.bio, {'attr': {'class': 'input textarea w-full'}}) }}
+				{{ form_errors(form.bio, {'attr': {'class': 'field-error'}}) }}
+			</div>
+		</div>
+	</div>
+{% endif %}
+
+<div class="panel">
+	<div class="panel-header"><h2 class="panel-title">Sécurité</h2></div>
+	<div class="panel-body">
+		<label class="flex items-center gap-2">
+			{{ form_widget(form.isTwoFactorEnabled, {'attr': {'class': 'input-checkbox'}}) }}
+			<span class="text-sm text-(--brand-dark)">2FA activé</span>
+		</label>
+		<p class="field-hint mt-2">
+			Rôles, vérification d'e-mail et statut du compte sont gérés depuis l'espace d'administration.
+			L'activation ou la désactivation de la 2FA se fait depuis « Sécurité et 2FA ».
+		</p>
+	</div>
+</div>
+
+<div class="panel">
+	<div class="panel-header"><h2 class="panel-title">Informations système</h2></div>
+	<div class="panel-body grid grid-cols-1 md:grid-cols-2 gap-4">
+		<div class="field">
+			{{ form_label(form.lastIp, null, {'label_attr': {'class': 'field-label'}}) }}
+			{{ form_widget(form.lastIp, {'attr': {'class': 'input input-disabled w-full'}}) }}
+		</div>
+		<div class="field">
+			{{ form_label(form.lastLocation, null, {'label_attr': {'class': 'field-label'}}) }}
+			{{ form_widget(form.lastLocation, {'attr': {'class': 'input input-disabled w-full'}}) }}
+		</div>
+		<div class="field">
+			{{ form_label(form.lastLoginAt, 'Dernière connexion', {'label_attr': {'class': 'field-label'}}) }}
+			{{ form_widget(form.lastLoginAt, {'attr': {'class': 'input input-disabled w-full'}}) }}
+		</div>
+		<div class="field">
+			{{ form_label(form.lastDevice, null, {'label_attr': {'class': 'field-label'}}) }}
+			{{ form_widget(form.lastDevice, {'attr': {'class': 'input input-disabled w-full'}}) }}
+		</div>
+	</div>
+</div>
+
+<div class="flex justify-end gap-3">
+	<a href="{{ path('profile_read', {'id': user.id}) }}" class="btn btn-secondary">Annuler</a>
+	<button type="submit" class="btn btn-primary gap-2">
+		<span class="ti ti-device-floppy" aria-hidden="true"></span>
+		Enregistrer les modifications
+	</button>
+</div>
+
+{{ form_end(form) }}

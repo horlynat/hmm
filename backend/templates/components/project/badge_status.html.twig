@@ -1,0 +1,5 @@
+{# templates/components/project/_badge_status.html.twig #}
+<span class="badge {{ this.status.badgeClass|default('bg-gray-100 text-gray-800') }} inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold shadow-xs" {{ attributes }}>
+	<span class="text-xs opacity-90" aria-hidden="true">{{ this.icon }}</span>
+	<span>{{ this.status.label }}</span>
+</span>

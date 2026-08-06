@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle dépense — {{ project.title }}{% endblock %}
+
+{% block body %}
+	<div class="page-header">
+		<div class="min-w-0">
+			<nav class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider opacity-50 mb-1" aria-label="Fil d'Ariane">
+				<a href="{{ path('admin_project_read', {id: project.id}) }}" class="hover:text-(--brand-primary) transition-colors">{{ project.title }}</a>
+				<span class="ti ti-chevron-right text-xs" aria-hidden="true"></span>
+				<span aria-current="page">Nouvelle dépense</span>
+			</nav>
+			<h1 class="page-title flex items-center gap-2">
+				<span class="ti ti-cash text-(--brand-primary)" aria-hidden="true"></span>
+				Enregistrer une dépense
+			</h1>
+		</div>
+		<a href="{{ path('admin_project_read', {id: project.id}) }}" class="btn btn-secondary gap-2">
+			<span class="ti ti-arrow-left" aria-hidden="true"></span> Retour au projet
+		</a>
+	</div>
+
+	<div class="max-w-2xl">
+		<div class="mb-4 flex items-center gap-2 text-sm rounded-lg bg-brand-light/30 border border-brand-light p-3 text-(--brand-dark)">
+			<span class="ti ti-info-circle shrink-0" aria-hidden="true"></span>
+			<span>La dépense sera enregistrée <strong>en attente d'approbation</strong> ; elle n'impactera le budget qu'une fois approuvée. Solde disponible : <strong>{{ project.formattedRemainingBudget }}</strong>.</span>
+		</div>
+
+		<div class="panel">
+			<div class="panel-body">
+				{{ form_start(form, {'attr': {'class': 'space-y-4'}}) }}
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+					<div class="field">
+						{{ form_label(form.amount, 'Montant (€)', {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.amount) }}
+						{{ form_errors(form.amount, {'attr': {'class': 'field-error'}}) }}
+					</div>
+					<div class="field">
+						{{ form_label(form.category, 'Catégorie', {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.category) }}
+						{{ form_errors(form.category, {'attr': {'class': 'field-error'}}) }}
+					</div>
+					<div class="field">
+						{{ form_label(form.spentAt, 'Date de la dépense', {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.spentAt) }}
+						{{ form_errors(form.spentAt, {'attr': {'class': 'field-error'}}) }}
+					</div>
+					<div class="field">
+						{{ form_label(form.receipt, 'Justificatif', {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.receipt) }}
+						{{ form_errors(form.receipt, {'attr': {'class': 'field-error'}}) }}
+					</div>
+				</div>
+				<div class="field">
+					{{ form_label(form.description, 'Description', {'label_attr': {'class': 'field-label'}}) }}
+					{{ form_widget(form.description) }}
+					{{ form_errors(form.description, {'attr': {'class': 'field-error'}}) }}
+				</div>
+
+				<div class="pt-4 flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-800">
+					<a href="{{ path('admin_project_read', {id: project.id}) }}" class="btn btn-secondary">Annuler</a>
+					<button type="submit" class="btn btn-primary gap-2">
+						<span class="ti ti-device-floppy" aria-hidden="true"></span> Soumettre la dépense
+					</button>
+				</div>
+				{{ form_end(form) }}
+			</div>
+		</div>
+	</div>
+{% endblock %}

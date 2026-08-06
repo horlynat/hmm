@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Sessions actives{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Sessions actives" subtitle="Sessions ouvertes depuis la dernière connexion de chaque compte." icon="ti-devices" />
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Sessions actives</caption>
+			<thead>
+				<tr>
+					<th scope="col">Compte</th><th scope="col">IP</th><th scope="col">Appareil</th>
+					<th scope="col">Ouverte le</th><th scope="col">Statut</th><th scope="col" class="w-32 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for entry in sessions %}
+					{% set userSession = entry.session %}
+					<tr>
+						<td class="font-medium text-(--brand-dark)">{{ userSession.user.fullName ?? userSession.user.email }}</td>
+						<td class="font-mono text-xs">{{ userSession.ip ?? '—' }}</td>
+						<td class="text-sm opacity-70 truncate max-w-xs">{{ userSession.userAgent ?? '—' }}</td>
+						<td class="text-sm opacity-70 whitespace-nowrap">{{ userSession.createdAt|date('d/m/Y H:i') }}</td>
+						<td>
+							{% if userSession.sessionId == currentSessionId %}
+								<twig:Badge variant="info">Vous</twig:Badge>
+							{% elseif entry.state == 'active' %}
+								<twig:Badge variant="success">Active</twig:Badge>
+							{% elseif entry.state == 'expired' %}
+								<twig:Badge variant="warning">Expirée</twig:Badge>
+							{% else %}
+								<twig:Badge variant="neutral">Terminée</twig:Badge>
+							{% endif %}
+						</td>
+						<td class="text-right">
+							{% if entry.state in ['active', 'expired'] and userSession.sessionId != currentSessionId %}
+								<form method="post" action="{{ path('admin_security_session_revoke', {id: userSession.id}) }}" onsubmit="return confirm('Forcer la déconnexion de {{ userSession.user.email }} ?');">
+									<input type="hidden" name="_token" value="{{ csrf_token('admin_security_session_revoke_' ~ userSession.id) }}">
+									<button type="submit" class="btn btn-ghost btn-icon text-danger" aria-label="Forcer la déconnexion de {{ userSession.user.email }}">
+										<span class="ti ti-logout text-lg" aria-hidden="true"></span>
+									</button>
+								</form>
+							{% endif %}
+						</td>
+					</tr>
+				{% else %}
+					<tr><td colspan="6"><twig:EmptyState text="Aucune session enregistrée." icon="ti-devices" /></td></tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	<div class="panel mt-6">
+		<div class="panel-header">
+			<h2 class="panel-title">Comptes qui ne se connectent plus ({{ inactiveUsers|length }})</h2>
+			<p class="text-xs opacity-50 mt-1">Aucune connexion depuis plus de {{ inactiveAccountDays }} jours (ou jamais).</p>
+		</div>
+		<div class="table-wrap border-0">
+			<table class="table">
+				<caption class="sr-only">Comptes inactifs</caption>
+				<thead><tr><th scope="col">Compte</th><th scope="col">Dernière connexion</th></tr></thead>
+				<tbody>
+					{% for user in inactiveUsers %}
+						<tr>
+							<td class="font-medium text-(--brand-dark)">{{ user.fullName ?? user.email }}</td>
+							<td class="text-sm opacity-70">{{ user.lastLoginAt ? user.lastLoginAt|date('d/m/Y H:i') : 'Jamais connecté' }}</td>
+						</tr>
+					{% else %}
+						<tr><td colspan="2"><twig:EmptyState text="Aucun compte inactif." icon="ti-user-check" /></td></tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+{% endblock %}

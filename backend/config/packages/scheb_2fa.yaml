@@ -1,0 +1,14 @@
+# See the configuration reference at https://symfony.com/bundles/SchebTwoFactorBundle/6.x/configuration.html
+scheb_two_factor:
+    security_tokens:
+        - Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken
+        - Symfony\Component\Security\Http\Authenticator\Token\PostAuthenticationToken
+        # Sans cette entrée, une connexion restaurée via le cookie "remember me" (7 jours,
+        # cf. security.yaml) ne redemande jamais le code TOTP : AuthenticatedTokenCondition
+        # ne déclenche la 2FA que pour les classes de token listées ici.
+        - Symfony\Component\Security\Core\Authentication\Token\RememberMeToken
+
+    totp:
+        enabled: true
+        issuer: 'HMM Admin'
+        template: 'security/2fa_form.html.twig'

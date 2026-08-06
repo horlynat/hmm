@@ -1,0 +1,9 @@
+{#
+   Composant : état vide pour les listes sans résultat.
+   Usage : <twig:EmptyState text="Aucun résultat." icon="ti-users" />
+#}
+{% props text, icon = 'ti-inbox' %}
+<div class="empty-state">
+	<span class="ti {{ icon }} empty-state__icon" aria-hidden="true"></span>
+	<p class="empty-state__text">{{ text }}</p>
+</div>

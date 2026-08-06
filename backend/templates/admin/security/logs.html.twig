@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Logs de connexion{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Logs de connexion" subtitle="Historique des connexions réussies et des tentatives échouées." icon="ti-file-text" />
+
+	<div class="flex items-center gap-2 mb-4">
+		<a href="{{ path('admin_security_log_index', {tab: 'success', search: search}) }}" class="btn btn-sm {{ tab == 'success' ? 'btn-primary' : 'btn-secondary' }}">Connexions réussies</a>
+		<a href="{{ path('admin_security_log_index', {tab: 'failed', search: search}) }}" class="btn btn-sm {{ tab == 'failed' ? 'btn-primary' : 'btn-secondary' }}">Tentatives échouées</a>
+	</div>
+
+	<form method="get" role="search" class="mb-4 flex gap-2">
+		<input type="hidden" name="tab" value="{{ tab }}">
+		<label for="log-search" class="sr-only">Rechercher par email ou IP</label>
+		<input id="log-search" type="search" name="search" value="{{ search }}" placeholder="Rechercher par email ou IP…" class="input w-full max-w-xs">
+		<button type="submit" class="btn btn-secondary gap-2"><span class="ti ti-filter" aria-hidden="true"></span> Filtrer</button>
+	</form>
+
+	<div class="table-wrap">
+		<table class="table">
+			{% if tab == 'success' %}
+				<caption class="sr-only">Connexions réussies</caption>
+				<thead>
+					<tr><th scope="col">Compte</th><th scope="col">IP</th><th scope="col">Appareil</th><th scope="col">Date</th></tr>
+				</thead>
+				<tbody>
+					{% for entry in entries %}
+						<tr>
+							<td class="font-medium text-(--brand-dark)">{{ entry.user.email }}</td>
+							<td class="font-mono text-xs">{{ entry.ip ?? '—' }}</td>
+							<td class="text-sm opacity-70 truncate max-w-xs">{{ entry.device ?? '—' }}</td>
+							<td class="text-sm opacity-70 whitespace-nowrap">{{ entry.loginAt|date('d/m/Y H:i') }}</td>
+						</tr>
+					{% else %}
+						<tr><td colspan="4"><twig:EmptyState text="Aucune connexion trouvée." icon="ti-login" /></td></tr>
+					{% endfor %}
+				</tbody>
+			{% else %}
+				<caption class="sr-only">Tentatives de connexion échouées</caption>
+				<thead>
+					<tr><th scope="col">Email tenté</th><th scope="col">Motif</th><th scope="col">IP</th><th scope="col">Date</th></tr>
+				</thead>
+				<tbody>
+					{% for entry in entries %}
+						<tr>
+							<td class="font-medium text-(--brand-dark)">{{ entry.email }}</td>
+							<td><twig:Badge variant="danger">{{ entry.reasonLabel }}</twig:Badge></td>
+							<td class="font-mono text-xs">{{ entry.ip ?? '—' }}</td>
+							<td class="text-sm opacity-70 whitespace-nowrap">{{ entry.createdAt|date('d/m/Y H:i') }}</td>
+						</tr>
+					{% else %}
+						<tr><td colspan="4"><twig:EmptyState text="Aucune tentative échouée trouvée." icon="ti-shield-check" /></td></tr>
+					{% endfor %}
+				</tbody>
+			{% endif %}
+		</table>
+	</div>
+
+	{% if totalPages > 1 %}
+		<div class="flex justify-center mt-6">
+			<twig:Pagination :currentPage="page" :totalPages="totalPages" route="admin_security_log_index" :params="{tab: tab, search: search}" />
+		</div>
+	{% endif %}
+{% endblock %}

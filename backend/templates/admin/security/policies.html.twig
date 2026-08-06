@@ -1,0 +1,66 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Politiques de sécurité{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Politiques de sécurité" subtitle="Rapport de conformité en lecture — règles déjà appliquées par l'application." icon="ti-lock" />
+
+	<div class="panel mb-8">
+		<div class="panel-header"><h2 class="panel-title">Règles en vigueur</h2></div>
+		<div class="panel-body">
+			<ul class="space-y-2 text-sm">
+				<li><span class="font-medium">Mot de passe :</span> au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.</li>
+				<li><span class="font-medium">Renouvellement du mot de passe :</span> recommandé tous les {{ passwordMaxAgeDays }} jours.</li>
+				<li><span class="font-medium">Tentatives de connexion :</span> 5 par minute et par IP (rate-limiter <code>login</code>).</li>
+				<li><span class="font-medium">Session « Se souvenir de moi » :</span> 7 jours.</li>
+			</ul>
+		</div>
+	</div>
+
+	<div class="panel mb-6">
+		<div class="panel-header">
+			<h3 class="panel-title">Mots de passe à renouveler ({{ staleUsers|length }})</h3>
+			<p class="text-xs opacity-50 mt-1">Comptes dont le mot de passe n'a pas été changé depuis plus de {{ passwordMaxAgeDays }} jours.</p>
+		</div>
+		<div class="table-wrap border-0">
+			<table class="table">
+				<caption class="sr-only">Mots de passe à renouveler</caption>
+				<thead><tr><th scope="col">Compte</th><th scope="col">Dernier changement</th></tr></thead>
+				<tbody>
+					{% for user in staleUsers %}
+						<tr>
+							<td class="font-medium text-(--brand-dark)">{{ user.fullName ?? user.email }}</td>
+							<td class="text-sm opacity-70">{{ (user.passwordChangedAt ?? user.createdAt)|date('d/m/Y') }}</td>
+						</tr>
+					{% else %}
+						<tr><td colspan="2"><twig:EmptyState text="Aucun mot de passe à renouveler." icon="ti-shield-check" /></td></tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header">
+			<h3 class="panel-title">IPs suspectes ({{ suspiciousIps|length }})</h3>
+			<p class="text-xs opacity-50 mt-1">Au moins {{ suspiciousIpMinAttempts }} échecs de connexion sur la dernière {{ suspiciousIpWindowHours }}h.</p>
+		</div>
+		<div class="table-wrap border-0">
+			<table class="table">
+				<caption class="sr-only">IPs suspectes</caption>
+				<thead><tr><th scope="col">IP</th><th scope="col">Tentatives</th><th scope="col">Dernière tentative</th></tr></thead>
+				<tbody>
+					{% for entry in suspiciousIps %}
+						<tr>
+							<td class="font-mono text-xs">{{ entry.ip }}</td>
+							<td><twig:Badge variant="danger">{{ entry.count }}</twig:Badge></td>
+							<td class="text-sm opacity-70 whitespace-nowrap">{{ entry.lastAttempt|date('d/m/Y H:i') }}</td>
+						</tr>
+					{% else %}
+						<tr><td colspan="3"><twig:EmptyState text="Aucune IP suspecte détectée." icon="ti-shield-check" /></td></tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+{% endblock %}

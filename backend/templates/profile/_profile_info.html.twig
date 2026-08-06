@@ -1,0 +1,32 @@
+{# templates/profile/_profile_info.html.twig #}
+
+<div class="panel">
+	<div class="panel-header">
+		<h2 class="panel-title flex items-center gap-2">
+			<span class="ti ti-user" aria-hidden="true"></span>
+			Informations personnelles
+		</h2>
+	</div>
+	<div class="panel-body grid grid-cols-1 sm:grid-cols-2 gap-4">
+		<div>
+			<p class="text-xs text-gray-400 mb-1">Nom complet</p>
+			<p class="text-sm font-medium text-(--brand-dark)">{{ user.fullName ?? 'Non spécifié' }}</p>
+		</div>
+		<div>
+			<p class="text-xs text-gray-400 mb-1">Adresse email</p>
+			<p class="text-sm font-medium text-(--brand-dark) break-all">{{ user.email }}</p>
+		</div>
+		<div>
+			<p class="text-xs text-gray-400 mb-1">Téléphone</p>
+			<p class="text-sm font-medium text-(--brand-dark)">{{ user.phone ?? 'Non renseigné' }}</p>
+		</div>
+		<div>
+			<p class="text-xs text-gray-400 mb-1">Mot de passe</p>
+			<p class="text-sm font-medium text-gray-400 tracking-widest">••••••••</p>
+		</div>
+		<div>
+			<p class="text-xs text-gray-400 mb-1">Membre depuis</p>
+			<p class="text-sm font-medium text-(--brand-dark)">{{ user.createdAt ? user.createdAt|date('d/m/Y') : 'Inconnu' }}</p>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,79 @@
+{
+  // ⚡ Tailwind v4 : ignore les faux warnings sur @theme
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore",
+
+  // 🎨 IntelliSense Tailwind
+  "tailwindCSS.showCanonicalVariants": false,
+  "tailwindCSS.includeLanguages": {
+    "plaintext": "html",
+    "twig": "html"
+  },
+
+  // 🧩 Intelephense (Symfony/PHP)
+  "intelephense.environment.includePaths": [
+    "vendor/symfony",
+    "vendor/doctrine",
+    "vendor/psr",
+    "vendor/phpunit"
+  ],
+  "intelephense.environment.phpVersion": "8.4.0",
+  "intelephense.files.associations": ["*.php"],
+  "intelephense.files.exclude": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/vendor/**/{Tests,tests}/**",
+    "**/var/cache/**"
+  ],
+  "intelephense.diagnostics.undefinedTypes": false,
+  "intelephense.diagnostics.undefinedMethods": false,
+  "intelephense.diagnostics.undefinedProperties": false,
+  "intelephense.diagnostics.undefinedConstants": false,
+  "intelephense.diagnostics.undefinedFunctions": false,
+  "intelephense.diagnostics.undefinedClasses": false,
+  "intelephense.diagnostics.undefinedTypeVars": false,
+  "php.validate.enable": false,
+
+  // 🛠️ TypeScript / JavaScript
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+  "typescript.tsserver.enableProjectDiagnostics": true,
+
+  // 🎯 Formatage premium
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // 🔒 Nettoyage et exclusions
+  "files.exclude": {
+    "**/.git": true,
+    "**/node_modules": true,
+    "**/vendor": true,
+    "**/dist": true,
+    "**/.cache": true,
+    "**/assets/vendor": true,
+    "**/var": true
+  },
+  "python.analysis.autoImportCompletions": false,
+  "python.analysis.autoSearchPaths": false,
+  "python.analysis.fixAll": [],
+
+  "phpstorm.lsp.excludePaths": ["vendor", "assets/vendor", "var"],
+
+  "phpstrom.completion.fullyQualifyGlobalSymbols": true,
+  "phpstrom.diagnostics.strictTypes": true,
+  "phpstrom.diagnostics.workspaceScanOnStart": true,
+  "phpstrom.environment.phpVersion": "8.4",
+  "phpstrom.phpdoc.useFullyQualifiedNames": true,
+  "js/ts.preferences.autoImportFileExcludePatterns": [
+    "/vendor/",
+    "/assets/vendor/",
+    "/var/"
+  ],
+  "phpstorm.diagnostics.exclude": {
+    "/vendor/": true,
+    "/assets/vendor/": true,
+    "/var/": true
+  },
+  "typescript.updateImportsOnFileMove.enabled": "never",
+  "javascript.updateImportsOnFileMove.enabled": "never"
+}

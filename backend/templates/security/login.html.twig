@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr" class="{{ app.request.attributes.get('_route') starts with 'profile' ? 'dark' : '' }}">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>
+			{% block title %}Login | Admin{% endblock %}
+		</title>
+
+		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+		{% include '_partials/_vite_fouc_guard.html.twig' %}
+
+		{% block stylesheets %}
+			{{ vite_entry_link_tags('login') }}
+		{% endblock %}
+
+		{% block javascripts %}
+			{{ vite_entry_script_tags('login') }}
+		{% endblock %}
+	</head>
+	<body class="h-screen bg-bg-default">
+
+		<div class="login-container">
+			{% include '_partials/_auth_illustration.html.twig' %}
+
+			<!-- Colonne droite -->
+			<div class="flex items-center justify-center px-0 py-12 lg:px-8">
+				<div class="w-full max-w-md bg-white/80 backdrop-blur-xl shadow-2xl rounded-2xl p-10 border border-white/30">
+					<h1 class="text-center text-3xl font-extrabold tracking-tight text-blue-900 mb-8">
+						🔐 Connexion Sécurisée
+					</h1>
+
+					{% if error %}
+						<div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg border border-red-300 text-sm">
+							{{ error.messageKey|trans(error.messageData, 'security') }}
+						</div>
+					{% endif %}
+
+					{% for message in app.flashes('success') %}
+						<div class="mb-4 p-3 bg-green-100 text-green-700 rounded-lg border border-green-300 text-sm">
+							{{ message }}
+						</div>
+					{% endfor %}
+					{% for message in app.flashes('danger') %}
+						<div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg border border-red-300 text-sm">
+							{{ message }}
+						</div>
+					{% endfor %}
+
+					<form id="loginForm" method="post" class="space-y-6">
+						<!-- Email -->
+						<div class="relative">
+							<label for="inputEmail" class="label block">E-mail : </label>
+							<input type="email" id="inputEmail" name="email" value="{{ last_username }}" autocomplete="email" required autofocus class="input input-email input-primary w-full" placeholder="Votre adresse email" aria-describedby="emailHelper"/>
+							<p id="emailHelper" class="text-sm mt-1"></p>
+						</div>
+
+						<!-- Mot de passe -->
+						<div class="relative">
+							<label for="inputPassword" class="label block">Mot de passe : </label>
+							<input type="password" id="inputPassword" name="password" autocomplete="current-password" required class="input input-password input-primary  w-full" placeholder="••••••••" aria-describedby="passwordHelper"/>
+							<p id="passwordHelper" class="text-sm mt-1"></p>
+						</div>
+
+						<!-- CSRF -->
+						<input
+						type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+						<!-- Remember me -->
+						<div class="flex items-center justify-between">
+							<span class="flex items-center space-x-2">
+								<input type="checkbox" id="remember_me" name="_remember_me" class="input-checkbox "/>
+								<label for="remember_me" class="label">Se souvenir de moi</label>
+							</span>
+							<a href="{{ path('forgot_password_request') }}" class="text-sm font-semibold text-blue-900 hover:underline">
+								Mot de passe oublié ?
+							</a>
+						</div>
+
+						<!-- Bouton principal -->
+						<button type="submit" class="btn btn-primary w-full">
+							🚀 Connexion
+						</button>
+					</form>
+
+					{% include '_partials/_auth_social_login.html.twig' with { separatorLabel: 'Ou continuez avec' } %}
+
+					<p class="mt-6 text-center text-sm text-gray-500">Pas encore de compte ? <a href="{{ path('register') }}" class="font-semibold text-blue-900 hover:underline">Inscrivez-vous</a></p>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
+

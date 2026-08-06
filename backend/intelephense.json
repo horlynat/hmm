@@ -1,0 +1,9 @@
+{
+    "files.associations": ["*.php"],
+    "files.exclude": ["**/vendor/**", "**/node_modules/**"],
+    "environment.phpVersion": "8.2.0",
+    "stubs": [
+        "symfony6",
+        "doctrine-orm"
+    ]
+}

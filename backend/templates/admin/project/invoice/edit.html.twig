@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier une facture — {{ project.title }}{% endblock %}
+
+{% block body %}
+	<div class="page-header">
+		<div class="min-w-0">
+			<nav class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider opacity-50 mb-1" aria-label="Fil d'Ariane">
+				<a href="{{ path('admin_project_read', {id: project.id}) }}" class="hover:text-(--brand-primary) transition-colors">{{ project.title }}</a>
+				<span class="ti ti-chevron-right text-xs" aria-hidden="true"></span>
+				<span aria-current="page">Modifier une facture</span>
+			</nav>
+			<h1 class="page-title flex items-center gap-2">
+				<span class="ti ti-edit text-(--brand-primary)" aria-hidden="true"></span>
+				Modifier la facture
+			</h1>
+		</div>
+		<a href="{{ path('admin_project_read', {id: project.id}) }}" class="btn btn-secondary gap-2">
+			<span class="ti ti-arrow-left" aria-hidden="true"></span> Retour au projet
+		</a>
+	</div>
+
+	<div class="max-w-2xl">
+		<div class="mb-4 flex items-center gap-2 text-sm rounded-lg bg-brand-light/30 border border-brand-light p-3 text-(--brand-dark)">
+			<span class="ti ti-info-circle shrink-0" aria-hidden="true"></span>
+			<span>Statut actuel : <twig:Badge :variant="invoice.status.variant" icon="{{ invoice.status.icon }}">{{ invoice.status.label }}</twig:Badge></span>
+		</div>
+
+		<div class="panel">
+			<div class="panel-body">
+				{{ form_start(form, {'attr': {'class': 'space-y-4'}}) }}
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+					<div class="field">
+						{{ form_label(form.number, null, {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.number) }}
+						{{ form_errors(form.number, {'attr': {'class': 'field-error'}}) }}
+					</div>
+					<div class="field">
+						{{ form_label(form.currency, null, {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.currency) }}
+						{{ form_errors(form.currency, {'attr': {'class': 'field-error'}}) }}
+					</div>
+					<div class="field">
+						{{ form_label(form.amount, null, {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.amount) }}
+						{{ form_errors(form.amount, {'attr': {'class': 'field-error'}}) }}
+					</div>
+					<div class="field">
+						{{ form_label(form.dueDate, null, {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.dueDate) }}
+						{{ form_errors(form.dueDate, {'attr': {'class': 'field-error'}}) }}
+					</div>
+				</div>
+				<div class="field">
+					{{ form_label(form.label, null, {'label_attr': {'class': 'field-label'}}) }}
+					{{ form_widget(form.label) }}
+					{{ form_errors(form.label, {'attr': {'class': 'field-error'}}) }}
+				</div>
+
+				<div class="pt-4 flex items-center justify-end gap-3 border-t border-gray-100 dark:border-gray-800">
+					<a href="{{ path('admin_project_read', {id: project.id}) }}" class="btn btn-secondary">Annuler</a>
+					<button type="submit" class="btn btn-primary gap-2">
+						<span class="ti ti-device-floppy" aria-hidden="true"></span> Enregistrer les modifications
+					</button>
+				</div>
+				{{ form_end(form) }}
+			</div>
+		</div>
+	</div>
+{% endblock %}
