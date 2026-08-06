@@ -304,7 +304,11 @@
       "resultsLabel": "Results",
       "repoLink": "View source code",
       "architectureLabel": "Architecture",
-      "galleryLabel": "Gallery"
+      "galleryLabel": "Gallery",
+      "deadlineInDays": "{days, plural, one {In # day} other {In # days}}",
+      "deadlineOverdueDays": "{days, plural, one {# day overdue} other {# days overdue}}",
+      "invoicesLabel": "Related invoices",
+      "viewAllInvoices": "View all my invoices"
     },
     "invite": {
       "badge": "Have a project to showcase?",
@@ -787,10 +791,14 @@
       "passwordPlaceholder": "Your password",
       "submit": "Sign in",
       "invalidCredentials": "Incorrect email or password.",
+      "notVerifiedError": "Your account isn't verified yet.",
+      "notVerifiedHint": "Check your inbox, or request a new confirmation link.",
+      "notVerifiedDismiss": "Close",
       "error": "Could not sign you in. Please try again.",
       "noAccount": "Don't have an account yet?",
       "registerLink": "Create an account",
-      "forgotPasswordLink": "Forgot your password?"
+      "forgotPasswordLink": "Forgot your password?",
+      "resendVerificationLink": "Resend verification link"
     },
     "forgotPassword": {
       "title": "Forgot password",
@@ -800,6 +808,22 @@
       "submit": "Send reset link",
       "success": "If an account exists for this address, an email with a reset link has just been sent.",
       "error": "Could not send the email right now. Please try again."
+    },
+    "verificationEmail": {
+      "title": "Verify my email",
+      "subtitle": "Enter your email address: if an account exists and isn't verified yet, you'll receive a new confirmation link.",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send the link",
+      "success": "If an account exists for this address and isn't verified yet, a new confirmation link has just been sent.",
+      "error": "Could not send the email right now. Please try again.",
+      "confirmTitle": "Confirming your email",
+      "confirmSubtitle": "We're checking your confirmation link.",
+      "verifying": "Verifying…",
+      "confirmSuccess": "Your account has been activated. You can now sign in.",
+      "confirmError": "This verification link is invalid or has expired.",
+      "loginLink": "Sign in",
+      "requestNewLink": "Request a new link"
     },
     "resetPassword": {
       "title": "Reset your password",
@@ -882,6 +906,7 @@
         "emptyProjects": "No projects yet.",
         "emptyQuotes": "No quote requests yet.",
         "quoteBudget": "Budget",
+        "quoteConverted": "Now tracked as a project",
         "viewAll": "View all →",
         "upcomingDeadlines": "Upcoming deadlines",
         "emptyDeadlines": "No upcoming deadlines.",
@@ -889,7 +914,8 @@
         "activity": "Recent activity",
         "emptyActivity": "No activity yet.",
         "messages": "Recent messages",
-        "emptyMessages": "No messages yet."
+        "emptyMessages": "No messages yet.",
+        "recentInvoices": "Recent invoices"
       },
       "stats": {
         "activeProjects": "Active projects",
@@ -931,13 +957,23 @@
         "messageLabel": "Message",
         "clarificationsLabel": "Clarifications exchanged",
         "notFoundTitle": "Quote request not found",
-        "notFoundText": "This quote request does not exist or does not belong to you."
+        "notFoundText": "This quote request does not exist or does not belong to you.",
+        "sentOnLabel": "Sent on",
+        "convertedBanner": "Good news: this request has been accepted and is now tracked as a project.",
+        "viewProjectCta": "View the project"
       },
       "myProjectsPage": {
-        "subtitle": "All projects linked to your account, as a client or as a team member."
+        "subtitle": "All projects linked to your account, as a client or as a team member.",
+        "statTotal": "Total projects",
+        "statActive": "In progress",
+        "statUpcoming": "Upcoming",
+        "statCompleted": "Completed"
       },
       "myQuotesPage": {
-        "subtitle": "The full history of your quote requests and their status."
+        "subtitle": "The full history of your quote requests and their status.",
+        "statTotal": "Total requests",
+        "statPending": "Pending",
+        "statAccepted": "Accepted"
       },
       "newQuotePage": {
         "title": "New quote request",
@@ -948,6 +984,9 @@
     "profile": {
       "title": "My profile",
       "subtitle": "Update your personal information.",
+      "roleClient": "Client",
+      "roleFreelance": "Freelance",
+      "memberSince": "Member since {date}",
       "fullNameLabel": "Full name",
       "phoneLabel": "Phone",
       "phoneLocked": "Not editable from your account. Contact us if this number has changed.",
@@ -1035,7 +1074,24 @@
       "revisionCancel": "Cancel",
       "revisionRequiredError": "Please explain the reason for your request.",
       "revisionRequestedNote": "Revision requested — waiting on the team. Details are in the project discussion.",
-      "genericError": "Something went wrong. Please try again."
+      "genericError": "Something went wrong. Please try again.",
+      "documentTitle": "Invoice",
+      "billedTo": "Billed to",
+      "descriptionLabel": "Description",
+      "amountLabel": "Amount",
+      "totalLabel": "Total",
+      "projectRefLabel": "Project",
+      "qtyLabel": "Qty",
+      "unitPriceLabel": "Unit price",
+      "contactNote": "Any question about this invoice?",
+      "contactCta": "Message on WhatsApp",
+      "statTotalPaid": "Total paid",
+      "statCount": "{count, plural, one {# invoice} other {# invoices}}",
+      "filterAll": "All",
+      "filterPending": "Pending",
+      "filterPaid": "Paid",
+      "filterRevision": "In revision",
+      "emptyFiltered": "No invoices match this filter."
     },
     "settings": {
       "title": "Settings",

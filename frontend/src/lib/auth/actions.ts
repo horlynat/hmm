@@ -11,6 +11,19 @@ import type { ApiPostResult } from "@/lib/api/client";
 import type { ProfileUpdatePayload, SessionUser, SessionComment, SessionInvoice } from "@/lib/types";
 
 /**
+ * Message exact levé par App\Security\UserChecker::checkPostAuth() quand le
+ * compte n'est pas vérifié — cette vérification s'exécute APRÈS la validation
+ * du mot de passe (cf. commentaire de UserChecker), donc ce message n'est
+ * jamais atteignable sans avoir déjà prouvé connaître le bon mot de passe :
+ * le distinguer du cas "identifiants invalides" ne fuite rien à un tiers qui
+ * ne connaît pas le mot de passe (pas de régression anti-énumération), et
+ * permet de guider spécifiquement un utilisateur légitime bloqué. Couplage
+ * fragile mais volontaire au texte backend ; en cas de désaccord, le pire
+ * échec possible est un simple retour au message générique (fail-safe).
+ */
+const ACCOUNT_NOT_VERIFIED_MESSAGE = "Votre compte n'est pas encore vérifié. Consultez vos emails pour l'activer.";
+
+/**
  * Connexion : POST /api/login_check (lexik JWT). En cas de succès, le token est
  * posé dans un cookie httpOnly. Le mot de passe ne transite que côté serveur.
  */
@@ -31,9 +44,21 @@ export async function login(
     });
 
     if (!res.ok) {
-      // lexik renvoie 401 { message: "Invalid credentials." } ; on ne fuite pas
-      // le détail (email inexistant vs mauvais mot de passe) à l'utilisateur.
-      return { ok: false, error: res.status === 401 ? "invalid_credentials" : `HTTP ${res.status}` };
+      if (res.status !== 401) {
+        return { ok: false, error: `HTTP ${res.status}` };
+      }
+
+      // lexik renvoie 401 { message: "Invalid credentials." } pour un email ou
+      // mot de passe erroné ; on ne fuite pas ce détail. Seul le message
+      // spécifique "compte non vérifié" (voir ACCOUNT_NOT_VERIFIED_MESSAGE)
+      // est distingué, car il ne peut être atteint qu'après un mot de passe
+      // correct.
+      const message = await res
+        .json()
+        .then((b: unknown) => (typeof b === "object" && b && "message" in b ? String((b as { message: unknown }).message) : null))
+        .catch(() => null);
+
+      return { ok: false, error: message === ACCOUNT_NOT_VERIFIED_MESSAGE ? "not_verified" : "invalid_credentials" };
     }
 
     const body = (await res.json()) as { token?: string };
@@ -265,6 +290,86 @@ export async function confirmPasswordReset(
     return { ok: true };
   } catch (error) {
     console.error("[auth] confirmPasswordReset failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+/**
+ * Consomme le token de vérification d'email : POST /api/verify-email.
+ * Contrepartie frontend de App\Controller\Api\EmailVerificationController::confirm()
+ * — pour un compte client/freelance, le lien envoyé par email pointe
+ * désormais ici plutôt que vers la route Symfony /verif/{token} (cf.
+ * App\Service\AccountLinkResolver), afin de rester dans l'espace Next.js.
+ */
+export async function verifyEmailToken(token: string): Promise<ApiPostResult> {
+  try {
+    const res = await fetch(`${API_URL}/verify-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ token }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      const detail = await res
+        .json()
+        .then((body: unknown) =>
+          typeof body === "object" && body && "detail" in body
+            ? String((body as { detail: unknown }).detail)
+            : null,
+        )
+        .catch(() => null);
+      return { ok: false, error: detail ?? `HTTP ${res.status}` };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    console.error("[auth] verifyEmailToken failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+/**
+ * Demande un nouveau lien de vérification d'email sans être connecté : POST
+ * /api/resend-verification-email. Nécessaire car la connexion (web ET JWT)
+ * est bloquée pour un compte non vérifié (cf. App\Security\UserChecker côté
+ * backend) — la seule action `resendVerificationEmail()` déjà existante dans
+ * ce fichier exige un token, donc inutilisable tant que le compte n'est pas
+ * vérifié. Le backend répond toujours succès (anti-énumération), que le
+ * compte existe ou non, ou soit déjà vérifié.
+ */
+export async function requestVerificationEmail(email: string): Promise<ApiPostResult> {
+  try {
+    const res = await fetch(`${API_URL}/resend-verification-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ email }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      const detail = await res
+        .json()
+        .then((body: unknown) =>
+          typeof body === "object" && body && "detail" in body
+            ? String((body as { detail: unknown }).detail)
+            : null,
+        )
+        .catch(() => null);
+      return { ok: false, error: detail ?? `HTTP ${res.status}` };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    console.error("[auth] requestVerificationEmail failed", error);
     return { ok: false, error: "network_error" };
   }
 }

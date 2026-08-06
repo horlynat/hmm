@@ -53,6 +53,14 @@ export const routing = defineRouting({
       fr: "/reinitialiser-mot-de-passe/[token]",
       en: "/reset-password/[token]",
     },
+    "/verification-email": {
+      fr: "/verification-email",
+      en: "/verify-email",
+    },
+    "/verification-email/[token]": {
+      fr: "/verification-email/[token]",
+      en: "/verify-email/[token]",
+    },
     "/inscription": {
       fr: "/inscription",
       en: "/register",

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { ArrowLeft } from "lucide-react";
-import { Badge, ButtonLink, SettingsSection, SettingsSectionGroup, Breadcrumb, SectionHeading } from "@/components/ui";
+import { ArrowLeft, FolderCheck, ArrowRight } from "lucide-react";
+import { Badge, ButtonLink, Card, SettingsSection, SettingsSectionGroup, Breadcrumb, SectionHeading } from "@/components/ui";
 import { getMyQuote } from "@/lib/auth/session";
 import { quoteStatusVariant } from "@/lib/status";
 
@@ -41,9 +41,14 @@ export default async function CompteQuoteDetailPage({
       </ButtonLink>
 
       <div>
-        <Badge variant={quoteStatusVariant(quote.status)} className="mb-3">
-          {quote.statusLabel}
-        </Badge>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <Badge variant={quoteStatusVariant(quote.status)}>{quote.statusLabel}</Badge>
+          {quote.createdAt && (
+            <span className="text-xs text-(--color-muted)">
+              {t("quoteDetail.sentOnLabel")} {new Date(quote.createdAt).toLocaleDateString(locale)}
+            </span>
+          )}
+        </div>
         <h1 className="text-[clamp(1.4rem,3vw,1.9rem)]">{quote.category}</h1>
         {quote.categoryDetail && (
           <p className="mt-1 text-sm text-(--color-muted)">
@@ -52,13 +57,29 @@ export default async function CompteQuoteDetailPage({
         )}
       </div>
 
+      {quote.convertedProjectId && (
+        <Card className="flex flex-wrap items-center justify-between gap-3 border-l-4 border-success bg-success/5 p-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
+              <FolderCheck size={17} aria-hidden="true" />
+            </span>
+            <p className="text-sm font-medium text-brand-dark">{t("quoteDetail.convertedBanner")}</p>
+          </div>
+          <ButtonLink
+            href={{ pathname: "/compte/projets/[id]", params: { id: String(quote.convertedProjectId) } }}
+            className="w-fit shrink-0 gap-1.5 text-xs"
+          >
+            {t("quoteDetail.viewProjectCta")}
+            <ArrowRight size={13} aria-hidden="true" />
+          </ButtonLink>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 divide-y divide-(--border-neutral) rounded-[var(--radius-lg)] border border-(--border-neutral) bg-bg-card p-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {quote.budget && (
           <div className="sm:px-4 sm:first:pl-0">
             <p className="text-xs uppercase tracking-wider text-(--color-muted)">{tw("recapBudget")}</p>
-            <p className="mt-0.5 text-sm font-semibold">
-              {quote.budget} {quote.currency ?? ""}
-            </p>
+            <p className="mt-0.5 text-sm font-semibold">{quote.budget}</p>
           </div>
         )}
         {quote.timeline && (

@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
-import { FileText, Plus } from "lucide-react";
-import { ButtonLink, EmptyState, PageHeader } from "@/components/ui";
+import { FileText, Plus, Clock, CheckCircle2 } from "lucide-react";
+import { ButtonLink, EmptyState, PageHeader, StatCard } from "@/components/ui";
 import { QuoteList } from "@/components/sections/AccountLists";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -40,11 +40,30 @@ export default async function CompteDevisPage({
         }
       />
 
+      {quoteRequests.length > 0 && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <StatCard icon={FileText} label={t("myQuotesPage.statTotal")} value={quoteRequests.length} />
+          <StatCard
+            icon={Clock}
+            label={t("myQuotesPage.statPending")}
+            value={quoteRequests.filter((q) => q.status === "pending").length}
+            tone="warning"
+          />
+          <StatCard
+            icon={CheckCircle2}
+            label={t("myQuotesPage.statAccepted")}
+            value={quoteRequests.filter((q) => q.status === "accepted").length}
+            tone="success"
+          />
+        </div>
+      )}
+
       {quoteRequests.length > 0 ? (
         <QuoteList
           quotes={quoteRequests}
           statusLabel={t("sections.quoteBudget")}
           statusLabels={quoteStatusLabels}
+          convertedLabel={t("sections.quoteConverted")}
         />
       ) : (
         <EmptyState

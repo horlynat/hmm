@@ -1,12 +1,21 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Receipt } from "lucide-react";
 import { Badge, Card, ButtonLink, Breadcrumb, SectionHeading } from "@/components/ui";
 import { ProjectDiscussion } from "@/components/sections/ProjectDiscussion";
-import { getMyProject, getProjectComments } from "@/lib/auth/session";
+import { getCurrentUser, getMyProject, getProjectComments } from "@/lib/auth/session";
 import { getMediaUrl } from "@/lib/media";
-import { projectStatusVariant } from "@/lib/status";
+import { projectStatusVariant, invoiceStatusVariant } from "@/lib/status";
+
+/** Nombre de jours entre aujourd'hui et la deadline (négatif si dépassée) — comparaison sur la seule date, pas l'heure. */
+function daysUntil(deadline: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(deadline);
+  target.setHours(0, 0, 0, 0);
+  return Math.round((target.getTime() - today.getTime()) / 86_400_000);
+}
 
 export default async function CompteProjectDetailPage({
   params,
@@ -24,14 +33,17 @@ export default async function CompteProjectDetailPage({
     notFound();
   }
 
-  const [t, td, tStatus, comments] = await Promise.all([
+  const [t, td, tStatus, comments, user] = await Promise.all([
     getTranslations({ locale, namespace: "auth.account" }),
     getTranslations({ locale, namespace: "projects.detail" }),
     getTranslations({ locale, namespace: "projects.status" }),
     getProjectComments(projectId),
+    getCurrentUser(),
   ]);
 
   const info = project.info;
+  const projectInvoices = user?.attributions.invoices.filter((inv) => inv.projectId === project.id) ?? [];
+  const remainingDays = project.deadline && project.status !== "termine" ? daysUntil(project.deadline) : null;
 
   return (
     <div className="max-w-[760px] space-y-6">
@@ -72,13 +84,49 @@ export default async function CompteProjectDetailPage({
             style={{ width: `${project.progress}%` }}
           />
         </div>
-        <p className="text-sm text-(--color-muted)">
-          {t("project.deadline")}:{" "}
-          <span className="font-medium text-brand-dark">
-            {project.deadline ? new Date(project.deadline).toLocaleDateString() : t("project.noDeadline")}
-          </span>
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-(--color-muted)">
+            {t("project.deadline")}:{" "}
+            <span className="font-medium text-brand-dark">
+              {project.deadline ? new Date(project.deadline).toLocaleDateString() : t("project.noDeadline")}
+            </span>
+          </p>
+          {remainingDays !== null && (
+            <Badge variant={remainingDays < 0 ? "danger" : remainingDays <= 7 ? "warning" : "neutral"}>
+              {remainingDays < 0
+                ? td("deadlineOverdueDays", { days: Math.abs(remainingDays) })
+                : td("deadlineInDays", { days: remainingDays })}
+            </Badge>
+          )}
+        </div>
       </Card>
+
+      {projectInvoices.length > 0 && (
+        <div>
+          <SectionHeading
+            title={td("invoicesLabel")}
+            viewAllHref="/compte/factures"
+            viewAllLabel={td("viewAllInvoices")}
+          />
+          <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
+            {projectInvoices.map((invoice) => (
+              <div key={invoice.id} className="flex items-center gap-3 p-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
+                  <Receipt size={15} aria-hidden="true" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{invoice.label}</p>
+                  <p className="text-xs text-(--color-muted)">{invoice.number}</p>
+                </div>
+                <span className="shrink-0 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                  {invoice.formattedAmount}
+                </span>
+                <Badge variant={invoiceStatusVariant(invoice.status)}>{invoice.statusLabel}</Badge>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
 
       <div>
         <SectionHeading title={t("projectDetail.descriptionLabel")} />

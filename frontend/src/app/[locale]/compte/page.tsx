@@ -5,7 +5,7 @@ import { ProjectList, QuoteList } from "@/components/sections/AccountLists";
 import { WelcomeBanner } from "@/components/sections/WelcomeBanner";
 import { getCurrentUser, getMyActivity } from "@/lib/auth/session";
 import { Link } from "@/i18n/navigation";
-import { projectStatusVariant } from "@/lib/status";
+import { projectStatusVariant, invoiceStatusVariant } from "@/lib/status";
 import type { SessionProject, SessionActivityEntry, SessionComment } from "@/lib/types";
 
 const PREVIEW_COUNT = 4;
@@ -163,6 +163,9 @@ export default async function ComptePage({
 
   const pendingQuotesCount = attributions.quoteRequests.filter((q) => q.status === "pending").length;
   const unpaidInvoicesCount = attributions.invoices.filter((inv) => inv.status === "pending").length;
+  const recentInvoices = [...attributions.invoices]
+    .sort((a, b) => new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime())
+    .slice(0, PREVIEW_COUNT);
 
   return (
     <div className="space-y-8">
@@ -188,7 +191,7 @@ export default async function ComptePage({
       )}
 
       {/* ---- Résumé ---- */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard icon={FolderKanban} label={t("stats.activeProjects")} value={countActive(allProjects)} />
         <StatCard
           icon={FileText}
@@ -225,11 +228,11 @@ export default async function ComptePage({
                 <Link
                   key={project.id}
                   href={{ pathname: "/compte/projets/[id]", params: { id: String(project.id) } }}
-                  className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-(--color-surface-muted)"
+                  className="flex flex-col gap-2 p-4 transition-colors hover:bg-(--color-surface-muted) sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     <Badge variant={projectStatusVariant(project.status)}>{project.statusLabel}</Badge>
-                    <span className="truncate font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                    <span className="min-w-0 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
                       {project.title}
                     </span>
                   </div>
@@ -308,6 +311,7 @@ export default async function ComptePage({
             quotes={attributions.quoteRequests.slice(0, PREVIEW_COUNT)}
             statusLabel={t("sections.quoteBudget")}
             statusLabels={quoteStatusLabels}
+            convertedLabel={t("sections.quoteConverted")}
           />
         ) : (
           <EmptyState
@@ -323,6 +327,42 @@ export default async function ComptePage({
           />
         )}
       </section>
+
+      {recentInvoices.length > 0 && (
+        <section aria-labelledby="section-invoices">
+          <SectionHeading
+            id="section-invoices"
+            title={t("sections.recentInvoices")}
+            viewAllHref={attributions.invoices.length > PREVIEW_COUNT ? "/compte/factures" : undefined}
+            viewAllLabel={t("sections.viewAll")}
+          />
+          <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
+            {recentInvoices.map((invoice) => (
+              <Link
+                key={invoice.id}
+                href="/compte/factures"
+                className="flex flex-col gap-3 p-4 transition-colors hover:bg-(--color-surface-muted) sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
+                    <Receipt size={14} aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                      {invoice.label}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-(--color-muted)">{invoice.projectTitle}</p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end">
+                  <span className="text-sm font-semibold">{invoice.formattedAmount}</span>
+                  <Badge variant={invoiceStatusVariant(invoice.status)}>{invoice.statusLabel}</Badge>
+                </div>
+              </Link>
+            ))}
+          </Card>
+        </section>
+      )}
     </div>
   );
 }
