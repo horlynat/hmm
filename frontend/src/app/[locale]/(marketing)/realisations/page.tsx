@@ -127,11 +127,19 @@ export default async function ProjectsPage({
       </section>
 
       <section className="px-6 py-16">
-        <Reveal delay={0} className="card mx-auto max-w-[1120px] border-dashed py-10 text-center">
-          <Badge variant="accent" className="mb-2">
-            {t("invite.badge")}
-          </Badge>
-          <p className="mx-auto max-w-[52ch] text-sm opacity-70">{t("invite.text")}</p>
+        <Reveal delay={0}>
+          <Card
+            variant="soft"
+            className="mx-auto flex max-w-[1120px] flex-col items-center gap-3 border-dashed py-12 text-center"
+          >
+            <h3 className="max-w-[36ch] text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+              {t("invite.title")}
+            </h3>
+            <p className="mx-auto max-w-[52ch] text-sm opacity-70">{t("invite.text")}</p>
+            <ButtonLink href="/contact" variant="secondary" className="mt-2">
+              {t("invite.cta")}
+            </ButtonLink>
+          </Card>
         </Reveal>
       </section>
 

@@ -95,9 +95,18 @@ export const profileSchema = (t: Translator) =>
     fullName: z.string().trim().max(120, t("tooLong", { max: 120 })).optional().or(z.literal("")),
     phone: optionalPhoneField(t),
     bio: z.string().max(2000, t("tooLong", { max: 2000 })).optional().or(z.literal("")),
-    specialties: z.string().max(500, t("tooLong", { max: 500 })).optional().or(z.literal("")),
     availability: z.string().max(120, t("tooLong", { max: 120 })).optional().or(z.literal("")),
     portfolioUrl: optionalUrlField(t),
+    // Compétences/langues gérées en state local (sélecteur à puces), pas via react-hook-form — cf. ProfileForm.tsx.
+    yearsOfExperience: z
+      .string()
+      .trim()
+      .refine((v) => v === "" || (/^\d+$/.test(v) && Number(v) <= 60), t("tooLong", { max: 60 }))
+      .optional()
+      .or(z.literal("")),
+    city: z.string().trim().max(100, t("tooLong", { max: 100 })).optional().or(z.literal("")),
+    linkedinUrl: optionalUrlField(t),
+    githubUrl: optionalUrlField(t),
   });
 export type ProfileValues = z.infer<ReturnType<typeof profileSchema>>;
 

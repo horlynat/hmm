@@ -311,8 +311,9 @@
       "viewAllInvoices": "View all my invoices"
     },
     "invite": {
-      "badge": "Have a project to showcase?",
-      "text": "Tell me about it — client, context, technologies used and outcome — and I'll replace these placeholders with your real work."
+      "title": "Have a project to showcase?",
+      "text": "Tell me about it — client, context, technologies used and outcome — and I'll replace these placeholders with your real work.",
+      "cta": "Suggest my project"
     },
     "cta": {
       "title": "Got a project in mind?",
@@ -801,7 +802,9 @@
       "resendVerificationLink": "Resend verification link"
     },
     "forgotPassword": {
-      "title": "Forgot password",
+      "eyebrow": "Account recovery",
+      "title": "Reset your",
+      "titleAccent": "password.",
       "subtitle": "Enter your email address: if an account exists, you'll receive a link to reset your password.",
       "emailLabel": "Email address",
       "emailPlaceholder": "you@example.com",
@@ -991,8 +994,8 @@
       "phoneLabel": "Phone",
       "phoneLocked": "Not editable from your account. Contact us if this number has changed.",
       "bioLabel": "About / bio",
-      "specialtiesLabel": "Specialties (comma-separated)",
-      "specialtiesPlaceholder": "Backend, Cybersecurity, UI...",
+      "specialtiesLabel": "Skills and technologies you use day to day",
+      "specialtiesPlaceholder": "E.g. React, Symfony, PostgreSQL, Docker...",
       "availabilityLabel": "Availability",
       "portfolioLabel": "Portfolio / link",
       "submit": "Save changes",
@@ -1032,7 +1035,26 @@
         "confirmButton": "Yes, delete permanently",
         "confirmPending": "Deleting…",
         "cancelButton": "Cancel"
-      }
+      },
+      "overview": {
+        "completeBadge": "Complete profile",
+        "portfolioLink": "View portfolio",
+        "checklistTitle": "What's left to complete",
+        "experienceValue": "{count, plural, one {# year of experience} other {# years of experience}}"
+      },
+      "yearsOfExperienceLabel": "Years of experience",
+      "cityLabel": "City",
+      "linkedinLabel": "LinkedIn",
+      "githubLabel": "GitHub",
+      "languagesLabel": "Languages spoken",
+      "languageFrench": "French",
+      "languageEnglish": "English",
+      "languageSpanish": "Spanish",
+      "languagePortuguese": "Portuguese",
+      "professionalLinksLabel": "Professional link (LinkedIn or GitHub)",
+      "fieldLocked": "Not editable from your account. Contact us if this information has changed.",
+      "allFieldsLocked": "All your information is locked. Contact us for any changes.",
+      "completeCta": "Complete my profile"
     },
     "changePassword": {
       "title": "Change password",
@@ -1051,7 +1073,55 @@
       "statTotal": "Total projects",
       "statActive": "In progress",
       "statUpcoming": "Upcoming",
-      "backOfficeHint": "For time tracking, expenses and detailed history, head to the back-office area."
+      "profileBanner": {
+        "title": "Complete your profile",
+        "body": "Your profile is {percent}% complete. Until it reaches 100%, you can't actively participate in projects (read-only) — no project can be confidently assigned to you without a complete profile. Still missing:",
+        "cta": "Complete my profile"
+      }
+    },
+    "workspace": {
+      "backLink": "← Back to project management",
+      "readOnlyBanner": {
+        "title": "Read-only workspace",
+        "body": "Complete your profile to 100% to participate in this project: comment, update your tasks and log your time.",
+        "cta": "Complete my profile",
+        "discussionHint": "Complete your profile to post here."
+      },
+      "team": {
+        "title": "Project team",
+        "ownerLabel": "Lead",
+        "collaboratorLabel": "Collaborator"
+      },
+      "tasks": {
+        "title": "Tasks",
+        "empty": "No tasks for this project.",
+        "notAssigned": "Unassigned",
+        "updateError": "Could not update the task status.",
+        "dueLabel": "Due",
+        "overdueLabel": "Overdue",
+        "status": {
+          "todo": "To do",
+          "in_progress": "In progress",
+          "done": "Done",
+          "blocked": "Blocked"
+        }
+      },
+      "time": {
+        "title": "Time tracking",
+        "totalLabel": "Team total",
+        "mineLabel": "My total",
+        "historyEmpty": "No time logged for this project.",
+        "formTitle": "Log time",
+        "hoursLabel": "Hours",
+        "minutesLabel": "Minutes",
+        "descriptionLabel": "Description",
+        "dateLabel": "Date",
+        "taskLabel": "Related task",
+        "noTask": "No related task",
+        "submit": "Save",
+        "submitting": "Saving…",
+        "success": "Time logged."
+      }
     },
     "invoices": {
       "title": "My invoices",
