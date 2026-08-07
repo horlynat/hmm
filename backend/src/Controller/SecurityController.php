@@ -23,6 +23,14 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
 class SecurityController extends AbstractController
 {
+    // Contraint à dark.horlynat.com (pas de host: -> aurait aussi redirigé la
+    // racine de api.horlynat.com, qui sert un usage différent, cf. compose).
+    #[Route(path: '/', name: 'admin_root', host: 'dark.horlynat.com')]
+    public function root(): Response
+    {
+        return $this->redirectToRoute('login');
+    }
+
     #[Route(path: '/login', name: 'login')]
     public function login(AuthenticationUtils $authenticationUtils): Response
     {
