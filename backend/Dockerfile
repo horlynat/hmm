@@ -3,9 +3,10 @@
 # ---- Stage 1 : dépendances Composer (prod, sans dev) ----
 FROM composer:2 AS vendor
 WORKDIR /app
-# ext-xsl : requis par twig/inky-extra (templates email), absent de l'image
-# composer:2 de base.
-RUN apk add --no-cache libxslt-dev $PHPIZE_DEPS && docker-php-ext-install xsl
+# ext-xsl : requis par twig/inky-extra (templates email). ext-bcmath : requis
+# par composer.json (App\Entity\Project et consorts) depuis qu'on l'a
+# déclaré explicitement — les deux absents de l'image composer:2 de base.
+RUN apk add --no-cache libxslt-dev $PHPIZE_DEPS && docker-php-ext-install xsl bcmath
 COPY composer.json composer.lock symfony.lock ./
 RUN composer install \
     --no-dev \
@@ -54,6 +55,7 @@ RUN install-php-extensions \
     xsl \
     opcache \
     apcu \
+    bcmath \
     && apk add --no-cache su-exec
 
 ENV APP_ENV=prod \
