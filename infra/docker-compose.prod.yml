@@ -5,7 +5,16 @@
 
 services:
   traefik:
-    image: traefik:v3.3
+    # v3.6+ requis : le client Docker interne de v3.3 fige l'API à 1.24 sans
+    # tenir compte de DOCKER_API_VERSION (testé — la variable n'a aucun
+    # effet sur ce client précis, contrairement au comportement usuel des
+    # SDK Docker). Docker 29 a relevé son API minimale à 1.44, cassant net
+    # toute version de Traefik antérieure à v3.6.1, qui a ajouté la
+    # négociation automatique de version — le provider docker échouait en
+    # boucle et Traefik ne découvrait plus AUCUN service par labels (404
+    # permanent sur tous les routers, malgré des services backend/frontend
+    # parfaitement sains). Cf. https://github.com/traefik/traefik/issues/12253
+    image: traefik:v3.6
     restart: unless-stopped
     ports:
       - "80:80"
@@ -142,7 +151,17 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: ["docker-entrypoint.sh", "php", "bin/console", "messenger:consume", "async", "failed", "--time-limit=3600", "--memory-limit=256M", "-vv"]
+    # Pas de "docker-entrypoint.sh" ici : c'est l'ENTRYPOINT du Dockerfile
+    # (hérité, jamais surchargé par `command:`) — le redéclarer double son
+    # exécution, la deuxième fois déjà sous www-data (après su-exec), qui ne
+    # peut plus relire les secrets (testé : le worker crash-loopait).
+    command: ["php", "bin/console", "messenger:consume", "async", "failed", "--time-limit=3600", "--memory-limit=256M", "-vv"]
+    # Désactive le HEALTHCHECK hérité de l'image (interroge l'API admin
+    # FrankenPHP sur :2019) — ce service ne lance jamais frankenphp, rien
+    # n'écoute là, il tournait donc "unhealthy" en continu malgré un worker
+    # parfaitement fonctionnel (testé).
+    healthcheck:
+      disable: true
     environment:
       - APP_ENV=prod
       - APP_DEBUG=0
@@ -180,6 +199,10 @@ services:
       # applicatif ci-dessus, root n'est jamais utilisé après l'init.
       MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
     secrets:
+      # Pas de mode: 0444 ici (contrairement à backend/messenger-worker) :
+      # l'entrypoint officiel de l'image mysql tourne en root et lit ce
+      # fichier avant de basculer sur l'utilisateur mysql, donc les
+      # permissions du fichier hôte ne posent pas de problème ici.
       - database_password
     volumes:
       - mysql_data:/var/lib/mysql:rw
