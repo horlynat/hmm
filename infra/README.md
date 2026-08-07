@@ -74,6 +74,8 @@ une variable d'env via `docker-entrypoint.sh`) :
 | `secrets/revalidate_secret` | Secret partagé webhook `/api/revalidate` (frontend)   |
 | `secrets/ntfy_dsn`          | DSN NTFY si utilisé                                   |
 | `secrets/database_password` | Mot de passe MySQL de l'utilisateur `app` (doit matcher celui dans `database_url`) |
+| `secrets/postfixadmin_db_password` | Mot de passe MySQL de l'utilisateur `postfixadmin` (base dédiée, native sur l'hôte — cf. §10) |
+| `secrets/postfixadmin_setup_password` | Hash bcrypt protégeant `/setup.php` de PostfixAdmin (cf. §10) |
 
 ```bash
 chmod 600 infra/secrets/*
@@ -256,6 +258,85 @@ avant d'en dépendre.
   conteneurs). Pas scripté ici (interactif, à valider toi-même).
 - **UptimeRobot / Better Stack** : moniteur externe HTTPS sur les 3 domaines,
   à créer manuellement (compte tiers, hors scope infra).
+
+### 10. PostfixAdmin — gestion des comptes mail
+
+Panneau web (`mailadmin.horlynat.com`) pour créer/éditer/supprimer les
+boîtes Postfix/Dovecot sans repasser par du SQL manuel — remplace ce
+qu'ISPConfig faisait avant d'être désinstallé du VPS. Mis en place une
+seule fois (bootstrap) ; ensuite tout se gère depuis l'interface.
+
+**Architecture** : Postfix/Dovecot restent natifs sur l'hôte (comme avant),
+mais lisent maintenant leurs comptes/routage depuis une base MySQL dédiée
+(`postfixadmin`, MariaDB natif sur l'hôte — **pas** la base applicative
+Docker) au lieu de fichiers plats. PostfixAdmin lui-même tourne en
+conteneur Docker derrière Traefik, protégé comme `dark.horlynat.com`
+(whitelist IP + `cloudflare-only`).
+
+**Si à refaire sur un VPS neuf** (résumé des étapes, déjà appliquées ici) :
+
+```bash
+# 1. Base dédiée (MariaDB déjà natif sur ce VPS, résidu de l'ancienne
+#    installation ISPConfig — sinon : apt install mariadb-server)
+sudo mysql <<'SQL'
+CREATE DATABASE postfixadmin CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE USER 'postfixadmin'@'172.18.0.0/255.255.0.0' IDENTIFIED BY '<motdepasse>'; -- conteneur PostfixAdmin (edge-net)
+CREATE USER 'postfixadmin'@'127.0.0.1' IDENTIFIED BY '<motdepasse>';             -- Postfix/Dovecot natifs (lecture seule)
+CREATE USER 'postfixadmin'@'localhost' IDENTIFIED BY '<motdepasse>';
+GRANT ALL PRIVILEGES ON postfixadmin.* TO 'postfixadmin'@'172.18.0.0/255.255.0.0';
+GRANT SELECT ON postfixadmin.* TO 'postfixadmin'@'127.0.0.1';
+GRANT SELECT ON postfixadmin.* TO 'postfixadmin'@'localhost';
+SQL
+
+# MariaDB doit écouter au-delà de 127.0.0.1 pour que le conteneur (edge-net)
+# la joigne — testé : bind-address par défaut = 127.0.0.1 uniquement.
+sudo sed -i "s/^bind-address.*/bind-address            = 0.0.0.0/" /etc/mysql/mariadb.conf.d/50-server.cnf
+sudo systemctl restart mariadb
+sudo ufw allow from 172.16.0.0/12 to any port 3306 proto tcp comment "MariaDB PostfixAdmin (Docker only)"
+
+# 2. Pilotes SQL manquants par défaut sur Ubuntu — sans eux : "Unknown
+#    database driver 'mysql'" (Dovecot) / "unsupported dictionary type:
+#    mysql" (Postfix). Testé, casse tout silencieusement sinon.
+sudo apt install -y dovecot-mysql postfix-mysql
+
+# 3. Conteneur PostfixAdmin : cf. service `postfixadmin` dans
+#    docker-compose.prod.yml + secrets/postfixadmin_db_password et
+#    secrets/postfixadmin_setup_password (hash bcrypt, PAS une variable
+#    ${...} — testé, un hash plein de "$" est tronqué par la substitution
+#    Compose). Générer le hash :
+#    php -r 'echo password_hash("motdepasse", PASSWORD_DEFAULT);'
+
+# 4. Une fois le conteneur up et le domaine/les boîtes créés via
+#    https://mailadmin.horlynat.com/setup.php puis l'UI normale :
+#    basculer Dovecot et Postfix dessus.
+
+# Dovecot : /etc/dovecot/dovecot-sql.conf.ext (driver=mysql, connect via
+# 127.0.0.1, default_pass_scheme=CRYPT — détecte automatiquement le format
+# du hash stocké par PostfixAdmin, bcrypt $2y$ dans les faits malgré
+# $CONF['encrypt']=md5crypt affiché par setup.php).
+# passdb -> sql dans /etc/dovecot/conf.d/auth-sql.conf.ext (garder userdb en
+# static, mêmes uid/gid/home qu'avant — inutile de tout re-router).
+# Activer l'include : commenter "!include auth-passwdfile.conf.ext" et
+# décommenter "!include auth-sql.conf.ext" dans 10-auth.conf.
+sudo systemctl reload dovecot
+
+# Postfix : trois fichiers mysql-virtual-{mailbox-domains,mailbox-maps,alias-maps}.cf
+# dans /etc/postfix/ (user/password/hosts=127.0.0.1/dbname/query), puis :
+sudo postconf -e \
+  "virtual_mailbox_domains=mysql:/etc/postfix/mysql-virtual-mailbox-domains.cf" \
+  "virtual_mailbox_maps=mysql:/etc/postfix/mysql-virtual-mailbox-maps.cf" \
+  "virtual_alias_maps=mysql:/etc/postfix/mysql-virtual-alias-maps.cf"
+sudo postfix check && sudo systemctl reload postfix
+
+# 5. Test direct (sans passer par un envoi réel) :
+sudo doveadm auth test <compte>@horlynat.com
+```
+
+⚠️ Les alias par défaut créés automatiquement par PostfixAdmin à la création
+d'un domaine (`abuse@`, `postmaster@`, `hostmaster@`, `webmaster@`)
+pointent vers un placeholder cassé (`...@change-this-to-your.domain.tld`)
+— à corriger manuellement (UPDATE SQL ou UI) vers une vraie boîte après
+création du domaine.
 
 ## Hors périmètre de cette livraison (documenté, pas implémenté)
 
