@@ -1,0 +1,35 @@
+{
+	frankenphp {
+		{$FRANKENPHP_CONFIG}
+	}
+	admin 0.0.0.0:2019
+	order php_server before file_server
+	# Le TLS et les vraies IP visiteurs sont gérés par Traefik en amont (edge) —
+	# ce conteneur n'écoute qu'en HTTP interne et fait confiance au proxy interne
+	# uniquement (réseau Docker edge-net, jamais exposé directement).
+	# `trusted_proxies` est une option globale de `servers`, pas une
+	# sous-directive de `php_server`.
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+{$SERVER_NAME:http://:80}
+
+log {
+	output stdout
+	format json
+}
+
+encode zstd gzip
+
+root * /app/public
+
+php_server {
+	worker {
+		file ./public/index.php
+		num {$FRANKENPHP_NUM_THREADS:4}
+	}
+}
+
+file_server
