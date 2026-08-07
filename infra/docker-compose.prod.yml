@@ -235,11 +235,14 @@ services:
       - POSTFIXADMIN_DB_USER=postfixadmin
       - POSTFIXADMIN_DB_NAME=postfixadmin
       - POSTFIXADMIN_DB_PASSWORD_FILE=/run/secrets/postfixadmin_db_password
-      - POSTFIXADMIN_SETUP_PASSWORD=${POSTFIXADMIN_SETUP_PASSWORD}
+      # Secret (pas une variable ${...}) : un hash bcrypt plein de "$" ne
+      # survit pas à la substitution Compose (testé : tronqué en "$$2y$$12").
+      - POSTFIXADMIN_SETUP_PASSWORD_FILE=/run/secrets/postfixadmin_setup_password
       - POSTFIXADMIN_SMTP_SERVER=host.docker.internal
       - POSTFIXADMIN_SMTP_PORT=587
     secrets:
       - postfixadmin_db_password
+      - postfixadmin_setup_password
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -289,3 +292,5 @@ secrets:
     file: ./secrets/database_password
   postfixadmin_db_password:
     file: ./secrets/postfixadmin_db_password
+  postfixadmin_setup_password:
+    file: ./secrets/postfixadmin_setup_password
