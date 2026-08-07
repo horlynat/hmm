@@ -140,6 +140,15 @@ else
   ufw allow 443/tcp
 fi
 
+# Postfix/Dovecot tournent nativement sur ce VPS, hors Docker (mail déjà en
+# prod avant ce script, cf. README) — le "ufw --force reset" ci-dessus efface
+# TOUTES les règles existantes, y compris celles-là. Oubli testé en prod :
+# le webmail/IMAP/SMTP externes sont restés coupés jusqu'à ce qu'on s'en
+# aperçoive en configurant mailer_dsn. Toujours les rouvrir explicitement.
+ufw allow 25/tcp comment 'SMTP (Postfix natif)'
+ufw allow 587/tcp comment 'SMTP submission (Postfix natif)'
+ufw allow 993/tcp comment 'IMAPS (Dovecot natif)'
+
 ufw --force enable
 echo "Règles UFW actives :"
 ufw status verbose
