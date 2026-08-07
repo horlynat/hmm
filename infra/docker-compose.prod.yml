@@ -221,6 +221,39 @@ services:
       retries: 5
       start_period: 30s
 
+  postfixadmin:
+    # Panneau de gestion des comptes mail (Postfix/Dovecot natifs sur l'hôte,
+    # cf. scripts/README) — n'a rien à voir avec la base applicative
+    # ci-dessus. Sa propre base MySQL tourne nativement sur l'hôte (pas dans
+    # Docker), jointe via host.docker.internal, protection défense-en-
+    # profondeur identique à dark.horlynat.com (cf. labels).
+    image: postfixadmin:latest
+    restart: unless-stopped
+    environment:
+      - POSTFIXADMIN_DB_TYPE=mysqli
+      - POSTFIXADMIN_DB_HOST=host.docker.internal
+      - POSTFIXADMIN_DB_USER=postfixadmin
+      - POSTFIXADMIN_DB_NAME=postfixadmin
+      - POSTFIXADMIN_DB_PASSWORD_FILE=/run/secrets/postfixadmin_db_password
+      - POSTFIXADMIN_SETUP_PASSWORD=${POSTFIXADMIN_SETUP_PASSWORD}
+      - POSTFIXADMIN_SMTP_SERVER=host.docker.internal
+      - POSTFIXADMIN_SMTP_PORT=587
+    secrets:
+      - postfixadmin_db_password
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - edge-net
+    mem_limit: 256m
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=edge-net
+      - traefik.http.routers.mailadmin.rule=Host(`mailadmin.horlynat.com`)
+      - traefik.http.routers.mailadmin.entrypoints=websecure
+      - traefik.http.routers.mailadmin.tls=true
+      - traefik.http.routers.mailadmin.middlewares=cloudflare-only@file,admin-ipwhitelist@file,security-headers@file,ratelimit-strict@file
+      - traefik.http.services.mailadmin.loadbalancer.server.port=80
+
 networks:
   edge-net:
     name: edge-net
@@ -254,3 +287,5 @@ secrets:
     file: ./secrets/ntfy_dsn
   database_password:
     file: ./secrets/database_password
+  postfixadmin_db_password:
+    file: ./secrets/postfixadmin_db_password
