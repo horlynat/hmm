@@ -87,7 +87,7 @@ http:
     admin-ipwhitelist:
       ipAllowList:
         sourceRange:
-          - "197.214.238.37/32"
+          - "197.214.238.12/32"
         ipStrategy:
           # Sans ça, l'IP évaluée est celle de la connexion brute (Cloudflare),
           # jamais celle du visiteur — testé en prod, bloquait systématiquement
