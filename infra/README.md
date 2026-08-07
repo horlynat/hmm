@@ -117,13 +117,29 @@ donc, dans cet ordre :
 ```bash
 cd /opt/hmm/infra
 
-# 1. Backend + DB + Traefik d'abord (le frontend n'est pas encore construit,
-#    inutile de l'inclure ici)
-docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build backend database messenger-worker traefik
+# 1. Backend + DB + Traefik d'abord — SANS messenger-worker (le frontend
+#    n'est pas encore construit, inutile de l'inclure ici). Messenger tourne
+#    en doctrine://default avec auto_setup : s'il démarre avant les
+#    migrations, il auto-crée sa propre table messenger_messages, qui entre
+#    ensuite en collision avec la migration censée la créer (testé en prod :
+#    "Table 'messenger_messages' already exists"). Toujours migrations
+#    d'abord, worker après (étape 2.5).
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build backend database traefik
 docker compose -f docker-compose.prod.yml ps backend   # attendre "healthy"
 
-# 2. Migrations
-docker compose -f docker-compose.prod.yml exec backend php bin/console doctrine:migrations:migrate --no-interaction
+# 2. Migrations — IMPORTANT : `docker compose exec` tourne en root par défaut
+#    (l'entrypoint su-exec vers www-data ne s'applique qu'au process PID 1,
+#    pas à exec — testé). Sans -u www-data, Symfony régénère son cache prod
+#    (property_metadata, isInitializable...) appartenant à root, et le vrai
+#    process web (www-data) se retrouve avec des "Permission denied" dessus
+#    au premier vrai appel API. Toujours -u www-data sur ces commandes ; si
+#    jamais oublié : `docker exec <container> chown -R www-data:www-data
+#    /app/var/cache` répare après coup.
+docker compose -f docker-compose.prod.yml exec -u www-data backend php bin/console doctrine:migrations:migrate --no-interaction
+
+# 2.5. Worker Messenger, seulement maintenant que les migrations ont créé
+#      messenger_messages proprement.
+docker compose -f docker-compose.prod.yml up -d messenger-worker
 
 # 3. Contenu obligatoire : `app:seed-content` (src/Command/SeedContentCommand.php)
 #    écrit directement le contenu réel des pages Accueil et À propos en base.
@@ -134,7 +150,7 @@ docker compose -f docker-compose.prod.yml exec backend php bin/console doctrine:
 #    --force. Le contenu reste ensuite modifiable via le back-office
 #    (dark.horlynat.com/admin/content/home et /about) comme n'importe quel
 #    contenu.
-docker compose -f docker-compose.prod.yml exec backend php bin/console app:seed-content
+docker compose -f docker-compose.prod.yml exec -u www-data backend php bin/console app:seed-content
 
 # 4. Frontend ensuite — son build a besoin de `backend` joignable en HTTP le
 #    temps du `RUN npm run build` (génération statique/ISR). BuildKit ne
