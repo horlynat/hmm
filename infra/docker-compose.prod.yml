@@ -1,0 +1,227 @@
+# Orchestration prod — à exécuter depuis un clone de la branche `main`
+# (structure attendue : main/backend, main/frontend, main/infra — celui-ci).
+# Aucun service applicatif ne publie de port : Traefik est le seul point
+# d'entrée public (guide hardening portfolio §2).
+
+services:
+  traefik:
+    image: traefik:v3.3
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic/dynamic.yml:ro
+      - ./certs:/etc/traefik/certs:ro
+    networks:
+      - edge-net
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      # Beaucoup de pages font des fetch server-side vers l'API PENDANT le
+      # build (génération statique/ISR, cf. Dockerfile) — le build a donc
+      # besoin d'atteindre `backend`. BuildKit ne supporte pas un réseau
+      # bridge nommé pour les étapes RUN ; on utilise le mode `host` (le RUN
+      # de build partage alors la pile réseau de l'hôte) et on atteint
+      # `backend` via son port publié en loopback ci-dessous. Implique un
+      # déploiement en deux temps (cf. README "Build en deux temps") :
+      # backend démarré AVANT `docker compose build frontend`.
+      network: host
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+        NEXT_PUBLIC_MEDIA_URL: ${NEXT_PUBLIC_MEDIA_URL}
+        API_URL: http://127.0.0.1:8000/api
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      # Appel interne conteneur-à-conteneur, jamais via le domaine public
+      # (cf. _config.frontend.md "100% server-side") :
+      - API_URL=http://backend:80/api
+    secrets:
+      - revalidate_secret
+    networks:
+      - edge-net
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=edge-net
+      - traefik.http.routers.frontend.rule=Host(`horlynat.com`) || Host(`www.horlynat.com`)
+      - traefik.http.routers.frontend.entrypoints=websecure
+      - traefik.http.routers.frontend.tls=true
+      - traefik.http.routers.frontend.middlewares=cloudflare-only@file,security-headers@file,ratelimit-standard@file
+      - traefik.http.services.frontend.loadbalancer.server.port=3000
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      # Loopback uniquement (jamais 0.0.0.0) — sert au build `frontend` en
+      # mode réseau `host` ci-dessus (SSG/ISR au build). Ne contourne pas
+      # "Traefik seul point d'entrée public" : ce port n'est routable que
+      # depuis l'hôte lui-même, jamais depuis l'extérieur.
+      - "127.0.0.1:8000:80"
+    environment:
+      - APP_ENV=prod
+      - APP_DEBUG=0
+      - CORS_ALLOW_ORIGIN=^https://(horlynat\.com|www\.horlynat\.com)$$
+      - FRONTEND_URL=${NEXT_PUBLIC_SITE_URL}
+      - DEFAULT_URI=https://api.horlynat.com
+      # IP/plage du conteneur traefik (réseau edge-net) — Symfony doit lui
+      # faire confiance pour lire les en-têtes X-Forwarded-* qu'il pose
+      # après avoir restauré l'IP réelle depuis Cloudflare (cf. README).
+      - SYMFONY_TRUSTED_PROXIES=${SYMFONY_TRUSTED_PROXIES:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+    secrets:
+      - app_secret
+      - jwt_passphrase
+      - jwt_secret_key
+      - jwt_public_key
+      - database_url
+      - mailer_dsn
+      - llm_api_key
+      - revalidate_secret
+      - ntfy_dsn
+    extra_hosts:
+      # Postfix/Dovecot tournent nativement sur l'hôte, hors Docker
+      # (cf. guide hardening portfolio §9) — jamais exposés publiquement,
+      # joints uniquement via cette passerelle interne en SMTP authentifié.
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - edge-net
+      - data-net
+    volumes:
+      # Logs lisibles depuis l'hôte pour fail2ban (jail symfony-security,
+      # cf. scripts/01-base-hardening.sh) — tant que Monolog n'a pas de
+      # channel dédié security_errors -> fichier, c'est var/log/prod.log
+      # qui est lu (cf. _config.backend.md pour le channel dédié à poser).
+      - ./logs/backend:/app/var/log
+    mem_limit: 3g
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2019/config/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=edge-net
+      - traefik.http.services.backend.loadbalancer.server.port=80
+      # api.horlynat.com — surface publique la plus large (guide §4)
+      - traefik.http.routers.api.rule=Host(`api.horlynat.com`)
+      - traefik.http.routers.api.entrypoints=websecure
+      - traefik.http.routers.api.tls=true
+      - traefik.http.routers.api.service=backend
+      - traefik.http.routers.api.middlewares=cloudflare-only@file,security-headers@file,ratelimit-standard@file
+      # dark.horlynat.com — back-office, protection maximale (guide §3)
+      - traefik.http.routers.dark.rule=Host(`dark.horlynat.com`)
+      - traefik.http.routers.dark.entrypoints=websecure
+      - traefik.http.routers.dark.tls=true
+      - traefik.http.routers.dark.service=backend
+      - traefik.http.routers.dark.middlewares=cloudflare-only@file,admin-ipwhitelist@file,security-headers@file,ratelimit-strict@file
+
+  messenger-worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["docker-entrypoint.sh", "php", "bin/console", "messenger:consume", "async", "failed", "--time-limit=3600", "--memory-limit=256M", "-vv"]
+    environment:
+      - APP_ENV=prod
+      - APP_DEBUG=0
+    secrets:
+      - app_secret
+      - database_url
+      - mailer_dsn
+      - llm_api_key
+      - ntfy_dsn
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      # edge-net : sortie internet nécessaire (appels LLM, SMTP) — le worker
+      # n'a pas de label traefik.enable donc reste non routable depuis
+      # l'extérieur malgré la présence sur ce réseau (exposedByDefault=false).
+      - edge-net
+      - data-net
+    mem_limit: 512m
+
+  database:
+    # MySQL 8, pas Postgres : les migrations committées (migrations/Version*.php)
+    # sont écrites en dialecte MySQL (AUTO_INCREMENT) et échouent sur Postgres
+    # (testé) — cf. README §4. C'est le moteur qui ne demande aucun changement
+    # de code applicatif.
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
+      MYSQL_USER: ${MYSQL_USER:-app}
+      MYSQL_PASSWORD_FILE: /run/secrets/database_password
+      # Pas de secret root dédié : l'app n'a besoin que de l'utilisateur
+      # applicatif ci-dessus, root n'est jamais utilisé après l'init.
+      MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+    secrets:
+      - database_password
+    volumes:
+      - mysql_data:/var/lib/mysql:rw
+    networks:
+      - data-net
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER -p\"$$(cat /run/secrets/database_password)\" --silent"]
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+networks:
+  edge-net:
+    name: edge-net
+    driver: bridge
+  data-net:
+    name: data-net
+    driver: bridge
+    internal: true # aucune route sortante directe vers internet — la DB ne parle qu'au backend
+
+volumes:
+  mysql_data:
+
+secrets:
+  app_secret:
+    file: ./secrets/app_secret
+  jwt_passphrase:
+    file: ./secrets/jwt_passphrase
+  jwt_secret_key:
+    file: ./secrets/jwt_secret_key
+  jwt_public_key:
+    file: ./secrets/jwt_public_key
+  database_url:
+    file: ./secrets/database_url
+  mailer_dsn:
+    file: ./secrets/mailer_dsn
+  llm_api_key:
+    file: ./secrets/llm_api_key
+  revalidate_secret:
+    file: ./secrets/revalidate_secret
+  ntfy_dsn:
+    file: ./secrets/ntfy_dsn
+  database_password:
+    file: ./secrets/database_password
