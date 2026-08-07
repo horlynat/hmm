@@ -49,7 +49,11 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
-RUN addgroup --system --gid 1001 nodejs \
+# su-exec : permet à docker-entrypoint.sh de démarrer en root (nécessaire
+# pour lire les secrets Docker, cf. commentaire dans ce script) puis de
+# basculer sur nextjs juste avant d'exécuter node.
+RUN apk add --no-cache su-exec \
+    && addgroup --system --gid 1001 nodejs \
     && adduser --system --uid 1001 nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
@@ -57,7 +61,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-USER nextjs
+# Pas de USER ici : l'ENTRYPOINT doit démarrer en root pour lire les secrets
+# Docker (cf. docker-entrypoint.sh), qui bascule ensuite explicitement sur
+# nextjs via su-exec avant d'exécuter node — le process applicatif final ne
+# tourne jamais en root.
 
 EXPOSE 3000
 
