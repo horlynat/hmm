@@ -93,10 +93,16 @@ when@dev:
 
 when@prod:
     nelmio_security:
-        # HSTS + redirection forcée vers HTTPS : uniquement en prod, jamais en
-        # dev/test où le serveur local tourne en HTTP simple (activer ceci
-        # hors prod casserait l'accès au site en local).
+        # Désactivé : redondant avec Traefik, qui est le seul point d'entrée
+        # public (cf. infra/docker-compose.prod.yml) et gère déjà lui-même la
+        # redirection HTTP -> HTTPS (entryPoint web -> websecure, permanent)
+        # ET le HSTS (middleware security-headers, cf. infra/traefik/dynamic.yml,
+        # stsSeconds/stsIncludeSubdomains/stsPreload équivalents à ci-dessous).
+        # Actif ici en plus, ce réglage cassait le trafic interne Docker
+        # légitime (127.0.0.1 non listé dans SYMFONY_TRUSTED_PROXIES, donc pas
+        # reconnu "déjà https" — le build frontend, qui interroge l'API en
+        # HTTP direct pendant `next build`, recevait une redirection 302 vers
+        # https sur un port qui ne parle pas TLS et échouait avec
+        # ERR_SSL_WRONG_VERSION_NUMBER — testé).
         forced_ssl:
-            enabled: true
-            hsts_max_age: 31536000
-            hsts_subdomains: true
+            enabled: false
