@@ -37,15 +37,24 @@ RUN npm run build
 # ---- Stage 3 : image finale FrankenPHP ----
 FROM dunglas/frankenphp:1-php8.4-alpine AS app
 
+# L'image de base bascule déjà sur www-data (son propre USER) — remonter en
+# root explicitement, sinon les RUN/COPY qui suivent (et in fine l'ENTRYPOINT,
+# cf. commentaire plus bas) héritent silencieusement de www-data.
+USER root
+
 # pdo_mysql, pas pdo_pgsql : les migrations committées sont écrites en
 # dialecte MySQL (cf. infra/README.md §4).
+# su-exec : permet à docker-entrypoint.sh de démarrer en root (nécessaire
+# pour lire les secrets Docker, cf. commentaire dans ce script) puis de
+# basculer sur www-data juste avant d'exécuter frankenphp.
 RUN install-php-extensions \
     pdo_mysql \
     intl \
     zip \
     xsl \
     opcache \
-    apcu
+    apcu \
+    && apk add --no-cache su-exec
 
 ENV APP_ENV=prod \
     APP_DEBUG=0 \
@@ -64,14 +73,18 @@ RUN mkdir -p var/cache var/log \
 
 # Caddy (sous FrankenPHP) écrit son état (config autosave, storage TLS) dans
 # les dossiers XDG /config/caddy et /data/caddy, appartenant à root par
-# défaut dans l'image de base — inaccessibles à www-data (cf. USER ci-dessous),
-# ce qui spamme les logs d'erreurs "permission denied" à chaque démarrage.
-# Inoffensif fonctionnellement (pas de TLS/ACME ici, Traefik s'en charge en
-# amont) mais bruite les logs consommés par fail2ban (cf. infra/scripts).
+# défaut dans l'image de base — inaccessibles à www-data (le process final
+# tourne sous cet utilisateur, cf. docker-entrypoint.sh), ce qui spamme les
+# logs d'erreurs "permission denied" à chaque démarrage. Inoffensif
+# fonctionnellement (pas de TLS/ACME ici, Traefik s'en charge en amont) mais
+# bruite les logs consommés par fail2ban (cf. infra/scripts).
 RUN mkdir -p /config/caddy /data/caddy \
     && chown -R www-data:www-data /config /data
 
-USER www-data
+# Pas de USER ici : l'ENTRYPOINT doit démarrer en root pour lire les secrets
+# Docker (cf. docker-entrypoint.sh), qui bascule ensuite explicitement sur
+# www-data via su-exec avant d'exécuter frankenphp — le process applicatif
+# final ne tourne jamais en root.
 
 EXPOSE 80
 
