@@ -15,6 +15,19 @@ Adapter `DEPLOY_PATH` dans les scripts si le clone n'est pas dans `/opt/hmm`.
 Pas d'accès SSH depuis l'environnement où ce runbook a été écrit — tout ce
 qui suit est à exécuter par toi sur le VPS.
 
+## Accès rapides (prod)
+
+| Usage | URL | Identifiants |
+|---|---|---|
+| Site public | https://horlynat.com | — |
+| API | https://api.horlynat.com | — |
+| Back-office app (projets, contenu, utilisateurs...) | https://dark.horlynat.com | Cloudflare Access (code email) puis compte `ROLE_SUPER_ADMIN` — cf. §6.5 |
+| Gestion des comptes mail | https://mailadmin.horlynat.com | Compte super-admin PostfixAdmin créé via `/setup.php` — cf. §10 |
+| Webmail / client mail (IMAP 993, SMTP 587) | `vps122840.serveur-vps.net` (pas `mail.horlynat.com`, cf. §3) | Comptes créés dans PostfixAdmin |
+
+Identifiants eux-mêmes non stockés ici (gestionnaire de mots de passe) —
+seuls les points d'entrée sont listés pour s'y retrouver rapidement.
+
 ## Ordre d'exécution
 
 ### 1. Durcissement OS (`scripts/01-base-hardening.sh`)
