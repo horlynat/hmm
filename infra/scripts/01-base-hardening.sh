@@ -103,10 +103,17 @@ else
   warn "SSH PAS encore verrouillé (mode préparation) : PasswordAuthentication reste"
   warn "actif et le port 22 reste ouvert en parallèle du ${SSH_PORT}, le temps que"
   warn "tu valides une connexion 'ssh -p ${SSH_PORT} ${DEPLOY_USER}@<IP_VPS>' réussie."
-  echo "PermitRootLogin prohibit-password" >> "$SSHD_CONFIG"
+  # "no" et pas "prohibit-password" : si root est déjà désactivé sur ce VPS
+  # (cf. sshd_config existant), pas de raison de rouvrir un accès root même
+  # temporaire le temps du test — DEPLOY_USER dispose déjà d'un accès
+  # sudo + clé confirmé fonctionnel, aucun besoin d'un filet de secours root.
+  echo "PermitRootLogin no" >> "$SSHD_CONFIG"
 fi
 
-sshd -t && systemctl restart sshd
+# Le nom de l'unité systemd diverge selon la distro : "ssh" sur Debian/Ubuntu,
+# "sshd" ailleurs (RHEL et dérivés) — testé, "systemctl restart sshd" échoue
+# sur Ubuntu 24.04 avec "Unit sshd.service not found."
+sshd -t && (systemctl restart ssh 2>/dev/null || systemctl restart sshd)
 echo "sshd redémarré. NE FERME PAS cette session tant que tu n'as pas testé"
 echo "une connexion réussie depuis un autre terminal :"
 echo "  ssh -p ${SSH_PORT} ${DEPLOY_USER}@<IP_VPS>"
@@ -246,7 +253,15 @@ cat > /etc/audit/rules.d/hardening.rules <<'EOF'
 -a always,exit -F arch=b64 -S execve -F euid=0 -k root_exec
 EOF
 augenrules --load 2>/dev/null || true
-systemctl enable --now auditd
+# Dans un conteneur LXC non privilégié (cf. sysctl read-only et AppArmor
+# absent ci-dessus, même cause), le sous-système d'audit noyau n'est pas
+# accessible et la plateforme masque volontairement ce service — testé sur
+# le VPS de prod ("Unit file .../auditd.service is masked"), pas un bug à
+# corriger, juste une limite de l'environnement. Averti, pas fatal.
+if ! systemctl enable --now auditd 2>&1; then
+  warn "auditd indisponible dans cet environnement (conteneur LXC — sous-système"
+  warn "d'audit noyau non accessible, service masqué par la plateforme). Ignoré."
+fi
 
 # Logging sudo renforcé (guide §10)
 cat > /etc/sudoers.d/logging <<'EOF'
@@ -257,9 +272,15 @@ chmod 440 /etc/sudoers.d/logging
 
 # ---------------------------------------------------------------------------
 log "10. Intégrité / anti-rootkit — AIDE + rkhunter (guide §8)"
-if [[ ! -f /var/lib/aide/aide.db.gz ]]; then
+if [[ ! -f /var/lib/aide/aide.db.gz && ! -f /var/lib/aide/aide.db ]]; then
   aideinit -y -f || aide --init
+  # Sur Ubuntu, aideinit promeut déjà aide.db.new -> aide.db en interne, sans
+  # compression gzip (contrairement à la convention d'autres distros) — testé
+  # sur le VPS de prod. Ce mv ne sert que si aide --init brut a été utilisé
+  # en repli (aideinit absent), auquel cas AUCUNE promotion automatique n'a
+  # lieu et il faut le faire nous-mêmes.
   mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz 2>/dev/null || true
+  mv -f /var/lib/aide/aide.db.new /var/lib/aide/aide.db 2>/dev/null || true
 fi
 ( crontab -l 2>/dev/null | grep -v aide.wrapper; \
   echo "0 5 * * * root /usr/bin/aide.wrapper --check" ) | crontab -
