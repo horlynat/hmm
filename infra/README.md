@@ -49,6 +49,13 @@ mkdir -p /opt/hmm/infra/certs
 chmod 600 /opt/hmm/infra/certs/cloudflare-origin.key
 ```
 
+⚠️ **Ne jamais proxifier `mail.horlynat.com`** (le garder en DNS only / nuage
+gris) si Postfix/Dovecot tournent nativement sur ce même VPS — Cloudflare ne
+relaie pas le SMTP/IMAP sur ses IP proxy standards. Testé en prod : ce
+sous-domaine s'est retrouvé proxié par erreur, coupant le mail entrant
+externe le temps de s'en apercevoir. Seuls `horlynat.com`, `www`, `api` et
+`dark` doivent être en proxied (nuage orange).
+
 ### 4. Secrets
 
 Créer un fichier par secret dans `infra/secrets/` (contenu brut, **sans**
@@ -99,6 +106,20 @@ cp .env.prod.example .env.prod
 Éditer `traefik/dynamic.yml` : remplacer `203.0.113.10/32` (middleware
 `admin-ipwhitelist`) par ta/tes vraie(s) IP fixe(s) — **tant que ce n'est
 pas fait, `dark.horlynat.com` reste inaccessible** (fail-closed voulu).
+
+⚠️ Deux pièges testés en prod sur ce réglage précis :
+- **IP résidentielle = pas fixe.** Une IP obtenue via `curl ifconfig.me`
+  depuis un réseau grand public peut changer entre deux sessions (constaté
+  en prod : changée en quelques heures). Si `dark.` redevient inaccessible
+  sans raison apparente, revérifier l'IP actuelle avant de chercher
+  ailleurs.
+- **`docker compose restart traefik` obligatoire après modification**, pas
+  juste une modification du fichier : `traefik.yml`/`dynamic.yml` sont
+  montés en bind-mount de **fichier unique** (pas un dossier), et un outil
+  qui réécrit le fichier via renommage atomique (`rsync`, la plupart des
+  éditeurs) change son inode — le bind-mount du conteneur reste accroché à
+  l'ancien inode. `watch: true` ne voit donc jamais la modification tant
+  que le conteneur n'est pas relancé.
 
 ### 6. Build en trois temps (important)
 
@@ -166,6 +187,40 @@ docker compose -f docker-compose.prod.yml ps
 
 Aux déploiements suivants (mise à jour de code), même ordre à respecter —
 sauf le contenu du back-office, qui persiste déjà en base.
+
+### 6.5. Premier compte admin (bootstrap — une seule fois)
+
+⚠️ Aucun mécanisme de seed/fixture ne crée de compte admin. Sur une base
+neuve (`user` vide), il n'existe **aucun chemin applicatif** pour créer le
+tout premier compte :
+- `RegistrationController` (`/register`) exige déjà `ROLE_ADMIN` pour créer
+  un compte — inscription publique volontairement absente pour un compte
+  admin.
+- `app:admin:recover` (CLI, cf. `src/Command/AdminRecoverCommand.php`) ne
+  répare qu'un compte **existant** (mot de passe oublié, 2FA perdue,
+  déverrouillage) — il ne crée rien.
+
+Donc, pour ce premier compte (ou tout compte admin créé hors back-office) :
+
+```bash
+# 1. Hash du mot de passe (saisie masquée, jamais en clair sur la ligne de commande)
+docker compose -f docker-compose.prod.yml exec -u www-data backend php bin/console security:hash-password
+
+# 2. Insertion directe en base avec le hash obtenu
+cat > /tmp/create-admin.sql <<'SQL_EOF'
+INSERT INTO user (email, roles, password, is_verified, is_active, is_two_factor_enabled, created_at, updated_at)
+VALUES ('email@exemple.com', '["ROLE_SUPER_ADMIN"]', '<hash obtenu ci-dessus>', 1, 1, 0, NOW(), NOW());
+SQL_EOF
+DBPASS=$(sudo cat secrets/database_password)
+sudo docker exec -i infra-database-1 mysql -u app -p"$DBPASS" app < /tmp/create-admin.sql
+rm -f /tmp/create-admin.sql   # contient le hash, pas juste un mot de passe en clair mais autant nettoyer
+```
+
+Rôles disponibles (hiérarchie complète dans `config/packages/security.yaml`) :
+`ROLE_USER < ROLE_EDITOR < ROLE_MODERATOR < ROLE_MANAGER < ROLE_ADMIN <
+ROLE_SUPER_ADMIN`. Une fois ce premier compte créé, les suivants peuvent
+passer par `/register` (accessible uniquement en étant déjà connecté en
+admin) plutôt que par SQL direct.
 
 ### 7. Vérifications
 
