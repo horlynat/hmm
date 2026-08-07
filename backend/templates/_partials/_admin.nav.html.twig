@@ -42,7 +42,8 @@
 {% set canViewNotifications = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_NOTIFICATIONS')) %}
 {% set canViewIntegrations = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_INTEGRATIONS')) %}
 {% set canViewBackups = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_BACKUPS')) %}
-{% set canViewParametresSection = canViewConfig or canViewNotifications or canViewIntegrations or canViewBackups %}
+{% set canViewMailAdmin = is_granted('ROLE_ADMIN') %}
+{% set canViewParametresSection = canViewConfig or canViewNotifications or canViewIntegrations or canViewBackups or canViewMailAdmin %}
 
 {% if is_granted('ROLE_EDITOR') %}
 <aside class="fixed inset-y-0 left-0 z-50 w-64 h-full bg-(--bg-default) border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out
@@ -303,6 +304,16 @@
 						<a href="{{ path('admin_backup_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_backup' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 							<i class="ti ti-database-export text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 							Sauvegardes
+						</a>
+					{% endif %}
+					{% if canViewMailAdmin %}
+						{# Panneau externe (PostfixAdmin, conteneur séparé sur son propre
+						   sous-domaine) — pas une route Symfony, d'où le lien direct et le
+						   nouvel onglet plutôt que path(). #}
+						<a href="https://mailadmin.horlynat.com" target="_blank" rel="noopener" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
+							<i class="ti ti-mail-cog text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Gestion mail
+							<i class="ti ti-external-link text-xs ml-auto opacity-50"></i>
 						</a>
 					{% endif %}
 				</div>
