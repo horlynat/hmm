@@ -96,6 +96,9 @@ services:
       # faire confiance pour lire les en-têtes X-Forwarded-* qu'il pose
       # après avoir restauré l'IP réelle depuis Cloudflare (cf. README).
       - SYMFONY_TRUSTED_PROXIES=${SYMFONY_TRUSTED_PROXIES:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+      # Doit correspondre au compte authentifié dans secrets/mailer_dsn (cf.
+      # .env.prod.example).
+      - APP_DEFAULT_SENDER=${APP_DEFAULT_SENDER}
     secrets:
       - app_secret
       - jwt_passphrase
@@ -165,6 +168,9 @@ services:
     environment:
       - APP_ENV=prod
       - APP_DEBUG=0
+      # SendEmailHandler tourne ici (transport async) — même contrainte que
+      # le service backend (cf. commentaire là-bas).
+      - APP_DEFAULT_SENDER=${APP_DEFAULT_SENDER}
     secrets:
       - app_secret
       - database_url
