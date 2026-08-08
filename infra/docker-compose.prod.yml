@@ -76,6 +76,13 @@ services:
       - traefik.http.services.frontend.loadbalancer.server.port=3000
 
   backend:
+    # Image poussée par le workflow deploy.yml (build + tests PHPStan/PHPUnit
+    # en amont sur GitHub Actions, cf. .github/workflows/backend-ci.yml et
+    # deploy.yml) — présente en parallèle du `build:` ci-dessous, qui reste
+    # utilisable pour un déploiement 100% local (`docker compose build
+    # backend`) en cas de panne du registre. BACKEND_IMAGE_TAG permet un
+    # rollback manuel vers un sha antérieur (cf. infra/scripts/deploy-remote.sh).
+    image: ghcr.io/horlynat/hmm-backend:${BACKEND_IMAGE_TAG:-latest}
     build:
       context: ../backend
       dockerfile: Dockerfile
@@ -150,6 +157,9 @@ services:
       - traefik.http.routers.dark.middlewares=cloudflare-only@file,admin-ipwhitelist@file,security-headers@file,ratelimit-strict@file
 
   messenger-worker:
+    # Même image que le service backend ci-dessus (seule la commande
+    # diffère) — un seul `pull` suffit aux deux services.
+    image: ghcr.io/horlynat/hmm-backend:${BACKEND_IMAGE_TAG:-latest}
     build:
       context: ../backend
       dockerfile: Dockerfile

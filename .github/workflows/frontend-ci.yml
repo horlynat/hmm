@@ -1,0 +1,45 @@
+name: Frontend CI
+
+# `next build` n'est volontairement PAS lancé ici. Plusieurs pages font du
+# fetch server-side vers l'API pendant le build (SSG/ISR, cf.
+# frontend/Dockerfile) et échouent sans backend joignable ET peuplé de
+# contenu réel (app:seed-content) — reproduire ça dans un runner isolé
+# demanderait de faire tourner toute la stack (MySQL + backend + migrations
+# + seed) à chaque CI, pour un gain limité à l'échelle de ce projet. Le
+# build réel se fait donc toujours sur le VPS pendant le déploiement (cf.
+# deploy.yml + infra/scripts/deploy-remote.sh), où `backend` tourne déjà.
+# Cette CI se limite donc au lint et aux tests unitaires (Vitest), qui n'ont
+# pas cette dépendance. `test:e2e` (Playwright) reste volontairement manuel,
+# pour la même raison.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # Aligne la version npm sur celle utilisée pour générer le lockfile —
+      # même piège que dans le Dockerfile (npm 10 embarqué dans node:22
+      # résout mal ce lockfile généré avec npm 11 : "Missing:
+      # @swc/helpers@... from lock file").
+      - run: npm install -g npm@11
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test

@@ -1,0 +1,73 @@
+name: Backend CI
+
+# Se déclenche sur les PR vers main qui touchent backend/. Le repo est un
+# monorepo à branches longues (backend/frontend -> main par PR, cf.
+# infra/README.md) : ce fichier n'existe que sur main, et l'évènement
+# pull_request lit la version du workflow présente sur la branche cible
+# (main) fusionnée avec la tête de la PR — inutile de le dupliquer sur les
+# branches backend/frontend.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      # Mêmes dialecte/version qu'en prod (cf. docker-compose.prod.yml) —
+      # les migrations committées sont écrites en SQL MySQL (AUTO_INCREMENT),
+      # elles échouent sur un autre moteur.
+      database:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+          MYSQL_DATABASE: app_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PHP 8.4 + extensions (miroir de l'image FrankenPHP de prod)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: bcmath, ctype, iconv, intl, xsl, pdo_mysql, zip, opcache
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-
+
+      - run: composer install --no-progress --prefer-dist
+
+      - name: PHPStan
+        run: vendor/bin/phpstan analyse --no-progress
+
+      - name: Migrations (base de test)
+        env:
+          APP_ENV: test
+          DATABASE_URL: "mysql://root@127.0.0.1:3306/app_test?serverVersion=8.0&charset=utf8mb4"
+        run: php bin/console doctrine:migrations:migrate --no-interaction
+
+      - name: PHPUnit
+        env:
+          APP_ENV: test
+          DATABASE_URL: "mysql://root@127.0.0.1:3306/app_test?serverVersion=8.0&charset=utf8mb4"
+        run: vendor/bin/phpunit

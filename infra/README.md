@@ -351,6 +351,84 @@ pointent vers un placeholder cassé (`...@change-this-to-your.domain.tld`)
 — à corriger manuellement (UPDATE SQL ou UI) vers une vraie boîte après
 création du domaine.
 
+### 11. Déploiement continu (GitHub Actions)
+
+Trois workflows (`.github/workflows/`), déclenchés uniquement depuis `main`
+(le repo est un monorepo à branches longues intégrées par PR — backend/
+frontend n'ont pas leur propre copie de ces fichiers, inutile puisque
+`pull_request` lit toujours la version présente sur la branche cible) :
+
+- `backend-ci.yml` — sur chaque PR touchant `backend/` : PHPStan + PHPUnit
+  contre une vraie base MySQL 8 (service container), même dialecte qu'en
+  prod.
+- `frontend-ci.yml` — sur chaque PR touchant `frontend/` : lint + tests
+  unitaires (Vitest). **Ne construit pas** l'app (`next build` a besoin d'un
+  backend joignable et peuplé de contenu réel, cf. commentaire dans le
+  fichier) — les tests e2e (`test:e2e`, Playwright) restent volontairement
+  manuels pour la même raison.
+- `deploy.yml` — à chaque merge sur `main` (ou déclenchement manuel) :
+  1. build + push de l'image backend sur GHCR (`ghcr.io/horlynat/hmm-backend`),
+     taguée `latest` et `<sha>` — c'est la même image pour `backend` et
+     `messenger-worker` (cf. `docker-compose.prod.yml`) ;
+  2. déploiement via un environnement GitHub **`production`** protégé
+     (validation manuelle requise avant exécution — à configurer dans
+     *Settings → Environments*) ;
+  3. `rsync` de `infra/` et `frontend/` vers `/opt/hmm/` (jamais `backend/`,
+     dont le code arrive désormais uniquement via l'image GHCR) ;
+  4. exécution de `infra/scripts/deploy-remote.sh` sur le VPS, qui reproduit
+     l'ordre du §6 (backend → migrations → messenger-worker → frontend,
+     toujours dans cet ordre, redeploy ou non).
+
+**Rollback** : relancer `deploy.yml` manuellement (`workflow_dispatch`) avec
+`backend_tag` = un `<sha>` antérieur (visible dans l'historique GHCR ou les
+runs précédents) — saute le rebuild et redéploie directement cette image.
+
+#### Utilisateur `deploy` dédié (pas `ubuntu`)
+
+La CI ne dispose jamais de la clé du compte `ubuntu` (sudo complet). Un
+utilisateur système `deploy` a été créé spécifiquement :
+
+```bash
+sudo useradd -m -s /bin/bash -G docker deploy   # docker uniquement, pas sudo
+sudo usermod -aG ubuntu deploy                  # accès rw à infra/frontend/backend (déjà group=ubuntu)
+sudo groupadd hmmsecrets                        # lecture SEULE sur infra/secrets
+sudo usermod -aG hmmsecrets ubuntu deploy
+sudo chgrp -R hmmsecrets infra/secrets && sudo chmod 750 infra/secrets
+sudo find infra/secrets -type f -exec chmod 640 {} \;
+# Ajouter deploy à la liste blanche SSH posée par 01-base-hardening.sh :
+sudo sed -i 's/^AllowUsers ubuntu$/AllowUsers ubuntu deploy/' /etc/ssh/sshd_config.d/99-hardening.conf
+sudo systemctl reload ssh   # PAS "sshd" : nom de service = ssh sur Ubuntu (cf. §1)
+```
+
+⚠️ Honnêteté sur le niveau réel d'isolation : l'appartenance au groupe
+`docker` équivaut déjà à un accès root (accès au socket Docker = possibilité
+de monter n'importe quel chemin hôte dans un conteneur). Ne pas donner sudo
+à `deploy` évite un accès root *interactif* direct, mais pas un accès root
+*via Docker* — c'est un choix de moindre privilège raisonnable pour ce
+contexte (clé stockée uniquement dans les secrets chiffrés GitHub, jamais
+sur un poste), pas une isolation complète.
+
+#### Secrets et variables à configurer sur le dépôt GitHub
+
+*Settings → Secrets and variables → Actions* :
+
+| Type | Nom | Valeur |
+|---|---|---|
+| Secret | `DEPLOY_SSH_KEY` | Clé privée ed25519 dédiée à la CI (jamais celle de `ubuntu`) |
+| Variable | `DEPLOY_KNOWN_HOSTS` | Sortie de `ssh-keyscan -t ed25519 <IP_VPS>` |
+| Variable | `DEPLOY_HOST` | IP ou nom d'hôte du VPS |
+
+*Settings → Environments → New environment `production`* : ajouter un
+*required reviewer* (toi-même) pour que chaque déploiement attende une
+validation manuelle en un clic avant de s'exécuter.
+
+*Packages* : le package `hmm-backend` doit être **public** (Settings du
+package sur GitHub) — aucun secret n'est embarqué dans l'image (tout passe
+par les Docker secrets montés à l'exécution, cf. §4), ça évite d'avoir à
+gérer un token de lecture GHCR sur le VPS. Sinon (image privée), prévoir un
+`docker login ghcr.io` avec un PAT `read:packages` dans
+`deploy-remote.sh`.
+
 ## Hors périmètre de cette livraison (documenté, pas implémenté)
 
 - **WireGuard devant `dark.horlynat.com`** : amélioration future la plus
