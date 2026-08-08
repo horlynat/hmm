@@ -68,6 +68,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Diagnostic temporaire (aucune de ces valeurs n'est un secret) --
+      # à retirer une fois DEPLOY_HOST confirmé résolu correctement.
+      - name: Debug variables
+        run: |
+          echo "DEPLOY_HOST='${{ vars.DEPLOY_HOST }}' (longueur: ${#DEPLOY_HOST})"
+          echo "DEPLOY_KNOWN_HOSTS length: ${#KNOWN_HOSTS}"
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+
       - name: Clé SSH de déploiement
         run: |
           mkdir -p ~/.ssh
