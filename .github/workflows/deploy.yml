@@ -86,14 +86,16 @@ jobs:
       # Exclusions : tout ce qui est local au serveur et jamais versionné
       # (secrets, certs, logs, .env.prod, dépendances/artefacts de build).
       - name: Rsync infra/ + frontend/ vers le VPS
-        # --omit-dir-times : `deploy` n'est pas propriétaire de infra/ et
-        # frontend/ sur le VPS (juste membre du groupe ubuntu, cf. README
-        # §11) -- il peut y écrire mais pas changer la date de modification
-        # des DOSSIERS eux-mêmes (EPERM, réservé au propriétaire). Sans
-        # incidence : seule la date des fichiers compte pour le cache
-        # Docker/npm, pas celle des dossiers.
+        # --omit-dir-times --no-perms : la propriété de infra/ et frontend/
+        # sur le VPS reste `ubuntu` par choix explicite (cf. README §11),
+        # `deploy` n'y a qu'un accès de groupe -- il peut écrire mais pas
+        # `chmod`/changer la date d'un DOSSIER qu'il ne possède pas (EPERM,
+        # réservé au propriétaire, quelle que soit la valeur demandée). Sans
+        # incidence sur le contenu transféré ; les nouveaux fichiers perdent
+        # simplement leurs bits d'exécution d'origine, restaurés
+        # explicitement en tout début de deploy-remote.sh.
         run: |
-          rsync -az --delete --omit-dir-times \
+          rsync -az --delete --omit-dir-times --no-perms \
             -e "ssh -i ~/.ssh/deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts" \
             --exclude infra/secrets \
             --exclude infra/certs \

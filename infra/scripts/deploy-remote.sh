@@ -14,6 +14,12 @@
 # pour un lancement manuel direct sur le VPS.
 set -euo pipefail
 
+# rsync tourne avec --no-perms (cf. deploy.yml -- deploy n'est pas
+# propriétaire de ces dossiers, cf. README §11) : les fichiers fraîchement
+# créés perdent leurs bits d'exécution d'origine. Restaurés ici plutôt que
+# de dépendre de rsync pour ça.
+chmod +x /opt/hmm/infra/scripts/*.sh 2>/dev/null || true
+
 cd /opt/hmm/infra
 
 export BACKEND_IMAGE_TAG="${BACKEND_IMAGE_TAG:-latest}"
