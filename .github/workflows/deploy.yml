@@ -33,7 +33,7 @@ jobs:
     if: ${{ github.event.inputs.backend_tag == '' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: docker/login-action@v3
         with:
@@ -66,7 +66,7 @@ jobs:
       # cette image existante sans en reconstruire une nouvelle.
       BACKEND_IMAGE_TAG: ${{ github.event.inputs.backend_tag || github.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Clé SSH de déploiement
         # DEPLOY_SSH_KEY est stockée encodée en base64 sur une seule ligne
