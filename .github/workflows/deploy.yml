@@ -79,9 +79,14 @@ jobs:
           KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
 
       - name: Clé SSH de déploiement
+        # DEPLOY_SSH_KEY est stockée encodée en base64 sur une seule ligne
+        # (`base64 -w0 id_ed25519`) -- un copier-coller direct de la clé
+        # multi-lignes dans le champ "secret" de GitHub corrompait des sauts
+        # de ligne (erreur "error in libcrypto" au chargement côté runner,
+        # constaté en prod). Le base64 élimine toute ambiguïté de collage.
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "${{ vars.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
