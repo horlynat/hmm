@@ -26,19 +26,38 @@ export BACKEND_IMAGE_TAG="${BACKEND_IMAGE_TAG:-latest}"
 
 COMPOSE=(docker compose --env-file .env.prod -f docker-compose.prod.yml)
 
+# `docker compose up` renomme temporairement l'ancien conteneur pendant un
+# recreate (<hash>_<service>) avant de le supprimer -- rencontré en prod un
+# conflit de nom transitoire sur cette étape (le renommage retente en
+# interne mais peut renvoyer un exit non-nul le temps que ça se résolve,
+# alors que l'état final est correct). 3 tentatives avant d'abandonner pour
+# de vrai.
+up_with_retry() {
+  local attempt
+  for attempt in 1 2 3; do
+    if "${COMPOSE[@]}" up -d --wait "$@"; then
+      return 0
+    fi
+    echo "up -d --wait $* : échec (tentative ${attempt}/3), nouvel essai dans 5s..."
+    sleep 5
+  done
+  echo "up -d --wait $* : échec après 3 tentatives" >&2
+  return 1
+}
+
 echo "==> Backend (${BACKEND_IMAGE_TAG}) : pull + traefik/database à jour"
 "${COMPOSE[@]}" pull backend
-"${COMPOSE[@]}" up -d --wait traefik database backend
+up_with_retry traefik database backend
 
 echo "==> Migrations (toujours avant le worker -- cf. README §6)"
 "${COMPOSE[@]}" exec -T -u www-data backend php bin/console doctrine:migrations:migrate --no-interaction
 
 echo "==> Worker Messenger (même image que backend, déjà pull ci-dessus)"
-"${COMPOSE[@]}" up -d --wait messenger-worker
+up_with_retry messenger-worker
 
 echo "==> Frontend : build local (a besoin de backend joignable en 127.0.0.1:8000 pendant le build SSG/ISR, cf. Dockerfile)"
 "${COMPOSE[@]}" build frontend
-"${COMPOSE[@]}" up -d --wait frontend
+up_with_retry frontend
 
 echo "==> Reste de la stack (postfixadmin...) + nettoyage des orphelins"
 "${COMPOSE[@]}" up -d --remove-orphans
