@@ -21,7 +21,9 @@ use App\Repository\ProjectTaskRepository;
 use App\Repository\QuoteRequestRepository;
 use App\Security\Voter\ProjectVoter;
 use App\Service\AccountLinkResolver;
+use App\Service\DeviceParser;
 use App\Service\EmailManager;
+use App\Service\GeolocationService;
 use App\Service\JWTService;
 use App\Service\ProjectNotifier;
 use App\Service\PublicSubmissionThrottler;
@@ -93,6 +95,8 @@ final class MeController extends AbstractController
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly ValidatorInterface $validator,
         private readonly AccountLinkResolver $accountLinkResolver,
+        private readonly GeolocationService $geolocationService,
+        private readonly DeviceParser $deviceParser,
     ) {
     }
 
@@ -1047,6 +1051,12 @@ final class MeController extends AbstractController
         // Attributions "client" : projets dont l'utilisateur est le client + ses devis.
         $clientProjects = $this->projectRepository->findBy(['client' => $user]);
 
+        // Détail (type/marque d'appareil, coordonnées de la dernière connexion) —
+        // dérivé à la volée de lastIp/lastDevice, jamais persisté séparément (cf.
+        // App\Service\GeolocationService pour le cache/la tolérance aux pannes).
+        $location = $user->getLastIp() ? $this->geolocationService->getLocationFromIp($user->getLastIp()) : null;
+        $device = $this->deviceParser->parse($user->getLastDevice());
+
         return [
             'id' => $user->getId(),
             'email' => $user->getEmail(),
@@ -1077,7 +1087,14 @@ final class MeController extends AbstractController
             'lastLoginAt' => $user->getLastLoginAt()?->format(\DateTimeInterface::ATOM),
             'lastIp' => $user->getLastIp(),
             'lastLocation' => $user->getLastLocation(),
+            'lastLocationCity' => $location['city'] ?? null,
+            'lastLocationCountry' => $location['country_name'] ?? null,
+            'lastLocationLatitude' => $location['latitude'] ?? null,
+            'lastLocationLongitude' => $location['longitude'] ?? null,
             'lastDevice' => $user->getLastDevice(),
+            'lastDeviceType' => $device['type'],
+            'lastDeviceBrand' => $device['brand'],
+            'lastDeviceLabel' => $device['label'],
             'editableFields' => self::EDITABLE_FIELDS,
             'attributions' => [
                 // Projets confiés au collaborateur/freelance (participation ou pilotage).

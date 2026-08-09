@@ -39,7 +39,11 @@
 			{% endif %}
 		</div>
 
-		<twig:profile:stat title="Dernier appareil" :value="user.lastDevice ?? 'Non enregistré'" icon="device-mobile" />
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+			<twig:profile:stat title="Type d'appareil" :value="deviceInfo is defined ? deviceInfo.type : 'Non enregistré'" icon="device-mobile" />
+			<twig:profile:stat title="Marque" :value="deviceInfo is defined ? (deviceInfo.brand ?? deviceInfo.os ?? 'Inconnue') : 'Inconnue'" icon="device-laptop" />
+		</div>
+		<p class="text-xs text-gray-400 mt-1 truncate" title="{{ user.lastDevice }}">{{ deviceInfo is defined ? deviceInfo.label : (user.lastDevice ?? 'Non enregistré') }}</p>
 
 		<div class="mt-6">
 			<p class="panel-title mb-3">Historique des connexions</p>

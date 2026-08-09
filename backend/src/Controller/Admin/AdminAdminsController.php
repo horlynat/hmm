@@ -10,6 +10,8 @@ use App\Security\Voter\UserVoter;
 use App\Service\AccountWelcomeNotifier;
 use App\Service\AdminAlertNotifier;
 use App\Service\AuditLogger;
+use App\Service\DeviceParser;
+use App\Service\GeolocationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
@@ -91,12 +93,16 @@ final class AdminAdminsController extends AbstractController
     }
 
     #[Route('/{id}', name: 'read', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function read(User $user): Response
+    public function read(User $user, GeolocationService $geolocationService, DeviceParser $deviceParser): Response
     {
         $this->denyAccessUnlessGranted(UserVoter::VIEW, $user);
 
+        $location = $user->getLastIp() ? $geolocationService->getLocationFromIp($user->getLastIp()) : null;
+
         return $this->render('admin/admins/read.html.twig', [
             'user' => $user,
+            'location' => $location,
+            'deviceInfo' => $deviceParser->parse($user->getLastDevice()),
         ]);
     }
 

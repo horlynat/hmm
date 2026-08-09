@@ -4,6 +4,7 @@ namespace App\MessageHandler;
 
 use App\Entity\User;
 use App\Message\LoginNotification;
+use App\Service\DeviceParser;
 use App\Service\EmailManager;
 use App\Service\GeolocationService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -16,6 +17,7 @@ class LoginNotificationHandler
     public function __construct(
         private EmailManager           $emailManager,
         private GeolocationService     $geolocationService,
+        private DeviceParser           $deviceParser,
         private EntityManagerInterface $entityManager,
         private LoggerInterface        $logger,
     ) {}
@@ -23,6 +25,7 @@ class LoginNotificationHandler
     public function __invoke(LoginNotification $message): void
     {
         $location = $this->resolveLocation($message->ip);
+        $device = $this->deviceParser->parse($message->device);
 
         /** @var User|null $user */
         $user = $this->entityManager->getRepository(User::class)->find($message->userId);
@@ -34,7 +37,7 @@ class LoginNotificationHandler
             return;
         }
 
-        $user->setLastLocation($location);
+        $user->setLastLocation($location['label']);
         $this->entityManager->flush();
 
         $this->emailManager->sendAsync(
@@ -46,19 +49,24 @@ class LoginNotificationHandler
                 'date'     => $message->date,
                 'ip'       => $message->ip,
                 'location' => $location,
-                'device'   => $message->device,
+                'device'   => $device,
             ]
         );
     }
 
-    private function resolveLocation(string $ip): string
+    /**
+     * @return array{label: string, city: ?string, country_name: ?string, latitude: ?float, longitude: ?float}
+     */
+    private function resolveLocation(string $ip): array
     {
+        $empty = ['city' => null, 'country_name' => null, 'latitude' => null, 'longitude' => null];
+
         if (!$this->geolocationService->isPublicIp($ip)) {
-            return 'Réseau local';
+            return [...$empty, 'label' => 'Réseau local'];
         }
 
-        $label = GeolocationService::formatLabel($this->geolocationService->getLocationFromIp($ip));
+        $location = $this->geolocationService->getLocationFromIp($ip);
 
-        return $label ?? 'Localisation inconnue';
+        return [...$empty, ...($location ?? []), 'label' => GeolocationService::formatLabel($location) ?? 'Localisation inconnue'];
     }
 }
