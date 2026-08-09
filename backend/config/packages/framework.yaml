@@ -85,6 +85,15 @@ framework:
             policy: fixed_window
             limit: 1
             interval: '1 day'
+        # Accès invité par jeton à un ticket support (consultation + réponse) —
+        # App\Service\PublicSubmissionThrottler::assertSupportTicketGuestAccessAllowed().
+        # Surface d'abus différente de la création (public_form_submission) :
+        # devinette de jeton / spam de réponses sur un fil déjà ouvert, donc
+        # limiteur dédié plutôt que réutiliser celui des formulaires publics.
+        support_ticket_guest_access:
+            policy: sliding_window
+            limit: 30
+            interval: '1 hour'
 
     # HTTP cache et fragments (désactivés par défaut)
     # esi: true
