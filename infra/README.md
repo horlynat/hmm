@@ -382,6 +382,16 @@ frontend n'ont pas leur propre copie de ces fichiers, inutile puisque
      l'ordre du §6 (backend → migrations → messenger-worker → frontend,
      toujours dans cet ordre, redeploy ou non).
 
+**Garde-fou secrets** : `deploy-remote.sh` vérifie, avant tout appel Docker
+Compose, que chaque secret déclaré dans `docker-compose.prod.yml` existe bien
+sur le VPS — sinon le déploiement s'arrête immédiatement avec la liste
+précise des fichiers manquants (`infra/secrets/<nom>`) plutôt que d'échouer
+avec l'erreur générique de Compose. Constaté en prod : ajouter un nouveau
+secret dans `docker-compose.prod.yml` sans l'avoir d'abord créé sur le VPS
+fait échouer le déploiement dès la première commande — toujours créer le
+fichier secret (§4) **avant** de merger/pusher le changement qui le
+référence.
+
 **Rollback** : relancer `deploy.yml` manuellement (`workflow_dispatch`) avec
 `backend_tag` = un `<sha>` antérieur (visible dans l'historique GHCR ou les
 runs précédents) — saute le rebuild et redéploie directement cette image.

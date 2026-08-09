@@ -22,6 +22,30 @@ chmod +x /opt/hmm/infra/scripts/*.sh 2>/dev/null || true
 
 cd /opt/hmm/infra
 
+# `docker compose` valide TOUT le fichier (y compris les `secrets:` de
+# services qu'on ne démarre pas encore dans cette commande précise) avant de
+# lancer quoi que ce soit -- un seul fichier manquant fait échouer le
+# déploiement dès la première commande, avec un message d'erreur Compose
+# assez générique à repérer dans les logs CI. Constaté en prod (secrets
+# gemini_api_key/anthropic_api_key jamais provisionnés avant un push infra
+# qui les référençait déjà) : on vérifie donc explicitement ici, avant tout
+# appel Compose, avec un message qui dit exactement quoi créer.
+check_secrets() {
+  local missing=()
+  local path
+  while IFS= read -r path; do
+    [[ -f "$path" ]] || missing+=("$path")
+  done < <(grep -oP 'file: \K\./secrets/\S+' docker-compose.prod.yml)
+
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "==> Secret(s) manquant(s) sur ce serveur, déploiement annulé avant toute action :" >&2
+    printf '    %s\n' "${missing[@]}" >&2
+    echo "    Provisionner ce(s) fichier(s) (cf. README §5) puis relancer." >&2
+    return 1
+  fi
+}
+check_secrets
+
 export BACKEND_IMAGE_TAG="${BACKEND_IMAGE_TAG:-latest}"
 
 COMPOSE=(docker compose --env-file .env.prod -f docker-compose.prod.yml)
