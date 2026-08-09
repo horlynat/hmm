@@ -37,21 +37,21 @@
 			<div class="stat-tile">
 				<div class="stat-tile__icon"><span class="ti ti-wallet" aria-hidden="true"></span></div>
 				<div>
-					<div class="stat-tile__value">{{ portfolio.totalBudget|number_format(0, ',', ' ') }} €</div>
+					<div class="stat-tile__value">{{ portfolio.totalBudget|money('EUR') }}</div>
 					<div class="stat-tile__label">Budget alloué</div>
 				</div>
 			</div>
 			<div class="stat-tile">
 				<div class="stat-tile__icon"><span class="ti ti-cash" aria-hidden="true"></span></div>
 				<div>
-					<div class="stat-tile__value">{{ portfolio.totalSpent|number_format(0, ',', ' ') }} €</div>
+					<div class="stat-tile__value">{{ portfolio.totalSpent|money('EUR') }}</div>
 					<div class="stat-tile__label">Dépensé · {{ pctSpentGlobal|number_format(0) }}%</div>
 				</div>
 			</div>
 			<div class="stat-tile">
 				<div class="stat-tile__icon"><span class="ti ti-report-money" aria-hidden="true"></span></div>
 				<div>
-					<div class="stat-tile__value {{ portfolio.remainingBudget < 0 ? 'text-danger' : '' }}">{{ portfolio.remainingBudget|number_format(0, ',', ' ') }} €</div>
+					<div class="stat-tile__value {{ portfolio.remainingBudget < 0 ? 'text-danger' : '' }}">{{ portfolio.remainingBudget|money('EUR') }}</div>
 					<div class="stat-tile__label">Marge restante</div>
 				</div>
 			</div>
@@ -80,7 +80,7 @@
 					<div><div class="text-xl font-extrabold text-brand-dark leading-none">{{ portfolio.dueThisWeek }}</div><div class="text-[11px] text-brand-dark/60 mt-0.5">Échéance &lt; 7j</div></div>
 				</a>
 
-				<div class="{{ alertCard }} {{ pendingApprovals.count > 0 ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200' }}" title="{{ pendingApprovals.total|number_format(2, ',', ' ') }} € en attente">
+				<div class="{{ alertCard }} {{ pendingApprovals.count > 0 ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200' }}" title="{{ pendingApprovals.total|money('EUR') }} en attente">
 					<span class="ti ti-clock-dollar text-2xl {{ pendingApprovals.count > 0 ? 'text-amber-600' : 'text-gray-400' }}" aria-hidden="true"></span>
 					<div><div class="text-xl font-extrabold text-brand-dark leading-none">{{ pendingApprovals.count }}</div><div class="text-[11px] text-brand-dark/60 mt-0.5">Dépenses à approuver</div></div>
 				</div>
@@ -144,7 +144,7 @@
 				<div class="panel-body">
 					<div class="flex items-end justify-between mb-2">
 						<span class="text-2xl font-extrabold text-brand-dark">{{ pctSpentGlobal|number_format(0) }}%</span>
-						<span class="text-xs text-brand-dark/60">{{ portfolio.totalSpent|number_format(0, ',', ' ') }} / {{ portfolio.totalBudget|number_format(0, ',', ' ') }} €</span>
+						<span class="text-xs text-brand-dark/60">{{ portfolio.totalSpent|money('EUR') }} / {{ portfolio.totalBudget|money('EUR') }}</span>
 					</div>
 					<div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3 overflow-hidden mb-3">
 						<div class="h-3 rounded-full {{ pctSpentGlobal >= 100 ? 'bg-danger' : (pctSpentGlobal >= 80 ? 'bg-amber-500' : 'bg-(--brand-primary)') }}" style="width: {{ min(pctSpentGlobal, 100) }}%"></div>
@@ -287,7 +287,7 @@
 											{% if project.priority %}<div class="mt-1"><span class="badge {{ project.priority.badgeClass }} text-xs">{{ project.priority.label }}</span></div>{% endif %}
 										</td>
 										<td>
-											<div class="text-sm text-brand-dark font-semibold">{{ project.budget|number_format(0, ',', ' ') }} €</div>
+											<div class="text-sm text-brand-dark font-semibold">{{ project.budget|money('EUR') }}</div>
 											<div class="mt-1">
 												{% if health == 'over' %}<span class="badge badge-danger text-xs">Dépassé</span>
 												{% elseif health == 'late' %}<span class="badge badge-danger text-xs">En retard</span>

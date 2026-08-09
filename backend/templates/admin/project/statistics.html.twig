@@ -33,16 +33,14 @@
 			{# Budget Cumulé #}
 			<div class="soft-card p-6 bg-white border border-gray-100 rounded-xl shadow-sm">
 				<span class="text-xs font-bold text-gray-400 uppercase block mb-1">Enveloppe Globale</span>
-				<span class="text-2xl font-extrabold text-brand-dark">{{ totalBudget|number_format(2, ',', ' ') }}
-					€</span>
+				<span class="text-2xl font-extrabold text-brand-dark">{{ totalBudget|money('EUR') }}</span>
 				<div class="text-[10px] text-gray-400 mt-2">Somme des budgets alloués</div>
 			</div>
 
 			{# Dépenses Cumulées #}
 			<div class="soft-card p-6 bg-white border border-gray-100 rounded-xl shadow-sm">
 				<span class="text-xs font-bold text-gray-400 uppercase block mb-1">Dépenses Cumulées</span>
-				<span class="text-2xl font-extrabold text-brand-primary">{{ totalSpent|number_format(2, ',', ' ') }}
-					€</span>
+				<span class="text-2xl font-extrabold text-brand-primary">{{ totalSpent|money('EUR') }}</span>
 				<div class="text-[10px] text-gray-400 mt-2">Toutes dépenses confondues</div>
 			</div>
 
@@ -50,8 +48,7 @@
 			<div class="soft-card p-6 bg-white border border-gray-100 rounded-xl shadow-sm">
 				<span class="text-xs font-bold text-gray-400 uppercase block mb-1">Trésorerie Restante</span>
 				<span class="text-2xl font-extrabold {% if remainingBudget < 0 %}text-danger{% else %}text-success{% endif %}">
-					{{ remainingBudget|number_format(2, ',', ' ') }}
-					€
+					{{ remainingBudget|money('EUR') }}
 				</span>
 				<div class="text-[10px] text-gray-400 mt-2">Disponible pour exécution</div>
 			</div>
@@ -106,16 +103,13 @@
 										</a>
 									</td>
 									<td class="p-3 text-right font-semibold text-sm text-gray-600">
-										{{ p.budget|number_format(2, ',', ' ') }}
-										€
+										{{ p.budget|money('EUR') }}
 									</td>
 									<td class="p-3 text-right font-bold text-sm text-danger">
-										{{ p.spent|number_format(2, ',', ' ') }}
-										€
+										{{ p.spent|money('EUR') }}
 									</td>
 									<td class="p-3 text-right font-bold text-sm text-danger bg-red-50/50">
-										+{{ excess|number_format(2, ',', ' ') }}
-										€
+										+{{ excess|money('EUR') }}
 									</td>
 								</tr>
 							{% else %}
@@ -162,16 +156,13 @@
 										</a>
 									</td>
 									<td class="p-3 text-right font-semibold text-sm text-gray-600">
-										{{ p.budget|number_format(2, ',', ' ') }}
-										€
+										{{ p.budget|money('EUR') }}
 									</td>
 									<td class="p-3 text-right font-bold text-sm text-brand-dark">
-										{{ p.spent|number_format(2, ',', ' ') }}
-										€
+										{{ p.spent|money('EUR') }}
 									</td>
 									<td class="p-3 text-right font-bold text-sm {% if margin < 0 %}text-danger{% else %}text-warning{% endif %}">
-										{{ margin|number_format(2, ',', ' ') }}
-										€
+										{{ margin|money('EUR') }}
 									</td>
 								</tr>
 							{% else %}

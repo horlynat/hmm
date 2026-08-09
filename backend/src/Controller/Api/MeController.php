@@ -12,6 +12,7 @@ use App\Entity\ProjectTask;
 use App\Entity\QuoteRequest;
 use App\Entity\TimeEntry;
 use App\Entity\User;
+use App\Enum\CurrencyEnum;
 use App\Enum\InvoiceStatusEnum;
 use App\Enum\ProjectStatusEnum;
 use App\Enum\TaskStatusEnum;
@@ -21,6 +22,7 @@ use App\Repository\ProjectTaskRepository;
 use App\Repository\QuoteRequestRepository;
 use App\Security\Voter\ProjectVoter;
 use App\Service\AccountLinkResolver;
+use App\Service\CurrencyConversionService;
 use App\Service\DeviceParser;
 use App\Service\EmailManager;
 use App\Service\GeolocationService;
@@ -97,18 +99,24 @@ final class MeController extends AbstractController
         private readonly AccountLinkResolver $accountLinkResolver,
         private readonly GeolocationService $geolocationService,
         private readonly DeviceParser $deviceParser,
+        private readonly CurrencyConversionService $conversionService,
     ) {
     }
 
     #[Route('', name: 'read', methods: ['GET'])]
-    public function read(): JsonResponse
+    public function read(Request $request): JsonResponse
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
             return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
         }
 
-        return $this->json($this->serializeUser($user));
+        // Absent/invalide -> null : comportement 100% rétrocompatible pour tout
+        // appelant qui n'envoie pas ce paramètre (montants dans leur devise
+        // d'origine, comme avant l'ajout de la conversion).
+        $displayCurrency = CurrencyEnum::tryFrom((string) $request->query->get('currency'))?->value;
+
+        return $this->json($this->serializeUser($user, $displayCurrency));
     }
 
     #[Route('', name: 'update', methods: ['PATCH', 'PUT'])]
@@ -1004,12 +1012,12 @@ final class MeController extends AbstractController
      *
      * @return array<int, array<string, mixed>>
      */
-    private function serializeClientInvoices(array $clientProjects): array
+    private function serializeClientInvoices(array $clientProjects, ?string $displayCurrency = null): array
     {
         $invoices = [];
         foreach ($clientProjects as $project) {
             foreach ($project->getInvoices() as $invoice) {
-                $invoices[] = $this->serializeInvoice($invoice, $project);
+                $invoices[] = $this->serializeInvoice($invoice, $project, $displayCurrency);
             }
         }
 
@@ -1019,7 +1027,7 @@ final class MeController extends AbstractController
     /**
      * @return array<string, mixed>
      */
-    private function serializeInvoice(Invoice $invoice, Project $project): array
+    private function serializeInvoice(Invoice $invoice, Project $project, ?string $displayCurrency = null): array
     {
         return [
             'id' => $invoice->getId(),
@@ -1027,9 +1035,22 @@ final class MeController extends AbstractController
             'projectTitle' => $project->getTitle(),
             'number' => $invoice->getNumber(),
             'label' => $invoice->getLabel(),
+            // Source de vérité, jamais convertie — contrat public déjà consommé
+            // par 3 pages du frontend, ne pas en changer la sémantique.
             'amount' => $invoice->getAmount(),
             'currency' => $invoice->getCurrency(),
             'formattedAmount' => $invoice->getFormattedAmount(),
+            // Ajouts pour l'affichage converti — retombent sur la devise
+            // d'origine si aucune devise cible n'est demandée ou si le
+            // fournisseur de taux est injoignable (convertAndFormat() ne
+            // renvoie jamais d'erreur à la place d'un montant).
+            'displayCurrency' => $displayCurrency ?? $invoice->getCurrency(),
+            'convertedAmount' => $displayCurrency
+                ? $this->conversionService->convert($invoice->getAmount(), $invoice->getCurrency(), $displayCurrency)
+                : null,
+            'formattedConvertedAmount' => $displayCurrency
+                ? $this->conversionService->convertAndFormat($invoice->getAmount(), $invoice->getCurrency(), $displayCurrency)
+                : $invoice->getFormattedAmount(),
             'status' => $invoice->getStatus()->value,
             'statusLabel' => $invoice->getStatus()->getLabel(),
             'issuedAt' => $invoice->getIssuedAt()->format(\DateTimeInterface::ATOM),
@@ -1043,7 +1064,7 @@ final class MeController extends AbstractController
     /**
      * @return array<string, mixed>
      */
-    private function serializeUser(User $user): array
+    private function serializeUser(User $user, ?string $displayCurrency = null): array
     {
         $roles = $user->getRoles();
         $isCollaborator = \in_array('ROLE_EDITOR', $roles, true);
@@ -1106,7 +1127,7 @@ final class MeController extends AbstractController
                 // Factures des projets dont l'utilisateur est le client — jamais
                 // pour l'équipe (owner/collaborateur), même restriction de
                 // périmètre que budget/spent sur Project.
-                'invoices' => $this->serializeClientInvoices($clientProjects),
+                'invoices' => $this->serializeClientInvoices($clientProjects, $displayCurrency),
             ],
         ];
     }

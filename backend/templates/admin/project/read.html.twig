@@ -125,14 +125,14 @@
 		<div class="stat-tile">
 			<div class="stat-tile__icon"><span class="ti ti-wallet" aria-hidden="true"></span></div>
 			<div>
-				<div class="stat-tile__value">{{ budget|number_format(0, ',', ' ') }} €</div>
+				<div class="stat-tile__value">{{ budget|money('EUR') }}</div>
 				<div class="stat-tile__label">Budget alloué</div>
 			</div>
 		</div>
 		<div class="stat-tile">
 			<div class="stat-tile__icon"><span class="ti ti-cash" aria-hidden="true"></span></div>
 			<div>
-				<div class="stat-tile__value">{{ spent|number_format(0, ',', ' ') }} €</div>
+				<div class="stat-tile__value">{{ spent|money('EUR') }}</div>
 				<div class="stat-tile__label">Dépensé · {{ pctSpent|number_format(0) }}%</div>
 			</div>
 		</div>
@@ -165,7 +165,7 @@
 				<div class="font-bold text-sm text-brand-dark">
 					{{ budgetHealth == 'over' ? 'Budget dépassé' : (budgetHealth == 'tight' ? 'Budget tendu' : (budgetHealth == 'none' ? 'Budget non défini' : 'Budget sain')) }}
 				</div>
-				<div class="text-xs text-brand-dark/60">{{ pctSpent|number_format(0) }}% consommé · reste {{ remaining|number_format(0, ',', ' ') }} €</div>
+				<div class="text-xs text-brand-dark/60">{{ pctSpent|number_format(0) }}% consommé · reste {{ remaining|money('EUR') }}</div>
 			</div>
 		</div>
 		{# Planning #}
@@ -195,7 +195,7 @@
 	{% if pendingCount > 0 %}
 		<div class="flex flex-wrap items-center gap-2 border rounded-xl p-3 text-sm bg-amber-50 border-amber-200 text-amber-800">
 			<span class="ti ti-clock-exclamation text-lg" aria-hidden="true"></span>
-			<span><strong>{{ pendingCount }}</strong> dépense(s) en attente pour <strong>{{ pendingTotal|number_format(2, ',', ' ') }} €</strong> (non décomptées du budget).</span>
+			<span><strong>{{ pendingCount }}</strong> dépense(s) en attente pour <strong>{{ pendingTotal|money('EUR') }}</strong> (non décomptées du budget).</span>
 			<button type="button" data-tab-goto="budget" class="ml-auto btn btn-ghost btn-sm text-amber-800">Voir les dépenses →</button>
 		</div>
 	{% endif %}
@@ -430,7 +430,7 @@
 										<div>
 											<div class="flex items-center justify-between text-sm mb-1">
 												<span class="text-brand-dark/70">{{ label }}</span>
-												<span class="font-semibold text-brand-dark">{{ total|number_format(2, ',', ' ') }} €</span>
+												<span class="font-semibold text-brand-dark">{{ total|money('EUR') }}</span>
 											</div>
 											<div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
 												<div class="h-2 rounded-full bg-(--brand-primary)" style="width: {{ maxCat > 0 ? (total / maxCat * 100) : 0 }}%"></div>
@@ -448,10 +448,10 @@
 					<div class="panel-header"><h3 class="panel-title">Synthèse financière</h3></div>
 					<div class="panel-body space-y-3 text-sm">
 						{% set frow = 'flex items-center justify-between gap-3 py-1.5 border-b border-gray-100 dark:border-gray-800 last:border-0' %}
-						<div class="{{ frow }}"><span class="text-brand-dark/50">Budget alloué</span><span class="font-semibold">{{ budget|number_format(2, ',', ' ') }} €</span></div>
-						<div class="{{ frow }}"><span class="text-brand-dark/50">Dépensé (approuvé)</span><span class="font-semibold">{{ spent|number_format(2, ',', ' ') }} €</span></div>
-						<div class="{{ frow }}"><span class="text-brand-dark/50">En attente</span><span class="font-semibold text-amber-600">{{ pendingTotal|number_format(2, ',', ' ') }} €</span></div>
-						<div class="{{ frow }}"><span class="text-brand-dark/50">Disponible</span><span class="font-bold {{ remaining < 0 ? 'text-danger' : 'text-emerald-600' }}">{{ remaining|number_format(2, ',', ' ') }} €</span></div>
+						<div class="{{ frow }}"><span class="text-brand-dark/50">Budget alloué</span><span class="font-semibold">{{ budget|money('EUR') }}</span></div>
+						<div class="{{ frow }}"><span class="text-brand-dark/50">Dépensé (approuvé)</span><span class="font-semibold">{{ spent|money('EUR') }}</span></div>
+						<div class="{{ frow }}"><span class="text-brand-dark/50">En attente</span><span class="font-semibold text-amber-600">{{ pendingTotal|money('EUR') }}</span></div>
+						<div class="{{ frow }}"><span class="text-brand-dark/50">Disponible</span><span class="font-bold {{ remaining < 0 ? 'text-danger' : 'text-emerald-600' }}">{{ remaining|money('EUR') }}</span></div>
 						<div class="{{ frow }}"><span class="text-brand-dark/50">Nombre de dépenses</span><span class="font-semibold">{{ project.expenses|length }}</span></div>
 					</div>
 				</div>
@@ -528,7 +528,7 @@
 										{{ invoice.dueDate ? invoice.dueDate|date('d/m/Y') : '—' }}
 										{% if invoice.overdue %} (en retard){% endif %}
 									</td>
-									<td class="p-4 text-right font-extrabold text-brand-dark text-sm whitespace-nowrap">{{ invoice.formattedAmount }}</td>
+									<td class="p-4 text-right font-extrabold text-brand-dark text-sm whitespace-nowrap">{{ invoice.amount|money(invoice.currency) }}</td>
 									<td class="p-4"><twig:Badge :variant="invoice.status.variant" icon="{{ invoice.status.icon }}">{{ invoice.status.label }}</twig:Badge></td>
 									{% if canManageInvoice %}
 										<td class="p-4 text-center whitespace-nowrap">
