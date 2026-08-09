@@ -80,7 +80,17 @@ echo "==> Worker Messenger (même image que backend, déjà pull ci-dessus)"
 up_with_retry messenger-worker
 
 echo "==> Frontend : build local (a besoin de backend joignable en 127.0.0.1:8000 pendant le build SSG/ISR, cf. Dockerfile)"
-"${COMPOSE[@]}" build frontend
+# --no-cache : constaté en prod, le cache de build Docker a repris tel quel
+# les layers COPY . . et npm run build sur un déploiement où le code source
+# avait pourtant changé (rsync avait bien livré le nouveau frontend/) --
+# résultat : ancien code silencieusement resservi malgré un déploiement
+# "réussi". Cause exacte non confirmée (probablement une interaction entre
+# le remplacement atomique des fichiers par rsync et le cache de contexte de
+# build BuildKit), mais le risque de servir du code obsolète sans erreur
+# visible est trop coûteux pour un site en prod -- on paie le coût d'un
+# rebuild complet à chaque déploiement plutôt que de rejouer ce genre de
+# panne silencieuse.
+"${COMPOSE[@]}" build --no-cache frontend
 up_with_retry frontend
 
 echo "==> Reste de la stack (postfixadmin...) + nettoyage des orphelins"
