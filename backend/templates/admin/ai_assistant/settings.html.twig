@@ -42,6 +42,17 @@
 	</div>
 
 	<div class="panel">
+		<div class="panel-body">
+			<label class="flex items-center gap-2">
+				{{ form_widget(form.aiAssistantEnabled) }}
+				<span>{{ form_label(form.aiAssistantEnabled, null, {label_attr: {class: ''}}) }}</span>
+			</label>
+			<p class="text-xs opacity-60 mt-1">{{ form.aiAssistantEnabled.vars.help }}</p>
+			{{ form_errors(form.aiAssistantEnabled) }}
+		</div>
+	</div>
+
+	<div class="panel">
 		<div class="panel-body flex items-center justify-between gap-4">
 			{% if settings.updatedAt %}
 				<p class="text-xs opacity-60">

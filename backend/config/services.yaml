@@ -47,6 +47,26 @@ services:
         arguments:
             $appSecret: '%kernel.secret%'
 
+    App\Service\GeminiIngestionClient:
+        arguments:
+            $apiKey: '%env(GEMINI_API_KEY)%'
+            $model: '%env(GEMINI_MODEL)%'
+            $embeddingModel: '%env(GEMINI_EMBEDDING_MODEL)%'
+
+    App\Service\ClaudeClient:
+        arguments:
+            $apiKey: '%env(ANTHROPIC_API_KEY)%'
+            $model: '%env(CLAUDE_MODEL)%'
+            $fallbackModel: '%env(CLAUDE_MODEL_FALLBACK)%'
+
+    App\Service\AiAssistantBudgetGuard:
+        arguments:
+            $monthlyBudgetUsd: '%env(float:ASSISTANT_MONTHLY_BUDGET_USD)%'
+
+    App\State\AiAssistantChatProcessor:
+        arguments:
+            $appSecret: '%kernel.secret%'
+
     # ⚠️ doctrine-bundle (3.x) + symfony/doctrine-bridge n'auto-tagguent PAS les classes
     #    qui implémentent Doctrine\Common\EventSubscriber (contrairement aux anciennes
     #    versions) : seul le tag "doctrine.event_listener" est reconnu par
@@ -55,6 +75,12 @@ services:
     App\EventSubscriber\AlertNotificationSubscriber:
         tags:
             - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: postFlush }
+
+    App\EventSubscriber\AiAssistantContentChangeSubscriber:
+        tags:
+            - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: postUpdate }
             - { name: doctrine.event_listener, event: postFlush }
 
     App\Service\DatabaseBackupService:
