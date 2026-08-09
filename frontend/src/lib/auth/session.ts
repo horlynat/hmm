@@ -6,6 +6,7 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { API_URL, SESSION_COOKIE } from "./config";
+import { CURRENCY_COOKIE, DEFAULT_CURRENCY, isCurrency } from "@/lib/currency/config";
 import type {
   SessionUser,
   SessionProjectDetail,
@@ -82,7 +83,10 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   if (!token) return null;
 
   try {
-    const res = await fetch(`${API_URL}/me`, {
+    const currencyCookie = (await cookies()).get(CURRENCY_COOKIE)?.value;
+    const currency = isCurrency(currencyCookie) ? currencyCookie : DEFAULT_CURRENCY;
+
+    const res = await fetch(`${API_URL}/me?currency=${currency}`, {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,

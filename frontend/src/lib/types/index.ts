@@ -380,6 +380,12 @@ export interface SessionInvoice {
   amount: string;
   currency: string;
   formattedAmount: string;
+  /** Devise d'affichage demandée (préférence du visiteur), jamais celle de `currency` si différente. */
+  displayCurrency: string;
+  /** Montant converti dans displayCurrency, ou null si la conversion a échoué/n'a pas été demandée. */
+  convertedAmount: string | null;
+  /** Toujours renseigné : retombe sur formattedAmount si la conversion échoue. */
+  formattedConvertedAmount: string;
   status: InvoiceStatus;
   statusLabel: string;
   issuedAt: string;

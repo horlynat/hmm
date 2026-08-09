@@ -9,6 +9,7 @@ import { Logo, Skeleton } from "@/components/ui";
 import { useScrolled } from "@/lib/useScrolled";
 import { useAuthStatus } from "@/lib/auth/useAuthStatus";
 import { LocaleSwitcher } from "./LocaleSwitcher";
+import { CurrencySwitcher } from "./CurrencySwitcher";
 
 export function Header() {
   const t = useTranslations("nav");
@@ -134,6 +135,7 @@ export function Header() {
             </Link>
           )}
           <LocaleSwitcher />
+          <CurrencySwitcher />
           <button
             ref={toggleButtonRef}
             type="button"

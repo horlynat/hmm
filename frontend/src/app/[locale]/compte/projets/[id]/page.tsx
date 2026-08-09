@@ -119,7 +119,7 @@ export default async function CompteProjectDetailPage({
                   <p className="text-xs text-(--color-muted)">{invoice.number}</p>
                 </div>
                 <span className="shrink-0 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-                  {invoice.formattedAmount}
+                  {invoice.formattedConvertedAmount}
                 </span>
                 <Badge variant={invoiceStatusVariant(invoice.status)}>{invoice.statusLabel}</Badge>
               </div>
