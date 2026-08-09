@@ -72,12 +72,30 @@
 						<p class="text-brand-dark font-bold">{{ user.passwordChangedAt ? user.passwordChangedAt|date('d/m/Y H:i') : '—' }}</p>
 					</div>
 					<div>
-						<p class="text-xs opacity-60 uppercase font-bold">Dernier appareil</p>
-						<p class="text-brand-dark font-bold">{{ user.lastDevice ?? '—' }}</p>
+						<p class="text-xs opacity-60 uppercase font-bold">Type d'appareil</p>
+						<p class="text-brand-dark font-bold">{{ deviceInfo.type }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Marque</p>
+						<p class="text-brand-dark font-bold">{{ deviceInfo.brand ?? deviceInfo.os ?? '—' }}</p>
+					</div>
+					<div class="col-span-2">
+						<p class="text-xs opacity-60 uppercase font-bold">Dernier appareil (détail)</p>
+						<p class="text-brand-dark font-bold truncate" title="{{ user.lastDevice }}">{{ deviceInfo.label }}</p>
 					</div>
 					<div>
 						<p class="text-xs opacity-60 uppercase font-bold">Localisation</p>
 						<p class="text-brand-dark font-bold">{{ user.lastLocation ?? '—' }}</p>
+					</div>
+					<div>
+						<p class="text-xs opacity-60 uppercase font-bold">Coordonnées GPS</p>
+						<p class="text-brand-dark font-bold">
+							{% if location is defined and location and location.latitude is defined and location.latitude %}
+								<a href="https://www.google.com/maps?q={{ location.latitude }},{{ location.longitude }}" target="_blank" rel="noopener noreferrer" class="text-brand-primary hover:underline">{{ location.latitude }}, {{ location.longitude }}</a>
+							{% else %}
+								—
+							{% endif %}
+						</p>
 					</div>
 				</div>
 

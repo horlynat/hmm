@@ -9,6 +9,7 @@ use App\Entity\LoginHistory;
 use App\Entity\User;
 use App\Entity\UserSession;
 use App\Enum\NotificationPriorityEnum;
+use App\Message\EnrichLoginLocationMessage;
 use App\Message\LoginNotification;
 use App\Repository\FailedLoginAttemptRepository;
 use App\Repository\UserRepository;
@@ -113,6 +114,8 @@ class LoginListener
         $this->entityManager->persist($loginHistory);
         $this->entityManager->persist($userSession);
         $this->entityManager->flush();
+
+        $this->bus->dispatch(new EnrichLoginLocationMessage($loginHistory->getId()));
     }
 
     public function onLoginFailure(LoginFailureEvent $event): void

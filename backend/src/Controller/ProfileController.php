@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Form\ProfileType;
 use App\Form\ResetPasswordFormType;
 use App\Security\Voter\UserVoter;
+use App\Service\DeviceParser;
 use App\Service\GeolocationService;
 use App\Service\ProfileCompletionService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -30,7 +31,8 @@ class ProfileController extends AbstractController
     public function read(
         User $user,
         ProfileCompletionService $completionService,
-        GeolocationService $geolocationService
+        GeolocationService $geolocationService,
+        DeviceParser $deviceParser
     ): Response {
         $this->denyAccessUnlessSelfOrGranted(UserVoter::VIEW, $user);
 
@@ -46,6 +48,7 @@ class ProfileController extends AbstractController
             'user' => $user,
             'completionPercentage' => $completionPercentage,
             'location' => $location,
+            'deviceInfo' => $deviceParser->parse($user->getLastDevice()),
         ]);
     }
 

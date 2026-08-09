@@ -27,12 +27,23 @@
 			? location.city ~ (location.country_name is defined and location.country_name ? ', ' ~ location.country_name : '')
 			: null %}
 
+		{% set coordinates = (location is defined and location and location.latitude is defined and location.latitude)
+			? location.latitude ~ ', ' ~ location.longitude
+			: null %}
+
 		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
 			<twig:profile:stat title="Adresse IP" :value="user.lastIp ?? 'N/A'" icon="device-desktop" />
 			<twig:profile:stat title="Localisation" :value="locationLabel ?? user.lastLocation ?? 'Inconnue'" icon="map-pin" />
+			{% if coordinates %}
+				<twig:profile:stat title="Coordonnées GPS" :value="coordinates" icon="location" />
+			{% endif %}
 		</div>
 
-		<twig:profile:stat title="Dernier appareil" :value="user.lastDevice ?? 'Non enregistré'" icon="device-mobile" />
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+			<twig:profile:stat title="Type d'appareil" :value="deviceInfo is defined ? deviceInfo.type : 'Non enregistré'" icon="device-mobile" />
+			<twig:profile:stat title="Marque" :value="deviceInfo is defined ? (deviceInfo.brand ?? deviceInfo.os ?? 'Inconnue') : 'Inconnue'" icon="device-laptop" />
+		</div>
+		<p class="text-xs text-gray-400 mt-1 truncate" title="{{ user.lastDevice }}">{{ deviceInfo is defined ? deviceInfo.label : (user.lastDevice ?? 'Non enregistré') }}</p>
 
 		<div class="mt-6">
 			<p class="panel-title mb-3">Historique des connexions</p>
