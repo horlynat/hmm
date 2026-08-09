@@ -44,6 +44,10 @@ class SystemSetting
     #[ORM\Column(type: 'json')]
     private array $availableLocales = ['fr'];
 
+    /** Devise d'affichage par défaut (dashboard admin + espace client) tant qu'aucune préférence n'est cookie-set — distincte de la devise fixe des budgets de projet (EUR, cf. CurrencyConversionService::PROJECT_LEDGER_CURRENCY). */
+    #[ORM\Column(length: 10)]
+    private string $defaultCurrency = 'USD';
+
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
@@ -126,6 +130,18 @@ class SystemSetting
     public function setAvailableLocales(array $availableLocales): static
     {
         $this->availableLocales = $availableLocales;
+
+        return $this;
+    }
+
+    public function getDefaultCurrency(): string
+    {
+        return $this->defaultCurrency;
+    }
+
+    public function setDefaultCurrency(string $defaultCurrency): static
+    {
+        $this->defaultCurrency = $defaultCurrency;
 
         return $this;
     }

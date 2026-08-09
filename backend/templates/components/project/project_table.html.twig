@@ -65,7 +65,7 @@
 									<a href="{{ path('admin_project_read', {id: project.id}) }}" class="hover:text-brand-primary">{{ project.title }}</a>
 								</td>
 								<td class="text-gray-600 text-sm">{{ project.client.fullName|default('Orphelin') }}</td>
-								<td class="font-semibold text-sm">{{ project.budget|number_format(2, ',', ' ') }} €</td>
+								<td class="font-semibold text-sm">{{ project.budget|money('EUR') }}</td>
 								<td>
 									<div class="w-24 bg-gray-200 rounded-full h-2">
 										<div class="bg-brand-primary h-2 rounded-full" style="width: {{ project.progress|default(0) }}%"></div>

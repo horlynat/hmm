@@ -42,6 +42,12 @@
 						{{ form_errors(form.theme, {'attr': {'class': 'field-error'}}) }}
 					</div>
 
+					<div class="field">
+						{{ form_label(form.defaultCurrency, 'Devise par défaut', {'label_attr': {'class': 'field-label'}}) }}
+						{{ form_widget(form.defaultCurrency, {'attr': {'class': 'input input-select w-full'}}) }}
+						{{ form_errors(form.defaultCurrency, {'attr': {'class': 'field-error'}}) }}
+					</div>
+
 					<div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
 						<div class="field">
 							{{ form_label(form.defaultLocale, 'Langue par défaut', {'label_attr': {'class': 'field-label'}}) }}
