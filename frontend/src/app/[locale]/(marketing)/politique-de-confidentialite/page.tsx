@@ -28,6 +28,7 @@ export default async function PrivacyPolicyPage({
               <li>• {t("dataProject")}</li>
               <li>• {t("dataFreelance")}</li>
               <li>• {t("dataTechnical")}</li>
+              <li>• {t("dataAiAssistant")}</li>
             </ul>
           ),
         },
