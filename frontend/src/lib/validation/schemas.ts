@@ -165,3 +165,18 @@ export const appointmentSchema = (t: Translator) =>
       { path: ["phone"], message: t("phoneRequiredForChannel") },
     );
 export type AppointmentValues = z.infer<ReturnType<typeof appointmentSchema>>;
+
+export const supportTicketSchema = (t: Translator) =>
+  z.object({
+    name: nameField(t),
+    email: emailField(t),
+    subject: z.string().trim().min(1, t("selectRequired")).max(255, t("tooLong", { max: 255 })),
+    message: z.string().trim().min(10, t("tooShort", { min: 10 })).max(5000, t("tooLong", { max: 5000 })),
+  });
+export type SupportTicketValues = z.infer<ReturnType<typeof supportTicketSchema>>;
+
+export const supportTicketReplySchema = (t: Translator) =>
+  z.object({
+    message: z.string().trim().min(10, t("tooShort", { min: 10 })).max(5000, t("tooLong", { max: 5000 })),
+  });
+export type SupportTicketReplyValues = z.infer<ReturnType<typeof supportTicketReplySchema>>;

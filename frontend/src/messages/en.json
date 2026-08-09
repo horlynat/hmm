@@ -36,6 +36,7 @@
     "agreeTerms": "You must accept the terms to continue.",
     "selectRequired": "Please make a selection.",
     "tooLong": "This text is too long ({max} characters maximum).",
+    "tooShort": "This text is too short ({min} characters minimum).",
     "genericError": "Something went wrong, please try again.",
     "networkError": "Connection failed. Check your network and try again.",
     "rateLimited": "Too many attempts. Please wait a minute before trying again.",
@@ -46,6 +47,7 @@
     "competences": "Skills",
     "realisations": "Projects",
     "blog": "Blog",
+    "aide": "Help",
     "contact": "Contact",
     "compte": "My account",
     "connexion": "Sign in"
@@ -659,6 +661,45 @@
       "error": "Something went wrong, please try again.",
       "errorRequired": "Please fill in your name, email, a slot and a contact channel.",
       "errorPhoneRequired": "A valid phone number is required for this contact channel."
+    }
+  },
+  "helpCenter": {
+    "eyebrow": "Help center",
+    "title": "Answers,",
+    "titleAccent": "found fast.",
+    "sub": "How working with me works, and the most common questions. Still stuck? Support answers directly.",
+    "docsHeading": "How it works",
+    "faqHeading": "Frequently asked questions",
+    "ctaTitle": "Can't find your answer?",
+    "ctaText": "Open a support ticket, I'll reply by email as soon as possible.",
+    "ctaButton": "Contact support"
+  },
+  "supportTicket": {
+    "form": {
+      "eyebrow": "Support",
+      "title": "Open a",
+      "titleAccent": "support ticket.",
+      "sub": "Describe your issue, I'll reply by email with a link to follow the thread.",
+      "nameLabel": "Name",
+      "emailLabel": "Email",
+      "subjectLabel": "Subject",
+      "messageLabel": "Your message",
+      "messagePlaceholder": "Describe your issue or question...",
+      "submit": "Send ticket",
+      "success": "Ticket sent — you'll receive a confirmation email with a link to follow the thread.",
+      "error": "Something went wrong, please try again.",
+      "rateLimited": "Too many attempts. Please wait before trying again."
+    },
+    "thread": {
+      "statusLabel": "Status",
+      "youLabel": "You",
+      "supportLabel": "Support",
+      "replyLabel": "Add a reply",
+      "replyPlaceholder": "Your message...",
+      "replySubmit": "Send",
+      "replySuccess": "Your reply has been sent.",
+      "replyError": "Something went wrong, please try again.",
+      "replyRateLimited": "Too many attempts. Please wait before trying again."
     }
   },
   "legal": {

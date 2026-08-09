@@ -24,6 +24,18 @@ export const routing = defineRouting({
     "/blog": "/blog",
     "/blog/[slug]": "/blog/[slug]",
     "/freelances": "/freelances",
+    "/aide": {
+      fr: "/aide",
+      en: "/help",
+    },
+    "/support/nouveau": {
+      fr: "/support/nouveau",
+      en: "/support/new",
+    },
+    // Identique dans les deux locales — jamais lié depuis la nav, atteint
+    // uniquement via le lien emailé (même logique que
+    // /reinitialiser-mot-de-passe/[token]).
+    "/support/[token]": "/support/[token]",
     "/contact": "/contact",
     "/mentions-legales": {
       fr: "/mentions-legales",
