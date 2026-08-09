@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Logo } from "@/components/ui";
-import { ThemeToggle, LocaleSwitcher } from "@/components/layout";
+import { ThemeToggle, LocaleSwitcher, CurrencySwitcher } from "@/components/layout";
 import { AccountUserMenu } from "./AccountUserMenu";
 
 interface AccountHeaderProps {
@@ -48,6 +48,7 @@ export function AccountHeader({ user, menuOpen, onToggleMenu }: AccountHeaderPro
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <LocaleSwitcher />
+          <CurrencySwitcher />
           <AccountUserMenu user={user} />
         </div>
       </div>

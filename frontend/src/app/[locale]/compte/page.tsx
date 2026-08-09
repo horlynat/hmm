@@ -355,7 +355,7 @@ export default async function ComptePage({
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end">
-                  <span className="text-sm font-semibold">{invoice.formattedAmount}</span>
+                  <span className="text-sm font-semibold">{invoice.formattedConvertedAmount}</span>
                   <Badge variant={invoiceStatusVariant(invoice.status)}>{invoice.statusLabel}</Badge>
                 </div>
               </Link>

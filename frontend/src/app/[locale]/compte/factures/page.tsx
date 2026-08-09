@@ -198,11 +198,11 @@ function InvoiceDocument({
                 <td className="px-3.5 py-3.5 align-top sm:px-4">
                   <p className="font-medium text-brand-dark">{invoice.label}</p>
                   <p className="mt-1 text-xs text-(--color-muted)">
-                    {labels.qtyLabel} : 1 &times; {labels.unitPriceLabel} : {invoice.formattedAmount}
+                    {labels.qtyLabel} : 1 &times; {labels.unitPriceLabel} : {invoice.formattedConvertedAmount}
                   </p>
                 </td>
                 <td className="whitespace-nowrap px-3.5 py-3.5 text-right align-top font-medium text-brand-dark sm:px-4">
-                  {invoice.formattedAmount}
+                  {invoice.formattedConvertedAmount}
                 </td>
               </tr>
             </tbody>
@@ -213,7 +213,7 @@ function InvoiceDocument({
                 </td>
                 <td className="whitespace-nowrap px-3.5 py-3.5 text-right sm:px-4">
                   <span className="text-lg font-bold sm:text-xl" style={{ fontFamily: "var(--font-heading)" }}>
-                    {invoice.formattedAmount}
+                    {invoice.formattedConvertedAmount}
                   </span>
                 </td>
               </tr>
