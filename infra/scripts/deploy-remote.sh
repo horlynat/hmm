@@ -84,7 +84,14 @@ echo "==> Frontend : build local (a besoin de backend joignable en 127.0.0.1:800
 up_with_retry frontend
 
 echo "==> Reste de la stack (postfixadmin...) + nettoyage des orphelins"
-"${COMPOSE[@]}" up -d --remove-orphans
+# Sans --wait ici, ce up recréait parfois backend/messenger-worker une 2e
+# fois (Compose réconcilie tout le stack à ce stade) sans attendre leur
+# healthcheck avant les curls de vérification finale juste après -- constaté
+# en prod : backend encore "health: starting" au moment du curl, 404
+# transitoire qui faisait échouer TOUT le déploiement alors que l'état final
+# (quelques secondes plus tard) était sain. up_with_retry (--wait + retries
+# sur le conflit de renommage transitoire, cf. plus haut) couvre ce cas.
+up_with_retry --remove-orphans
 
 echo "==> État final"
 "${COMPOSE[@]}" ps
