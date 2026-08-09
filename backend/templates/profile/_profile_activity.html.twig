@@ -27,9 +27,16 @@
 			? location.city ~ (location.country_name is defined and location.country_name ? ', ' ~ location.country_name : '')
 			: null %}
 
+		{% set coordinates = (location is defined and location and location.latitude is defined and location.latitude)
+			? location.latitude ~ ', ' ~ location.longitude
+			: null %}
+
 		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
 			<twig:profile:stat title="Adresse IP" :value="user.lastIp ?? 'N/A'" icon="device-desktop" />
 			<twig:profile:stat title="Localisation" :value="locationLabel ?? user.lastLocation ?? 'Inconnue'" icon="map-pin" />
+			{% if coordinates %}
+				<twig:profile:stat title="Coordonnées GPS" :value="coordinates" icon="location" />
+			{% endif %}
 		</div>
 
 		<twig:profile:stat title="Dernier appareil" :value="user.lastDevice ?? 'Non enregistré'" icon="device-mobile" />
