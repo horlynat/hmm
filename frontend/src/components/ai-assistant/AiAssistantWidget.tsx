@@ -24,16 +24,18 @@ interface AiAssistantWidgetProps {
  * appliquée partout ailleurs. Jetons dédiés dans globals.css (--assistant-*),
  * jamais les tokens de marque globaux.
  *
- * Les chips de départ (`entries`) restent des réponses instantanées 100%
- * locales (askChip, coût zéro) — mais uniquement tant qu'aucune vraie
- * conversation n'a démarré. Dès qu'un échange réel a eu lieu (texte libre ou
- * clic sur une suggestion), la barre de puces bascule sur les questions de
- * suivi contextuelles renvoyées par Claude (`result.suggestions`, cf.
- * AiAssistantChatProcessor::buildSystemPrompt côté backend) : sans ça, les
- * puces génériques restaient figées devant le visiteur pendant toute la
- * conversation, sans jamais refléter ce qui vient d'être dit — c'est le bug
- * corrigé ici. Sur repli/erreur, le backend ne renvoie aucune suggestion et
- * on garde la dernière barre affichée plutôt que de la vider.
+ * Puces : rien n'est affiché à l'ouverture (seul l'accueil compte pour la
+ * première impression) — les chips de départ (`entries`, réponses locales
+ * instantanées, coût zéro) n'apparaissent que pendant que le visiteur tape,
+ * filtrées sur ses mots-clés (`entry.keywords`), comme un fil d'Ariane vers
+ * la FAQ plutôt qu'un mur de boutons imposé d'entrée. Dès qu'un échange réel
+ * a eu lieu (texte libre envoyé ou clic sur une suggestion), la barre bascule
+ * sur les questions de suivi contextuelles renvoyées par Claude
+ * (`result.suggestions`, cf. AiAssistantChatProcessor::buildSystemPrompt côté
+ * backend) — affichées en continu, pas seulement pendant la frappe : ce sont
+ * des relances de conversation, pas une aide à la saisie. Sur repli/erreur,
+ * le backend ne renvoie aucune suggestion et on garde la dernière barre
+ * affichée plutôt que de la vider.
  *
  * Le texte libre tapé par le visiteur part vers /api/ai-assistant/chat —
  * proxy Next.js vers POST /api/assistant/chat (RAG Gemini + raisonnement
@@ -104,6 +106,7 @@ export function AiAssistantWidget({ settings, entries }: AiAssistantWidgetProps)
 
   function askChip(entry: AiAssistantEntry) {
     setOpen(true);
+    setInput("");
     addMessage(entry.chipLabel, "user");
     window.setTimeout(() => addMessage(entry.answer, "bot"), 350);
   }
@@ -114,6 +117,17 @@ export function AiAssistantWidget({ settings, entries }: AiAssistantWidgetProps)
     addMessage(text, "user");
     void respond(text, historyBefore);
   }
+
+  const typed = input.trim().toLowerCase();
+  const matchingEntries =
+    suggestions === null && typed
+      ? entries.filter((entry) =>
+          entry.keywords.some(
+            (kw) => typed.includes(kw.toLowerCase()) || kw.toLowerCase().includes(typed),
+          ),
+        )
+      : [];
+  const chipsToShow = suggestions ?? matchingEntries;
 
   return (
     <>
@@ -217,36 +231,38 @@ export function AiAssistantWidget({ settings, entries }: AiAssistantWidgetProps)
           )}
         </div>
 
-        <div className="flex flex-wrap gap-1.5 px-4 pb-3">
-          {suggestions === null
-            ? entries.map((entry) => (
-                <button
-                  key={entry.id}
-                  type="button"
-                  onClick={() => askChip(entry)}
-                  className="rounded-full px-2.5 py-1.5 font-mono text-[0.66rem] transition-colors"
-                  style={{ border: "1px solid var(--assistant-border)", color: "var(--assistant-accent)" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--assistant-accent-soft)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                >
-                  {entry.chipLabel}
-                </button>
-              ))
-            : suggestions.map((suggestion, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  disabled={pending}
-                  onClick={() => askSuggestion(suggestion)}
-                  className="rounded-full px-2.5 py-1.5 font-mono text-[0.66rem] transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                  style={{ border: "1px solid var(--assistant-border)", color: "var(--assistant-accent)" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--assistant-accent-soft)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                >
-                  {suggestion}
-                </button>
-              ))}
-        </div>
+        {chipsToShow.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 px-4 pb-3">
+            {suggestions === null
+              ? matchingEntries.map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    onClick={() => askChip(entry)}
+                    className="rounded-full px-2.5 py-1.5 font-mono text-[0.66rem] transition-colors"
+                    style={{ border: "1px solid var(--assistant-border)", color: "var(--assistant-accent)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--assistant-accent-soft)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    {entry.chipLabel}
+                  </button>
+                ))
+              : suggestions.map((suggestion, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    disabled={pending}
+                    onClick={() => askSuggestion(suggestion)}
+                    className="rounded-full px-2.5 py-1.5 font-mono text-[0.66rem] transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{ border: "1px solid var(--assistant-border)", color: "var(--assistant-accent)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--assistant-accent-soft)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+          </div>
+        )}
 
         <div className="p-3" style={{ borderTop: "1px solid var(--assistant-border)" }}>
           <div
