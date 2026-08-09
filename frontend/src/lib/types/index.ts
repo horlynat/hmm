@@ -188,6 +188,17 @@ export interface AiAssistantEntry {
   sortOrder: number;
 }
 
+/** Payload envoyé à POST /api/ai-assistant/chat (proxy vers /api/assistant/chat). */
+export interface AiAssistantChatPayload {
+  question: string;
+  history: Array<{ role: "user" | "assistant"; text: string }>;
+  locale: string;
+}
+
+export type AiAssistantChatResult =
+  | { ok: true; answer: string; suggestions: string[] }
+  | { ok: false; error: "rate_limited" | "unavailable" | "network_error" };
+
 /** Miroir du groupe `api_public` de App\Entity\ContactMessage. */
 export interface ContactMessagePayload {
   source: string;

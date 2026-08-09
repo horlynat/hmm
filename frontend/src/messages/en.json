@@ -686,14 +686,15 @@
       "dataProject": "Quote request: service category, indicative budget, desired timeline, and any detail provided via the qualification assistant.",
       "dataFreelance": "Freelancer sign-up: specialties, availability, portfolio and free-form bio, provided at your own initiative.",
       "dataTechnical": "Technical data: your IP address is used transiently (not stored) to limit abusive form submissions.",
+      "dataAiAssistant": "Conversational AI assistant: the text of the questions you ask it is sent to third-party AI providers to generate a reply (see \"Data recipients\"). No trace of that text is kept in our own database — only anonymized metadata is (length, cost, timestamp, a non-reversible hash of your IP address).",
       "purposeTitle": "Purpose of processing",
       "purposeText": "This information is used only to qualify your request, get back to you, manage your account where applicable, prepare a quote or arrange an appointment. It is never resold or used for advertising purposes.",
       "legalBasisTitle": "Legal basis",
       "legalBasisText": "Processing is based on your explicit consent (form checkboxes), on the performance of a contract when you create an account, and on legitimate interest for abuse prevention (rate-limiting form submissions).",
       "retentionTitle": "Retention period",
-      "retentionText": "Account data (client or freelancer) is kept for as long as the account remains active. Quote or appointment requests that don't lead to a project are kept only for as long as needed to process them, then deleted.",
+      "retentionText": "Account data (client or freelancer) is kept for as long as the account remains active. Quote or appointment requests that don't lead to a project are kept only for as long as needed to process them, then deleted. Anonymized metadata from AI assistant exchanges is automatically deleted after 90 days.",
       "recipientsTitle": "Data recipients",
-      "recipientsText": "Your data is accessible only to Horlynat Mampassi Mbama, as data controller. No data is sold, rented, or shared with third parties for commercial or advertising purposes; this site does not use any third-party analytics or tracking tool.",
+      "recipientsText": "Your data is accessible only to Horlynat Mampassi Mbama, as data controller. No data is sold, rented, or shared with third parties for commercial or advertising purposes; this site does not use any third-party analytics or tracking tool. Technical exception: questions asked to the AI assistant are sent to Google (Gemini, for relevant-content retrieval) and Anthropic (Claude, for generating the reply), two providers located outside the European Union acting as technical subprocessors for this one feature, under their respective API terms of service — never for advertising purposes on our part.",
       "rightsTitle": "Your rights",
       "rightsText": "In line with GDPR principles, you have a right of access, rectification, erasure, restriction and objection regarding your personal data, as well as a right to portability for the data you provided.",
       "rightsContact": "To exercise any of these rights, contact us via the <link>contact form</link>.",
@@ -775,7 +776,10 @@
     "answerRealisations": "His most accomplished work to date is this portfolio itself: Symfony/API Platform/Next.js architecture with a built-in AI assistant.",
     "answerPhilosophie": "His view: technology is only worthwhile if it serves a real business need, and cybersecurity must be designed in from the start, not bolted on afterwards.",
     "answerPourquoi": "Because he combines business expertise (insurance, risk management), cybersecurity, full-range development and design — rare to find all of that in one person.",
-    "answerProjet": "Tell me the type of service, your indicative budget and desired timeline, and I'll prepare your request for Horlynat."
+    "answerProjet": "Tell me the type of service, your indicative budget and desired timeline, and I'll prepare your request for Horlynat.",
+    "thinking": "The assistant is thinking…",
+    "errorRateLimited": "Too many questions sent. Please wait a moment before trying again.",
+    "errorUnavailable": "The conversational assistant is temporarily unavailable."
   },
   "auth": {
     "login": {

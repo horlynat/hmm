@@ -686,14 +686,15 @@
       "dataProject": "Demande de devis : catégorie de prestation, budget indicatif, délai souhaité, et toute précision apportée via l'assistant de qualification.",
       "dataFreelance": "Inscription freelance : spécialités, disponibilité, portfolio et présentation libre, fournis à votre initiative.",
       "dataTechnical": "Donnée technique : votre adresse IP est utilisée de façon transitoire (non stockée) pour limiter les tentatives abusives d'envoi de formulaires.",
+      "dataAiAssistant": "Assistant IA conversationnel : le texte des questions que vous lui posez est transmis à des prestataires IA tiers pour générer une réponse (voir « Destinataires des données »). Aucune trace de ce texte n'est conservée dans notre propre base — seules des métadonnées anonymisées le sont (longueur, coût, horodatage, empreinte non réversible de l'adresse IP).",
       "purposeTitle": "Finalité du traitement",
       "purposeText": "Ces informations sont utilisées uniquement pour qualifier votre demande, vous recontacter, gérer votre compte le cas échéant, établir un devis ou organiser un rendez-vous. Elles ne sont ni revendues ni utilisées à des fins publicitaires.",
       "legalBasisTitle": "Base légale",
       "legalBasisText": "Le traitement repose sur votre consentement explicite (cases à cocher des formulaires), sur l'exécution du contrat lorsque vous créez un compte, et sur l'intérêt légitime pour la prévention des abus (limitation du nombre de tentatives d'envoi).",
       "retentionTitle": "Durée de conservation",
-      "retentionText": "Les données d'un compte (client ou freelance) sont conservées tant que le compte reste actif. Les demandes de devis ou de rendez-vous non suivies d'effet sont conservées le temps nécessaire à leur traitement, puis supprimées.",
+      "retentionText": "Les données d'un compte (client ou freelance) sont conservées tant que le compte reste actif. Les demandes de devis ou de rendez-vous non suivies d'effet sont conservées le temps nécessaire à leur traitement, puis supprimées. Les métadonnées anonymisées des échanges avec l'assistant IA sont supprimées automatiquement après 90 jours.",
       "recipientsTitle": "Destinataires des données",
-      "recipientsText": "Vos données sont accessibles uniquement à Horlynat Mampassi Mbama, responsable du traitement. Aucune donnée n'est vendue, louée ou partagée avec des tiers à des fins commerciales ou publicitaires ; ce site n'utilise aucun outil d'analytics ou de tracking tiers.",
+      "recipientsText": "Vos données sont accessibles uniquement à Horlynat Mampassi Mbama, responsable du traitement. Aucune donnée n'est vendue, louée ou partagée avec des tiers à des fins commerciales ou publicitaires ; ce site n'utilise aucun outil d'analytics ou de tracking tiers. Exception technique : les questions posées à l'assistant IA sont transmises à Google (Gemini, recherche de contenu pertinent) et Anthropic (Claude, génération de la réponse), deux prestataires situés hors Union européenne agissant comme sous-traitants techniques pour cette seule fonctionnalité, dans le cadre de leurs conditions d'utilisation API respectives — jamais à des fins publicitaires de notre part.",
       "rightsTitle": "Vos droits",
       "rightsText": "Conformément aux principes du RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation et d'opposition concernant vos données personnelles, ainsi que d'un droit à la portabilité pour les données que vous avez fournies.",
       "rightsContact": "Pour exercer l'un de ces droits, contactez-nous via le <link>formulaire de contact</link>.",
@@ -775,7 +776,10 @@
     "answerRealisations": "Sa réalisation la plus aboutie à ce jour est ce portfolio lui-même : architecture Symfony/API Platform/Next.js avec un assistant IA intégré.",
     "answerPhilosophie": "Sa vision : la technologie ne vaut que si elle sert un besoin métier réel, et la cybersécurité doit être pensée dès la conception, pas ajoutée après coup.",
     "answerPourquoi": "Parce qu'il combine expertise métier (assurance, gestion des risques), cybersécurité, développement complet et design — rare de trouver tout ça chez une seule personne.",
-    "answerProjet": "Décrivez-moi le type de prestation, votre budget indicatif et votre délai souhaité, et je préparerai votre demande pour Horlynat."
+    "answerProjet": "Décrivez-moi le type de prestation, votre budget indicatif et votre délai souhaité, et je préparerai votre demande pour Horlynat.",
+    "thinking": "L'assistant réfléchit…",
+    "errorRateLimited": "Trop de questions envoyées. Merci de patienter un peu avant de réessayer.",
+    "errorUnavailable": "L'assistant conversationnel est momentanément indisponible."
   },
   "auth": {
     "login": {

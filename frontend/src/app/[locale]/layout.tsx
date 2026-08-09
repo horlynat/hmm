@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { headers } from "next/headers";
@@ -16,6 +16,13 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
+});
+// Serif éditorial réservé au panneau de l'assistant IA (AiAssistantWidget) —
+// distinct du sans-serif de marque (--font-heading) utilisé partout ailleurs.
+const fraunces = Fraunces({
+  variable: "--font-assistant-serif",
+  subsets: ["latin"],
+  axes: ["opsz", "SOFT"],
 });
 
 const THEME_INIT_SCRIPT = `(function(){try{var saved=localStorage.getItem('theme');var wantsDark=saved?saved==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(wantsDark)document.documentElement.classList.add('dark');}catch(e){}})();`;
@@ -90,7 +97,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${jetbrainsMono.variable} ${fraunces.variable}`}
       suppressHydrationWarning
     >
       <head>
