@@ -4,6 +4,7 @@
 {% set isUtilisateursActive = currentRoute starts with 'admin_admins' or currentRoute starts with 'admin_user' or currentRoute starts with 'admin_collaborator' or currentRoute starts with 'admin_contact' or currentRoute starts with 'admin_request' or currentRoute starts with 'admin_testimonial' %}
 {% set isSecuriteActive = currentRoute starts with 'admin_security_' %}
 {% set isParametresActive = currentRoute starts with 'admin_config' or currentRoute starts with 'admin_notification' or currentRoute starts with 'admin_integration' or currentRoute starts with 'admin_backup' %}
+{% set isSupportActive = currentRoute starts with 'admin_support' %}
 
 {# 🔒 Visibilité par rôle : chaque booléen reflète EXACTEMENT le denyAccessUnlessGranted/Voter
    de la méthode index() du contrôleur ciblé (voir routes admin_*), pas une approximation —
@@ -43,6 +44,11 @@
 {% set canViewIntegrations = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_INTEGRATIONS')) %}
 {% set canViewBackups = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_BACKUPS')) %}
 {% set canViewParametresSection = canViewConfig or canViewNotifications or canViewIntegrations or canViewBackups %}
+
+{% set canViewSupportDocs = is_granted('ROLE_EDITOR') %}
+{% set canViewSupportFaq = is_granted('ROLE_EDITOR') %}
+{% set canViewSupportTickets = is_granted(constant('App\\Security\\Voter\\SupportTicketVoter::VIEW')) %}
+{% set canViewSupportSection = canViewSupportDocs or canViewSupportFaq or canViewSupportTickets %}
 
 {% if is_granted('ROLE_EDITOR') %}
 <aside class="fixed inset-y-0 left-0 z-50 w-64 h-full bg-(--bg-default) border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out
@@ -312,30 +318,38 @@
 		<!-- ==========================================
 				     ❓ SUPPORT (ACCORDÉON)
 				     ========================================== -->
-		<div x-data="{ open: false }">
-			<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
-				<div class="flex items-center gap-3">
-					<i class="ti ti-help-circle text-lg text-(--brand-dark)"></i>
-					<span>Support</span>
-				</div>
-				<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
-			</button>
+		{% if canViewSupportSection %}
+			<div x-data="{ open: {{ isSupportActive ? 'true' : 'false' }} }">
+				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
+					<div class="flex items-center gap-3">
+						<i class="ti ti-help-circle text-lg text-(--brand-dark)"></i>
+						<span>Support</span>
+					</div>
+					<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+				</button>
 
-			<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
-					<i class="ti ti-book text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Documentation
-				</a>
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
-					<i class="ti ti-message-question text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					FAQ
-				</a>
-				<a href="#" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
-					<i class="ti ti-lifebuoy text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
-					Support Client
-				</a>
+				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
+					{% if canViewSupportDocs %}
+						<a href="{{ path('admin_support_docs_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_support_docs' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-book text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Documentation
+						</a>
+					{% endif %}
+					{% if canViewSupportFaq %}
+						<a href="{{ path('admin_support_faq_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_support_faq' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-message-question text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							FAQ
+						</a>
+					{% endif %}
+					{% if canViewSupportTickets %}
+						<a href="{{ path('admin_support_ticket_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_support_ticket' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-lifebuoy text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Support Client
+						</a>
+					{% endif %}
+				</div>
 			</div>
-		</div>
+		{% endif %}
 
 	</nav>
 
