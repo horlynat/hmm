@@ -14,8 +14,8 @@ const settings: AiAssistantSettings = {
 };
 
 const entries: AiAssistantEntry[] = [
-  { id: 1, chipLabel: "Qui est Horlynat ?", keywords: [], answer: "Réponse locale à propos de Horlynat.", sortOrder: 1 },
-  { id: 2, chipLabel: "Ses compétences", keywords: [], answer: "Réponse locale sur les compétences.", sortOrder: 2 },
+  { id: 1, chipLabel: "Qui est Horlynat ?", keywords: ["horlynat", "qui"], answer: "Réponse locale à propos de Horlynat.", sortOrder: 1 },
+  { id: 2, chipLabel: "Ses compétences", keywords: ["compétence", "competence"], answer: "Réponse locale sur les compétences.", sortOrder: 2 },
 ];
 
 function openWidget() {
@@ -42,12 +42,29 @@ describe("AiAssistantWidget", () => {
     vi.restoreAllMocks();
   });
 
-  it("affiche les puces statiques tant qu'aucune conversation réelle n'a démarré", () => {
+  it("n'affiche aucune puce à l'ouverture, avant toute frappe", () => {
     render(<AiAssistantWidget settings={settings} entries={entries} />);
     openWidget();
 
+    expect(screen.queryByRole("button", { name: "Qui est Horlynat ?" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ses compétences" })).not.toBeInTheDocument();
+  });
+
+  it("suggère les puces FAQ correspondantes pendant la frappe, avant tout échange réel", () => {
+    render(<AiAssistantWidget settings={settings} entries={entries} />);
+    openWidget();
+    const field = screen.getByPlaceholderText("placeholder");
+
+    fireEvent.change(field, { target: { value: "qui est" } });
     expect(screen.getByRole("button", { name: "Qui est Horlynat ?" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ses compétences" })).not.toBeInTheDocument();
+
+    fireEvent.change(field, { target: { value: "ses compétences" } });
     expect(screen.getByRole("button", { name: "Ses compétences" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Qui est Horlynat ?" })).not.toBeInTheDocument();
+
+    fireEvent.change(field, { target: { value: "" } });
+    expect(screen.queryByRole("button", { name: "Ses compétences" })).not.toBeInTheDocument();
   });
 
   it("remplace les puces statiques par les suggestions contextuelles après un vrai échange", async () => {
