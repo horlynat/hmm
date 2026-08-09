@@ -106,6 +106,13 @@ services:
       # Doit correspondre au compte authentifié dans secrets/mailer_dsn (cf.
       # .env.prod.example).
       - APP_DEFAULT_SENDER=${APP_DEFAULT_SENDER}
+      # Assistant IA — noms de modèles et plafond de coût, pas des secrets
+      # (les clés API, elles, arrivent via `secrets:` ci-dessous).
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      - GEMINI_EMBEDDING_MODEL=${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
+      - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-sonnet-5}
+      - CLAUDE_MODEL_FALLBACK=${CLAUDE_MODEL_FALLBACK:-claude-haiku-4-5-20251001}
+      - ASSISTANT_MONTHLY_BUDGET_USD=${ASSISTANT_MONTHLY_BUDGET_USD:-20}
     secrets:
       - app_secret
       - jwt_passphrase
@@ -113,7 +120,8 @@ services:
       - jwt_public_key
       - database_url
       - mailer_dsn
-      - llm_api_key
+      - gemini_api_key
+      - anthropic_api_key
       - revalidate_secret
       - ntfy_dsn
     extra_hosts:
@@ -181,11 +189,16 @@ services:
       # SendEmailHandler tourne ici (transport async) — même contrainte que
       # le service backend (cf. commentaire là-bas).
       - APP_DEFAULT_SENDER=${APP_DEFAULT_SENDER}
+      # AiAssistantIngestMessageHandler (ingestion RAG) tourne ici — a besoin
+      # de Gemini, pas de Claude (le conversationnel temps réel reste sur le
+      # service backend ci-dessus).
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      - GEMINI_EMBEDDING_MODEL=${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
     secrets:
       - app_secret
       - database_url
       - mailer_dsn
-      - llm_api_key
+      - gemini_api_key
       - ntfy_dsn
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -292,8 +305,10 @@ secrets:
     file: ./secrets/database_url
   mailer_dsn:
     file: ./secrets/mailer_dsn
-  llm_api_key:
-    file: ./secrets/llm_api_key
+  gemini_api_key:
+    file: ./secrets/gemini_api_key
+  anthropic_api_key:
+    file: ./secrets/anthropic_api_key
   revalidate_secret:
     file: ./secrets/revalidate_secret
   ntfy_dsn:

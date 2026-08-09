@@ -83,7 +83,8 @@ une variable d'env via `docker-entrypoint.sh`) :
 | `secrets/jwt_public_key`    | Contenu de la clé publique JWT                        |
 | `secrets/database_url`      | DSN complet, ex. `mysql://app:<motdepasse>@database:3306/app?serverVersion=8.0.32&charset=utf8mb4` |
 | `secrets/mailer_dsn`        | DSN SMTP vers Postfix natif de l'hôte, ex. `smtp://user:pass@host.docker.internal:587` |
-| `secrets/llm_api_key`       | Clé API Anthropic (assistant IA) — isolée, pas partagée avec d'autres usages |
+| `secrets/gemini_api_key`    | Clé API Google Gemini (assistant IA — ingestion RAG + embedding) — isolée, pas partagée avec d'autres usages |
+| `secrets/anthropic_api_key` | Clé API Anthropic Claude (assistant IA — conversationnel) — isolée, pas partagée avec d'autres usages |
 | `secrets/revalidate_secret` | Secret partagé webhook `/api/revalidate` (frontend)   |
 | `secrets/ntfy_dsn`          | DSN NTFY si utilisé                                   |
 | `secrets/database_password` | Mot de passe MySQL de l'utilisateur `app` (doit matcher celui dans `database_url`) |
@@ -259,6 +260,8 @@ chmod 600 /root/.age/backup-key.txt
 Ajouter au crontab root :
 ```
 0 3 * * * DEPLOY_PATH=/opt/hmm AGE_RECIPIENT=age1... /opt/hmm/infra/scripts/backup.sh
+# Purge RGPD des logs de conversation de l'assistant IA (> 90 jours, cf. §12)
+0 4 * * * docker compose -f /opt/hmm/infra/docker-compose.prod.yml exec -T -u www-data backend php bin/console app:ai-assistant:purge-logs
 ```
 
 Tester une restauration au moins une fois (`scripts/backup.sh --restore <fichier>`)
@@ -429,16 +432,63 @@ gérer un token de lecture GHCR sur le VPS. Sinon (image privée), prévoir un
 `docker login ghcr.io` avec un PAT `read:packages` dans
 `deploy-remote.sh`.
 
+### 12. Assistant IA (RAG Gemini + Claude)
+
+Architecture hybride : ingestion asynchrone (Gemini, résumé + embedding du
+contenu Project/Article/Experience, table MySQL `document_embedding` — pas
+de pgvector, la prod est en MySQL) déclenchée automatiquement à chaque
+création/modification de contenu via Symfony Messenger (même worker que le
+reste, `messenger-worker` ci-dessus) ; conversation temps réel (Claude,
+`POST /api/assistant/chat`) qui fait un retrieval par similarité cosinus
+(calculée en PHP) sur ces embeddings avant de répondre.
+
+- **Clés API** : `secrets/gemini_api_key` (ingestion + embedding, montée sur
+  `backend` et `messenger-worker`) et `secrets/anthropic_api_key`
+  (conversationnel, montée seulement sur `backend`) — cf. §4. Jamais
+  partagées avec d'autres usages.
+- **Réingestion manuelle** (après un changement de contenu massif, un
+  ajustement du prompt de résumé, ou une migration de modèle Gemini) :
+  ```bash
+  docker compose -f docker-compose.prod.yml exec -T -u www-data backend php bin/console app:assistant:reingest --all
+  # ou une seule entité :
+  docker compose -f docker-compose.prod.yml exec -T -u www-data backend php bin/console app:assistant:reingest --entity=Project --id=42
+  ```
+- **Plafond budgétaire** (`ASSISTANT_MONTHLY_BUDGET_USD`, cf. `.env.prod`) :
+  dès dépassement, bascule automatique sur la réponse de repli statique
+  (`AiAssistantSettings.fallback`) + email d'alerte (au plus 1/jour). Suivi
+  du coût cumulé dans `ai_assistant_conversation_log` (table anonymisée,
+  jamais de texte brut — cf. ci-dessous).
+- **Cache de prompt Claude** (`App\Service\ClaudeClient`, `cache_control`
+  ephemeral TTL 1h sur le system prompt) : le contexte RAG injecté est
+  identique à chaque question tant que le contenu n'a pas été réingéré —
+  mis en cache côté Anthropic, une lecture en cache ne coûte que 10% du prix
+  d'entrée standard (contre 100% sans cache), rentable dès la 2e question
+  dans l'heure. Suivi séparé dans `AiAssistantChatProcessor::estimateCost()`
+  (écriture cache = 2x le prix d'entrée, lecture cache = 0,1x).
+- **Coupe-circuit immédiat** : décocher "Chat conversationnel actif" dans
+  `/admin/ai-assistant/settings` désactive `/api/assistant/chat` (503) sans
+  redéploiement. Les chips de FAQ restent toujours actives (réponses
+  locales, sans appel externe).
+- **Garde-fous anti prompt-injection** : détection heuristique en entrée
+  (`AiAssistantInputGuard`), séparation stricte system/user dans l'appel
+  Claude, contexte RAG délimité explicitement dans le system prompt, et
+  sanitisation de sortie (`AiAssistantOutputSanitizer`) qui détecte toute
+  fuite du system prompt et plafonne la longueur de la réponse.
+- **RGPD** : `ai_assistant_conversation_log` ne peut structurellement
+  contenir aucun texte brut (longueurs, hash d'IP salé, ids de chunks
+  utilisés, coût, statut — jamais la question/réponse elle-même). Purge
+  automatique après 90 jours (`app:ai-assistant:purge-logs`, en cron, cf.
+  §8) — c'est le garde-fou documenté depuis longtemps dans "Hors périmètre"
+  ci-dessous, désormais implémenté.
+
 ## Hors périmètre de cette livraison (documenté, pas implémenté)
 
 - **WireGuard devant `dark.horlynat.com`** : amélioration future la plus
   impactante selon le guide. Pour l'instant : whitelist IP Traefik +
   Cloudflare Access. À revisiter si tu changes souvent de lieu de connexion
   (la whitelist IP devient alors pénible).
-- **Filtrage de sortie anti-prompt-injection de l'assistant IA** et
-  **anonymisation RGPD des logs de conversation** : changements applicatifs
-  (code Symfony), pas de l'infra. La clé LLM est isolée (secret dédié,
-  jamais partagée), mais le filtrage de contenu reste à coder.
+- ~~Filtrage de sortie anti-prompt-injection de l'assistant IA et
+  anonymisation RGPD des logs de conversation~~ : implémenté, cf. §12.
 - **`config/packages/security.yaml`** : la règle globale
   `{ path: ^/api, roles: IS_AUTHENTICATED_FULLY }` déjà repérée dans
   `_config.frontend.md` bloque toujours tous les appels publics vers `/api`.
