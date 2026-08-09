@@ -43,6 +43,18 @@ class AiAssistantSettings
     #[Groups(['api_public', 'api_admin'])]
     private ?string $fallbackEn = null;
 
+    /**
+     * Coupe-circuit du chat conversationnel (texte libre → Gemini+Claude), à
+     * ne pas confondre avec les chips de FAQ qui restent toujours actives
+     * (réponses locales, sans appel externe). Décoché ici, l'appel à
+     * /api/assistant/chat échoue immédiatement en 503 — permet de désactiver
+     * l'assistant en un clic depuis l'admin, sans redéploiement (cf. §4.7 du
+     * document d'architecture assistant IA).
+     */
+    #[ORM\Column]
+    #[Groups(['api_public', 'api_admin'])]
+    private bool $aiAssistantEnabled = true;
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
@@ -99,6 +111,18 @@ class AiAssistantSettings
     public function setFallbackEn(?string $fallbackEn): static
     {
         $this->fallbackEn = $fallbackEn;
+
+        return $this;
+    }
+
+    public function isAiAssistantEnabled(): bool
+    {
+        return $this->aiAssistantEnabled;
+    }
+
+    public function setAiAssistantEnabled(bool $aiAssistantEnabled): static
+    {
+        $this->aiAssistantEnabled = $aiAssistantEnabled;
 
         return $this;
     }
