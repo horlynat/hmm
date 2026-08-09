@@ -181,10 +181,8 @@ export default async function SkillsPage({
           <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
             {t("eyebrow")}
           </Badge>
-          <h1
-            className="hero-in mb-5 max-w-[22ch] text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]"
-            style={{ animationDelay: "0.08s" }}
-          >
+          {/* Pas d'animation ici : candidat LCP le plus probable de la page. */}
+          <h1 className="mb-5 max-w-[22ch] text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
             {t("title")} <span className="text-brand-primary">{t("titleAccent")}</span>
           </h1>
           <p

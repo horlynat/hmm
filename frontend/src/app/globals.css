@@ -303,10 +303,13 @@
   /* Diagramme d'architecture du hero : flux animé le long des connecteurs
      (dash qui défile) + ping radar sur le nœud central API Platform.
      Automatiquement neutralisé par prefers-reduced-motion (règle globale
-     ci-dessus qui fige toutes les animations). */
+     ci-dessus qui fige toutes les animations). Non composées (stroke-dashoffset
+     et box-shadow/transform sur SVG en fill-box repeignent à chaque frame) —
+     bornées à quelques itérations plutôt que `infinite` pour limiter le
+     travail de peinture continu tout en gardant l'effet visible au chargement. */
   .arch-flow {
     stroke-dasharray: 8 6;
-    animation: arch-flow-dash 1s linear infinite;
+    animation: arch-flow-dash 1s linear 6;
   }
   @keyframes arch-flow-dash {
     to {
@@ -316,7 +319,7 @@
   .arch-pulse-ring {
     transform-box: fill-box;
     transform-origin: center;
-    animation: arch-pulse 2.4s ease-out infinite;
+    animation: arch-pulse 2.4s ease-out 3;
   }
   @keyframes arch-pulse {
     0% {

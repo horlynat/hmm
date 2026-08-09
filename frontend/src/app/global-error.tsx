@@ -1,16 +1,19 @@
 "use client";
 
 import { useEffect } from "react";
-import { Inter } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] });
+const SYSTEM_FONT_STACK =
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif";
 
 /**
  * Frontière d'erreur racine (dernier recours) : remplace tout le document si le
  * layout racine lui-même échoue. Pas d'accès aux styles globaux ni à l'i18n —
- * styles en ligne et texte en français (locale par défaut). La police Inter est
- * rechargée ici (via `.style.fontFamily`, pas de variable CSS) pour rester
- * cohérente avec le reste du site malgré l'absence du layout racine.
+ * styles en ligne et texte en français (locale par défaut). Police système
+ * plutôt que `next/font/google` (Turbopack sur Next 16.3 échoue au build sur
+ * cette combinaison précise — "Font loader calls must be assigned to a const"
+ * malgré un const bien présent, cf. vercel/next.js#86792) : sans incidence
+ * ici, cette page ne s'affiche qu'en cas de panne catastrophique du layout
+ * racine, la fidélité exacte à Inter n'est pas requise.
  */
 export default function GlobalError({
   error,
@@ -32,7 +35,7 @@ export default function GlobalError({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontFamily: inter.style.fontFamily,
+          fontFamily: SYSTEM_FONT_STACK,
           background: "#f9fafb",
           color: "#03045e",
           padding: "24px",

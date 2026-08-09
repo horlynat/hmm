@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Header, Footer, ScrollTopButton, WhatsappFab } from "@/components/layout";
-import { AiAssistantWidget } from "@/components/ai-assistant";
+import { AiAssistantWidgetLazy as AiAssistantWidget } from "@/components/ai-assistant";
 import { getAiAssistantEntries, getAiAssistantSettings } from "@/lib/api/ai-assistant";
 
 /**

@@ -182,10 +182,12 @@ export default async function HomePage({
                 {content.founderBadge}
               </span>
             </div>
-            <h1
-              className="hero-in mb-5 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]"
-              style={{ animationDelay: "0.08s" }}
-            >
+            {/* Pas d'animation d'entrée ici (contrairement au reste du hero) : ce
+                <h1> est le candidat LCP le plus probable de la page — Chrome ne
+                finalise la mesure LCP d'un élément qu'une fois son animation
+                d'opacité stabilisée, un fondu ajouterait donc directement son
+                délai+durée au LCP mesuré. */}
+            <h1 className="mb-5 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
               {content.heroTitle}
               <br />
               <span className="text-brand-primary">{content.heroTitleAccent}</span>
