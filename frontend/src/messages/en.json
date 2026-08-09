@@ -1022,7 +1022,10 @@
         "lastLoginGroupTitle": "Last login",
         "lastLoginAtLabel": "Date",
         "lastLocationLabel": "Approximate location",
+        "lastLocationCoordinatesLabel": "Geographic coordinates",
         "lastDeviceLabel": "Device",
+        "lastDeviceTypeLabel": "Device type",
+        "lastDeviceBrandLabel": "Brand",
         "lastIpLabel": "IP address"
       },
       "dataExport": {

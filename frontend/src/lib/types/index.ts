@@ -551,7 +551,15 @@ export interface SessionUser {
   lastLoginAt: string | null;
   lastIp: string | null;
   lastLocation: string | null;
+  lastLocationCity: string | null;
+  lastLocationCountry: string | null;
+  lastLocationLatitude: number | null;
+  lastLocationLongitude: number | null;
   lastDevice: string | null;
+  /** Type d'appareil lisible ("Smartphone", "Ordinateur"...), dérivé du user-agent — voir App\Service\DeviceParser. */
+  lastDeviceType: string;
+  lastDeviceBrand: string | null;
+  lastDeviceLabel: string;
   editableFields: string[];
   attributions: SessionAttributions;
 }
