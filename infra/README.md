@@ -120,15 +120,26 @@ cp .env.prod.example .env.prod
 ```
 
 Éditer `traefik/dynamic.yml` : remplacer `203.0.113.10/32` (middleware
-`admin-ipwhitelist`) par ta/tes vraie(s) IP fixe(s) — **tant que ce n'est
-pas fait, `dark.horlynat.com` reste inaccessible** (fail-closed voulu).
+`admin-ipwhitelist`, utilisé uniquement par `mailadmin.horlynat.com` — cf.
+ci-dessous) par ta/tes vraie(s) IP fixe(s) — **tant que ce n'est pas fait,
+`mailadmin.horlynat.com` reste inaccessible** (fail-closed voulu).
 
-⚠️ Deux pièges testés en prod sur ce réglage précis :
-- **IP résidentielle = pas fixe.** Une IP obtenue via `curl ifconfig.me`
-  depuis un réseau grand public peut changer entre deux sessions (constaté
-  en prod : changée en quelques heures). Si `dark.` redevient inaccessible
-  sans raison apparente, revérifier l'IP actuelle avant de chercher
-  ailleurs.
+⚠️ **IP résidentielle = pas fixe**, testé en prod (changée en quelques
+heures sur `dark.horlynat.com` avant d'en tirer la conclusion suivante) :
+une whitelist IP statique sur un service auquel on se connecte depuis des
+réseaux variables (mobile, wifi public...) finit par bloquer l'accès la
+plupart du temps, pas par exception. C'est pour ça que `dark.horlynat.com`
+n'utilise **plus** `admin-ipwhitelist@file` (cf. `docker-compose.prod.yml`,
+routeur `dark`) : seuls `cloudflare-only` (aucun accès direct à l'origine
+hors réseau Cloudflare) et Cloudflare Access (code email, dashboard
+Cloudflare Zero Trust) protègent ce routeur — renforçable côté Cloudflare
+(MFA, session courte) si besoin, sans dépendre d'une IP figée. `mailadmin.
+horlynat.com` garde la whitelist (pas de Cloudflare Access dessus, cf. §10)
+: si son IP doit aussi devenir mobile, se poser la même question avant de
+la retirer là aussi (perte d'une couche de défense en profondeur, à
+compenser autrement).
+
+⚠️ Piège testé en prod sur ce réglage :
 - **`docker compose restart traefik` obligatoire après modification**, pas
   juste une modification du fichier : `traefik.yml`/`dynamic.yml` sont
   montés en bind-mount de **fichier unique** (pas un dossier), et un outil
@@ -286,8 +297,10 @@ seule fois (bootstrap) ; ensuite tout se gère depuis l'interface.
 mais lisent maintenant leurs comptes/routage depuis une base MySQL dédiée
 (`postfixadmin`, MariaDB natif sur l'hôte — **pas** la base applicative
 Docker) au lieu de fichiers plats. PostfixAdmin lui-même tourne en
-conteneur Docker derrière Traefik, protégé comme `dark.horlynat.com`
-(whitelist IP + `cloudflare-only`).
+conteneur Docker derrière Traefik, protégé par `cloudflare-only` +
+`admin-ipwhitelist` (IP fixe à maintenir à jour — contrairement à
+`dark.horlynat.com`, ce routeur n'a pas de Cloudflare Access en
+compensation, cf. §5).
 
 **Si à refaire sur un VPS neuf** (résumé des étapes, déjà appliquées ici) :
 
@@ -494,9 +507,13 @@ reste, `messenger-worker` ci-dessus) ; conversation temps réel (Claude,
 ## Hors périmètre de cette livraison (documenté, pas implémenté)
 
 - **WireGuard devant `dark.horlynat.com`** : amélioration future la plus
-  impactante selon le guide. Pour l'instant : whitelist IP Traefik +
-  Cloudflare Access. À revisiter si tu changes souvent de lieu de connexion
-  (la whitelist IP devient alors pénible).
+  impactante selon le guide — donnerait une IP de tunnel fixe même en
+  connexion mobile, restaurant une vraie défense en profondeur par IP en
+  plus de Cloudflare Access. Pour l'instant : `cloudflare-only` +
+  Cloudflare Access seuls (whitelist IP retirée, cf. §5 — testé en prod,
+  une IP figée sur ce routeur bloquait l'accès la plupart du temps plutôt
+  que par exception). `mailadmin.horlynat.com` garde la whitelist IP,
+  faute de Cloudflare Access dessus.
 - ~~Filtrage de sortie anti-prompt-injection de l'assistant IA et
   anonymisation RGPD des logs de conversation~~ : implémenté, cf. §12.
 - **`config/packages/security.yaml`** : la règle globale
@@ -527,5 +544,5 @@ reste, `messenger-worker` ci-dessus) ; conversation temps réel (Claude,
 - [ ] TLS vérifié (Cloudflare Full Strict + cert Origin sur Traefik)
 - [ ] Sauvegardes automatiques chiffrées + restauration testée
 - [ ] Monitoring (Netdata + Uptime externe) en place
-- [ ] `admin-ipwhitelist` éditée avec la vraie IP avant d'utiliser `dark.horlynat.com`
+- [ ] `admin-ipwhitelist` éditée avec la vraie IP avant d'utiliser `mailadmin.horlynat.com` (`dark.horlynat.com` n'en dépend plus, cf. §5)
 - [ ] `security.yaml` `/api` corrigé côté backend (sinon l'API reste 401 partout)

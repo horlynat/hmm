@@ -157,12 +157,20 @@ services:
       - traefik.http.routers.api.tls=true
       - traefik.http.routers.api.service=backend
       - traefik.http.routers.api.middlewares=cloudflare-only@file,security-headers@file,ratelimit-standard@file
-      # dark.horlynat.com — back-office, protection maximale (guide §3)
+      # dark.horlynat.com — back-office, protection maximale (guide §3).
+      # Pas de whitelist IP perso (admin-ipwhitelist@file, cf. traefik/
+      # dynamic.yml) : IP non stable (connexions depuis des réseaux
+      # variables), whitelist statique = accès bloqué la plupart du temps.
+      # cloudflare-only interdit déjà tout accès direct à l'origine (seul le
+      # réseau Cloudflare peut atteindre ce routeur), et Cloudflare Access
+      # (code email, cf. dashboard Cloudflare Zero Trust) fait office de
+      # vrai contrôle d'identité en amont de la connexion applicative —
+      # renforçable côté Cloudflare (MFA, session courte) sans toucher ici.
       - traefik.http.routers.dark.rule=Host(`dark.horlynat.com`)
       - traefik.http.routers.dark.entrypoints=websecure
       - traefik.http.routers.dark.tls=true
       - traefik.http.routers.dark.service=backend
-      - traefik.http.routers.dark.middlewares=cloudflare-only@file,admin-ipwhitelist@file,security-headers@file,ratelimit-strict@file
+      - traefik.http.routers.dark.middlewares=cloudflare-only@file,security-headers@file,ratelimit-strict@file
 
   messenger-worker:
     # Même image que le service backend ci-dessus (seule la commande
