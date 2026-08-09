@@ -52,10 +52,35 @@ export default async function SecuritePage({
                   <dd className="font-semibold">{user.lastLocation}</dd>
                 </div>
               )}
+              {user.lastLocationLatitude !== null && user.lastLocationLongitude !== null && (
+                <div>
+                  <dt className="text-xs opacity-50">{t("lastLocationCoordinatesLabel")}</dt>
+                  <dd className="font-semibold">
+                    <a
+                      href={`https://www.google.com/maps?q=${user.lastLocationLatitude},${user.lastLocationLongitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline decoration-dotted underline-offset-2"
+                    >
+                      {user.lastLocationLatitude}, {user.lastLocationLongitude}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              <div>
+                <dt className="text-xs opacity-50">{t("lastDeviceTypeLabel")}</dt>
+                <dd className="font-semibold">{user.lastDeviceType}</dd>
+              </div>
+              {user.lastDeviceBrand && (
+                <div>
+                  <dt className="text-xs opacity-50">{t("lastDeviceBrandLabel")}</dt>
+                  <dd className="font-semibold">{user.lastDeviceBrand}</dd>
+                </div>
+              )}
               {user.lastDevice && (
                 <div>
                   <dt className="text-xs opacity-50">{t("lastDeviceLabel")}</dt>
-                  <dd className="font-semibold">{user.lastDevice}</dd>
+                  <dd className="font-semibold" title={user.lastDevice}>{user.lastDeviceLabel}</dd>
                 </div>
               )}
               {user.lastIp && (
