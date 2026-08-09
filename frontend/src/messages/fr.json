@@ -36,6 +36,7 @@
     "agreeTerms": "Vous devez accepter les conditions pour continuer.",
     "selectRequired": "Merci de faire une sélection.",
     "tooLong": "Ce texte est trop long ({max} caractères maximum).",
+    "tooShort": "Ce texte est trop court ({min} caractères minimum).",
     "genericError": "Une erreur est survenue, merci de réessayer.",
     "networkError": "Connexion impossible. Vérifiez votre réseau et réessayez.",
     "rateLimited": "Trop de tentatives. Merci de patienter une minute avant de réessayer.",
@@ -46,6 +47,7 @@
     "competences": "Compétences",
     "realisations": "Réalisations",
     "blog": "Blog",
+    "aide": "Aide",
     "contact": "Contact",
     "compte": "Mon compte",
     "connexion": "Connexion"
@@ -659,6 +661,45 @@
       "error": "Une erreur est survenue, merci de réessayer.",
       "errorRequired": "Merci de compléter votre nom, votre email, un créneau et un canal de contact.",
       "errorPhoneRequired": "Un numéro de téléphone valide est requis pour ce canal de contact."
+    }
+  },
+  "helpCenter": {
+    "eyebrow": "Centre d'aide",
+    "title": "Des réponses,",
+    "titleAccent": "vite trouvées.",
+    "sub": "Comment fonctionne une collaboration avec moi, et les questions les plus fréquentes. Toujours coincé ? Le support répond directement.",
+    "docsHeading": "Comment ça marche",
+    "faqHeading": "Questions fréquentes",
+    "ctaTitle": "Vous ne trouvez pas votre réponse ?",
+    "ctaText": "Ouvrez un ticket de support, je vous réponds par email dès que possible.",
+    "ctaButton": "Contacter le support"
+  },
+  "supportTicket": {
+    "form": {
+      "eyebrow": "Support",
+      "title": "Ouvrir un",
+      "titleAccent": "ticket de support.",
+      "sub": "Décrivez votre problème, je vous réponds par email avec un lien pour suivre l'échange.",
+      "nameLabel": "Nom",
+      "emailLabel": "Email",
+      "subjectLabel": "Sujet",
+      "messageLabel": "Votre message",
+      "messagePlaceholder": "Décrivez votre problème ou votre question...",
+      "submit": "Envoyer le ticket",
+      "success": "Ticket envoyé — vous allez recevoir un email de confirmation avec un lien pour suivre l'échange.",
+      "error": "Une erreur est survenue, merci de réessayer.",
+      "rateLimited": "Trop de tentatives. Merci de patienter avant de réessayer."
+    },
+    "thread": {
+      "statusLabel": "Statut",
+      "youLabel": "Vous",
+      "supportLabel": "Support",
+      "replyLabel": "Ajouter une réponse",
+      "replyPlaceholder": "Votre message...",
+      "replySubmit": "Envoyer",
+      "replySuccess": "Votre réponse a été envoyée.",
+      "replyError": "Une erreur est survenue, merci de réessayer.",
+      "replyRateLimited": "Trop de tentatives. Merci de patienter avant de réessayer."
     }
   },
   "legal": {

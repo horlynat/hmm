@@ -67,5 +67,16 @@ export const contactMessageSchema = z.object({
   slot: z.string().max(60).optional(),
 });
 
+export const supportTicketSchema = z.object({
+  name: z.string().trim().min(1).max(255),
+  email,
+  subject: z.string().trim().min(1).max(255),
+  message: z.string().min(10).max(5000),
+});
+
+export const supportTicketReplySchema = z.object({
+  message: z.string().min(10).max(5000),
+});
+
 /** Résultat standard d'échec de validation serveur, compatible ApiPostResult. */
 export const invalidInput: ApiPostResult = { ok: false, error: "invalid_input" };

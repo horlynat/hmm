@@ -229,6 +229,29 @@ export interface QuoteRequestPayload {
   message: string;
 }
 
+/** Miroir du groupe `api_public` de App\Entity\SupportTicket (+ $message, virtuel côté SupportTicketApiResource). */
+export interface SupportTicketPayload {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
+/** Un message du fil, tel que renvoyé par SupportTicketPublicController (jamais le jeton lui-même). */
+export interface SupportTicketMessage {
+  body: string;
+  fromAdmin: boolean;
+  createdAt: string;
+}
+
+/** Réponse de GET /api/support_tickets/{token} — contrôleur "plain", pas de forme Hydra. */
+export interface SupportTicketThread {
+  subject: string;
+  status: "open" | "in_progress" | "resolved";
+  statusLabel: string;
+  messages: SupportTicketMessage[];
+}
+
 /**
  * Réponses collectées par le wizard "devis" du formulaire de contact.
  * `categoryDetail` est la réponse à la question de qualification spécifique

@@ -16,6 +16,7 @@ export type NavHref =
   | "/realisations"
   | "/blog"
   | "/freelances"
+  | "/aide"
   | "/contact"
   | "/mentions-legales"
   | "/politique-de-confidentialite"
@@ -27,5 +28,6 @@ export const navItems: { key: string; href: NavHref }[] = [
   { key: "competences", href: "/competences" },
   { key: "realisations", href: "/realisations" },
   { key: "blog", href: "/blog" },
+  { key: "aide", href: "/aide" },
   { key: "contact", href: "/contact" },
 ];
