@@ -800,7 +800,7 @@
   },
   "aiAssistant": {
     "title": "Assistant de Horlynat",
-    "sub": "répond à ma place — profil, projets, vision",
+    "sub": "En ligne",
     "greeting": "Bonjour, je suis l'assistant IA de Horlynat. Je peux vous présenter son profil, ses compétences, ses réalisations, sa vision du métier, ou qualifier votre demande de projet. Que voulez-vous savoir ?",
     "placeholder": "Posez votre question...",
     "send": "Envoyer",

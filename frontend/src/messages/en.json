@@ -800,7 +800,7 @@
   },
   "aiAssistant": {
     "title": "Horlynat's assistant",
-    "sub": "answers on my behalf — profile, projects, vision",
+    "sub": "Online",
     "greeting": "Hello, I'm Horlynat's AI assistant. I can introduce his profile, skills, projects, view of the craft, or qualify your project request. What would you like to know?",
     "placeholder": "Ask your question...",
     "send": "Send",
