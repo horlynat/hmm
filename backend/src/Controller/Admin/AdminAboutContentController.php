@@ -7,8 +7,10 @@ use App\Entity\User;
 use App\Form\AboutContentType;
 use App\Repository\AboutContentRepository;
 use App\Service\AuditLogger;
+use App\Service\MediaUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -28,6 +30,7 @@ class AdminAboutContentController extends AbstractController
         Request $request,
         AboutContentRepository $aboutContentRepository,
         EntityManagerInterface $entityManager,
+        MediaUploader $uploader,
         AuditLogger $auditLogger,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
@@ -37,6 +40,12 @@ class AdminAboutContentController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $profileImageFile = $form->get('profileImageFile')->getData();
+            if ($profileImageFile instanceof UploadedFile) {
+                $result = $uploader->upload($profileImageFile, 'about');
+                $content->setProfileImagePath($result['path']);
+            }
+
             $content->setBeyondLanguages($this->parseLines((string) $form->get('beyondLanguages')->getData()));
             $languagesEn = $this->parseLines((string) $form->get('beyondLanguagesEn')->getData());
             $content->setBeyondLanguagesEn($languagesEn ?: null);
