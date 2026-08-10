@@ -79,6 +79,7 @@ export interface Skill {
   id: number;
   name: string;
   level: number;
+  skillCategory: SkillCategory;
 }
 
 export interface Experience {
@@ -88,11 +89,19 @@ export interface Experience {
   description: string;
 }
 
+/** Miroir de App\Enum\CourseTypeEnum côté backend. */
+export type CourseType = "diplome" | "certification" | "formation";
+
 export interface Course {
   id: number;
   title: string;
   institution: string;
   description: string;
+  type: CourseType;
+  /** ISO 8601. */
+  startDate: string;
+  /** ISO 8601. */
+  endDate: string;
 }
 
 export interface Testimonial {

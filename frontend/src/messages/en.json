@@ -47,7 +47,6 @@
     "competences": "Skills",
     "realisations": "Projects",
     "blog": "Blog",
-    "aide": "Help",
     "contact": "Contact",
     "compte": "My account",
     "connexion": "Sign in"
@@ -95,7 +94,7 @@
     "skills": {
       "eyebrow": "Skills",
       "title": "The same architecture, explained simply",
-      "lede": "Each card matches a real building block of the stack used on this site.",
+      "lede": "Four domains that shape my work — the full breakdown, category by category, is on the skills page.",
       "empty": "Skills will appear here as soon as they're published.",
       "cta": "See all skills"
     },
@@ -170,7 +169,10 @@
     },
     "formation": {
       "eyebrow": "Education",
-      "title": "Qualifications and certifications"
+      "title": "Qualifications and certifications",
+      "typeDiploma": "Degrees",
+      "typeCertification": "Certifications",
+      "typeTraining": "Training"
     },
     "experience": {
       "eyebrow": "Experience",
@@ -216,7 +218,7 @@
     "list": {
       "eyebrow": "Skills",
       "title": "The stack used daily",
-      "lede": "Grouping by category is temporarily unavailable from the public API — flat list in the meantime.",
+      "lede": "Grouped by domain — each category maps to a real part of my work, not a generic list.",
       "empty": "Skills will appear here as soon as they're published."
     },
     "domain": {
@@ -939,6 +941,7 @@
         "settings": "Settings",
         "dataExport": "Export my data",
         "deleteAccount": "Delete my account",
+        "help": "Help",
         "groupActivity": "My activity",
         "groupAccount": "My account",
         "groupDanger": "Danger zone",

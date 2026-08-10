@@ -47,7 +47,6 @@
     "competences": "Compétences",
     "realisations": "Réalisations",
     "blog": "Blog",
-    "aide": "Aide",
     "contact": "Contact",
     "compte": "Mon compte",
     "connexion": "Connexion"
@@ -95,7 +94,7 @@
     "skills": {
       "eyebrow": "Compétences",
       "title": "La même architecture, expliquée simplement",
-      "lede": "Chaque carte correspond à une brique réelle de la stack utilisée sur ce site.",
+      "lede": "Quatre domaines qui structurent mon travail — le détail complet, catégorie par catégorie, est sur la page compétences.",
       "empty": "Les compétences seront affichées ici dès leur publication.",
       "cta": "Voir toutes les compétences"
     },
@@ -170,7 +169,10 @@
     },
     "formation": {
       "eyebrow": "Formation",
-      "title": "Qualifications et certifications"
+      "title": "Qualifications et certifications",
+      "typeDiploma": "Diplômes",
+      "typeCertification": "Certifications",
+      "typeTraining": "Formations"
     },
     "experience": {
       "eyebrow": "Expérience",
@@ -216,7 +218,7 @@
     "list": {
       "eyebrow": "Compétences",
       "title": "La stack utilisée au quotidien",
-      "lede": "Groupement par catégorie temporairement indisponible côté API publique — liste à plat en attendant.",
+      "lede": "Regroupées par domaine — chaque catégorie correspond à un pan réel de mon activité, pas une liste générique.",
       "empty": "Les compétences seront affichées ici dès leur publication."
     },
     "domain": {
@@ -939,6 +941,7 @@
         "settings": "Paramètres",
         "dataExport": "Exporter mes données",
         "deleteAccount": "Supprimer mon compte",
+        "help": "Aide",
         "groupActivity": "Mon activité",
         "groupAccount": "Mon compte",
         "groupDanger": "Zone sensible",

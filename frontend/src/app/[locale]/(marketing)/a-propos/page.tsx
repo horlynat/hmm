@@ -1,7 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { Badge, ButtonLink, Card, HeroBackground, Reveal } from "@/components/ui";
-import { SkillChip } from "@/components/sections/SkillChip";
+import { SkillsByCategory } from "@/components/sections/SkillsByCategory";
+import { QualificationsList } from "@/components/sections/QualificationsList";
 import { Timeline } from "@/components/sections/Timeline";
 import {
   DualLensIcon,
@@ -9,6 +10,7 @@ import {
   ShieldIcon,
   SparkleChatIcon,
 } from "@/components/sections/AboutIcons";
+import type { CourseType } from "@/lib/types";
 import { getExperiences } from "@/lib/api/experiences";
 import { getCourses } from "@/lib/api/courses";
 import { getSkills } from "@/lib/api/skills";
@@ -197,11 +199,15 @@ export default async function AboutPage({
               {t("formation.title")}
             </h2>
             {courses.length > 0 ? (
-              <Timeline
-                items={courses.map((c) => ({
-                  title: `${c.title} — ${c.institution}`,
-                  desc: c.description,
-                }))}
+              <QualificationsList
+                courses={courses}
+                labels={
+                  {
+                    diplome: t("formation.typeDiploma"),
+                    certification: t("formation.typeCertification"),
+                    formation: t("formation.typeTraining"),
+                  } satisfies Record<CourseType, string>
+                }
               />
             ) : (
               <p className="text-sm opacity-60">{tc("aVenir")}</p>
@@ -234,13 +240,7 @@ export default async function AboutPage({
             <p className="mb-10 max-w-[60ch] opacity-70">{t("skillsDetail.lede")}</p>
           </Reveal>
           {skills.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {skills.map((skill, i) => (
-                <Reveal key={skill.id} delay={i * 0.05}>
-                  <SkillChip skill={skill} />
-                </Reveal>
-              ))}
-            </div>
+            <SkillsByCategory skills={skills} />
           ) : (
             <p className="text-sm opacity-60">{tc("aVenir")}</p>
           )}

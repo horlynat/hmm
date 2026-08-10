@@ -5,7 +5,7 @@ import { ProjectCard } from "@/components/sections/ProjectCard";
 import { ArticleCard } from "@/components/sections/ArticleCard";
 import { TestimonialCard } from "@/components/sections/TestimonialCard";
 import { RoleRotator } from "@/components/sections/RoleRotator";
-import { SkillChip } from "@/components/sections/SkillChip";
+import { SkillsByCategory } from "@/components/sections/SkillsByCategory";
 import {
   DevicesIcon,
   DualLensIcon,
@@ -16,7 +16,7 @@ import {
 import { getProjects } from "@/lib/api/projects";
 import { getArticles } from "@/lib/api/articles";
 import { getTestimonials } from "@/lib/api/testimonials";
-import { getSkills } from "@/lib/api/skills";
+import { getFeaturedSkills } from "@/lib/api/skills";
 import { getHomeContent } from "@/lib/api/home-content";
 import { getAboutContent } from "@/lib/api/about-content";
 
@@ -153,7 +153,7 @@ export default async function HomePage({
     getProjects(locale),
     getArticles(locale),
     getTestimonials(locale),
-    getSkills(locale),
+    getFeaturedSkills(locale),
   ]);
 
   // Contenu narratif piloté par le back-office (App\Entity\HomeContent) : la
@@ -348,12 +348,8 @@ export default async function HomePage({
             <p className="mb-10 max-w-[60ch] opacity-70">{t("skills.lede")}</p>
           </Reveal>
           {skills.length > 0 ? (
-            <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {skills.slice(0, 8).map((skill, i) => (
-                <Reveal key={skill.id} delay={i * 0.05}>
-                  <SkillChip skill={skill} />
-                </Reveal>
-              ))}
+            <div className="mb-8">
+              <SkillsByCategory skills={skills} maxSkillsPerCategory={4} />
             </div>
           ) : (
             <p className="mb-8 text-sm opacity-60">{t("skills.empty")}</p>
