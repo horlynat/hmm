@@ -103,8 +103,8 @@ export default async function GestionProjetDetailPage({
         </div>
         <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-brand-light">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-brand-primary to-brand-accent transition-[width] duration-300"
-            style={{ width: `${project.progress}%` }}
+            className="h-full w-full origin-left rounded-full bg-gradient-to-r from-brand-primary to-brand-accent transition-transform duration-300"
+            style={{ transform: `scaleX(${project.progress / 100})` }}
           />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">

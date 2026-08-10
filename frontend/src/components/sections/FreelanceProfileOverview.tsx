@@ -124,8 +124,8 @@ export async function FreelanceProfileOverview({ user, locale }: { user: Session
           </div>
           <div className="mb-3.5 h-1.5 w-full overflow-hidden rounded-full bg-brand-light">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-brand-primary to-brand-accent transition-[width] duration-300"
-              style={{ width: `${user.profileCompletion}%` }}
+              className="h-full w-full origin-left rounded-full bg-gradient-to-r from-brand-primary to-brand-accent transition-transform duration-300"
+              style={{ transform: `scaleX(${user.profileCompletion / 100})` }}
             />
           </div>
           <ul className="flex flex-col gap-1.5">
