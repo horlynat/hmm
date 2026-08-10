@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 import { Badge, ButtonLink, Card, HeroBackground, Reveal } from "@/components/ui";
-import { SkillChip } from "@/components/sections/SkillChip";
+import { SkillsByCategory } from "@/components/sections/SkillsByCategory";
 import { getSkills } from "@/lib/api/skills";
 
 export const dynamic = "force-static";
@@ -222,13 +222,7 @@ export default async function SkillsPage({
             <p className="mb-10 max-w-[60ch] opacity-70">{t("list.lede")}</p>
           </Reveal>
           {skills.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-              {skills.map((skill, i) => (
-                <Reveal key={skill.id} delay={i * 0.04}>
-                  <SkillChip skill={skill} />
-                </Reveal>
-              ))}
-            </div>
+            <SkillsByCategory skills={skills} />
           ) : (
             <p className="text-sm opacity-60">{t("list.empty")}</p>
           )}

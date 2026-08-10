@@ -76,3 +76,58 @@ export function PaletteIcon() {
     </svg>
   );
 }
+
+/** Qualifications (App\Entity\Course) — cf. QualificationsList.tsx. */
+export function GraduationCapIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+      <path
+        d="M2.5 9.5 12 5l9.5 4.5-9.5 4.5-9.5-4.5Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path d="M6.5 11.5v4c0 1.4 2.5 2.5 5.5 2.5s5.5-1.1 5.5-2.5v-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M21 10v5.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function RibbonIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+      <circle cx="12" cy="9" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M9 13.8 7.5 20.5 12 18l4.5 2.5L15 13.8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <path d="M9.7 9.2 11.3 10.8 14.3 7.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function BookIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20">
+      <path
+        d="M4 5.2c1.8-1 4.4-1 7-.3.4.1.7.4.7.9v12c0-.5-.3-.8-.7-.9-2.6-.7-5.2-.7-7 .3V5.2Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M20 5.2c-1.8-1-4.4-1-7-.3-.4.1-.7.4-.7.9v12c0-.5.3-.8.7-.9 2.6-.7 5.2-.7 7 .3V5.2Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
