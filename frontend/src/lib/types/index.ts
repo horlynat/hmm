@@ -87,6 +87,10 @@ export interface Experience {
   company: string;
   role: string;
   description: string;
+  /** ISO 8601. */
+  startDate: string;
+  /** ISO 8601, absent = poste actuel. */
+  endDate: string | null;
 }
 
 /** Miroir de App\Enum\CourseTypeEnum côté backend. */
@@ -160,6 +164,8 @@ export interface AboutContent {
   profileLocation: string;
   profileWorkMode: string;
   profileLanguages: string;
+  /** URL complète (résolue via getMediaUrl), uploadée depuis l'admin — absente tant qu'aucune photo n'a été définie. */
+  profileImagePath: string | null;
   bioTitle: string;
   bioP1: string;
   bioP2: string;
