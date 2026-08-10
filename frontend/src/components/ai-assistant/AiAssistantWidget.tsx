@@ -166,10 +166,11 @@ export function AiAssistantWidget({ settings, entries }: AiAssistantWidgetProps)
         >
           <div className="flex items-center gap-2.5">
             <span
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-              style={{ background: "var(--assistant-accent)" }}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[0.68rem] font-bold text-white"
+              style={{ background: "var(--assistant-accent)", fontFamily: "var(--font-assistant-serif)" }}
+              aria-hidden="true"
             >
-              <Sparkles className="h-4 w-4 text-white" strokeWidth={2} />
+              HM
             </span>
             <div>
               <div
@@ -179,9 +180,13 @@ export function AiAssistantWidget({ settings, entries }: AiAssistantWidgetProps)
                 {t("title")}
               </div>
               <div
-                className="font-mono text-[0.65rem] uppercase tracking-wide"
+                className="flex items-center gap-1.5 font-mono text-[0.65rem] uppercase tracking-wide"
                 style={{ color: "var(--assistant-text-dim)" }}
               >
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                </span>
                 {t("sub")}
               </div>
             </div>

@@ -43,7 +43,10 @@ export async function POST(request: NextRequest) {
         locale: body.locale ?? "fr",
       }),
       cache: "no-store",
-      signal: AbortSignal.timeout(15_000),
+      // Doit couvrir le timeout backend (30s, cf. App\Service\ClaudeClient) +
+      // une marge de traitement — sinon ce proxy abandonnait avant que le
+      // backend ait fini un appel Sonnet légitimement long.
+      signal: AbortSignal.timeout(35_000),
     });
 
     if (429 === res.status) {
