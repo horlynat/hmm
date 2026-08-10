@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\CourseTypeEnum;
 use App\Repository\CourseRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -38,14 +39,14 @@ class Course
     #[ORM\Column]
     #[Assert\NotNull(message: "La date de début est obligatoire")]
     #[Assert\Type(\DateTimeImmutable::class)]
-    #[Groups(['api_admin'])]
+    #[Groups(['api_public', 'api_admin'])]
     private \DateTimeImmutable $startDate;
 
     #[ORM\Column]
     #[Assert\NotNull(message: "La date de fin est obligatoire")]
     #[Assert\Type(\DateTimeImmutable::class)]
     #[Assert\GreaterThan(propertyPath: "startDate", message: "La date de fin doit être postérieure à la date de début")]
-    #[Groups(['api_admin'])]
+    #[Groups(['api_public', 'api_admin'])]
     private \DateTimeImmutable $endDate;
 
     #[ORM\Column(type: Types::TEXT)]
@@ -64,6 +65,12 @@ class Course
     #[Assert\NotNull(message: "Le cours doit être lié à un utilisateur")]
     #[Groups(['api_admin'])] // exposé seulement côté admin
     private User $user;
+
+    /** Permet au frontend de regrouper diplômes/certifications/formations plutôt que tout lister à plat. */
+    #[ORM\Column(length: 20, enumType: CourseTypeEnum::class)]
+    #[Assert\NotNull(message: "Le type de formation est obligatoire")]
+    #[Groups(['api_public', 'api_admin'])]
+    private CourseTypeEnum $type = CourseTypeEnum::DIPLOMA;
 
     public function __construct()
     {
@@ -168,6 +175,18 @@ class Course
     public function setUser(User $user): static
     {
         $this->user = $user;
+
+        return $this;
+    }
+
+    public function getType(): CourseTypeEnum
+    {
+        return $this->type;
+    }
+
+    public function setType(CourseTypeEnum $type): static
+    {
+        $this->type = $type;
 
         return $this;
     }

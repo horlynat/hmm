@@ -4,8 +4,10 @@ namespace App\Form;
 
 use App\Entity\Course;
 use App\Entity\User;
+use App\Enum\CourseTypeEnum;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
@@ -69,6 +71,12 @@ class CourseType extends AbstractType
                 'choice_label' => 'email', // ⚠️ plus parlant que l’ID
                 'label' => 'Utilisateur associé',
                 'placeholder' => 'Sélectionnez un utilisateur',
+            ])
+            ->add('type', EnumType::class, [
+                'class' => CourseTypeEnum::class,
+                'label' => 'Type',
+                'choice_label' => static fn (CourseTypeEnum $type): string => $type->getLabel(),
+                'help' => 'Détermine le regroupement affiché publiquement (diplômes / certifications / formations).',
             ])
         ;
     }
