@@ -93,10 +93,30 @@ final class ClaudeClient
                 'anthropic-version' => self::API_VERSION,
                 'content-type' => 'application/json',
             ],
-            'timeout' => 12,
+            // Idle timeout du client HTTP — la requête n'étant pas streamée, ça
+            // couvre en pratique toute la durée de génération. Mesuré en direct
+            // contre l'API : une réponse Sonnet proche de max_tokens (1024) sur
+            // une question commerciale prend jusqu'à ~14s. 12s coupait la
+            // connexion avant la fin — le pire scénario côté budget : Anthropic
+            // termine probablement la génération malgré l'abandon côté client
+            // (et la facture potentiellement), puis le repli déclenche un
+            // second appel payant sur l'autre modèle. 30s laisse une marge
+            // confortable au lieu de risquer une double facturation invisible.
+            'timeout' => 30,
             'json' => [
                 'model' => $model,
                 'max_tokens' => $maxTokens,
+                // Désactivé explicitement : le raisonnement étendu se déclenche
+                // parfois de façon non déterministe côté Sonnet (constaté en
+                // test direct, sans qu'on l'ait demandé) et consomme une partie
+                // du budget max_tokens sur du contenu jamais montré au visiteur
+                // — facturé au tarif de sortie comme le texte visible, donc
+                // du coût pur sans bénéfice pour un assistant censé "rester
+                // bref, professionnel et factuel" (cf. system prompt). Sans
+                // rapport avec la sélection du modèle (Sonnet/Haiku) via
+                // AiAssistantModelSelector — ça concerne le raisonnement interne
+                // d'un appel déjà choisi, pas lequel des deux modèles appeler.
+                'thinking' => ['type' => 'disabled'],
                 // Bloc unique avec cache_control : voir le commentaire de classe.
                 'system' => [[
                     'type' => 'text',
@@ -108,7 +128,18 @@ final class ClaudeClient
         ]);
 
         $data = $response->toArray();
-        $text = trim((string) ($data['content'][0]['text'] ?? ''));
+        // Ne pas supposer que le texte est en content[0] : un bloc "thinking"
+        // peut le précéder (cf. commentaire sur `thinking` ci-dessus — en
+        // pratique ça ne devrait plus arriver une fois désactivé, mais autant
+        // rester robuste plutôt que de déclencher un repli inutile, et donc un
+        // second appel payant, sur une réponse qui existe bel et bien).
+        $text = '';
+        foreach ($data['content'] ?? [] as $block) {
+            if ('text' === ($block['type'] ?? null)) {
+                $text = trim((string) ($block['text'] ?? ''));
+                break;
+            }
+        }
 
         if ('' === $text) {
             throw new \RuntimeException(sprintf('Réponse Claude vide (modèle %s).', $model));
