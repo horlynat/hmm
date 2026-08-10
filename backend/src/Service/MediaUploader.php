@@ -2,8 +2,10 @@
 
 namespace App\Service;
 
+use App\Message\OffsiteBackupMessage;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -22,6 +24,7 @@ class MediaUploader
     private string $targetDirectory;
     private SluggerInterface $slugger;
     private LoggerInterface $logger;
+    private MessageBusInterface $bus;
     /** @var array<int, string> */
     private array $allowedMimeTypes;
     private int $maxFileSize;
@@ -33,12 +36,14 @@ class MediaUploader
         string $targetDirectory,
         SluggerInterface $slugger,
         LoggerInterface $logger,
+        MessageBusInterface $bus,
         array $allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'],
         int $maxFileSize = 5242880 // 5 Mo
     ) {
         $this->targetDirectory = $targetDirectory;
         $this->slugger = $slugger;
         $this->logger = $logger;
+        $this->bus = $bus;
         $this->allowedMimeTypes = $allowedMimeTypes;
         $this->maxFileSize = $maxFileSize;
     }
@@ -107,9 +112,16 @@ class MediaUploader
             throw new \RuntimeException("Erreur lors de l'upload du fichier.");
         }
 
+        $relativePath = ($subDirectory ? $subDirectory . '/' : '') . $newFilename;
+
+        // Copie de secours hors-site, asynchrone (cf. App\Service\OffsiteBackupUploader) —
+        // ne bloque jamais la réponse de l'upload ; no-op tant qu'aucun
+        // provider S3-compatible n'est configuré (cf. son propre commentaire).
+        $this->bus->dispatch(new OffsiteBackupMessage($relativePath));
+
         return [
             'filename' => $newFilename,
-            'path' => '/uploads/' . ($subDirectory ? $subDirectory . '/' : '') . $newFilename,
+            'path' => '/uploads/' . $relativePath,
             'mimeType' => $mimeType,
             'size' => $size,
             'uploadedAt' => new \DateTimeImmutable(),
