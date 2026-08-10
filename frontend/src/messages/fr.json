@@ -47,7 +47,6 @@
     "competences": "Compétences",
     "realisations": "Réalisations",
     "blog": "Blog",
-    "aide": "Aide",
     "contact": "Contact",
     "compte": "Mon compte",
     "connexion": "Connexion"
@@ -939,6 +938,7 @@
         "settings": "Paramètres",
         "dataExport": "Exporter mes données",
         "deleteAccount": "Supprimer mon compte",
+        "help": "Aide",
         "groupActivity": "Mon activité",
         "groupAccount": "Mon compte",
         "groupDanger": "Zone sensible",

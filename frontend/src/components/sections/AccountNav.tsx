@@ -16,6 +16,7 @@ import {
   Download,
   Trash2,
   Plus,
+  HelpCircle,
   PanelLeftClose,
   PanelLeftOpen,
   type LucideIcon,
@@ -24,7 +25,12 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { Badge, ButtonLink } from "@/components/ui";
 import { LogoutButton } from "@/components/sections/LogoutButton";
 
-/** Routes statiques (sans paramètre) de l'aside compte — cf. src/i18n/routing.ts. */
+/**
+ * Routes statiques (sans paramètre) de l'aside compte — cf. src/i18n/routing.ts.
+ * "/aide" est la seule exception hors /compte : le centre d'aide public,
+ * volontairement retiré du menu du site vitrine (cf. src/config/site.ts) et
+ * accessible exclusivement depuis ici.
+ */
 type AccountPath =
   | "/compte"
   | "/compte/projets"
@@ -36,7 +42,8 @@ type AccountPath =
   | "/compte/securite"
   | "/compte/parametres"
   | "/compte/export"
-  | "/compte/supprimer";
+  | "/compte/supprimer"
+  | "/aide";
 
 interface NavItem {
   href: AccountPath;
@@ -188,6 +195,7 @@ export function AccountNav({
         <NavLink href="/compte/securite" label={t("security")} icon={ShieldCheck} collapsed={collapsed} />
         <NavLink href="/compte/parametres" label={t("settings")} icon={Settings} collapsed={collapsed} />
         <NavLink href="/compte/export" label={t("dataExport")} icon={Download} collapsed={collapsed} />
+        <NavLink href="/aide" label={t("help")} icon={HelpCircle} collapsed={collapsed} />
       </NavGroup>
 
       <NavGroup title={t("groupDanger")} collapsed={collapsed}>
