@@ -47,7 +47,10 @@ class Skill
     #[ORM\ManyToOne(inversedBy: 'skill')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(message: "La catégorie de compétence est obligatoire.")]
-    #[Groups(['api_admin'])] // exposé seulement côté admin
+    // Public depuis peu : permet au frontend de grouper les compétences par
+    // catégorie (cf. src/lib/api/skills.ts côté frontend). Pas de risque de
+    // cycle : SkillCategory::$skill (la collection inverse) reste api_admin.
+    #[Groups(['api_public', 'api_admin'])]
     private SkillCategory $skillCategory;
 
     public function __construct()
