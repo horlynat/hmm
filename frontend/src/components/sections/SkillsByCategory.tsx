@@ -27,6 +27,13 @@ interface SkillsByCategoryProps {
   skills: Skill[];
   /** Tronque chaque carte aux `n` compétences les mieux notées — pour un aperçu condensé (home). */
   maxSkillsPerCategory?: number;
+  /**
+   * Limite aux `n` catégories comptant le plus de compétences — pour
+   * l'aperçu condensé de la home ("catégories phares"). Dérivé des données
+   * reçues (pas de nom de catégorie codé en dur, qui casserait dès que
+   * l'admin renomme ou réorganise ses catégories).
+   */
+  maxCategories?: number;
 }
 
 /**
@@ -35,8 +42,9 @@ interface SkillsByCategoryProps {
  * n'apparaît simplement pas (dérivé des `skills` reçus, pas d'appel séparé
  * à `getSkillCategories()`).
  */
-export function SkillsByCategory({ skills, maxSkillsPerCategory }: SkillsByCategoryProps) {
-  const categories = groupByCategory(skills);
+export function SkillsByCategory({ skills, maxSkillsPerCategory, maxCategories }: SkillsByCategoryProps) {
+  const grouped = groupByCategory(skills);
+  const categories = maxCategories ? grouped.slice(0, maxCategories) : grouped;
 
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -47,7 +55,7 @@ export function SkillsByCategory({ skills, maxSkillsPerCategory }: SkillsByCateg
 
         return (
           <Reveal key={category.id} delay={i * 0.06}>
-            <div className="soft-card h-full p-5">
+            <div className="card h-full p-5">
               <div className="mb-4 flex items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
                   {category.name}

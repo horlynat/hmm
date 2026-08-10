@@ -11,6 +11,7 @@ import {
   SparkleChatIcon,
 } from "@/components/sections/AboutIcons";
 import type { CourseType } from "@/lib/types";
+import { formatDateRange } from "@/lib/date";
 import { getExperiences } from "@/lib/api/experiences";
 import { getCourses } from "@/lib/api/courses";
 import { getSkills } from "@/lib/api/skills";
@@ -137,14 +138,14 @@ export default async function AboutPage({
         <div className="mx-auto grid max-w-[1120px] gap-12 md:grid-cols-2 md:items-center">
           <Reveal
             delay={0.16}
-            className="relative h-full rounded-sm -mx-6 aspect-[2/3] w-[calc(100%+3rem)] overflow-hidden md:mx-auto md:w-full md:max-w-[380px] md:aspect-[4/5] md:rounded-[var(--radius-lg)] md:border md:border-[var(--border-soft)] md:shadow-lg"
+            className="relative h-full w-[calc(100%+3rem)] -mx-6 aspect-[2/3] overflow-hidden rounded-sm md:mx-0 md:w-full md:aspect-[4/5] md:rounded-[var(--radius-lg)] md:border md:border-[var(--border-soft)] md:shadow-lg"
           >
             <Image
-              src="/images/portrait-horlynat.jpg"
+              src={content.profileImagePath ?? "/images/portrait-horlynat.jpg"}
               alt={content.profileName}
               fill
-              sizes="(min-width: 768px) 380px, 100vw"
-              className="object-top object-cover h-full w-full "
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="h-full w-full object-cover object-top"
               priority
             />
           </Reveal>
@@ -223,6 +224,7 @@ export default async function AboutPage({
                 items={experiences.map((e) => ({
                   title: `${e.role} — ${e.company}`,
                   desc: e.description,
+                  date: formatDateRange(e.startDate, e.endDate, tc("present")),
                 }))}
               />
             ) : (

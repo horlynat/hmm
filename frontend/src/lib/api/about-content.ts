@@ -1,4 +1,5 @@
 import { apiFetch, extractCollection, pickLocalized, pickLocalizedList } from "./client";
+import { getMediaUrl } from "@/lib/media";
 import type { AboutContent } from "@/lib/types";
 
 // Contenu curé manuellement, mis à jour rarement — la fraîcheur réelle vient
@@ -60,6 +61,7 @@ export async function getAboutContent(locale: string): Promise<AboutContent | nu
     profileLocation: pickLocalized(raw.profileLocation, raw.profileLocationEn, locale),
     profileWorkMode: pickLocalized(raw.profileWorkMode, raw.profileWorkModeEn, locale),
     profileLanguages: pickLocalized(raw.profileLanguages, raw.profileLanguagesEn, locale),
+    profileImagePath: raw.profileImagePath ? getMediaUrl(raw.profileImagePath) : null,
     bioTitle: pickLocalized(raw.bioTitle, raw.bioTitleEn, locale),
     bioP1: pickLocalized(raw.bioP1, raw.bioP1En, locale),
     bioP2: pickLocalized(raw.bioP2, raw.bioP2En, locale),

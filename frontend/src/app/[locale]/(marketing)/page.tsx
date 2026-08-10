@@ -16,7 +16,7 @@ import {
 import { getProjects } from "@/lib/api/projects";
 import { getArticles } from "@/lib/api/articles";
 import { getTestimonials } from "@/lib/api/testimonials";
-import { getFeaturedSkills } from "@/lib/api/skills";
+import { getSkills } from "@/lib/api/skills";
 import { getHomeContent } from "@/lib/api/home-content";
 import { getAboutContent } from "@/lib/api/about-content";
 
@@ -153,7 +153,7 @@ export default async function HomePage({
     getProjects(locale),
     getArticles(locale),
     getTestimonials(locale),
-    getFeaturedSkills(locale),
+    getSkills(locale),
   ]);
 
   // Contenu narratif piloté par le back-office (App\Entity\HomeContent) : la
@@ -349,7 +349,7 @@ export default async function HomePage({
           </Reveal>
           {skills.length > 0 ? (
             <div className="mb-8">
-              <SkillsByCategory skills={skills} maxSkillsPerCategory={4} />
+              <SkillsByCategory skills={skills} maxCategories={4} maxSkillsPerCategory={4} />
             </div>
           ) : (
             <p className="mb-8 text-sm opacity-60">{t("skills.empty")}</p>

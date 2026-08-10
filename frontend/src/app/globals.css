@@ -160,6 +160,20 @@
     color: inherit;
   }
 
+  /* Justification demandée pour tous les paragraphes (cohérence visuelle
+     UX/UI) — `text-align-last: left` évite qu'une dernière ligne courte soit
+     étirée sur toute la largeur, `hyphens: auto` réduit les grands blancs
+     entre mots que la justification introduit sans coupure de mots (le
+     `lang` de <html> pilote les règles de césure du navigateur). Un <p> sur
+     une seule ligne (labels, micro-copie) n'est visuellement pas affecté :
+     la justification ne joue que sur les lignes qui débordent. */
+  p {
+    text-align: justify;
+    text-align-last: left;
+    text-wrap: pretty;
+    hyphens: auto;
+  }
+
   /* Anneau de focus clavier cohérent sur tous les éléments interactifs.
      `:focus-visible` n'apparaît qu'au clavier, jamais au clic souris. */
   :where(a, button, input, select, textarea, [tabindex]):focus-visible {
