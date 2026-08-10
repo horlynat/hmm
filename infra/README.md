@@ -90,6 +90,34 @@ une variable d'env via `docker-entrypoint.sh`) :
 | `secrets/database_password` | Mot de passe MySQL de l'utilisateur `app` (doit matcher celui dans `database_url`) |
 | `secrets/postfixadmin_db_password` | Mot de passe MySQL de l'utilisateur `postfixadmin` (base dédiée, native sur l'hôte — cf. §10) |
 | `secrets/postfixadmin_setup_password` | Hash bcrypt protégeant `/setup.php` de PostfixAdmin (cf. §10) |
+| `secrets/offsite_s3_endpoint` | URL du endpoint S3-compatible (ex. `https://<account_id>.r2.cloudflarestorage.com` pour Cloudflare R2) — **vide = copie hors-site désactivée**, voir ci-dessous |
+| `secrets/offsite_s3_bucket` | Nom du bucket dédié à la copie hors-site des uploads |
+| `secrets/offsite_s3_access_key_id` | Access key ID du provider S3-compatible |
+| `secrets/offsite_s3_secret_access_key` | Secret access key du provider S3-compatible |
+
+**Copie hors-site des uploads (`App\Service\OffsiteBackupUploader`)** : chaque
+fichier uploadé (`App\Service\MediaUploader` — photo de profil, logo, documents
+de projet...) est copié de façon asynchrone vers un stockage S3-compatible
+juste après l'upload, en plus du volume Docker `uploads_data` (persistant
+entre déploiements mais toujours local au VPS). Tant que les 4 fichiers
+ci-dessus n'existent pas (même vides), la fonctionnalité se désactive
+proprement (log + no-op, aucune erreur) — mais **les 4 fichiers doivent
+exister sur le VPS avant le prochain déploiement**, même vides, sinon
+`deploy-remote.sh` bloque le déploiement (garde-fou secrets, cf. §7) :
+
+```bash
+# Sans provider pour l'instant (désactive juste la fonctionnalité proprement) :
+touch infra/secrets/offsite_s3_endpoint infra/secrets/offsite_s3_bucket \
+      infra/secrets/offsite_s3_access_key_id infra/secrets/offsite_s3_secret_access_key
+chmod 600 infra/secrets/offsite_s3_*
+
+# Avec un provider (ex. Cloudflare R2, recommandé : pas de frais de sortie) :
+echo -n 'https://<account_id>.r2.cloudflarestorage.com' > infra/secrets/offsite_s3_endpoint
+echo -n 'hmm-uploads-backup' > infra/secrets/offsite_s3_bucket
+echo -n '<access_key_id>' > infra/secrets/offsite_s3_access_key_id
+echo -n '<secret_access_key>' > infra/secrets/offsite_s3_secret_access_key
+chmod 600 infra/secrets/offsite_s3_*
+```
 
 ```bash
 chmod 600 infra/secrets/*

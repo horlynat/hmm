@@ -128,6 +128,10 @@ services:
       - anthropic_api_key
       - revalidate_secret
       - ntfy_dsn
+      - offsite_s3_endpoint
+      - offsite_s3_bucket
+      - offsite_s3_access_key_id
+      - offsite_s3_secret_access_key
     extra_hosts:
       # Postfix/Dovecot tournent nativement sur l'hôte, hors Docker
       # (cf. guide hardening portfolio §9) — jamais exposés publiquement,
@@ -145,6 +149,14 @@ services:
       # channel dédié security_errors -> fichier, c'est var/log/prod.log
       # qui est lu (cf. _config.backend.md pour le channel dédié à poser).
       - ./logs/backend:/app/var/log
+      # Fichiers uploadés (App\Service\MediaUploader) — sans ce volume nommé,
+      # tout upload disparaît au prochain déploiement (nouveau conteneur =
+      # nouvelle image, aucune persistance de l'ancien système de fichiers
+      # éphémère). Constaté en prod. Doit rester monté aussi sur
+      # messenger-worker (même chemin) : App\MessageHandler\
+      # OffsiteBackupMessageHandler y lit le fichier fraîchement uploadé pour
+      # sa copie hors-site asynchrone.
+      - uploads_data:/app/public/uploads
     mem_limit: 3g
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2019/config/"]
@@ -212,6 +224,10 @@ services:
       - mailer_dsn
       - gemini_api_key
       - ntfy_dsn
+      - offsite_s3_endpoint
+      - offsite_s3_bucket
+      - offsite_s3_access_key_id
+      - offsite_s3_secret_access_key
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -223,6 +239,11 @@ services:
       # l'extérieur malgré la présence sur ce réseau (exposedByDefault=false).
       - edge-net
       - data-net
+    volumes:
+      # Même volume que le service backend ci-dessus (voir son commentaire) —
+      # OffsiteBackupMessageHandler tourne ici et a besoin de lire le fichier
+      # fraîchement uploadé pour sa copie hors-site.
+      - uploads_data:/app/public/uploads
     mem_limit: 512m
 
   database:
@@ -303,6 +324,7 @@ networks:
 
 volumes:
   mysql_data:
+  uploads_data:
 
 secrets:
   app_secret:
@@ -331,3 +353,11 @@ secrets:
     file: ./secrets/postfixadmin_db_password
   postfixadmin_setup_password:
     file: ./secrets/postfixadmin_setup_password
+  offsite_s3_endpoint:
+    file: ./secrets/offsite_s3_endpoint
+  offsite_s3_bucket:
+    file: ./secrets/offsite_s3_bucket
+  offsite_s3_access_key_id:
+    file: ./secrets/offsite_s3_access_key_id
+  offsite_s3_secret_access_key:
+    file: ./secrets/offsite_s3_secret_access_key
