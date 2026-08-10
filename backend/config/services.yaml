@@ -51,7 +51,6 @@ services:
         arguments:
             $apiKey: '%env(GEMINI_API_KEY)%'
             $model: '%env(GEMINI_MODEL)%'
-            $embeddingModel: '%env(GEMINI_EMBEDDING_MODEL)%'
 
     App\Service\ClaudeClient:
         arguments:

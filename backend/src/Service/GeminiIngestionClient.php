@@ -6,14 +6,11 @@ use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
- * Appels Gemini : résumé structuré du contenu source côté ingestion
- * asynchrone (App\Service\AiAssistantIngestionService), et embedding —
- * réutilisé aussi en synchrone côté conversationnel
- * (App\Service\AiAssistantChatProcessor) pour vectoriser la question du
- * visiteur avant le retrieval, dans le même espace vectoriel que les chunks
- * (même modèle d'embedding des deux côtés). Seul `summarize()` reste propre
- * à l'ingestion ; le raisonnement conversationnel proprement dit passe par
- * App\Service\ClaudeClient.
+ * Appel Gemini : résumé structuré du contenu source côté ingestion asynchrone
+ * (App\Service\AiAssistantIngestionService) — le raisonnement conversationnel
+ * proprement dit passe par App\Service\ClaudeClient, à qui le corpus complet
+ * est envoyé tel quel (pas de retrieval par embedding, cf. docblock de
+ * App\State\AiAssistantChatProcessor).
  *
  * Auth via header `x-goog-api-key` (jamais en query string, pour éviter la
  * fuite de la clé dans les logs d'accès/proxy).
@@ -27,8 +24,6 @@ final class GeminiIngestionClient
         private readonly LoggerInterface $logger,
         private readonly string $apiKey,
         private readonly string $model,
-        private readonly string $embeddingModel,
-        private readonly int $embeddingDimensions = 768,
     ) {
     }
 
@@ -74,36 +69,6 @@ final class GeminiIngestionClient
             $this->logger->error('GeminiIngestionClient::summarize a échoué.', ['error' => $e->getMessage()]);
 
             throw new \RuntimeException('Échec du résumé Gemini.', previous: $e);
-        }
-    }
-
-    /**
-     * @return array{vector: float[], tokens: int}
-     */
-    public function embed(string $text): array
-    {
-        try {
-            $response = $this->httpClient->request('POST', sprintf('%s/%s:embedContent', self::API_BASE, $this->embeddingModel), [
-                'headers' => ['x-goog-api-key' => $this->apiKey],
-                'timeout' => 15,
-                'json' => [
-                    'content' => ['parts' => [['text' => $text]]],
-                    'outputDimensionality' => $this->embeddingDimensions,
-                ],
-            ]);
-
-            $data = $response->toArray();
-            $vector = $data['embedding']['values'] ?? null;
-
-            if (!is_array($vector) || [] === $vector) {
-                throw new \RuntimeException('Vecteur d\'embedding vide.');
-            }
-
-            return ['vector' => array_map(floatval(...), $vector), 'tokens' => (int) round(mb_strlen($text) / 4)];
-        } catch (\Throwable $e) {
-            $this->logger->error('GeminiIngestionClient::embed a échoué.', ['error' => $e->getMessage()]);
-
-            throw new \RuntimeException('Échec de l\'embedding Gemini.', previous: $e);
         }
     }
 }

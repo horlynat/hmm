@@ -13,17 +13,19 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * Construit/rafraîchit les chunks RAG (document_embedding) pour une entité de
- * contenu du portfolio. Project/Article/Experience/SkillCategory alimentent
- * le RAG — toutes déjà exposées sans filtre par l'API publique (opérations
- * GetCollection sans `security:`), donc déjà du contenu public à 100 % :
- * aucun filtre de statut supplémentaire n'est nécessaire ici.
+ * Construit/rafraîchit les chunks de contexte (document_embedding) pour une
+ * entité de contenu du portfolio. Project/Article/Experience/SkillCategory
+ * alimentent le corpus statique envoyé à Claude (cf. docblock de
+ * App\State\AiAssistantChatProcessor) — toutes déjà exposées sans filtre par
+ * l'API publique (opérations GetCollection sans `security:`), donc déjà du
+ * contenu public à 100 % : aucun filtre de statut supplémentaire n'est
+ * nécessaire ici.
  *
  * SkillCategory est ingérée au niveau de la catégorie (pas de chaque Skill
  * individuellement) : un Skill seul ("Symfony, niveau 9/10") est un chunk
- * trop pauvre en signal pour la similarité cosinus — une catégorie complète
- * ("Backend : Symfony, PHP, API Platform...") forme un chunk dense et
- * cohérent, dans le même esprit qu'un Project ou une Experience.
+ * trop pauvre en contexte — une catégorie complète ("Backend : Symfony, PHP,
+ * API Platform...") forme un chunk dense et cohérent, dans le même esprit
+ * qu'un Project ou une Experience.
  */
 final class AiAssistantIngestionService
 {
@@ -68,7 +70,6 @@ final class AiAssistantIngestionService
 
         try {
             $summary = $this->geminiClient->summarize($sourceText);
-            $embedding = $this->geminiClient->embed($summary['summary']);
         } catch (\Throwable $e) {
             $this->logger->error('AiAssistantIngestionService : ingestion échouée, chunk existant conservé.', [
                 'entityType' => $entityType,
@@ -88,7 +89,6 @@ final class AiAssistantIngestionService
             ->setChunkIndex(0)
             ->setChunkText($sourceText)
             ->setChunkSummary($summary['summary'])
-            ->setEmbedding($embedding['vector'])
             ->setMetadata(['is_public' => true, 'label' => $this->extractLabel($entityType, $entity)]);
 
         $this->entityManager->persist($chunk);

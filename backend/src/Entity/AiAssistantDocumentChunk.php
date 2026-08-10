@@ -7,19 +7,17 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Un fragment de contenu du portfolio (Project/Article/Experience), résumé et
- * vectorisé par Gemini lors de l'ingestion asynchrone, utilisé comme contexte
- * RAG par l'assistant conversationnel (App\Service\AiAssistantRetrievalService).
+ * Un fragment de contenu du portfolio (Project/Article/Experience), résumé
+ * par Gemini lors de l'ingestion asynchrone. L'intégralité des chunks publics
+ * est envoyée telle quelle comme contexte système à Claude, sans sélection
+ * par similarité (cf. docblock de App\State\AiAssistantChatProcessor) — pas
+ * d'embedding stocké ici, un corpus de portfolio (quelques dizaines de
+ * lignes) tient largement dans une seule fenêtre de contexte.
  *
- * Pas de pgvector (la prod tourne en MySQL, pas Postgres) : `embedding` est un
- * simple JSON (tableau de floats), la similarité cosinus est calculée en PHP
- * au moment du retrieval — largement suffisant au volume de contenu d'un
- * portfolio (quelques dizaines de lignes).
- *
- * `metadata.is_public` est revérifié systématiquement par le retrieval, en
- * défense en profondeur, même si seules des entités déjà publiques
- * (Project/Article/Experience exposées par l'API publique) alimentent
- * aujourd'hui l'ingestion.
+ * `metadata.is_public` est revérifié systématiquement à l'assemblage du
+ * contexte, en défense en profondeur, même si seules des entités déjà
+ * publiques (Project/Article/Experience exposées par l'API publique)
+ * alimentent aujourd'hui l'ingestion.
  */
 #[ORM\Entity(repositoryClass: AiAssistantDocumentChunkRepository::class)]
 #[ORM\Table(name: 'document_embedding')]
@@ -48,10 +46,6 @@ class AiAssistantDocumentChunk
     /** Résumé généré par Gemini — c'est ce texte qui est injecté dans le contexte transmis à Claude. */
     #[ORM\Column(type: Types::TEXT)]
     private string $chunkSummary = '';
-
-    /** @var float[] */
-    #[ORM\Column(type: Types::JSON)]
-    private array $embedding = [];
 
     /** @var array<string, mixed> */
     #[ORM\Column(type: Types::JSON)]
@@ -130,20 +124,6 @@ class AiAssistantDocumentChunk
     public function setChunkSummary(string $chunkSummary): static
     {
         $this->chunkSummary = $chunkSummary;
-
-        return $this;
-    }
-
-    /** @return float[] */
-    public function getEmbedding(): array
-    {
-        return $this->embedding;
-    }
-
-    /** @param float[] $embedding */
-    public function setEmbedding(array $embedding): static
-    {
-        $this->embedding = $embedding;
 
         return $this;
     }
