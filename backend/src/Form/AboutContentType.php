@@ -4,10 +4,12 @@ namespace App\Form;
 
 use App\Entity\AboutContent;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\File;
 
 class AboutContentType extends AbstractType
 {
@@ -42,6 +44,18 @@ class AboutContentType extends AbstractType
             ->add('profileLanguagesEn', TextType::class, ['label' => 'Langues (anglais)', 'required' => false])
 
             // --- Bio ---
+            ->add('profileImageFile', FileType::class, [
+                'label' => 'Photo (section Bio — laisser vide pour conserver l\'actuelle)',
+                'mapped' => false,
+                'required' => false,
+                'constraints' => [
+                    new File(
+                        maxSize: '5M',
+                        mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+                        mimeTypesMessage: 'Formats autorisés : JPG, PNG, WEBP.',
+                    ),
+                ],
+            ])
             ->add('bioTitle', TextType::class, ['label' => 'Bio — titre'])
             ->add('bioTitleEn', TextType::class, ['label' => 'Bio — titre (anglais)', 'required' => false])
             ->add('bioP1', TextareaType::class, ['label' => 'Bio — paragraphe 1'])
