@@ -84,6 +84,23 @@ export function pickLocalizedList<T>(fr: T[], en: T[] | null | undefined, locale
   return locale === "en" && en && en.length > 0 ? en : fr;
 }
 
+/**
+ * API Platform renvoie un "detail" lisible sur les erreurs de validation
+ * (ex: "email: Il existe déjà un compte avec cet email.") — utile pour les
+ * formulaires qui veulent afficher un message précis plutôt que générique
+ * (ex: inscription collaborateur). Partagé entre apiPost et apiPostWithData.
+ */
+async function extractErrorDetail(res: Response): Promise<string | null> {
+  return res
+    .json()
+    .then((body: unknown) =>
+      typeof body === "object" && body && "detail" in body
+        ? String((body as { detail: unknown }).detail)
+        : null,
+    )
+    .catch(() => null);
+}
+
 export type ApiPostResult = { ok: true } | { ok: false; error: string };
 
 export async function apiPost<T extends object>(
@@ -105,22 +122,50 @@ export async function apiPost<T extends object>(
 
     if (!res.ok) {
       console.error(`[api] POST ${path} -> ${res.status} ${res.statusText}`);
-      // API Platform renvoie un "detail" lisible sur les erreurs de validation
-      // (ex: "email: Il existe déjà un compte avec cet email.") — utile pour
-      // les formulaires qui veulent afficher un message précis plutôt que
-      // générique (ex: inscription collaborateur).
-      const detail = await res
-        .json()
-        .then((body: unknown) =>
-          typeof body === "object" && body && "detail" in body
-            ? String((body as { detail: unknown }).detail)
-            : null,
-        )
-        .catch(() => null);
+      const detail = await extractErrorDetail(res);
       return { ok: false, error: detail ?? `HTTP ${res.status}` };
     }
 
     return { ok: true };
+  } catch (error) {
+    console.error(`[api] POST ${path} failed`, error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+export type ApiPostDataResult<T> = { ok: true; data: T } | { ok: false; error: string };
+
+/**
+ * Variante de apiPost qui renvoie le corps de la réponse sur succès — apiPost
+ * l'ignore volontairement (`{ok:true}` seul), ce qui suffit pour une création
+ * "fire and forget" mais pas quand l'appelant a besoin de la donnée générée
+ * par le backend (ex: questions de qualification IA). `timeoutMs` permet de
+ * dépasser le délai par défaut pour un appel qui invoque un LLM côté backend.
+ */
+export async function apiPostWithData<T>(
+  path: string,
+  body: object,
+  options: { token?: string; timeoutMs?: number } = {},
+): Promise<ApiPostDataResult<T>> {
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/ld+json",
+        Accept: "application/ld+json",
+        ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(options.timeoutMs ?? API_TIMEOUT_MS),
+    });
+
+    if (!res.ok) {
+      console.error(`[api] POST ${path} -> ${res.status} ${res.statusText}`);
+      const detail = await extractErrorDetail(res);
+      return { ok: false, error: detail ?? `HTTP ${res.status}` };
+    }
+
+    return { ok: true, data: (await res.json()) as T };
   } catch (error) {
     console.error(`[api] POST ${path} failed`, error);
     return { ok: false, error: "network_error" };
