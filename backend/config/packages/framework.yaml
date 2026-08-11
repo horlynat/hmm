@@ -85,6 +85,14 @@ framework:
             policy: fixed_window
             limit: 1
             interval: '1 day'
+        # Génération des questions de qualification dynamiques du wizard de
+        # devis (POST /api/quote/qualify) — App\Service\PublicSubmissionThrottler
+        # ::assertQuoteQualifyAllowed(). Même profil que ai_assistant_chat :
+        # chaque appel accepté coûte un appel Sonnet réel.
+        quote_qualify:
+            policy: sliding_window
+            limit: 20
+            interval: '1 hour'
         # Accès invité par jeton à un ticket support (consultation + réponse) —
         # App\Service\PublicSubmissionThrottler::assertSupportTicketGuestAccessAllowed().
         # Surface d'abus différente de la création (public_form_submission) :
