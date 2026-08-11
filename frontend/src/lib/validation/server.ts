@@ -55,6 +55,17 @@ export const quoteAnswersSchema = z.object({
     .max(10),
 });
 
+/** Sous-ensemble des champs projet de quoteAnswersSchema — exclut volontairement name/email/phone/canal, sans rapport avec la qualification du projet. */
+export const quoteQualifyAnswersSchema = quoteAnswersSchema.pick({
+  type: true,
+  categoryDetail: true,
+  source: true,
+  description: true,
+  budget: true,
+  currency: true,
+  delai: true,
+});
+
 export const contactMessageSchema = z.object({
   source: z.string().min(1).max(60),
   name: z.string().trim().min(1).max(120),

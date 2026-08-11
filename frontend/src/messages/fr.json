@@ -593,6 +593,7 @@
       "back": "Précédent",
       "next": "Suivant",
       "continueWithAssistant": "Continuer avec l'assistant",
+      "iaGenerating": "Préparation des questions...",
       "iaLabel": "Vérification par l'assistant",
       "iaQuestion": "Un dernier point avant l'envoi",
       "iaAnswerPlaceholder": "Votre réponse (optionnel)...",

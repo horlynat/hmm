@@ -20,7 +20,7 @@ export function Timeline({ items }: { items: TimelineItem[] }) {
             </span>
             {item.date && <span className="font-mono text-xs opacity-60">{item.date}</span>}
           </div>
-          <div className="text-sm opacity-70">{item.desc}</div>
+          <p className="text-sm opacity-70">{item.desc}</p>
         </li>
       ))}
     </ul>
