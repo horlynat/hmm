@@ -48,7 +48,9 @@ export async function generateMetadata({
   return {
     title: {
       template: "%s — Horlynat",
-      default: `Horlynat — ${content?.heroEyebrow ?? t("eyebrow")}`,
+      // Titre du site fixé par choix de marque ("Horlynat | Portail Digital")
+      // plutôt que dérivé du hero-eyebrow admin — indépendant de la locale.
+      default: "Horlynat | Portail Digital",
     },
     description: content?.heroSub ?? t("sub"),
   };
