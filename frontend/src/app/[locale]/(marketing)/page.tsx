@@ -19,6 +19,7 @@ import { getTestimonials } from "@/lib/api/testimonials";
 import { getSkills } from "@/lib/api/skills";
 import { getHomeContent } from "@/lib/api/home-content";
 import { getAboutContent } from "@/lib/api/about-content";
+import { HOME_FEATURED_SKILL_CATEGORIES } from "@/lib/skills/featuredCategories";
 
 export const dynamic = "force-static";
 
@@ -349,7 +350,11 @@ export default async function HomePage({
           </Reveal>
           {skills.length > 0 ? (
             <div className="mb-8">
-              <SkillsByCategory skills={skills} maxCategories={4} maxSkillsPerCategory={4} />
+              <SkillsByCategory
+                skills={skills}
+                featuredCategories={HOME_FEATURED_SKILL_CATEGORIES}
+                maxSkillsPerCategory={4}
+              />
             </div>
           ) : (
             <p className="mb-8 text-sm opacity-60">{t("skills.empty")}</p>

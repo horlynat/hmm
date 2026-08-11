@@ -222,7 +222,7 @@ export default async function SkillsPage({
             <p className="mb-10 max-w-[60ch] opacity-70">{t("list.lede")}</p>
           </Reveal>
           {skills.length > 0 ? (
-            <SkillsByCategory skills={skills} />
+            <SkillsByCategory skills={skills} variant="immersive" />
           ) : (
             <p className="text-sm opacity-60">{t("list.empty")}</p>
           )}
