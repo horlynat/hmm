@@ -1,0 +1,26 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block title %}Votre ticket a été créé{% endblock %}
+{% block preheader %}Nous avons bien reçu votre demande de support.{% endblock %}
+
+{% block body %}
+	<p style="margin:0 0 16px;">Bonjour <strong>{{ clientName }}</strong>,</p>
+
+	<p style="margin:0 0 24px;">
+		Nous avons bien reçu votre ticket de support concernant « {{ subject }} ». Nous reviendrons vers vous dès que possible.
+	</p>
+
+	<p style="margin:0 0 24px;">
+		Vous pouvez suivre l'échange et ajouter des précisions à tout moment depuis ce lien :
+	</p>
+
+	<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 8px;">
+		<tr>
+			<td align="center" bgcolor="#0077b6" style="background-color:#0077b6; border-radius:6px;">
+				<a href="{{ threadUrl }}" style="display:inline-block; padding:14px 28px; color:#ffffff; font-size:15px; font-weight:bold; text-decoration:none; font-family:Arial, Helvetica, sans-serif;">
+					Suivre mon ticket
+				</a>
+			</td>
+		</tr>
+	</table>
+{% endblock %}

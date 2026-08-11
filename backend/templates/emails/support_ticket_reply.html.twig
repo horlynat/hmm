@@ -1,0 +1,28 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block title %}Nouvelle réponse à votre ticket{% endblock %}
+{% block preheader %}Une réponse a été apportée à votre ticket « {{ subject }} ».{% endblock %}
+
+{% block body %}
+	<p style="margin:0 0 16px;">Bonjour <strong>{{ clientName }}</strong>,</p>
+
+	<p style="margin:0 0 16px;">
+		Vous avez reçu une nouvelle réponse concernant votre ticket « {{ subject }} » :
+	</p>
+
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+		<tr>
+			<td style="padding:16px; background-color:#f6f8fa; border-radius:8px; border:1px solid #d0d7de; font-size:14px; line-height:1.6; white-space:pre-line;">{{ replyBody }}</td>
+		</tr>
+	</table>
+
+	<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 8px;">
+		<tr>
+			<td align="center" bgcolor="#0077b6" style="background-color:#0077b6; border-radius:6px;">
+				<a href="{{ threadUrl }}" style="display:inline-block; padding:14px 28px; color:#ffffff; font-size:15px; font-weight:bold; text-decoration:none; font-family:Arial, Helvetica, sans-serif;">
+					Voir et répondre
+				</a>
+			</td>
+		</tr>
+	</table>
+{% endblock %}

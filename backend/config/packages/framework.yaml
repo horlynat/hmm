@@ -69,6 +69,39 @@ framework:
             policy: sliding_window
             limit: 5
             interval: '1 hour'
+        # Chat de l'assistant IA (POST /api/assistant/chat) — App\Service\
+        # PublicSubmissionThrottler::assertAiAssistantAllowed(). Plus strict que
+        # les autres formulaires publics : chaque appel accepté coûte réellement
+        # de l'argent (Gemini + Claude), cf. §4.2/§4.5 du document d'architecture
+        # assistant IA. À affiner selon le trafic réel observé.
+        ai_assistant_chat:
+            policy: sliding_window
+            limit: 20
+            interval: '1 hour'
+        # Anti-spam de l'alerte email de dépassement budgétaire (App\Service\
+        # AiAssistantBudgetGuard) — au plus 1 par jour, même principe que
+        # error_notification ci-dessus.
+        ai_assistant_budget_alert:
+            policy: fixed_window
+            limit: 1
+            interval: '1 day'
+        # Génération des questions de qualification dynamiques du wizard de
+        # devis (POST /api/quote/qualify) — App\Service\PublicSubmissionThrottler
+        # ::assertQuoteQualifyAllowed(). Même profil que ai_assistant_chat :
+        # chaque appel accepté coûte un appel Sonnet réel.
+        quote_qualify:
+            policy: sliding_window
+            limit: 20
+            interval: '1 hour'
+        # Accès invité par jeton à un ticket support (consultation + réponse) —
+        # App\Service\PublicSubmissionThrottler::assertSupportTicketGuestAccessAllowed().
+        # Surface d'abus différente de la création (public_form_submission) :
+        # devinette de jeton / spam de réponses sur un fil déjà ouvert, donc
+        # limiteur dédié plutôt que réutiliser celui des formulaires publics.
+        support_ticket_guest_access:
+            policy: sliding_window
+            limit: 30
+            interval: '1 hour'
 
     # HTTP cache et fragments (désactivés par défaut)
     # esi: true

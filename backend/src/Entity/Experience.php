@@ -38,12 +38,13 @@ class Experience
     #[ORM\Column]
     #[Assert\NotNull(message: "La date de début est obligatoire.")]
     #[Assert\Type(\DateTimeImmutable::class)]
-    #[Groups(['api_admin'])]
+    #[Groups(['api_public', 'api_admin'])]
     private \DateTimeImmutable $startDate;
 
+    /** Null = poste actuel (affiché "aujourd'hui" côté frontend). */
     #[ORM\Column(nullable: true)]
     #[Assert\Type(\DateTimeImmutable::class)]
-    #[Groups(['api_admin'])]
+    #[Groups(['api_public', 'api_admin'])]
     private ?\DateTimeImmutable $endDate = null;
 
     #[ORM\Column(type: Types::TEXT)]

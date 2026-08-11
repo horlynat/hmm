@@ -46,7 +46,7 @@
 								</span>
 							</td>
 							<td><twig:Badge :variant="expense.status.variant" icon="{{ expense.status.icon }}">{{ expense.status.label }}</twig:Badge></td>
-							<td class="text-right font-extrabold text-(--brand-dark) whitespace-nowrap">{{ expense.formattedAmount }}</td>
+							<td class="text-right font-extrabold text-(--brand-dark) whitespace-nowrap">{{ expense.amount|money('EUR') }}</td>
 							{% if this.canApprove %}
 								<td class="text-right">
 									<div class="flex items-center justify-end gap-1">

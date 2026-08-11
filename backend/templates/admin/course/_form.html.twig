@@ -72,6 +72,13 @@
 				</div>
 			{% endif %}
 
+			<div class="mb-4">
+				{{ form_label(form.type, 'Type', {'label_attr': {'class': 'block text-xs font-bold mb-1 opacity-70'}}) }}
+				<p class="text-[11px] opacity-40 mb-2">{{ form.type.vars.help }}</p>
+				{{ form_widget(form.type, {'attr': {'class': 'input input-select w-full text-sm'}}) }}
+				{{ form_errors(form.type, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
 			<div class="text-xs opacity-80 bg-brand-light/30 p-3 rounded-sm flex items-center gap-2 text-brand-dark border border-brand-light">
 				<span class="inline-block w-2 h-2 bg-warning rounded-full animate-pulse-danger"></span>
 				<span>Prêt pour l'enregistrement</span>

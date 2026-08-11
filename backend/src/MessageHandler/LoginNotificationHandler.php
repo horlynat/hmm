@@ -4,18 +4,20 @@ namespace App\MessageHandler;
 
 use App\Entity\User;
 use App\Message\LoginNotification;
+use App\Service\DeviceParser;
 use App\Service\EmailManager;
+use App\Service\GeolocationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 #[AsMessageHandler]
 class LoginNotificationHandler
 {
     public function __construct(
         private EmailManager           $emailManager,
-        private HttpClientInterface    $httpClient,
+        private GeolocationService     $geolocationService,
+        private DeviceParser           $deviceParser,
         private EntityManagerInterface $entityManager,
         private LoggerInterface        $logger,
     ) {}
@@ -23,6 +25,7 @@ class LoginNotificationHandler
     public function __invoke(LoginNotification $message): void
     {
         $location = $this->resolveLocation($message->ip);
+        $device = $this->deviceParser->parse($message->device);
 
         /** @var User|null $user */
         $user = $this->entityManager->getRepository(User::class)->find($message->userId);
@@ -34,7 +37,7 @@ class LoginNotificationHandler
             return;
         }
 
-        $user->setLastLocation($location);
+        $user->setLastLocation($location['label']);
         $this->entityManager->flush();
 
         $this->emailManager->sendAsync(
@@ -46,38 +49,24 @@ class LoginNotificationHandler
                 'date'     => $message->date,
                 'ip'       => $message->ip,
                 'location' => $location,
-                'device'   => $message->device,
+                'device'   => $device,
             ]
         );
     }
 
-    private function resolveLocation(string $ip): string
+    /**
+     * @return array{label: string, city: ?string, country_name: ?string, latitude: ?float, longitude: ?float}
+     */
+    private function resolveLocation(string $ip): array
     {
-        if ($this->isLocalIp($ip)) {
-            return 'Réseau local';
+        $empty = ['city' => null, 'country_name' => null, 'latitude' => null, 'longitude' => null];
+
+        if (!$this->geolocationService->isPublicIp($ip)) {
+            return [...$empty, 'label' => 'Réseau local'];
         }
 
-        try {
-            $response = $this->httpClient->request('GET', "https://ip-api.com/json/{$ip}", [
-                'timeout' => 3,
-            ]);
-            $data = $response->toArray(false);
+        $location = $this->geolocationService->getLocationFromIp($ip);
 
-            if (($data['status'] ?? '') === 'success') {
-                return trim(($data['city'] ?? 'Inconnu') . ', ' . ($data['country'] ?? 'Inconnu'));
-            }
-        } catch (\Throwable $e) {
-            $this->logger->warning('Géolocalisation échouée : ' . $e->getMessage(), ['ip' => $ip]);
-        }
-
-        return 'Localisation inconnue';
-    }
-
-    private function isLocalIp(string $ip): bool
-    {
-        return in_array($ip, ['127.0.0.1', '::1'], true)
-            || str_starts_with($ip, '192.168.')
-            || str_starts_with($ip, '10.')
-            || str_starts_with($ip, '172.');
+        return [...$empty, ...($location ?? []), 'label' => GeolocationService::formatLabel($location) ?? 'Localisation inconnue'];
     }
 }

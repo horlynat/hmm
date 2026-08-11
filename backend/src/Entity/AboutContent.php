@@ -119,6 +119,11 @@ class AboutContent
 
     // --- Bio ---
 
+    /** Portrait affiché à côté de la bio — chemin relatif (ex: /uploads/about/xxx.jpg), uploadé depuis l'admin (cf. AdminAboutContentController). */
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $profileImagePath = null;
+
     #[ORM\Column(length: 255)]
     #[Groups(['api_public', 'api_admin'])]
     private string $bioTitle = '';
@@ -551,6 +556,18 @@ class AboutContent
     public function setProfileLanguagesEn(?string $profileLanguagesEn): static
     {
         $this->profileLanguagesEn = $profileLanguagesEn;
+
+        return $this;
+    }
+
+    public function getProfileImagePath(): ?string
+    {
+        return $this->profileImagePath;
+    }
+
+    public function setProfileImagePath(?string $profileImagePath): static
+    {
+        $this->profileImagePath = $profileImagePath;
 
         return $this;
     }

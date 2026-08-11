@@ -42,8 +42,7 @@
 								{{ expense.description }}
 							</td>
 							<td class="p-4 text-right font-extrabold text-brand-dark text-sm whitespace-nowrap">
-								{{ expense.amount|number_format(2, ',', ' ') }}
-								€
+								{{ expense.amount|money('EUR') }}
 							</td>
 							{% if not this.projectLocked %}
 								<td class="p-4 text-center">

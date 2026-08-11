@@ -1,0 +1,363 @@
+# Orchestration prod — à exécuter depuis un clone de la branche `main`
+# (structure attendue : main/backend, main/frontend, main/infra — celui-ci).
+# Aucun service applicatif ne publie de port : Traefik est le seul point
+# d'entrée public (guide hardening portfolio §2).
+
+services:
+  traefik:
+    # v3.6+ requis : le client Docker interne de v3.3 fige l'API à 1.24 sans
+    # tenir compte de DOCKER_API_VERSION (testé — la variable n'a aucun
+    # effet sur ce client précis, contrairement au comportement usuel des
+    # SDK Docker). Docker 29 a relevé son API minimale à 1.44, cassant net
+    # toute version de Traefik antérieure à v3.6.1, qui a ajouté la
+    # négociation automatique de version — le provider docker échouait en
+    # boucle et Traefik ne découvrait plus AUCUN service par labels (404
+    # permanent sur tous les routers, malgré des services backend/frontend
+    # parfaitement sains). Cf. https://github.com/traefik/traefik/issues/12253
+    image: traefik:v3.6
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic/dynamic.yml:ro
+      - ./certs:/etc/traefik/certs:ro
+    networks:
+      - edge-net
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      # Beaucoup de pages font des fetch server-side vers l'API PENDANT le
+      # build (génération statique/ISR, cf. Dockerfile) — le build a donc
+      # besoin d'atteindre `backend`. BuildKit ne supporte pas un réseau
+      # bridge nommé pour les étapes RUN ; on utilise le mode `host` (le RUN
+      # de build partage alors la pile réseau de l'hôte) et on atteint
+      # `backend` via son port publié en loopback ci-dessous. Implique un
+      # déploiement en deux temps (cf. README "Build en deux temps") :
+      # backend démarré AVANT `docker compose build frontend`.
+      network: host
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+        NEXT_PUBLIC_MEDIA_URL: ${NEXT_PUBLIC_MEDIA_URL}
+        API_URL: http://127.0.0.1:8000/api
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      # Appel interne conteneur-à-conteneur, jamais via le domaine public
+      # (cf. _config.frontend.md "100% server-side") :
+      - API_URL=http://backend:80/api
+    secrets:
+      - revalidate_secret
+    networks:
+      - edge-net
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=edge-net
+      - traefik.http.routers.frontend.rule=Host(`horlynat.com`) || Host(`www.horlynat.com`)
+      - traefik.http.routers.frontend.entrypoints=websecure
+      - traefik.http.routers.frontend.tls=true
+      - traefik.http.routers.frontend.middlewares=cloudflare-only@file,security-headers@file,ratelimit-standard@file
+      - traefik.http.services.frontend.loadbalancer.server.port=3000
+
+  backend:
+    # Image poussée par le workflow deploy.yml (build + tests PHPStan/PHPUnit
+    # en amont sur GitHub Actions, cf. .github/workflows/backend-ci.yml et
+    # deploy.yml) — présente en parallèle du `build:` ci-dessous, qui reste
+    # utilisable pour un déploiement 100% local (`docker compose build
+    # backend`) en cas de panne du registre. BACKEND_IMAGE_TAG permet un
+    # rollback manuel vers un sha antérieur (cf. infra/scripts/deploy-remote.sh).
+    image: ghcr.io/horlynat/hmm-backend:${BACKEND_IMAGE_TAG:-latest}
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      # Loopback uniquement (jamais 0.0.0.0) — sert au build `frontend` en
+      # mode réseau `host` ci-dessus (SSG/ISR au build). Ne contourne pas
+      # "Traefik seul point d'entrée public" : ce port n'est routable que
+      # depuis l'hôte lui-même, jamais depuis l'extérieur.
+      - "127.0.0.1:8000:80"
+    environment:
+      - APP_ENV=prod
+      - APP_DEBUG=0
+      - CORS_ALLOW_ORIGIN=^https://(horlynat\.com|www\.horlynat\.com)$$
+      - FRONTEND_URL=${NEXT_PUBLIC_SITE_URL}
+      - DEFAULT_URI=https://api.horlynat.com
+      # IP/plage du conteneur traefik (réseau edge-net) ET plages Cloudflare
+      # (cf. cloudflare-ips.txt) — Symfony doit faire confiance aux DEUX pour
+      # lire correctement les en-têtes X-Forwarded-* : Traefik restaure l'IP
+      # visiteur réelle en tête de X-Forwarded-For mais ajoute aussi son
+      # propre maillon (l'IP du nœud Cloudflare) ; sans les plages Cloudflare
+      # ici, Symfony s'arrête à ce maillon et prend l'IP du datacenter
+      # Cloudflare pour l'IP du visiteur (cf. README, bug constaté en prod).
+      - SYMFONY_TRUSTED_PROXIES=${SYMFONY_TRUSTED_PROXIES:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22,2400:cb00::/32,2606:4700::/32,2803:f800::/32,2405:b500::/32,2405:8100::/32,2a06:98c0::/29,2c0f:f248::/29}
+      # Doit correspondre au compte authentifié dans secrets/mailer_dsn (cf.
+      # .env.prod.example).
+      - APP_DEFAULT_SENDER=${APP_DEFAULT_SENDER}
+      # Assistant IA — noms de modèles et plafond de coût, pas des secrets
+      # (les clés API, elles, arrivent via `secrets:` ci-dessous).
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      - GEMINI_EMBEDDING_MODEL=${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
+      - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-sonnet-5}
+      - CLAUDE_MODEL_FALLBACK=${CLAUDE_MODEL_FALLBACK:-claude-haiku-4-5-20251001}
+      - ASSISTANT_MONTHLY_BUDGET_USD=${ASSISTANT_MONTHLY_BUDGET_USD:-20}
+    secrets:
+      - app_secret
+      - jwt_passphrase
+      - jwt_secret_key
+      - jwt_public_key
+      - database_url
+      - mailer_dsn
+      - gemini_api_key
+      - anthropic_api_key
+      - revalidate_secret
+      - ntfy_dsn
+      - offsite_s3_endpoint
+      - offsite_s3_bucket
+      - offsite_s3_access_key_id
+      - offsite_s3_secret_access_key
+    extra_hosts:
+      # Postfix/Dovecot tournent nativement sur l'hôte, hors Docker
+      # (cf. guide hardening portfolio §9) — jamais exposés publiquement,
+      # joints uniquement via cette passerelle interne en SMTP authentifié.
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - edge-net
+      - data-net
+    volumes:
+      # Logs lisibles depuis l'hôte pour fail2ban (jail symfony-security,
+      # cf. scripts/01-base-hardening.sh) — tant que Monolog n'a pas de
+      # channel dédié security_errors -> fichier, c'est var/log/prod.log
+      # qui est lu (cf. _config.backend.md pour le channel dédié à poser).
+      - ./logs/backend:/app/var/log
+      # Fichiers uploadés (App\Service\MediaUploader) — sans ce volume nommé,
+      # tout upload disparaît au prochain déploiement (nouveau conteneur =
+      # nouvelle image, aucune persistance de l'ancien système de fichiers
+      # éphémère). Constaté en prod. Doit rester monté aussi sur
+      # messenger-worker (même chemin) : App\MessageHandler\
+      # OffsiteBackupMessageHandler y lit le fichier fraîchement uploadé pour
+      # sa copie hors-site asynchrone.
+      - uploads_data:/app/public/uploads
+    mem_limit: 3g
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2019/config/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=edge-net
+      - traefik.http.services.backend.loadbalancer.server.port=80
+      # api.horlynat.com — surface publique la plus large (guide §4)
+      - traefik.http.routers.api.rule=Host(`api.horlynat.com`)
+      - traefik.http.routers.api.entrypoints=websecure
+      - traefik.http.routers.api.tls=true
+      - traefik.http.routers.api.service=backend
+      - traefik.http.routers.api.middlewares=cloudflare-only@file,security-headers@file,ratelimit-standard@file
+      # dark.horlynat.com — back-office, protection maximale (guide §3).
+      # Pas de whitelist IP perso (admin-ipwhitelist@file, cf. traefik/
+      # dynamic.yml) : IP non stable (connexions depuis des réseaux
+      # variables), whitelist statique = accès bloqué la plupart du temps.
+      # cloudflare-only interdit déjà tout accès direct à l'origine (seul le
+      # réseau Cloudflare peut atteindre ce routeur), et Cloudflare Access
+      # (code email, cf. dashboard Cloudflare Zero Trust) fait office de
+      # vrai contrôle d'identité en amont de la connexion applicative —
+      # renforçable côté Cloudflare (MFA, session courte) sans toucher ici.
+      - traefik.http.routers.dark.rule=Host(`dark.horlynat.com`)
+      - traefik.http.routers.dark.entrypoints=websecure
+      - traefik.http.routers.dark.tls=true
+      - traefik.http.routers.dark.service=backend
+      - traefik.http.routers.dark.middlewares=cloudflare-only@file,security-headers@file,ratelimit-strict@file
+
+  messenger-worker:
+    # Même image que le service backend ci-dessus (seule la commande
+    # diffère) — un seul `pull` suffit aux deux services.
+    image: ghcr.io/horlynat/hmm-backend:${BACKEND_IMAGE_TAG:-latest}
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # Pas de "docker-entrypoint.sh" ici : c'est l'ENTRYPOINT du Dockerfile
+    # (hérité, jamais surchargé par `command:`) — le redéclarer double son
+    # exécution, la deuxième fois déjà sous www-data (après su-exec), qui ne
+    # peut plus relire les secrets (testé : le worker crash-loopait).
+    command: ["php", "bin/console", "messenger:consume", "async", "failed", "--time-limit=3600", "--memory-limit=256M", "-vv"]
+    # Désactive le HEALTHCHECK hérité de l'image (interroge l'API admin
+    # FrankenPHP sur :2019) — ce service ne lance jamais frankenphp, rien
+    # n'écoute là, il tournait donc "unhealthy" en continu malgré un worker
+    # parfaitement fonctionnel (testé).
+    healthcheck:
+      disable: true
+    environment:
+      - APP_ENV=prod
+      - APP_DEBUG=0
+      # SendEmailHandler tourne ici (transport async) — même contrainte que
+      # le service backend (cf. commentaire là-bas).
+      - APP_DEFAULT_SENDER=${APP_DEFAULT_SENDER}
+      # AiAssistantIngestMessageHandler (ingestion RAG) tourne ici — a besoin
+      # de Gemini, pas de Claude (le conversationnel temps réel reste sur le
+      # service backend ci-dessus).
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      - GEMINI_EMBEDDING_MODEL=${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
+    secrets:
+      - app_secret
+      - database_url
+      - mailer_dsn
+      - gemini_api_key
+      - ntfy_dsn
+      - offsite_s3_endpoint
+      - offsite_s3_bucket
+      - offsite_s3_access_key_id
+      - offsite_s3_secret_access_key
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      # edge-net : sortie internet nécessaire (appels LLM, SMTP) — le worker
+      # n'a pas de label traefik.enable donc reste non routable depuis
+      # l'extérieur malgré la présence sur ce réseau (exposedByDefault=false).
+      - edge-net
+      - data-net
+    volumes:
+      # Même volume que le service backend ci-dessus (voir son commentaire) —
+      # OffsiteBackupMessageHandler tourne ici et a besoin de lire le fichier
+      # fraîchement uploadé pour sa copie hors-site.
+      - uploads_data:/app/public/uploads
+    mem_limit: 512m
+
+  database:
+    # MySQL 8, pas Postgres : les migrations committées (migrations/Version*.php)
+    # sont écrites en dialecte MySQL (AUTO_INCREMENT) et échouent sur Postgres
+    # (testé) — cf. README §4. C'est le moteur qui ne demande aucun changement
+    # de code applicatif.
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
+      MYSQL_USER: ${MYSQL_USER:-app}
+      MYSQL_PASSWORD_FILE: /run/secrets/database_password
+      # Pas de secret root dédié : l'app n'a besoin que de l'utilisateur
+      # applicatif ci-dessus, root n'est jamais utilisé après l'init.
+      MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+    secrets:
+      # Pas de mode: 0444 ici (contrairement à backend/messenger-worker) :
+      # l'entrypoint officiel de l'image mysql tourne en root et lit ce
+      # fichier avant de basculer sur l'utilisateur mysql, donc les
+      # permissions du fichier hôte ne posent pas de problème ici.
+      - database_password
+    volumes:
+      - mysql_data:/var/lib/mysql:rw
+    networks:
+      - data-net
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER -p\"$$(cat /run/secrets/database_password)\" --silent"]
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  postfixadmin:
+    # Panneau de gestion des comptes mail (Postfix/Dovecot natifs sur l'hôte,
+    # cf. scripts/README) — n'a rien à voir avec la base applicative
+    # ci-dessus. Sa propre base MySQL tourne nativement sur l'hôte (pas dans
+    # Docker), jointe via host.docker.internal, protection défense-en-
+    # profondeur identique à dark.horlynat.com (cf. labels).
+    image: postfixadmin:latest
+    restart: unless-stopped
+    environment:
+      - POSTFIXADMIN_DB_TYPE=mysqli
+      - POSTFIXADMIN_DB_HOST=host.docker.internal
+      - POSTFIXADMIN_DB_USER=postfixadmin
+      - POSTFIXADMIN_DB_NAME=postfixadmin
+      - POSTFIXADMIN_DB_PASSWORD_FILE=/run/secrets/postfixadmin_db_password
+      # Secret (pas une variable ${...}) : un hash bcrypt plein de "$" ne
+      # survit pas à la substitution Compose (testé : tronqué en "$$2y$$12").
+      - POSTFIXADMIN_SETUP_PASSWORD_FILE=/run/secrets/postfixadmin_setup_password
+      - POSTFIXADMIN_SMTP_SERVER=host.docker.internal
+      - POSTFIXADMIN_SMTP_PORT=587
+    secrets:
+      - postfixadmin_db_password
+      - postfixadmin_setup_password
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - edge-net
+    mem_limit: 256m
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=edge-net
+      - traefik.http.routers.mailadmin.rule=Host(`mailadmin.horlynat.com`)
+      - traefik.http.routers.mailadmin.entrypoints=websecure
+      - traefik.http.routers.mailadmin.tls=true
+      - traefik.http.routers.mailadmin.middlewares=cloudflare-only@file,admin-ipwhitelist@file,security-headers@file,ratelimit-strict@file
+      - traefik.http.services.mailadmin.loadbalancer.server.port=80
+
+networks:
+  edge-net:
+    name: edge-net
+    driver: bridge
+  data-net:
+    name: data-net
+    driver: bridge
+    internal: true # aucune route sortante directe vers internet — la DB ne parle qu'au backend
+
+volumes:
+  mysql_data:
+  uploads_data:
+
+secrets:
+  app_secret:
+    file: ./secrets/app_secret
+  jwt_passphrase:
+    file: ./secrets/jwt_passphrase
+  jwt_secret_key:
+    file: ./secrets/jwt_secret_key
+  jwt_public_key:
+    file: ./secrets/jwt_public_key
+  database_url:
+    file: ./secrets/database_url
+  mailer_dsn:
+    file: ./secrets/mailer_dsn
+  gemini_api_key:
+    file: ./secrets/gemini_api_key
+  anthropic_api_key:
+    file: ./secrets/anthropic_api_key
+  revalidate_secret:
+    file: ./secrets/revalidate_secret
+  ntfy_dsn:
+    file: ./secrets/ntfy_dsn
+  database_password:
+    file: ./secrets/database_password
+  postfixadmin_db_password:
+    file: ./secrets/postfixadmin_db_password
+  postfixadmin_setup_password:
+    file: ./secrets/postfixadmin_setup_password
+  offsite_s3_endpoint:
+    file: ./secrets/offsite_s3_endpoint
+  offsite_s3_bucket:
+    file: ./secrets/offsite_s3_bucket
+  offsite_s3_access_key_id:
+    file: ./secrets/offsite_s3_access_key_id
+  offsite_s3_secret_access_key:
+    file: ./secrets/offsite_s3_secret_access_key

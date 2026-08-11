@@ -18,6 +18,7 @@
 				<tr>
 					<th scope="col" class="w-16">Id</th>
 					<th scope="col">Formation &amp; institution</th>
+					<th scope="col" class="w-32">Type</th>
 					<th scope="col" class="w-48">Période</th>
 					<th scope="col" class="w-40 text-right">Actions</th>
 				</tr>
@@ -32,6 +33,9 @@
 								<span class="ti ti-building-bank text-sm" aria-hidden="true"></span>
 								{{ course.institution }}
 							</div>
+						</td>
+						<td>
+							<span class="badge bg-brand-light text-brand-primary">{{ course.type.label }}</span>
 						</td>
 						<td class="text-xs opacity-80 whitespace-nowrap">
 							{{ course.startDate ? course.startDate|date('m/Y') : '—' }} — {{ course.endDate ? course.endDate|date('m/Y') : 'En cours' }}
@@ -50,7 +54,7 @@
 					</tr>
 				{% else %}
 					<tr>
-						<td colspan="4"><twig:EmptyState text="Aucune formation pour le moment." icon="ti-school" /></td>
+						<td colspan="5"><twig:EmptyState text="Aucune formation pour le moment." icon="ti-school" /></td>
 					</tr>
 				{% endfor %}
 			</tbody>

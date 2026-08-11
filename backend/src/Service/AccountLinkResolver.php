@@ -42,4 +42,15 @@ final class AccountLinkResolver
         // le français reste la langue par défaut du site (routing Next.js).
         return rtrim($this->frontendUrl, '/').'/fr'.$frontendPath;
     }
+
+    /**
+     * Lien vers un espace invité sans compte (ex : fil de ticket support par
+     * jeton) — toujours en français par défaut, même repli que resolve() pour
+     * les utilisateurs hors back-office : aucun champ de langue n'existe sur
+     * SupportTicket.
+     */
+    public function resolveGuestLink(string $frontendPath): string
+    {
+        return rtrim($this->frontendUrl, '/').'/fr'.$frontendPath;
+    }
 }
