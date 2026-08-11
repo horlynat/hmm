@@ -88,7 +88,7 @@
 							<td class="text-sm opacity-70">{{ project.owner.fullName ?? project.owner.email }}</td>
 							<td><span class="badge {{ project.status.badgeClass|default('bg-gray-400 text-white') }}">{{ project.status.label }}</span></td>
 							<td class="text-sm">
-								<span class="font-semibold text-brand-dark">{{ project.getFormattedBudget() }}</span>
+								<span class="font-semibold text-brand-dark">{{ project.budget|money('EUR') }}</span>
 								<span class="{{ project.spent > project.budget ? 'text-danger' : 'opacity-50' }}"> ({{ project.getBudgetPercentageUsed()|default(0) }}% utilisé)</span>
 							</td>
 							<td>

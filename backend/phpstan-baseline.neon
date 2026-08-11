@@ -1,0 +1,205 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method App\\Controller\\Api\\MeController\:\:firstViolation\(\) has parameter \$constraints with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Controller/Api/MeController.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$constraints with type Symfony\\Component\\Validator\\Constraints\\Length\|Symfony\\Component\\Validator\\Constraints\\Url is incompatible with native type array\.$#'
+			identifier: parameter.phpDocType
+			count: 1
+			path: src/Controller/Api/MeController.php
+
+		-
+			message: '#^Method App\\Entity\\ProjectInfo\:\:getChallenges\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Method App\\Entity\\ProjectInfo\:\:getChallengesEn\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Method App\\Entity\\ProjectInfo\:\:getResults\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Method App\\Entity\\ProjectInfo\:\:getResultsEn\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Method App\\Entity\\ProjectInfo\:\:getTechStack\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Method App\\Entity\\ProjectInfo\:\:getTechStackEn\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Method App\\Entity\\ProjectInfo\:\:setChallenges\(\) has parameter \$challenges with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Method App\\Entity\\ProjectInfo\:\:setChallengesEn\(\) has parameter \$challengesEn with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Method App\\Entity\\ProjectInfo\:\:setResults\(\) has parameter \$results with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Method App\\Entity\\ProjectInfo\:\:setResultsEn\(\) has parameter \$resultsEn with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Method App\\Entity\\ProjectInfo\:\:setTechStack\(\) has parameter \$techStack with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Method App\\Entity\\ProjectInfo\:\:setTechStackEn\(\) has parameter \$techStackEn with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Property App\\Entity\\ProjectInfo\:\:\$challengesEn type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Property App\\Entity\\ProjectInfo\:\:\$objectivesEn type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Property App\\Entity\\ProjectInfo\:\:\$resultsEn type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Property App\\Entity\\ProjectInfo\:\:\$techStackEn type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/ProjectInfo.php
+
+		-
+			message: '#^Method App\\Entity\\QuoteRequest\:\:getClarifications\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/QuoteRequest.php
+
+		-
+			message: '#^Method App\\Entity\\QuoteRequest\:\:setClarifications\(\) has parameter \$clarifications with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/QuoteRequest.php
+
+		-
+			message: '#^Property App\\Entity\\QuoteRequest\:\:\$clarifications type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/QuoteRequest.php
+
+		-
+			message: '#^Method App\\Entity\\User\:\:freelanceProfileFields\(\) should return list\<string\> but returns array\{fullName\: string\|null, bio\: string\|null, specialties\: ''1''\|null, availability\: string\|null, portfolioUrl\: string\|null, yearsOfExperience\: decimal\-int\-string\|null, city\: string\|null, professionalLinks\: ''1''\|null, \.\.\.\}\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Method App\\Entity\\User\:\:getMissingFreelanceProfileFields\(\) should return list\<string\> but returns list\<int\<0, max\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Method App\\Entity\\User\:\:getSpecialties\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Method App\\Entity\\User\:\:setSpecialties\(\) has parameter \$specialties with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Property App\\Entity\\User\:\:\$languages type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Property App\\Entity\\User\:\:\$specialties type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between null and string will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between null and string will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Class App\\State\\AiAssistantChatProcessor implements generic interface ApiPlatform\\State\\ProcessorInterface but does not specify its types\: T1, T2$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/State/AiAssistantChatProcessor.php
+
+		-
+			message: '#^Class App\\State\\CollaboratorRegistrationProcessor implements generic interface ApiPlatform\\State\\ProcessorInterface but does not specify its types\: T1, T2$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/State/CollaboratorRegistrationProcessor.php
+
+		-
+			message: '#^Class App\\State\\ContactMessageCreateProcessor implements generic interface ApiPlatform\\State\\ProcessorInterface but does not specify its types\: T1, T2$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/State/ContactMessageCreateProcessor.php
+
+		-
+			message: '#^Class App\\State\\QuoteRequestCreateProcessor implements generic interface ApiPlatform\\State\\ProcessorInterface but does not specify its types\: T1, T2$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/State/QuoteRequestCreateProcessor.php
+
+		-
+			message: '#^Class App\\State\\TestimonialCreateProcessor implements generic interface ApiPlatform\\State\\ProcessorInterface but does not specify its types\: T1, T2$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/State/TestimonialCreateProcessor.php

@@ -139,6 +139,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     #[Groups(["api_user", "api_admin", "collaborator_signup"])]
     private ?string $bio = null;
 
+    #[ORM\Column(type: Types::SMALLINT, nullable: true)]
+    #[Groups(["api_user", "api_admin"])]
+    #[Assert\Range(min: 0, max: 60, notInRangeMessage: "Le nombre d'années d'expérience doit être compris entre {{ min }} et {{ max }}.")]
+    private ?int $yearsOfExperience = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(["api_user", "api_admin"])]
+    private ?string $city = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["api_user", "api_admin"])]
+    #[Assert\Url(message: "Le lien LinkedIn doit être une URL valide.")]
+    private ?string $linkedinUrl = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["api_user", "api_admin"])]
+    #[Assert\Url(message: "Le lien GitHub doit être une URL valide.")]
+    private ?string $githubUrl = null;
+
+    /** Langues parlées — liste fermée, cf. MeController::ALLOWED_LANGUAGES. */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(["api_user", "api_admin"])]
+    private ?array $languages = null;
+
     #[ORM\Column(type: 'boolean')]
     #[Groups(["api_admin"])]
     private bool $isTwoFactorEnabled = false;
@@ -463,6 +487,63 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
         return $this;
     }
 
+    public function getYearsOfExperience(): ?int
+    {
+        return $this->yearsOfExperience;
+    }
+
+    public function setYearsOfExperience(?int $yearsOfExperience): self
+    {
+        $this->yearsOfExperience = $yearsOfExperience;
+        return $this;
+    }
+
+    public function getCity(): ?string
+    {
+        return $this->city;
+    }
+
+    public function setCity(?string $city): self
+    {
+        $this->city = $city;
+        return $this;
+    }
+
+    public function getLinkedinUrl(): ?string
+    {
+        return $this->linkedinUrl;
+    }
+
+    public function setLinkedinUrl(?string $linkedinUrl): self
+    {
+        $this->linkedinUrl = $linkedinUrl;
+        return $this;
+    }
+
+    public function getGithubUrl(): ?string
+    {
+        return $this->githubUrl;
+    }
+
+    public function setGithubUrl(?string $githubUrl): self
+    {
+        $this->githubUrl = $githubUrl;
+        return $this;
+    }
+
+    /** @return list<string>|null */
+    public function getLanguages(): ?array
+    {
+        return $this->languages;
+    }
+
+    /** @param list<string>|null $languages */
+    public function setLanguages(?array $languages): self
+    {
+        $this->languages = $languages;
+        return $this;
+    }
+
     public function isTwoFactorEnabled(): bool
     {
         return $this->isTwoFactorEnabled;
@@ -686,6 +767,66 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
         if ($this->lastLoginAt) $filledFields++;
 
         return (int) (($filledFields / $totalFields) * 100);
+    }
+
+    /**
+     * Champs qui composent la complétude du profil "freelance" — distinct de
+     * getProfileCompletionPercentage() ci-dessus (calcul générique utilisé
+     * par le back-office admin, ne pas fusionner). Volontairement limité aux
+     * champs que l'utilisateur peut réellement renseigner lui-même via
+     * PATCH /api/me (App\Controller\Api\MeController::EDITABLE_FIELDS) :
+     * `phone` en est explicitement exclu (verrouillé en self-service, cf.
+     * commentaire sur EDITABLE_FIELDS) et il n'existe aujourd'hui aucun
+     * moyen self-service de renseigner `profileImage` — les inclure ici
+     * rendrait la complétude à 100 % inatteignable pour un utilisateur qui
+     * ne les a pas renseignés à l'inscription (où ils sont eux aussi
+     * optionnels).
+     *
+     * @return list<string>
+     */
+    private function freelanceProfileFields(): array
+    {
+        return [
+            'fullName' => $this->fullName,
+            'bio' => $this->bio,
+            'specialties' => !empty($this->specialties) ? '1' : null,
+            'availability' => $this->availability,
+            'portfolioUrl' => $this->portfolioUrl,
+            'yearsOfExperience' => null !== $this->yearsOfExperience ? (string) $this->yearsOfExperience : null,
+            'city' => $this->city,
+            // Un seul lien pro suffit (LinkedIn OU GitHub) — tous les
+            // freelances n'ont pas de GitHub public (ex: designers).
+            'professionalLinks' => ($this->linkedinUrl || $this->githubUrl) ? '1' : null,
+            'languages' => !empty($this->languages) ? '1' : null,
+        ];
+    }
+
+    public function getFreelanceProfileCompletionPercentage(): int
+    {
+        $fields = $this->freelanceProfileFields();
+        $filled = \count(array_filter($fields, static fn ($f) => null !== $f && '' !== $f));
+
+        return (int) round(100 * $filled / \count($fields));
+    }
+
+    public function isFreelanceProfileComplete(): bool
+    {
+        return 100 === $this->getFreelanceProfileCompletionPercentage();
+    }
+
+    /**
+     * Clés (parmi EDITABLE_FIELDS) encore vides — sert à guider l'utilisateur
+     * sur ce qu'il reste précisément à compléter, plutôt que de n'afficher
+     * qu'un pourcentage.
+     *
+     * @return list<string>
+     */
+    public function getMissingFreelanceProfileFields(): array
+    {
+        return array_keys(array_filter(
+            $this->freelanceProfileFields(),
+            static fn ($f) => null === $f || '' === $f,
+        ));
     }
 
     public function eraseCredentials(): void

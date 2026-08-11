@@ -17,15 +17,13 @@
 		<div>
 			<span class="text-xs text-gray-400 block mb-1">Budget Initial</span>
 			<span class="text-xl font-extrabold text-brand-dark">
-				{{ project.budget|number_format(2, ',', ' ') }}
-				€
+				{{ project.budget|money('EUR') }}
 			</span>
 		</div>
 		<div>
 			<span class="text-xs text-gray-400 block mb-1">Dépensé</span>
 			<span class="text-xl font-extrabold {% if this.isBudgetCritical %}text-danger{% else %}text-brand-primary{% endif %}">
-				{{ project.spent|number_format(2, ',', ' ') }}
-				€
+				{{ project.spent|money('EUR') }}
 			</span>
 		</div>
 	</div>
@@ -41,8 +39,7 @@
 			<strong class="text-brand-dark">{{ this.percentageSpent|number_format(1) }}%</strong>
 		</span>
 		<span>Reste :
-			<strong class="{% if this.isBudgetCritical %}text-danger font-bold{% else %}text-brand-dark{% endif %}">{{ (project.budget - project.spent)|number_format(2, ',', ' ') }}
-				€</strong>
+			<strong class="{% if this.isBudgetCritical %}text-danger font-bold{% else %}text-brand-dark{% endif %}">{{ (project.budget - project.spent)|money('EUR') }}</strong>
 		</span>
 	</div>
 </div>

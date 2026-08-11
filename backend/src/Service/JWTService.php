@@ -10,8 +10,11 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 class JWTService
 {
-    // Algorithmes supportés
-    private const SUPPORTED_ALGORITHMS = ['HS256', 'HS384', 'HS512'];
+    // Algorithme supporté — generate()/validate() signent et vérifient
+    // toujours en HMAC-SHA256 en dur (cf. plus bas) : la liste ne doit donc
+    // annoncer que ce qui est réellement appliqué, pas un choix disponible
+    // via le header (cf. audit de sécurité).
+    private const SUPPORTED_ALGORITHMS = ['HS256'];
     private const DEFAULT_ALGORITHM = 'HS256';
 
     // Durées de validité

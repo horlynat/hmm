@@ -181,7 +181,8 @@ class ProjectRepository extends ServiceEntityRepository
         // 📌 Tri dynamique sécurisé
         $allowedSortFields = ['title', 'createdAt', 'status', 'budget', 'deadline', 'progress']; // cite: 6, 7
         $sortField = in_array($filters['sort'] ?? 'createdAt', $allowedSortFields, true) ? $filters['sort'] : 'createdAt'; // cite: 6, 7
-        $direction = strtoupper($filters['direction'] ?? 'DESC'); // cite: 6, 7
+        $direction = strtoupper($filters['direction'] ?? 'DESC');
+        $direction = in_array($direction, ['ASC', 'DESC'], true) ? $direction : 'DESC';
 
         $qb->orderBy('p.' . $sortField, $direction); // cite: 6, 7
 

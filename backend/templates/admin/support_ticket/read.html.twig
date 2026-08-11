@@ -1,0 +1,86 @@
+{# templates/admin/support_ticket/read.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Ticket :
+	{{ ticket.subject }}
+{% endblock %}
+
+{% block body %}
+	<div>
+
+		<div class="mb-6">
+			<a href="{{ path('admin_support_ticket_index') }}" class="btn btn-secondary gap-2 px-3 py-2 text-sm w-fit">
+				<span class="ti ti-arrow-left text-base" aria-hidden="true"></span>
+				<span>Retour à la liste des tickets</span>
+			</a>
+		</div>
+
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+			<!-- 📖 FIL DE MESSAGES (70%) -->
+			<div class="lg:col-span-2 card space-y-6">
+				<div>
+					<span class="badge {{ ticket.status.getBadgeClass() }}">{{ ticket.status.getLabel() }}</span>
+					<h1 class="text-3xl font-heading font-bold tracking-tight mt-3 text-brand-dark">
+						{{ ticket.subject }}
+					</h1>
+					<p class="text-sm opacity-60 mt-1">De {{ ticket.name }} — {{ ticket.email }} — ouvert le {{ ticket.createdAt|date('d/m/Y H:i') }}</p>
+				</div>
+
+				<div class="space-y-4 border-t border-gray-100 pt-6">
+					{% for message in ticket.messages %}
+						<div class="flex {{ message.fromAdmin ? 'justify-end' : 'justify-start' }}">
+							<div class="max-w-lg rounded-2xl px-4 py-3 {{ message.fromAdmin ? 'bg-(--brand-primary) text-white' : 'bg-gray-100 text-brand-dark' }}">
+								<p class="text-xs opacity-70 mb-1">{{ message.fromAdmin ? 'Support' : ticket.name }} — {{ message.createdAt|date('d/m/Y H:i') }}</p>
+								<p class="whitespace-pre-line leading-relaxed">{{ message.body }}</p>
+							</div>
+						</div>
+					{% endfor %}
+				</div>
+
+				<form method="post" action="{{ path('admin_support_ticket_reply', {'id': ticket.id}) }}" class="border-t border-gray-100 pt-6 space-y-3">
+					<input type="hidden" name="_token" value="{{ csrf_token('support_reply_' ~ ticket.id) }}">
+					<label for="f-body" class="field-label">Répondre au client</label>
+					<textarea id="f-body" name="body" rows="4" minlength="10" required class="input w-full" placeholder="Votre réponse…"></textarea>
+					<button type="submit" class="btn btn-primary gap-2">
+						<span class="ti ti-send text-sm" aria-hidden="true"></span>
+						<span>Envoyer la réponse</span>
+					</button>
+				</form>
+			</div>
+
+			<!-- ⚙️ INFOS LATÉRALES (30%) -->
+			<div class="space-y-6">
+				<div class="card space-y-4">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">
+						Fiche Technique
+					</h3>
+
+					<div class="space-y-3 text-sm">
+						<div class="flex justify-between items-center gap-3">
+							<span class="opacity-60">Nom :</span>
+							<span class="font-bold text-brand-dark text-right">{{ ticket.name }}</span>
+						</div>
+						<div class="flex justify-between items-center gap-3">
+							<span class="opacity-60">Email :</span>
+							<span class="font-bold text-brand-dark text-right">{{ ticket.email }}</span>
+						</div>
+						<div class="flex justify-between items-center gap-3">
+							<span class="opacity-60">Messages :</span>
+							<span class="font-bold text-brand-dark text-right">{{ ticket.messages|length }}</span>
+						</div>
+					</div>
+
+					<div class="pt-4 border-t border-gray-100">
+						{% include 'admin/support_ticket/_status_forms.html.twig' with {ticket: ticket} %}
+					</div>
+
+					<div class="pt-4 border-t border-gray-100 w-full [&>div]:w-full [&_.btn]:w-full text-center">
+						<twig:DeleteModal :id="ticket.id" :action="path('admin_support_ticket_delete', {id: ticket.id})" :token="csrf_token('admin_support_ticket_delete_' ~ ticket.id)" :label="ticket.subject" entity="ce ticket" />
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</div>
+{% endblock %}

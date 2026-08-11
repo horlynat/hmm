@@ -1,0 +1,8 @@
+# Contenu réel des secrets/certificats — jamais dans Git.
+secrets/*
+!secrets/.gitkeep
+
+certs/*
+!certs/.gitkeep
+
+.env.prod

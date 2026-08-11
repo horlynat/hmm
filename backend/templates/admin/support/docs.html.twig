@@ -1,0 +1,103 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Documentation{% endblock %}
+
+{% block body %}
+	<div class="page-header">
+		<div class="min-w-0">
+			<h1 class="page-title flex items-center gap-2">
+				<span class="ti ti-book text-(--brand-primary)" aria-hidden="true"></span>
+				Documentation
+			</h1>
+			<p class="page-subtitle">Guide d'utilisation du back-office, section par section.</p>
+		</div>
+	</div>
+
+	<div class="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 items-start">
+
+		<!-- 🧭 TABLE DES MATIÈRES -->
+		<nav class="card lg:sticky lg:top-6 space-y-1 text-sm" aria-label="Sommaire de la documentation">
+			<a href="#contenu" class="block px-2 py-1.5 rounded-lg hover:bg-gray-50 hover:text-(--brand-primary)">Contenu</a>
+			<a href="#utilisateurs" class="block px-2 py-1.5 rounded-lg hover:bg-gray-50 hover:text-(--brand-primary)">Utilisateurs</a>
+			<a href="#securite" class="block px-2 py-1.5 rounded-lg hover:bg-gray-50 hover:text-(--brand-primary)">Sécurité</a>
+			<a href="#parametres" class="block px-2 py-1.5 rounded-lg hover:bg-gray-50 hover:text-(--brand-primary)">Paramètres</a>
+			<a href="#assistant-ia" class="block px-2 py-1.5 rounded-lg hover:bg-gray-50 hover:text-(--brand-primary)">Assistant IA & budget</a>
+			<a href="#sauvegardes" class="block px-2 py-1.5 rounded-lg hover:bg-gray-50 hover:text-(--brand-primary)">Sauvegardes</a>
+			<a href="#support" class="block px-2 py-1.5 rounded-lg hover:bg-gray-50 hover:text-(--brand-primary)">Support</a>
+		</nav>
+
+		<!-- 📖 CONTENU -->
+		<div class="card space-y-10">
+
+			<section id="contenu" class="scroll-mt-6 space-y-2">
+				<h2 class="text-xl font-heading font-bold text-brand-dark">Contenu</h2>
+				<p class="opacity-80 leading-relaxed">
+					Regroupe tout ce qui compose le portfolio public : Projets, Compétences et leurs
+					catégories, Articles, Tags, Formations, Expériences, ainsi que le contenu éditorial
+					des pages "Accueil" et "À propos". Chaque section suit le même schéma : une liste
+					filtrable, une fiche de détail, et des formulaires de création/édition.
+				</p>
+			</section>
+
+			<section id="utilisateurs" class="scroll-mt-6 space-y-2">
+				<h2 class="text-xl font-heading font-bold text-brand-dark">Utilisateurs</h2>
+				<p class="opacity-80 leading-relaxed">
+					Gestion des comptes : Admins/Collaborateurs (back-office) et Clients (espace public
+					Next.js), ainsi que les messages de Contact, les demandes de Devis et les
+					Témoignages laissés par les visiteurs. Une demande de devis acceptée peut être
+					convertie en projet suivi directement depuis sa fiche.
+				</p>
+			</section>
+
+			<section id="securite" class="scroll-mt-6 space-y-2">
+				<h2 class="text-xl font-heading font-bold text-brand-dark">Sécurité</h2>
+				<p class="opacity-80 leading-relaxed">
+					Logs système, sessions actives (avec révocation à distance), rôles & permissions,
+					audit & monitoring, double authentification (2FA) et politiques de sécurité
+					(mots de passe, verrouillage de compte). Toute action sensible (suppression,
+					changement de statut) est tracée dans le journal d'audit.
+				</p>
+			</section>
+
+			<section id="parametres" class="scroll-mt-6 space-y-2">
+				<h2 class="text-xl font-heading font-bold text-brand-dark">Paramètres</h2>
+				<p class="opacity-80 leading-relaxed">
+					Configuration générale du site (logo, nom, informations affichées), préférences de
+					notifications, intégrations API tierces, et sauvegardes de la base de données.
+				</p>
+			</section>
+
+			<section id="assistant-ia" class="scroll-mt-6 space-y-2">
+				<h2 class="text-xl font-heading font-bold text-brand-dark">Assistant IA & garde-fou budget</h2>
+				<p class="opacity-80 leading-relaxed">
+					L'assistant conversationnel du portfolio combine Gemini (ingestion/résumé du
+					contenu public) et Claude (réponse au visiteur). Un plafond mensuel
+					(<code class="text-xs bg-gray-100 px-1 py-0.5 rounded">ASSISTANT_MONTHLY_BUDGET_USD</code>)
+					coupe automatiquement l'assistant en mode dégradé dès dépassement, avec une alerte
+					email immédiate. Le feature flag "Assistant IA activé" (Contenu > Assistant IA)
+					permet une désactivation immédiate en cas d'incident, sans redéploiement.
+				</p>
+			</section>
+
+			<section id="sauvegardes" class="scroll-mt-6 space-y-2">
+				<h2 class="text-xl font-heading font-bold text-brand-dark">Sauvegardes</h2>
+				<p class="opacity-80 leading-relaxed">
+					Sauvegardes de la base de données déclenchables manuellement ou automatisées par
+					cron côté serveur, avec chiffrement et rotation. Consultables et téléchargeables
+					depuis Paramètres > Sauvegardes.
+				</p>
+			</section>
+
+			<section id="support" class="scroll-mt-6 space-y-2">
+				<h2 class="text-xl font-heading font-bold text-brand-dark">Support</h2>
+				<p class="opacity-80 leading-relaxed">
+					Les tickets envoyés par les visiteurs via le formulaire public de support
+					apparaissent dans Support > Support Client. Répondre à un ticket notifie le client
+					par email avec un lien vers le fil complet ; le ticket passe alors "En cours". Une
+					réponse du client sur un ticket "Résolu" le rouvre automatiquement.
+				</p>
+			</section>
+
+		</div>
+	</div>
+{% endblock %}

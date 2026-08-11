@@ -1,0 +1,100 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}FAQ{% endblock %}
+
+{% block body %}
+	<div class="page-header">
+		<div class="min-w-0">
+			<h1 class="page-title flex items-center gap-2">
+				<span class="ti ti-message-question text-(--brand-primary)" aria-hidden="true"></span>
+				FAQ
+			</h1>
+			<p class="page-subtitle">Questions fréquentes sur l'utilisation du back-office.</p>
+		</div>
+	</div>
+
+	<div class="max-w-3xl space-y-8">
+
+		<section class="space-y-3">
+			<h2 class="text-xs font-bold uppercase tracking-wider opacity-40">Back-office</h2>
+
+			<details class="card group">
+				<summary class="cursor-pointer font-semibold text-brand-dark list-none flex items-center justify-between">
+					Comment ajouter un nouveau projet au portfolio ?
+					<span class="ti ti-chevron-down text-sm transition-transform group-open:rotate-180" aria-hidden="true"></span>
+				</summary>
+				<p class="mt-3 opacity-80 leading-relaxed">
+					Contenu > Projets > Ajouter un projet. Le titre, le slug et au moins une image sont
+					requis avant publication. Un projet peut aussi être créé automatiquement en
+					convertissant une demande de devis acceptée.
+				</p>
+			</details>
+
+			<details class="card group">
+				<summary class="cursor-pointer font-semibold text-brand-dark list-none flex items-center justify-between">
+					Un collaborateur peut-il voir toutes les sections du back-office ?
+					<span class="ti ti-chevron-down text-sm transition-transform group-open:rotate-180" aria-hidden="true"></span>
+				</summary>
+				<p class="mt-3 opacity-80 leading-relaxed">
+					Non. Chaque section vérifie un rôle minimum (voir Sécurité > Rôles & Perms) : un
+					collaborateur (ROLE_EDITOR) a accès au Contenu, mais pas à la Sécurité ni aux
+					Paramètres, réservés aux rôles Admin et au-delà.
+				</p>
+			</details>
+		</section>
+
+		<section class="space-y-3">
+			<h2 class="text-xs font-bold uppercase tracking-wider opacity-40">Assistant IA</h2>
+
+			<details class="card group">
+				<summary class="cursor-pointer font-semibold text-brand-dark list-none flex items-center justify-between">
+					Que se passe-t-il si le budget mensuel de l'assistant IA est dépassé ?
+					<span class="ti ti-chevron-down text-sm transition-transform group-open:rotate-180" aria-hidden="true"></span>
+				</summary>
+				<p class="mt-3 opacity-80 leading-relaxed">
+					L'assistant bascule automatiquement en mode dégradé (réponse de repli
+					pré-configurée) et une alerte email est envoyée. Aucune action manuelle n'est
+					requise pour couper l'assistant — le plafond protège déjà le budget.
+				</p>
+			</details>
+
+			<details class="card group">
+				<summary class="cursor-pointer font-semibold text-brand-dark list-none flex items-center justify-between">
+					Comment désactiver l'assistant IA en urgence ?
+					<span class="ti ti-chevron-down text-sm transition-transform group-open:rotate-180" aria-hidden="true"></span>
+				</summary>
+				<p class="mt-3 opacity-80 leading-relaxed">
+					Contenu > Assistant IA > décocher "Assistant IA activé". L'effet est immédiat, sans
+					redéploiement.
+				</p>
+			</details>
+		</section>
+
+		<section class="space-y-3">
+			<h2 class="text-xs font-bold uppercase tracking-wider opacity-40">Sécurité & rôles</h2>
+
+			<details class="card group">
+				<summary class="cursor-pointer font-semibold text-brand-dark list-none flex items-center justify-between">
+					Comment révoquer la session d'un collaborateur qui a perdu son appareil ?
+					<span class="ti ti-chevron-down text-sm transition-transform group-open:rotate-180" aria-hidden="true"></span>
+				</summary>
+				<p class="mt-3 opacity-80 leading-relaxed">
+					Sécurité > Sessions actives : repérer la session concernée et la révoquer. Elle est
+					déconnectée immédiatement, où qu'elle se trouve.
+				</p>
+			</details>
+
+			<details class="card group">
+				<summary class="cursor-pointer font-semibold text-brand-dark list-none flex items-center justify-between">
+					Un ticket support résolu peut-il se rouvrir tout seul ?
+					<span class="ti ti-chevron-down text-sm transition-transform group-open:rotate-180" aria-hidden="true"></span>
+				</summary>
+				<p class="mt-3 opacity-80 leading-relaxed">
+					Oui : si le client répond après que le ticket a été marqué "Résolu", il repasse
+					automatiquement "En cours" — pas besoin de le rouvrir manuellement.
+				</p>
+			</details>
+		</section>
+
+	</div>
+{% endblock %}

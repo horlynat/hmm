@@ -49,6 +49,10 @@
 
 					<div class="space-y-3 text-sm">
 						<div class="flex justify-between items-center">
+							<span class="opacity-60">Type :</span>
+							<span class="badge bg-brand-light text-brand-primary">{{ course.type.label }}</span>
+						</div>
+						<div class="flex justify-between items-center">
 							<span class="opacity-60">Date de début :</span>
 							<span class="font-bold">{{ course.startDate ? course.startDate|date('d/m/Y') : '—' }}</span>
 						</div>

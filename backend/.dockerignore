@@ -1,0 +1,32 @@
+.git
+.gitignore
+.github
+
+# Dépendances reconstruites dans l'image
+vendor/
+node_modules/
+
+# État local, jamais dans l'image
+var/
+.env.local
+.env.local.php
+.env.*.local
+.php-cs-fixer.cache
+.phpunit.cache/
+
+# Assets compilés localement — reconstruits par le stage "assets"
+public/build/
+
+# Dev/CI uniquement
+tests/
+.vscode/
+.editorconfig
+intelephense.json
+phpstan.dist.neon
+.php-cs-fixer.dist.php
+phpunit.dist.xml
+
+# Docs internes, pas utiles dans l'image
+_config.backend.md
+_cycle_vie_project.md
+docs/

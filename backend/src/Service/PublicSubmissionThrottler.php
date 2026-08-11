@@ -16,6 +16,9 @@ final class PublicSubmissionThrottler
     public function __construct(
         #[Autowire(service: 'limiter.public_form_submission')] private readonly RateLimiterFactory $formLimiter,
         #[Autowire(service: 'limiter.registration_attempt')] private readonly RateLimiterFactory $registrationLimiter,
+        #[Autowire(service: 'limiter.ai_assistant_chat')] private readonly RateLimiterFactory $aiAssistantLimiter,
+        #[Autowire(service: 'limiter.support_ticket_guest_access')] private readonly RateLimiterFactory $supportTicketGuestLimiter,
+        #[Autowire(service: 'limiter.quote_qualify')] private readonly RateLimiterFactory $quoteQualifyLimiter,
         private readonly RequestStack $requestStack,
     ) {
     }
@@ -34,6 +37,30 @@ final class PublicSubmissionThrottler
     public function assertRegistrationAllowed(): void
     {
         $this->assert($this->registrationLimiter);
+    }
+
+    /**
+     * @throws TooManyRequestsException
+     */
+    public function assertAiAssistantAllowed(): void
+    {
+        $this->assert($this->aiAssistantLimiter);
+    }
+
+    /**
+     * @throws TooManyRequestsException
+     */
+    public function assertSupportTicketGuestAccessAllowed(): void
+    {
+        $this->assert($this->supportTicketGuestLimiter);
+    }
+
+    /**
+     * @throws TooManyRequestsException
+     */
+    public function assertQuoteQualifyAllowed(): void
+    {
+        $this->assert($this->quoteQualifyLimiter);
     }
 
     private function assert(RateLimiterFactory $factory): void

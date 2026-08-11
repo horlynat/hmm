@@ -20,7 +20,9 @@ framework:
 
         routing:
             # C'est ici que se trouve l'erreur
-            'App\Message\LoginNotification': async 
+            'App\Message\LoginNotification': async
             'App\Message\SendEmail': async
+            'App\Message\AiAssistantIngestMessage': async
+            'App\Message\OffsiteBackupMessage': async
 
         failure_transport: failed

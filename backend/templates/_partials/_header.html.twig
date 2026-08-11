@@ -38,6 +38,16 @@
 				   class="input input-search w-48 lg:w-72 text-sm py-1.5" />
 		</form>
 
+		<form method="post" action="{{ path('admin_currency_set') }}" class="hidden sm:block">
+			<label for="admin-currency" class="sr-only">Devise d'affichage</label>
+			<select id="admin-currency" name="currency" onchange="this.form.submit()"
+					class="input input-select text-sm py-1.5 w-auto" aria-label="Devise d'affichage">
+				{% for currency in currency_choices() %}
+					<option value="{{ currency.value }}" {% if active_currency() == currency.value %}selected{% endif %}>{{ currency.getSymbol() }} {{ currency.value }}</option>
+				{% endfor %}
+			</select>
+		</form>
+
 		{% if is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_NOTIFICATIONS')) %}
 			<a href="{{ path('admin_notification_index') }}"
 			   class="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-600 dark:text-gray-300"

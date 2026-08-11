@@ -3,6 +3,7 @@
 namespace App\Form;
 
 use App\Entity\SystemSetting;
+use App\Enum\CurrencyEnum;
 use App\Enum\ThemeEnum;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
@@ -57,6 +58,11 @@ class SystemSettingType extends AbstractType
                 'choices' => self::LOCALE_CHOICES,
                 'multiple' => true,
                 'expanded' => true,
+            ])
+            ->add('defaultCurrency', EnumType::class, [
+                'class' => CurrencyEnum::class,
+                'label' => 'Devise par défaut',
+                'choice_label' => static fn (CurrencyEnum $currency): string => $currency->getLabel(),
             ])
         ;
     }
