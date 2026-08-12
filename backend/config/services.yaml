@@ -74,6 +74,7 @@ services:
     App\Service\AiAssistantBudgetGuard:
         arguments:
             $monthlyBudgetUsd: '%env(float:ASSISTANT_MONTHLY_BUDGET_USD)%'
+            $alertThresholdUsd: '%env(float:ASSISTANT_BUDGET_ALERT_THRESHOLD_USD)%'
 
     App\State\AiAssistantChatProcessor:
         arguments:
