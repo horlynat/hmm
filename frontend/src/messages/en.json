@@ -300,7 +300,10 @@
       "title": "Published projects",
       "lede": "Filter by status to find ongoing, completed or collaborative projects.",
       "empty": "Upcoming projects will appear here as soon as they're published.",
-      "filterAll": "All"
+      "filterAll": "All",
+      "previous": "Previous",
+      "next": "Next",
+      "pageIndicator": "Page {page} of {total}"
     },
     "status": {
       "a_venir": "Upcoming",

@@ -8,6 +8,7 @@ import { getProjectBySlug, getProjectSlugs } from "@/lib/api/projects";
 import { getMediaUrl } from "@/lib/media";
 import { jsonLdScript } from "@/lib/json-ld";
 import { siteConfig } from "@/config/site";
+import { projectStatusVariant } from "@/lib/status";
 
 export const dynamic = "force-static";
 
@@ -105,9 +106,6 @@ export default async function ProjectDetailPage({
       />
       <section className="px-6 pt-14 pb-8">
         <div className="mx-auto max-w-[840px]">
-          <Badge variant="outline" className="mb-4">
-            {tStatus(project.status)}
-          </Badge>
           <h1 className="mb-5 text-[clamp(2.25rem,4.5vw,3.75rem)] leading-[1.14]">
             {project.title}
           </h1>
@@ -160,6 +158,11 @@ export default async function ProjectDetailPage({
               ) : (
                 <ProjectVisual seed={project.id} />
               )}
+              {/* Même position que ProjectCard (coin supérieur droit) : lecture
+                  cohérente du statut, qu'on regarde une grille ou une page projet. */}
+              <Badge variant={projectStatusVariant(project.status)} className="absolute top-3 right-3 shadow-sm">
+                {tStatus(project.status)}
+              </Badge>
             </div>
           </Card>
         </div>

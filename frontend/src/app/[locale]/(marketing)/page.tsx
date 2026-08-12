@@ -15,6 +15,7 @@ import {
   SparkleChatIcon,
 } from "@/components/sections/AboutIcons";
 import { getProjects } from "@/lib/api/projects";
+import { sortProjectsForDisplay } from "@/lib/projects/sortForDisplay";
 import { getArticles } from "@/lib/api/articles";
 import { getTestimonials } from "@/lib/api/testimonials";
 import { getSkills } from "@/lib/api/skills";
@@ -164,6 +165,11 @@ export default async function HomePage({
   if (!content || !aboutContent) {
     throw new Error("Contenu de la page d'accueil indisponible.");
   }
+
+  // 6 derniers projets terminés, complétés par les projets en cours si moins
+  // de 6 sont terminés (cf. sortProjectsForDisplay) — au-delà, on renvoie
+  // vers /realisations plutôt que d'allonger la home indéfiniment.
+  const homeProjects = sortProjectsForDisplay(projects).slice(0, 6);
 
   return (
     <>
@@ -357,20 +363,13 @@ export default async function HomePage({
           <Badge className="mb-3.5">{t("projects.eyebrow")}</Badge>
           <h2 className="mb-2 text-[clamp(1.75rem,3.5vw,2.5rem)]">{t("projects.title")}</h2>
           <p className="mb-10 max-w-[60ch] opacity-70">{t("projects.lede")}</p>
-          {projects.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              {projects[0] && (
-                <Reveal delay={0} className="lg:row-span-2">
-                  <ProjectCard project={projects[0]} className="h-full" featured />
+          {homeProjects.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              {homeProjects.map((project, i) => (
+                <Reveal key={project.id} delay={i * 0.08}>
+                  <ProjectCard project={project} className="h-full" />
                 </Reveal>
-              )}
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-1">
-                {projects.slice(1, 3).map((project, i) => (
-                  <Reveal key={project.id} delay={(i + 1) * 0.08}>
-                    <ProjectCard project={project} />
-                  </Reveal>
-                ))}
-              </div>
+              ))}
             </div>
           ) : (
             <p className="text-sm opacity-60">{t("projects.empty")}</p>
