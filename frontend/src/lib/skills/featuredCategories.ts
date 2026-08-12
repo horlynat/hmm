@@ -19,7 +19,7 @@ export const HOME_FEATURED_SKILL_CATEGORIES: string[][] = [
   ["Consultant en Cyber Sécurité", "Cybersecurity Consultant"],
   ["Consultant en Gestion des Risques", "Risk Management Consultant"],
   ["IA & Automatisations", "AI & Automation"],
-  ["Développeur Web FullStack", "Full-Stack Web Developer"],
+  ["Développement Web FullStack", "Full-Stack Web Development"],
   ["Développement Mobile", "Mobile Development"],
   ["DevOps & Infrastructure"],
 ];

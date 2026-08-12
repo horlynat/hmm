@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
-import { Badge, Card, HeroBackground, Reveal } from "@/components/ui";
+import { Badge, Card, Reveal } from "@/components/ui";
+import { PageHero } from "@/components/sections/PageHero";
 import { FreelanceForm } from "@/components/sections/FreelanceForm";
 
 export const dynamic = "force-static";
@@ -14,35 +15,12 @@ export default async function FreelancesPage({
 
   return (
     <>
-      <section className="relative overflow-hidden px-6 pt-16 pb-20">
-        <HeroBackground />
-        <div className="relative mx-auto grid max-w-[1120px] gap-10 md:grid-cols-[1.05fr_0.95fr] md:items-center">
-          <div>
-            <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
-              {t("eyebrow")}
-            </Badge>
-            {/* Pas d'animation ici : candidat LCP le plus probable de la page. */}
-            <h1 className="mb-5 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
-              {t("title")} <span className="text-brand-primary">{t("titleAccent")}</span>
-            </h1>
-            <p
-              className="hero-in mb-7 max-w-[48ch] text-[1.05rem] opacity-75"
-              style={{ animationDelay: "0.16s" }}
-            >
-              {t("sub")}
-            </p>
-            <div
-              className="hero-in flex flex-wrap items-center gap-x-6 gap-y-3"
-              style={{ animationDelay: "0.24s" }}
-            >
-              <a href="#signup" className="btn-primary">
-                {t("ctaCreate")}
-              </a>
-              <a href="#how" className="text-sm font-semibold text-brand-primary hover:underline">
-                {t("how.eyebrow")} →
-              </a>
-            </div>
-          </div>
+      <PageHero
+        eyebrow={t("eyebrow")}
+        title={t("title")}
+        titleAccent={t("titleAccent")}
+        subtitle={t("sub")}
+        aside={
           <div className="hero-in flex flex-wrap gap-3" style={{ animationDelay: "0.32s" }}>
             <Card variant="soft" className="min-w-[100px] flex-1 py-5 text-center">
               <div
@@ -78,8 +56,20 @@ export default async function FreelancesPage({
               </div>
             </Card>
           </div>
+        }
+      >
+        <div
+          className="hero-in flex flex-wrap items-center gap-x-6 gap-y-3"
+          style={{ animationDelay: "0.24s" }}
+        >
+          <a href="#signup" className="btn-primary">
+            {t("ctaCreate")}
+          </a>
+          <a href="#how" className="text-sm font-semibold text-brand-primary hover:underline">
+            {t("how.eyebrow")} →
+          </a>
         </div>
-      </section>
+      </PageHero>
 
       <section id="how" className="px-6 py-14">
         <div className="mx-auto max-w-[1120px]">

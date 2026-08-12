@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
-import { Badge, ButtonLink, Card, HeroBackground, Reveal } from "@/components/ui";
+import { Layers, FolderKanban, Gauge } from "lucide-react";
+import { Badge, ButtonLink, Card, Reveal, StatCard } from "@/components/ui";
+import { PageHero } from "@/components/sections/PageHero";
 import { SkillsByCategory } from "@/components/sections/SkillsByCategory";
 import { getSkills } from "@/lib/api/skills";
 
@@ -173,46 +175,54 @@ export default async function SkillsPage({
   const softItems = t.raw("soft.items") as string[];
   const toolItems = t.raw("tools.items") as string[];
 
+  // Dérivées en JS pur depuis `skills` (déjà chargées ci-dessus) — pas de
+  // nouvel appel API rien que pour illustrer le hero.
+  const categoryCount = new Set(skills.map((skill) => skill.skillCategory.id)).size;
+  const averageLevel =
+    skills.length > 0
+      ? Math.round((skills.reduce((sum, skill) => sum + skill.level, 0) / skills.length) * 10) / 10
+      : 0;
+
   return (
     <>
-      <section className="relative overflow-hidden px-6 pt-16 pb-20">
-        <HeroBackground />
-        <div className="relative mx-auto max-w-[1120px]">
-          <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
-            {t("eyebrow")}
-          </Badge>
-          {/* Pas d'animation ici : candidat LCP le plus probable de la page. */}
-          <h1 className="mb-5 max-w-[22ch] text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
-            {t("title")} <span className="text-brand-primary">{t("titleAccent")}</span>
-          </h1>
-          <p
-            className="hero-in mb-7 max-w-[60ch] text-[1.05rem] opacity-75"
-            style={{ animationDelay: "0.16s" }}
-          >
-            {t("sub")}
-          </p>
-          <div
-            className="hero-in mb-7 flex flex-wrap items-center gap-x-6 gap-y-3"
-            style={{ animationDelay: "0.24s" }}
-          >
-            <ButtonLink href="/contact">{tc("ctaConfierProjet")}</ButtonLink>
-            <a
-              href="/cv-horlynat-mampassi-mbama.pdf"
-              download
-              className="text-sm font-semibold text-brand-primary hover:underline"
-            >
-              {tc("ctaTelechargerCv")} →
-            </a>
+      <PageHero
+        eyebrow={t("eyebrow")}
+        title={t("title")}
+        titleAccent={t("titleAccent")}
+        titleClassName="max-w-[22ch]"
+        subtitle={t("sub")}
+        subtitleClassName="max-w-[60ch]"
+        aside={
+          <div className="hero-in grid grid-cols-2 gap-3" style={{ animationDelay: "0.16s" }}>
+            <StatCard icon={Layers} label={t("stats.total")} value={skills.length} />
+            <StatCard icon={FolderKanban} label={t("stats.categories")} value={categoryCount} />
+            <div className="col-span-2">
+              <StatCard icon={Gauge} label={t("stats.level")} value={`${averageLevel}/10`} />
+            </div>
           </div>
-          <div className="hero-in flex flex-wrap gap-2.5" style={{ animationDelay: "0.32s" }}>
-            <Badge variant="accent">Symfony</Badge>
-            <Badge variant="accent">API Platform</Badge>
-            <Badge variant="accent">Next.js</Badge>
-            <Badge variant="outline">Assistant IA</Badge>
-            <Badge variant="outline">Cybersécurité</Badge>
-          </div>
+        }
+      >
+        <div
+          className="hero-in mb-7 flex flex-wrap items-center gap-x-6 gap-y-3"
+          style={{ animationDelay: "0.24s" }}
+        >
+          <ButtonLink href="/contact">{tc("ctaConfierProjet")}</ButtonLink>
+          <a
+            href="/cv-horlynat-mampassi-mbama.pdf"
+            download
+            className="text-sm font-semibold text-brand-primary hover:underline"
+          >
+            {tc("ctaTelechargerCv")} →
+          </a>
         </div>
-      </section>
+        <div className="hero-in flex flex-wrap gap-2.5" style={{ animationDelay: "0.32s" }}>
+          <Badge variant="accent">Symfony</Badge>
+          <Badge variant="accent">API Platform</Badge>
+          <Badge variant="accent">Next.js</Badge>
+          <Badge variant="outline">Assistant IA</Badge>
+          <Badge variant="outline">Cybersécurité</Badge>
+        </div>
+      </PageHero>
 
       <section className="border-y border-[var(--border-softer)] bg-bg-card px-6 py-16">
         <div className="mx-auto max-w-[1120px]">
