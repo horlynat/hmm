@@ -4,3 +4,4 @@ export { ThemeToggle } from "./ThemeToggle";
 export { ScrollTopButton } from "./ScrollTopButton";
 export { WhatsappFab } from "./WhatsappFab";
 export { LocaleSwitcher } from "./LocaleSwitcher";
+export { CurrencySwitcher } from "./CurrencySwitcher";

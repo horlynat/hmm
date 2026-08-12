@@ -1,6 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui";
 import { ProfileForm } from "@/components/sections/ProfileForm";
+import { ProfileFormSection } from "@/components/sections/ProfileFormSection";
+import { FreelanceProfileOverview } from "@/components/sections/FreelanceProfileOverview";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getAvatarUrl } from "@/lib/media";
 
@@ -40,7 +42,14 @@ export default async function ProfilPage({
         </div>
       </div>
 
-      <ProfileForm user={user} />
+      {user.isCollaborator ? (
+        <>
+          <FreelanceProfileOverview user={user} locale={locale} />
+          <ProfileFormSection user={user} />
+        </>
+      ) : (
+        <ProfileForm user={user} />
+      )}
     </div>
   );
 }

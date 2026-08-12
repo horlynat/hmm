@@ -79,6 +79,7 @@ export interface Skill {
   id: number;
   name: string;
   level: number;
+  skillCategory: SkillCategory;
 }
 
 export interface Experience {
@@ -86,13 +87,25 @@ export interface Experience {
   company: string;
   role: string;
   description: string;
+  /** ISO 8601. */
+  startDate: string;
+  /** ISO 8601, absent = poste actuel. */
+  endDate: string | null;
 }
+
+/** Miroir de App\Enum\CourseTypeEnum côté backend. */
+export type CourseType = "diplome" | "certification" | "formation";
 
 export interface Course {
   id: number;
   title: string;
   institution: string;
   description: string;
+  type: CourseType;
+  /** ISO 8601. */
+  startDate: string;
+  /** ISO 8601. */
+  endDate: string;
 }
 
 export interface Testimonial {
@@ -151,6 +164,8 @@ export interface AboutContent {
   profileLocation: string;
   profileWorkMode: string;
   profileLanguages: string;
+  /** URL complète (résolue via getMediaUrl), uploadée depuis l'admin — absente tant qu'aucune photo n'a été définie. */
+  profileImagePath: string | null;
   bioTitle: string;
   bioP1: string;
   bioP2: string;
@@ -188,6 +203,17 @@ export interface AiAssistantEntry {
   sortOrder: number;
 }
 
+/** Payload envoyé à POST /api/ai-assistant/chat (proxy vers /api/assistant/chat). */
+export interface AiAssistantChatPayload {
+  question: string;
+  history: Array<{ role: "user" | "assistant"; text: string }>;
+  locale: string;
+}
+
+export type AiAssistantChatResult =
+  | { ok: true; answer: string; suggestions: string[] }
+  | { ok: false; error: "rate_limited" | "unavailable" | "network_error" };
+
 /** Miroir du groupe `api_public` de App\Entity\ContactMessage. */
 export interface ContactMessagePayload {
   source: string;
@@ -216,6 +242,29 @@ export interface QuoteRequestPayload {
   attachmentName?: string;
   clarifications?: { question: string; answer: string }[];
   message: string;
+}
+
+/** Miroir du groupe `api_public` de App\Entity\SupportTicket (+ $message, virtuel côté SupportTicketApiResource). */
+export interface SupportTicketPayload {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
+/** Un message du fil, tel que renvoyé par SupportTicketPublicController (jamais le jeton lui-même). */
+export interface SupportTicketMessage {
+  body: string;
+  fromAdmin: boolean;
+  createdAt: string;
+}
+
+/** Réponse de GET /api/support_tickets/{token} — contrôleur "plain", pas de forme Hydra. */
+export interface SupportTicketThread {
+  subject: string;
+  status: "open" | "in_progress" | "resolved";
+  statusLabel: string;
+  messages: SupportTicketMessage[];
 }
 
 /**
@@ -346,6 +395,12 @@ export interface SessionInvoice {
   amount: string;
   currency: string;
   formattedAmount: string;
+  /** Devise d'affichage demandée (préférence du visiteur), jamais celle de `currency` si différente. */
+  displayCurrency: string;
+  /** Montant converti dans displayCurrency, ou null si la conversion a échoué/n'a pas été demandée. */
+  convertedAmount: string | null;
+  /** Toujours renseigné : retombe sur formattedAmount si la conversion échoue. */
+  formattedConvertedAmount: string;
   status: InvoiceStatus;
   statusLabel: string;
   issuedAt: string;
@@ -423,6 +478,62 @@ export interface SessionProjectDetail {
   info: ProjectInfo | null;
 }
 
+/** Membre de l'équipe d'un projet — miroir de GET /api/me/projects/{id}/team. */
+export interface SessionTeamMember {
+  id: number;
+  fullName: string | null;
+  email: string;
+  profileImage: string | null;
+  specialties: string[] | null;
+  availability: string | null;
+}
+
+/** Équipe complète d'un projet (jamais le client) — miroir de GET /api/me/projects/{id}/team. */
+export interface SessionProjectTeam {
+  owner: SessionTeamMember;
+  collaborators: SessionTeamMember[];
+}
+
+export type TaskStatus = "todo" | "in_progress" | "done" | "blocked";
+
+/** Tâche de projet — miroir de GET /api/me/projects/{id}/tasks. */
+export interface SessionTask {
+  id: number;
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  statusLabel: string;
+  statusVariant: string;
+  dueDate: string | null;
+  isOverdue: boolean;
+  position: number;
+  completedAt: string | null;
+  assignee: { id: number; fullName: string | null } | null;
+  /** La tâche est assignée à l'utilisateur courant — seule condition pour pouvoir en changer le statut en self-service. */
+  isMine: boolean;
+}
+
+/** Entrée de temps passé — miroir de GET /api/me/projects/{id}/time-entries. */
+export interface SessionTimeEntry {
+  id: number;
+  user: { id: number; fullName: string | null };
+  task: { id: number; title: string } | null;
+  minutes: number;
+  formattedDuration: string;
+  spentOn: string;
+  description: string | null;
+  isMine: boolean;
+}
+
+/** Suivi du temps d'un projet, visible par toute l'équipe. */
+export interface SessionTimeTracking {
+  entries: SessionTimeEntry[];
+  totalMinutes: number;
+  formattedTotalTime: string;
+  mineMinutes: number;
+  mineFormattedTime: string;
+}
+
 /** Détail complet d'un devis appartenant à l'utilisateur courant — miroir de GET /api/me/quotes/{id}. */
 export interface SessionQuoteDetail {
   id: number;
@@ -466,16 +577,33 @@ export interface SessionUser {
   specialties: string[] | null;
   availability: string | null;
   portfolioUrl: string | null;
+  yearsOfExperience: number | null;
+  city: string | null;
+  linkedinUrl: string | null;
+  githubUrl: string | null;
+  languages: string[] | null;
   roles: string[];
   isVerified: boolean;
   isTwoFactorEnabled: boolean;
   isCollaborator: boolean;
+  /** Complétude du profil "freelance" (0-100), pertinente seulement si isCollaborator. Voir User::getFreelanceProfileCompletionPercentage(). */
+  profileCompletion: number;
+  /** Clés (parmi FREELANCE_PROFILE_FIELD_KEYS, @see lib/profileFields) encore vides — voir User::getMissingFreelanceProfileFields(). */
+  missingProfileFields: string[];
   /** Peut être `null` pour les comptes créés avant l'ajout de ce champ. */
   createdAt: string | null;
   lastLoginAt: string | null;
   lastIp: string | null;
   lastLocation: string | null;
+  lastLocationCity: string | null;
+  lastLocationCountry: string | null;
+  lastLocationLatitude: number | null;
+  lastLocationLongitude: number | null;
   lastDevice: string | null;
+  /** Type d'appareil lisible ("Smartphone", "Ordinateur"...), dérivé du user-agent — voir App\Service\DeviceParser. */
+  lastDeviceType: string;
+  lastDeviceBrand: string | null;
+  lastDeviceLabel: string;
   editableFields: string[];
   attributions: SessionAttributions;
 }
@@ -487,6 +615,11 @@ export interface ProfileUpdatePayload {
   specialties?: string[];
   availability?: string;
   portfolioUrl?: string;
+  yearsOfExperience?: number | null;
+  city?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  languages?: string[];
   plainPassword?: string;
   currentPassword?: string;
 }

@@ -1,7 +1,9 @@
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
-import { Badge, ButtonLink, Card, HeroBackground, Reveal } from "@/components/ui";
-import { SkillChip } from "@/components/sections/SkillChip";
+import { Badge, ButtonLink, Card, Reveal } from "@/components/ui";
+import { PageHero } from "@/components/sections/PageHero";
+import { SkillsByCategory } from "@/components/sections/SkillsByCategory";
+import { QualificationsList } from "@/components/sections/QualificationsList";
 import { Timeline } from "@/components/sections/Timeline";
 import {
   DualLensIcon,
@@ -9,6 +11,8 @@ import {
   ShieldIcon,
   SparkleChatIcon,
 } from "@/components/sections/AboutIcons";
+import type { CourseType } from "@/lib/types";
+import { formatDateRange } from "@/lib/date";
 import { getExperiences } from "@/lib/api/experiences";
 import { getCourses } from "@/lib/api/courses";
 import { getSkills } from "@/lib/api/skills";
@@ -48,47 +52,12 @@ export default async function AboutPage({
 
   return (
     <>
-      <section className="relative overflow-hidden px-6 pt-16 pb-20">
-        <HeroBackground />
-
-        <div className="relative mx-auto grid max-w-[1120px] gap-12 md:grid-cols-[1.05fr_0.95fr] md:items-center">
-          <div>
-            <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
-              {content.heroEyebrow}
-            </Badge>
-            <h1
-              className="hero-in mb-5 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]"
-              style={{ animationDelay: "0.08s" }}
-            >
-              {content.heroTitle} <span className="text-brand-primary">{content.heroTitleAccent}</span>
-            </h1>
-            <p
-              className="hero-in mb-7 max-w-[48ch] text-[1.05rem] opacity-75"
-              style={{ animationDelay: "0.16s" }}
-            >
-              {content.heroSub}
-            </p>
-            <div
-              className="hero-in mb-7 flex flex-wrap items-center gap-x-6 gap-y-3"
-              style={{ animationDelay: "0.24s" }}
-            >
-              <ButtonLink href="/contact">{tc("ctaConfierProjet")}</ButtonLink>
-              <a
-                href="/cv-horlynat-mampassi-mbama.pdf"
-                download
-                className="text-sm font-semibold text-brand-primary hover:underline"
-              >
-                {tc("ctaTelechargerCv")} →
-              </a>
-            </div>
-            <div className="hero-in flex flex-wrap gap-2.5" style={{ animationDelay: "0.32s" }}>
-              <Badge variant="accent">Symfony</Badge>
-              <Badge variant="accent">API Platform</Badge>
-              <Badge variant="accent">Next.js</Badge>
-              <Badge variant="outline">Assistant IA</Badge>
-              <Badge variant="outline">Cybersécurité</Badge>
-            </div>
-          </div>
+      <PageHero
+        eyebrow={content.heroEyebrow}
+        title={content.heroTitle}
+        titleAccent={content.heroTitleAccent}
+        subtitle={content.heroSub}
+        aside={
           <Card variant="soft" className="hero-in p-7 text-center" style={{ animationDelay: "0.16s" }}>
             <div
               className="mx-auto mb-4 flex h-[88px] w-[88px] items-center justify-center rounded-full text-2xl font-extrabold text-white"
@@ -130,21 +99,42 @@ export default async function AboutPage({
               {tc("ctaTelechargerCv")}
             </a>
           </Card>
+        }
+      >
+        <div
+          className="hero-in mb-7 flex flex-wrap items-center gap-x-6 gap-y-3"
+          style={{ animationDelay: "0.24s" }}
+        >
+          <ButtonLink href="/contact">{tc("ctaConfierProjet")}</ButtonLink>
+          <a
+            href="/cv-horlynat-mampassi-mbama.pdf"
+            download
+            className="text-sm font-semibold text-brand-primary hover:underline"
+          >
+            {tc("ctaTelechargerCv")} →
+          </a>
         </div>
-      </section>
+        <div className="hero-in flex flex-wrap gap-2.5" style={{ animationDelay: "0.32s" }}>
+          <Badge variant="accent">Symfony</Badge>
+          <Badge variant="accent">API Platform</Badge>
+          <Badge variant="accent">Next.js</Badge>
+          <Badge variant="outline">Assistant IA</Badge>
+          <Badge variant="outline">Cybersécurité</Badge>
+        </div>
+      </PageHero>
 
       <section className="px-6 py-16">
         <div className="mx-auto grid max-w-[1120px] gap-12 md:grid-cols-2 md:items-center">
           <Reveal
             delay={0.16}
-            className="relative h-full rounded-sm -mx-6 aspect-[2/3] w-[calc(100%+3rem)] overflow-hidden md:mx-auto md:w-full md:max-w-[380px] md:aspect-[4/5] md:rounded-[var(--radius-lg)] md:border md:border-[var(--border-soft)] md:shadow-lg"
+            className="relative h-full w-[calc(100%+3rem)] -mx-6 aspect-[2/3] overflow-hidden rounded-sm md:mx-0 md:w-full md:aspect-[4/5] md:rounded-[var(--radius-lg)] md:border md:border-[var(--border-soft)] md:shadow-lg"
           >
             <Image
-              src="/images/portrait-horlynat.jpg"
+              src={content.profileImagePath ?? "/images/portrait-horlynat.jpg"}
               alt={content.profileName}
               fill
-              sizes="(min-width: 768px) 380px, 100vw"
-              className="object-top object-cover h-full w-full "
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="h-full w-full object-cover object-top"
               priority
             />
           </Reveal>
@@ -199,11 +189,15 @@ export default async function AboutPage({
               {t("formation.title")}
             </h2>
             {courses.length > 0 ? (
-              <Timeline
-                items={courses.map((c) => ({
-                  title: `${c.title} — ${c.institution}`,
-                  desc: c.description,
-                }))}
+              <QualificationsList
+                courses={courses}
+                labels={
+                  {
+                    diplome: t("formation.typeDiploma"),
+                    certification: t("formation.typeCertification"),
+                    formation: t("formation.typeTraining"),
+                  } satisfies Record<CourseType, string>
+                }
               />
             ) : (
               <p className="text-sm opacity-60">{tc("aVenir")}</p>
@@ -219,6 +213,7 @@ export default async function AboutPage({
                 items={experiences.map((e) => ({
                   title: `${e.role} — ${e.company}`,
                   desc: e.description,
+                  date: formatDateRange(e.startDate, e.endDate, tc("present")),
                 }))}
               />
             ) : (
@@ -236,13 +231,7 @@ export default async function AboutPage({
             <p className="mb-10 max-w-[60ch] opacity-70">{t("skillsDetail.lede")}</p>
           </Reveal>
           {skills.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {skills.map((skill, i) => (
-                <Reveal key={skill.id} delay={i * 0.05}>
-                  <SkillChip skill={skill} />
-                </Reveal>
-              ))}
-            </div>
+            <SkillsByCategory skills={skills} />
           ) : (
             <p className="text-sm opacity-60">{tc("aVenir")}</p>
           )}

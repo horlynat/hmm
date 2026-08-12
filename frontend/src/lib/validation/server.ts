@@ -55,6 +55,17 @@ export const quoteAnswersSchema = z.object({
     .max(10),
 });
 
+/** Sous-ensemble des champs projet de quoteAnswersSchema — exclut volontairement name/email/phone/canal, sans rapport avec la qualification du projet. */
+export const quoteQualifyAnswersSchema = quoteAnswersSchema.pick({
+  type: true,
+  categoryDetail: true,
+  source: true,
+  description: true,
+  budget: true,
+  currency: true,
+  delai: true,
+});
+
 export const contactMessageSchema = z.object({
   source: z.string().min(1).max(60),
   name: z.string().trim().min(1).max(120),
@@ -65,6 +76,17 @@ export const contactMessageSchema = z.object({
   phone: z.string().max(30).optional(),
   channel: z.string().max(60).optional(),
   slot: z.string().max(60).optional(),
+});
+
+export const supportTicketSchema = z.object({
+  name: z.string().trim().min(1).max(255),
+  email,
+  subject: z.string().trim().min(1).max(255),
+  message: z.string().min(10).max(5000),
+});
+
+export const supportTicketReplySchema = z.object({
+  message: z.string().min(10).max(5000),
 });
 
 /** Résultat standard d'échec de validation serveur, compatible ApiPostResult. */

@@ -16,12 +16,16 @@ export type NavHref =
   | "/realisations"
   | "/blog"
   | "/freelances"
+  | "/aide"
   | "/contact"
   | "/mentions-legales"
   | "/politique-de-confidentialite"
   | "/politique-de-cookies"
   | "/conditions-generales";
 
+// "/aide" reste une route valide (centre d'aide public, accessible depuis
+// l'espace client — cf. AccountNav.tsx — ou un lien direct/email de support)
+// mais n'apparaît plus ici : plus dans le menu ni le footer du site vitrine.
 export const navItems: { key: string; href: NavHref }[] = [
   { key: "apropos", href: "/a-propos" },
   { key: "competences", href: "/competences" },

@@ -6,10 +6,13 @@ interface RawSkillCategory extends SkillCategory {
 }
 
 /**
- * La relation Skill <-> SkillCategory n'est pas exposée dans le groupe
- * `api_public` (cf. plan) : cette liste ne permet donc pas de grouper les
- * compétences par catégorie pour l'instant, seulement d'afficher les noms de
- * catégorie si besoin ailleurs.
+ * Liste des catégories seules (sans leurs compétences — la relation inverse
+ * `SkillCategory::$skill` reste `api_admin` uniquement, pour éviter un cycle
+ * de sérialisation). Le groupement par catégorie ne passe pas par cette
+ * fonction : `getSkills()` (src/lib/api/skills.ts) renvoie directement
+ * chaque compétence avec sa catégorie imbriquée (`skill.skillCategory`),
+ * c'est à partir de là que `SkillsByCategory` reconstruit les groupes — ça
+ * évite d'afficher une catégorie vide comme celles sans compétence publiée.
  *
  * `locale` explicite — cf. commentaire dans projects.ts (bug de mémoïsation de `getLocale()`).
  */

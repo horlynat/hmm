@@ -11,6 +11,7 @@
     "closeMenu": "Close menu",
     "skipToContent": "Skip to content",
     "aVenir": "to be completed",
+    "present": "Present",
     "envoiEnCours": "Sending...",
     "envoye": "Sent",
     "readMore": "Read article",
@@ -36,6 +37,7 @@
     "agreeTerms": "You must accept the terms to continue.",
     "selectRequired": "Please make a selection.",
     "tooLong": "This text is too long ({max} characters maximum).",
+    "tooShort": "This text is too short ({min} characters minimum).",
     "genericError": "Something went wrong, please try again.",
     "networkError": "Connection failed. Check your network and try again.",
     "rateLimited": "Too many attempts. Please wait a minute before trying again.",
@@ -93,7 +95,7 @@
     "skills": {
       "eyebrow": "Skills",
       "title": "The same architecture, explained simply",
-      "lede": "Each card matches a real building block of the stack used on this site.",
+      "lede": "Four domains that shape my work — the full breakdown, category by category, is on the skills page.",
       "empty": "Skills will appear here as soon as they're published.",
       "cta": "See all skills"
     },
@@ -168,7 +170,10 @@
     },
     "formation": {
       "eyebrow": "Education",
-      "title": "Qualifications and certifications"
+      "title": "Qualifications and certifications",
+      "typeDiploma": "Degrees",
+      "typeCertification": "Certifications",
+      "typeTraining": "Training"
     },
     "experience": {
       "eyebrow": "Experience",
@@ -211,10 +216,15 @@
     "title": "A wide range,",
     "titleAccent": "connected by a single logic.",
     "sub": "Web and mobile development, AI, cybersecurity, insurance and design: fields that seem unrelated, but converge as soon as it's about understanding a need and answering it with a reliable system.",
+    "stats": {
+      "total": "Skills",
+      "categories": "Domains",
+      "level": "Average level"
+    },
     "list": {
       "eyebrow": "Skills",
       "title": "The stack used daily",
-      "lede": "Grouping by category is temporarily unavailable from the public API — flat list in the meantime.",
+      "lede": "Grouped by domain — each category maps to a real part of my work, not a generic list.",
       "empty": "Skills will appear here as soon as they're published."
     },
     "domain": {
@@ -268,6 +278,11 @@
     "title": "Systems that ship,",
     "titleAccent": "not just mockups.",
     "sub": "This site is the first concrete proof. The following projects will be added over time.",
+    "stats": {
+      "statTotal": "Total projects",
+      "statActive": "In progress",
+      "statCompleted": "Completed"
+    },
     "caseStudy": {
       "eyebrow": "Case study",
       "title": "This portfolio, as a demonstration",
@@ -275,9 +290,9 @@
       "badge": "Decoupled architecture",
       "cardTitle": "One system, four layers",
       "cardText": "Backend, API, frontend and AI assistant — each with a clear role.",
-      "bodyTitle": "Personal portfolio & AI assistant",
-      "bodyText1": "A showcase site designed like a real product: a Symfony back office for content management, API Platform as the single entry point, a decoupled Next.js frontend, and an AI assistant that presents my profile and qualifies project requests on my behalf.",
-      "bodyText2": "The goal: the site itself demonstrates how I design an architecture — every piece replaceable without breaking the others.",
+      "bodyTitle": "Horlynat | Portail Digital",
+      "bodyText1": "Much more than a showcase: a full platform running in production — client area, quote requests qualified by the AI assistant around the clock, project tracking and invoicing — managed from a Symfony back office and served by a decoupled Next.js frontend through API Platform.",
+      "bodyText2": "It's also my best demonstration: the architecture you're browsing is the very one I design for my clients — every piece replaceable without breaking the others.",
       "linkText": "See the full profile"
     },
     "list": {
@@ -310,14 +325,11 @@
       "invoicesLabel": "Related invoices",
       "viewAllInvoices": "View all my invoices"
     },
-    "invite": {
-      "badge": "Have a project to showcase?",
-      "text": "Tell me about it — client, context, technologies used and outcome — and I'll replace these placeholders with your real work."
-    },
     "cta": {
       "title": "Got a project in mind?",
       "sub": "Let's talk about what you want to build, or let my assistant qualify your request in a few questions.",
-      "linkText": "See my skills"
+      "linkText": "See my skills",
+      "proposeLinkText": "Suggest my project"
     }
   },
   "blog": {
@@ -326,6 +338,10 @@
     "titleAccent": "and lessons learned.",
     "sub": "Thoughts on architecture, technical choices and my view of the craft — between development, cybersecurity and insurance.",
     "empty": "Articles will appear here as soon as they're published.",
+    "stats": {
+      "articles": "Published articles",
+      "topics": "Topics covered"
+    },
     "newsletter": {
       "title": "Follow upcoming articles",
       "text": "An occasional email, no spam — only when a new article or project comes out.",
@@ -587,6 +603,7 @@
       "back": "Back",
       "next": "Next",
       "continueWithAssistant": "Continue with the assistant",
+      "iaGenerating": "Preparing questions...",
       "iaLabel": "Assistant review",
       "iaQuestion": "One last thing before sending",
       "iaAnswerPlaceholder": "Your answer (optional)...",
@@ -660,6 +677,45 @@
       "errorPhoneRequired": "A valid phone number is required for this contact channel."
     }
   },
+  "helpCenter": {
+    "eyebrow": "Help center",
+    "title": "Answers,",
+    "titleAccent": "found fast.",
+    "sub": "How working with me works, and the most common questions. Still stuck? Support answers directly.",
+    "docsHeading": "How it works",
+    "faqHeading": "Frequently asked questions",
+    "ctaTitle": "Can't find your answer?",
+    "ctaText": "Open a support ticket, I'll reply by email as soon as possible.",
+    "ctaButton": "Contact support"
+  },
+  "supportTicket": {
+    "form": {
+      "eyebrow": "Support",
+      "title": "Open a",
+      "titleAccent": "support ticket.",
+      "sub": "Describe your issue, I'll reply by email with a link to follow the thread.",
+      "nameLabel": "Name",
+      "emailLabel": "Email",
+      "subjectLabel": "Subject",
+      "messageLabel": "Your message",
+      "messagePlaceholder": "Describe your issue or question...",
+      "submit": "Send ticket",
+      "success": "Ticket sent — you'll receive a confirmation email with a link to follow the thread.",
+      "error": "Something went wrong, please try again.",
+      "rateLimited": "Too many attempts. Please wait before trying again."
+    },
+    "thread": {
+      "statusLabel": "Status",
+      "youLabel": "You",
+      "supportLabel": "Support",
+      "replyLabel": "Add a reply",
+      "replyPlaceholder": "Your message...",
+      "replySubmit": "Send",
+      "replySuccess": "Your reply has been sent.",
+      "replyError": "Something went wrong, please try again.",
+      "replyRateLimited": "Too many attempts. Please wait before trying again."
+    }
+  },
   "legal": {
     "mentions": {
       "title": "Legal notice",
@@ -685,14 +741,15 @@
       "dataProject": "Quote request: service category, indicative budget, desired timeline, and any detail provided via the qualification assistant.",
       "dataFreelance": "Freelancer sign-up: specialties, availability, portfolio and free-form bio, provided at your own initiative.",
       "dataTechnical": "Technical data: your IP address is used transiently (not stored) to limit abusive form submissions.",
+      "dataAiAssistant": "Conversational AI assistant: the text of the questions you ask it is sent to third-party AI providers to generate a reply (see \"Data recipients\"). No trace of that text is kept in our own database — only anonymized metadata is (length, cost, timestamp, a non-reversible hash of your IP address).",
       "purposeTitle": "Purpose of processing",
       "purposeText": "This information is used only to qualify your request, get back to you, manage your account where applicable, prepare a quote or arrange an appointment. It is never resold or used for advertising purposes.",
       "legalBasisTitle": "Legal basis",
       "legalBasisText": "Processing is based on your explicit consent (form checkboxes), on the performance of a contract when you create an account, and on legitimate interest for abuse prevention (rate-limiting form submissions).",
       "retentionTitle": "Retention period",
-      "retentionText": "Account data (client or freelancer) is kept for as long as the account remains active. Quote or appointment requests that don't lead to a project are kept only for as long as needed to process them, then deleted.",
+      "retentionText": "Account data (client or freelancer) is kept for as long as the account remains active. Quote or appointment requests that don't lead to a project are kept only for as long as needed to process them, then deleted. Anonymized metadata from AI assistant exchanges is automatically deleted after 90 days.",
       "recipientsTitle": "Data recipients",
-      "recipientsText": "Your data is accessible only to Horlynat Mampassi Mbama, as data controller. No data is sold, rented, or shared with third parties for commercial or advertising purposes; this site does not use any third-party analytics or tracking tool.",
+      "recipientsText": "Your data is accessible only to Horlynat Mampassi Mbama, as data controller. No data is sold, rented, or shared with third parties for commercial or advertising purposes; this site does not use any third-party analytics or tracking tool. Technical exception: questions asked to the AI assistant are sent to Google (Gemini, for relevant-content retrieval) and Anthropic (Claude, for generating the reply), two providers located outside the European Union acting as technical subprocessors for this one feature, under their respective API terms of service — never for advertising purposes on our part.",
       "rightsTitle": "Your rights",
       "rightsText": "In line with GDPR principles, you have a right of access, rectification, erasure, restriction and objection regarding your personal data, as well as a right to portability for the data you provided.",
       "rightsContact": "To exercise any of these rights, contact us via the <link>contact form</link>.",
@@ -757,7 +814,7 @@
   },
   "aiAssistant": {
     "title": "Horlynat's assistant",
-    "sub": "answers on my behalf — profile, projects, vision",
+    "sub": "Online",
     "greeting": "Hello, I'm Horlynat's AI assistant. I can introduce his profile, skills, projects, view of the craft, or qualify your project request. What would you like to know?",
     "placeholder": "Ask your question...",
     "send": "Send",
@@ -774,7 +831,10 @@
     "answerRealisations": "His most accomplished work to date is this portfolio itself: Symfony/API Platform/Next.js architecture with a built-in AI assistant.",
     "answerPhilosophie": "His view: technology is only worthwhile if it serves a real business need, and cybersecurity must be designed in from the start, not bolted on afterwards.",
     "answerPourquoi": "Because he combines business expertise (insurance, risk management), cybersecurity, full-range development and design — rare to find all of that in one person.",
-    "answerProjet": "Tell me the type of service, your indicative budget and desired timeline, and I'll prepare your request for Horlynat."
+    "answerProjet": "Tell me the type of service, your indicative budget and desired timeline, and I'll prepare your request for Horlynat.",
+    "thinking": "The assistant is thinking…",
+    "errorRateLimited": "Too many questions sent. Please wait a moment before trying again.",
+    "errorUnavailable": "The conversational assistant is temporarily unavailable."
   },
   "auth": {
     "login": {
@@ -801,7 +861,9 @@
       "resendVerificationLink": "Resend verification link"
     },
     "forgotPassword": {
-      "title": "Forgot password",
+      "eyebrow": "Account recovery",
+      "title": "Reset your",
+      "titleAccent": "password.",
       "subtitle": "Enter your email address: if an account exists, you'll receive a link to reset your password.",
       "emailLabel": "Email address",
       "emailPlaceholder": "you@example.com",
@@ -891,6 +953,7 @@
         "settings": "Settings",
         "dataExport": "Export my data",
         "deleteAccount": "Delete my account",
+        "help": "Help",
         "groupActivity": "My activity",
         "groupAccount": "My account",
         "groupDanger": "Danger zone",
@@ -991,8 +1054,8 @@
       "phoneLabel": "Phone",
       "phoneLocked": "Not editable from your account. Contact us if this number has changed.",
       "bioLabel": "About / bio",
-      "specialtiesLabel": "Specialties (comma-separated)",
-      "specialtiesPlaceholder": "Backend, Cybersecurity, UI...",
+      "specialtiesLabel": "Skills and technologies you use day to day",
+      "specialtiesPlaceholder": "E.g. React, Symfony, PostgreSQL, Docker...",
       "availabilityLabel": "Availability",
       "portfolioLabel": "Portfolio / link",
       "submit": "Save changes",
@@ -1015,7 +1078,10 @@
         "lastLoginGroupTitle": "Last login",
         "lastLoginAtLabel": "Date",
         "lastLocationLabel": "Approximate location",
+        "lastLocationCoordinatesLabel": "Geographic coordinates",
         "lastDeviceLabel": "Device",
+        "lastDeviceTypeLabel": "Device type",
+        "lastDeviceBrandLabel": "Brand",
         "lastIpLabel": "IP address"
       },
       "dataExport": {
@@ -1032,7 +1098,26 @@
         "confirmButton": "Yes, delete permanently",
         "confirmPending": "Deleting…",
         "cancelButton": "Cancel"
-      }
+      },
+      "overview": {
+        "completeBadge": "Complete profile",
+        "portfolioLink": "View portfolio",
+        "checklistTitle": "What's left to complete",
+        "experienceValue": "{count, plural, one {# year of experience} other {# years of experience}}"
+      },
+      "yearsOfExperienceLabel": "Years of experience",
+      "cityLabel": "City",
+      "linkedinLabel": "LinkedIn",
+      "githubLabel": "GitHub",
+      "languagesLabel": "Languages spoken",
+      "languageFrench": "French",
+      "languageEnglish": "English",
+      "languageSpanish": "Spanish",
+      "languagePortuguese": "Portuguese",
+      "professionalLinksLabel": "Professional link (LinkedIn or GitHub)",
+      "fieldLocked": "Not editable from your account. Contact us if this information has changed.",
+      "allFieldsLocked": "All your information is locked. Contact us for any changes.",
+      "completeCta": "Complete my profile"
     },
     "changePassword": {
       "title": "Change password",
@@ -1051,7 +1136,55 @@
       "statTotal": "Total projects",
       "statActive": "In progress",
       "statUpcoming": "Upcoming",
-      "backOfficeHint": "For time tracking, expenses and detailed history, head to the back-office area."
+      "profileBanner": {
+        "title": "Complete your profile",
+        "body": "Your profile is {percent}% complete. Until it reaches 100%, you can't actively participate in projects (read-only) — no project can be confidently assigned to you without a complete profile. Still missing:",
+        "cta": "Complete my profile"
+      }
+    },
+    "workspace": {
+      "backLink": "← Back to project management",
+      "readOnlyBanner": {
+        "title": "Read-only workspace",
+        "body": "Complete your profile to 100% to participate in this project: comment, update your tasks and log your time.",
+        "cta": "Complete my profile",
+        "discussionHint": "Complete your profile to post here."
+      },
+      "team": {
+        "title": "Project team",
+        "ownerLabel": "Lead",
+        "collaboratorLabel": "Collaborator"
+      },
+      "tasks": {
+        "title": "Tasks",
+        "empty": "No tasks for this project.",
+        "notAssigned": "Unassigned",
+        "updateError": "Could not update the task status.",
+        "dueLabel": "Due",
+        "overdueLabel": "Overdue",
+        "status": {
+          "todo": "To do",
+          "in_progress": "In progress",
+          "done": "Done",
+          "blocked": "Blocked"
+        }
+      },
+      "time": {
+        "title": "Time tracking",
+        "totalLabel": "Team total",
+        "mineLabel": "My total",
+        "historyEmpty": "No time logged for this project.",
+        "formTitle": "Log time",
+        "hoursLabel": "Hours",
+        "minutesLabel": "Minutes",
+        "descriptionLabel": "Description",
+        "dateLabel": "Date",
+        "taskLabel": "Related task",
+        "noTask": "No related task",
+        "submit": "Save",
+        "submitting": "Saving…",
+        "success": "Time logged."
+      }
     },
     "invoices": {
       "title": "My invoices",

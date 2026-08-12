@@ -8,7 +8,15 @@ import {
   setSessionCookie,
 } from "./session";
 import type { ApiPostResult } from "@/lib/api/client";
-import type { ProfileUpdatePayload, SessionUser, SessionComment, SessionInvoice } from "@/lib/types";
+import type {
+  ProfileUpdatePayload,
+  SessionUser,
+  SessionComment,
+  SessionInvoice,
+  SessionTask,
+  SessionTimeEntry,
+  TaskStatus,
+} from "@/lib/types";
 
 /**
  * Message exact levé par App\Security\UserChecker::checkPostAuth() quand le
@@ -417,6 +425,102 @@ export async function postProjectComment(
     return { ok: true, comment };
   } catch (error) {
     console.error("[auth] postProjectComment failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+/**
+ * Changement de statut d'une tâche assignée au collaborateur courant :
+ * POST /api/me/projects/{id}/tasks/{taskId}/status. Renvoie
+ * error: "freelance_profile_incomplete" (via le champ `detail` du backend)
+ * si le profil freelance n'est pas complet à 100 % — l'appelant décide de
+ * l'affichage, aucun traitement spécial nécessaire ici.
+ */
+export async function updateTaskStatus(
+  projectId: number,
+  taskId: number,
+  status: TaskStatus,
+): Promise<ApiPostResult & { task?: SessionTask }> {
+  const token = await getToken();
+  if (!token) {
+    return { ok: false, error: "unauthenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/me/projects/${projectId}/tasks/${taskId}/status`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      const detail = await res
+        .json()
+        .then((body: unknown) =>
+          typeof body === "object" && body && "detail" in body
+            ? String((body as { detail: unknown }).detail)
+            : null,
+        )
+        .catch(() => null);
+      return { ok: false, error: detail ?? `HTTP ${res.status}` };
+    }
+
+    const task = (await res.json()) as SessionTask;
+    return { ok: true, task };
+  } catch (error) {
+    console.error("[auth] updateTaskStatus failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+/**
+ * Saisie de temps sur un projet par le collaborateur courant :
+ * POST /api/me/projects/{id}/time-entries.
+ */
+export async function logTime(
+  projectId: number,
+  payload: { minutes: number; spentOn?: string; description?: string; taskId?: number },
+): Promise<ApiPostResult & { entry?: SessionTimeEntry }> {
+  const token = await getToken();
+  if (!token) {
+    return { ok: false, error: "unauthenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/me/projects/${projectId}/time-entries`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      const detail = await res
+        .json()
+        .then((body: unknown) =>
+          typeof body === "object" && body && "detail" in body
+            ? String((body as { detail: unknown }).detail)
+            : null,
+        )
+        .catch(() => null);
+      return { ok: false, error: detail ?? `HTTP ${res.status}` };
+    }
+
+    const entry = (await res.json()) as SessionTimeEntry;
+    return { ok: true, entry };
+  } catch (error) {
+    console.error("[auth] logTime failed", error);
     return { ok: false, error: "network_error" };
   }
 }

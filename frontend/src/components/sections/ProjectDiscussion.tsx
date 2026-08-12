@@ -19,7 +19,10 @@ interface ProjectDiscussionProps {
     you: string;
     close: string;
     open: string;
+    readOnly?: string;
   };
+  /** Désactive l'envoi (formulaire masqué) — la lecture des messages reste possible. Utilisé pour un profil freelance incomplet. */
+  readOnly?: boolean;
 }
 
 /**
@@ -28,7 +31,7 @@ interface ProjectDiscussionProps {
  * un projet avec beaucoup de contenu (galerie, stack, résultats…) rendait la
  * discussion inaccessible sans défiler toute la fiche.
  */
-export function ProjectDiscussion({ projectId, initialComments, locale, labels }: ProjectDiscussionProps) {
+export function ProjectDiscussion({ projectId, initialComments, locale, labels, readOnly = false }: ProjectDiscussionProps) {
   const [open, setOpen] = useState(false);
   const [comments, setComments] = useState(initialComments);
   const [content, setContent] = useState("");
@@ -133,25 +136,29 @@ export function ProjectDiscussion({ projectId, initialComments, locale, labels }
           </ul>
         )}
 
-        <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-[var(--border-softer)] p-3">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder={labels.placeholder}
-            rows={1}
-            maxLength={5000}
-            disabled={isPending}
-            className="input min-h-10 flex-1 resize-none"
-          />
-          <button
-            type="submit"
-            disabled={isPending || !content.trim()}
-            aria-label={isPending ? labels.sending : labels.send}
-            className="btn-primary shrink-0 !px-3"
-          >
-            <Send size={16} aria-hidden="true" />
-          </button>
-        </form>
+        {readOnly ? (
+          <p className="border-t border-[var(--border-softer)] p-3 text-center text-xs opacity-60">{labels.readOnly}</p>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-[var(--border-softer)] p-3">
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={labels.placeholder}
+              rows={1}
+              maxLength={5000}
+              disabled={isPending}
+              className="input min-h-10 flex-1 resize-none"
+            />
+            <button
+              type="submit"
+              disabled={isPending || !content.trim()}
+              aria-label={isPending ? labels.sending : labels.send}
+              className="btn-primary shrink-0 !px-3"
+            >
+              <Send size={16} aria-hidden="true" />
+            </button>
+          </form>
+        )}
         {error && <p className="px-3 pb-3 text-xs text-danger">{error}</p>}
       </div>
     </>

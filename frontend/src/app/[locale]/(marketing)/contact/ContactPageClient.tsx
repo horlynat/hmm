@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import clsx from "clsx";
-import { Badge, Card, HeroBackground, Reveal } from "@/components/ui";
+import { Badge, Card, Reveal } from "@/components/ui";
+import { PageHero } from "@/components/sections/PageHero";
 import { Link } from "@/i18n/navigation";
 import { QuoteWizard } from "@/components/sections/QuoteWizard";
 import { AppointmentForm } from "@/components/sections/AppointmentForm";
@@ -20,9 +21,16 @@ const MODES: { value: Mode; icon: string; labelKey: ModeMessageKey; subKey: Mode
   { value: "freelance", icon: "💼", labelKey: "modeFreelance", subKey: "modeFreelanceSub" },
 ];
 
-export function ContactPageClient() {
+function isMode(value: string | undefined): value is Mode {
+  return MODES.some((m) => m.value === value);
+}
+
+export function ContactPageClient({ initialMode }: { initialMode?: string }) {
   const t = useTranslations("contact");
-  const [mode, setMode] = useState<Mode>("devis");
+  // `initialMode` vient de `?mode=` (cf. contact/page.tsx) — permet à un lien
+  // externe (ex. "Proposer mon projet" sur /realisations) d'ouvrir directement
+  // le bon panneau plutôt que de retomber sur "Demander un devis" par défaut.
+  const [mode, setMode] = useState<Mode>(isMode(initialMode) ? initialMode : "devis");
 
   const activeStyle = {
     background:
@@ -31,36 +39,15 @@ export function ContactPageClient() {
 
   return (
     <>
-      <section className="relative overflow-hidden px-6 pt-16 pb-20">
-        <HeroBackground />
-        <div className="relative mx-auto max-w-[1120px]">
-          <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
-            {t("eyebrow")}
-          </Badge>
-          <h1
-            className="hero-in mb-5 max-w-[24ch] text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]"
-            style={{ animationDelay: "0.08s" }}
-          >
-            {t("title")} <span className="text-brand-primary">{t("titleAccent")}</span>
-          </h1>
-          <p
-            className="hero-in mb-7 max-w-[56ch] text-[1.05rem] opacity-75"
-            style={{ animationDelay: "0.16s" }}
-          >
-            {t("sub")}
-          </p>
-          <div className="hero-in flex flex-wrap gap-2.5" style={{ animationDelay: "0.24s" }}>
-            <Badge variant="accent">Symfony</Badge>
-            <Badge variant="accent">API Platform</Badge>
-            <Badge variant="accent">Next.js</Badge>
-            <Badge variant="outline">Assistant IA</Badge>
-            <Badge variant="outline">Cybersécurité</Badge>
-          </div>
-
-          <div
-            className="hero-in mt-8 flex flex-wrap gap-3"
-            style={{ animationDelay: "0.32s" }}
-          >
+      <PageHero
+        eyebrow={t("eyebrow")}
+        title={t("title")}
+        titleAccent={t("titleAccent")}
+        titleClassName="max-w-[24ch]"
+        subtitle={t("sub")}
+        subtitleClassName="max-w-[56ch]"
+        aside={
+          <div className="hero-in grid grid-cols-2 gap-3" style={{ animationDelay: "0.16s" }}>
             {MODES.map(({ value, icon, labelKey, subKey }) => (
               <button
                 key={value}
@@ -82,8 +69,16 @@ export function ContactPageClient() {
               </button>
             ))}
           </div>
+        }
+      >
+        <div className="hero-in flex flex-wrap gap-2.5" style={{ animationDelay: "0.24s" }}>
+          <Badge variant="accent">Symfony</Badge>
+          <Badge variant="accent">API Platform</Badge>
+          <Badge variant="accent">Next.js</Badge>
+          <Badge variant="outline">Assistant IA</Badge>
+          <Badge variant="outline">Cybersécurité</Badge>
         </div>
-      </section>
+      </PageHero>
 
       <section className="px-6 py-10">
         {mode === "devis" && (

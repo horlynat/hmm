@@ -1,5 +1,7 @@
 import { getTranslations } from "next-intl/server";
-import { Badge, ButtonLink, HeroBackground, Reveal } from "@/components/ui";
+import { Newspaper, Tag as TagIcon } from "lucide-react";
+import { Badge, ButtonLink, Reveal, StatCard } from "@/components/ui";
+import { PageHero } from "@/components/sections/PageHero";
 import { ArticleCard } from "@/components/sections/ArticleCard";
 import { NewsletterForm } from "@/components/sections/NewsletterForm";
 import { getArticles } from "@/lib/api/articles";
@@ -15,45 +17,45 @@ export default async function BlogPage({
   const t = await getTranslations({ locale, namespace: "blog" });
   const tc = await getTranslations({ locale, namespace: "common" });
   const articles = await getArticles(locale);
+  // Nombre de sujets distincts réellement couverts par les articles publiés
+  // (pas de contenu inventé : dérivé des tags déjà chargés depuis l'API).
+  const topicsCount = new Set(articles.flatMap((article) => article.tags.map((tag) => tag.id))).size;
 
   return (
     <>
-      <section className="relative overflow-hidden px-6 pt-16 pb-20">
-        <HeroBackground />
-        <div className="relative mx-auto max-w-[1120px]">
-          <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
-            {t("eyebrow")}
-          </Badge>
-          <h1
-            className="hero-in mb-5 max-w-[22ch] text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]"
-            style={{ animationDelay: "0.08s" }}
-          >
-            {t("title")} <span className="text-brand-primary">{t("titleAccent")}</span>
-          </h1>
-          <p
-            className="hero-in mb-7 max-w-[60ch] text-[1.05rem] opacity-75"
-            style={{ animationDelay: "0.16s" }}
-          >
-            {t("sub")}
-          </p>
-          <div
-            className="hero-in mb-7 flex flex-wrap items-center gap-x-6 gap-y-3"
-            style={{ animationDelay: "0.24s" }}
-          >
-            <ButtonLink href="/contact">{tc("ctaConfierProjet")}</ButtonLink>
-            <a href="#newsletter" className="text-sm font-semibold text-brand-primary hover:underline">
-              {t("newsletter.submit")} →
-            </a>
+      <PageHero
+        eyebrow={t("eyebrow")}
+        title={t("title")}
+        titleAccent={t("titleAccent")}
+        titleClassName="max-w-[22ch]"
+        subtitle={t("sub")}
+        subtitleClassName="max-w-[60ch]"
+        aside={
+          <div className="hero-in flex flex-wrap gap-3" style={{ animationDelay: "0.16s" }}>
+            <StatCard icon={Newspaper} label={t("stats.articles")} value={articles.length} />
+            {topicsCount > 0 && (
+              <StatCard icon={TagIcon} label={t("stats.topics")} value={topicsCount} />
+            )}
           </div>
-          <div className="hero-in flex flex-wrap gap-2.5" style={{ animationDelay: "0.32s" }}>
-            <Badge variant="accent">Symfony</Badge>
-            <Badge variant="accent">API Platform</Badge>
-            <Badge variant="accent">Next.js</Badge>
-            <Badge variant="outline">Assistant IA</Badge>
-            <Badge variant="outline">Cybersécurité</Badge>
-          </div>
+        }
+      >
+        <div
+          className="hero-in mb-7 flex flex-wrap items-center gap-x-6 gap-y-3"
+          style={{ animationDelay: "0.24s" }}
+        >
+          <ButtonLink href="/contact">{tc("ctaConfierProjet")}</ButtonLink>
+          <a href="#newsletter" className="text-sm font-semibold text-brand-primary hover:underline">
+            {t("newsletter.submit")} →
+          </a>
         </div>
-      </section>
+        <div className="hero-in flex flex-wrap gap-2.5" style={{ animationDelay: "0.32s" }}>
+          <Badge variant="accent">Symfony</Badge>
+          <Badge variant="accent">API Platform</Badge>
+          <Badge variant="accent">Next.js</Badge>
+          <Badge variant="outline">Assistant IA</Badge>
+          <Badge variant="outline">Cybersécurité</Badge>
+        </div>
+      </PageHero>
 
       <section id="articles" className="border-y border-[var(--border-softer)] bg-bg-card px-6 py-16">
         <div className="mx-auto max-w-[1120px]">

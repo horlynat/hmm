@@ -1,9 +1,9 @@
 "use server";
 
-import { apiPost, type ApiPostResult } from "@/lib/api/client";
+import { apiPost, apiPostWithData, type ApiPostResult } from "@/lib/api/client";
 import { getToken } from "@/lib/auth/session";
 import { rateLimit } from "@/lib/rate-limit";
-import { quoteAnswersSchema, invalidInput } from "@/lib/validation/server";
+import { quoteAnswersSchema, quoteQualifyAnswersSchema, invalidInput } from "@/lib/validation/server";
 import type { QuoteRequestPayload, QuoteWizardAnswers } from "@/lib/types";
 
 /**
@@ -43,4 +43,41 @@ export async function submitQuoteRequest(
   const token = await getToken();
 
   return apiPost("/quote_requests", payload, token ? { token } : {});
+}
+
+export type QualifyQuoteResult = { ok: true; questions: string[] } | { ok: false; error: string };
+
+/**
+ * Génère 1 à 2 questions de qualification dynamiques (Claude Sonnet, cf.
+ * App\State\QuoteQualifyProcessor) à partir des réponses projet déjà saisies
+ * dans le wizard — appelé juste avant la transition vers l'étape "ia-qualif"
+ * (cf. useQuoteWizard.ts::fetchIaQuestions). N'envoie jamais name/email/phone/
+ * canal : sans rapport avec la qualification du projet. Ne throw jamais —
+ * l'appelant retombe sur ses questions codées en dur sur tout `ok:false` ou
+ * tableau vide, sans avoir à distinguer la cause de l'échec.
+ */
+export async function qualifyQuoteRequest(
+  answers: Pick<
+    QuoteWizardAnswers,
+    "type" | "categoryDetail" | "source" | "description" | "budget" | "currency" | "delai"
+  >,
+  locale: string,
+): Promise<QualifyQuoteResult> {
+  if (!(await rateLimit("quote-qualify", 20, 60 * 60 * 1000))) {
+    return { ok: false, error: "rate_limited" };
+  }
+
+  const parsed = quoteQualifyAnswersSchema.safeParse(answers);
+  if (!parsed.success) return { ok: false, error: "invalid_input" };
+
+  const result = await apiPostWithData<{ questions: string[] }>(
+    "/quote/qualify",
+    { ...parsed.data, locale },
+    // Couvre le timeout de 30s côté App\Service\ClaudeClient + marge — même
+    // arbitrage que la route proxy de l'assistant IA (src/app/api/ai-assistant/chat/route.ts).
+    { timeoutMs: 35_000 },
+  );
+  if (!result.ok) return result;
+
+  return { ok: true, questions: Array.isArray(result.data.questions) ? result.data.questions : [] };
 }

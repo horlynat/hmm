@@ -11,6 +11,7 @@
     "closeMenu": "Fermer le menu",
     "skipToContent": "Aller au contenu",
     "aVenir": "à compléter",
+    "present": "Aujourd'hui",
     "envoiEnCours": "Envoi en cours...",
     "envoye": "Envoyé",
     "readMore": "Lire l'article",
@@ -36,6 +37,7 @@
     "agreeTerms": "Vous devez accepter les conditions pour continuer.",
     "selectRequired": "Merci de faire une sélection.",
     "tooLong": "Ce texte est trop long ({max} caractères maximum).",
+    "tooShort": "Ce texte est trop court ({min} caractères minimum).",
     "genericError": "Une erreur est survenue, merci de réessayer.",
     "networkError": "Connexion impossible. Vérifiez votre réseau et réessayez.",
     "rateLimited": "Trop de tentatives. Merci de patienter une minute avant de réessayer.",
@@ -93,7 +95,7 @@
     "skills": {
       "eyebrow": "Compétences",
       "title": "La même architecture, expliquée simplement",
-      "lede": "Chaque carte correspond à une brique réelle de la stack utilisée sur ce site.",
+      "lede": "Quatre domaines qui structurent mon travail — le détail complet, catégorie par catégorie, est sur la page compétences.",
       "empty": "Les compétences seront affichées ici dès leur publication.",
       "cta": "Voir toutes les compétences"
     },
@@ -168,7 +170,10 @@
     },
     "formation": {
       "eyebrow": "Formation",
-      "title": "Qualifications et certifications"
+      "title": "Qualifications et certifications",
+      "typeDiploma": "Diplômes",
+      "typeCertification": "Certifications",
+      "typeTraining": "Formations"
     },
     "experience": {
       "eyebrow": "Expérience",
@@ -211,10 +216,15 @@
     "title": "Une palette large,",
     "titleAccent": "reliée par une seule logique.",
     "sub": "Développement web et mobile, IA, cybersécurité, assurance et design : des domaines qui se rejoignent dès qu'il s'agit de comprendre un besoin et d'y répondre par un système fiable.",
+    "stats": {
+      "total": "Compétences",
+      "categories": "Domaines",
+      "level": "Niveau moyen"
+    },
     "list": {
       "eyebrow": "Compétences",
       "title": "La stack utilisée au quotidien",
-      "lede": "Groupement par catégorie temporairement indisponible côté API publique — liste à plat en attendant.",
+      "lede": "Regroupées par domaine — chaque catégorie correspond à un pan réel de mon activité, pas une liste générique.",
       "empty": "Les compétences seront affichées ici dès leur publication."
     },
     "domain": {
@@ -268,6 +278,11 @@
     "title": "Des systèmes livrés,",
     "titleAccent": "pas seulement des maquettes.",
     "sub": "Ce site en est la première preuve concrète. Les projets suivants viennent s'y ajouter au fil des missions.",
+    "stats": {
+      "statTotal": "Projets au total",
+      "statActive": "En cours",
+      "statCompleted": "Terminés"
+    },
     "caseStudy": {
       "eyebrow": "Étude de cas",
       "title": "Ce portfolio, comme démonstration",
@@ -275,9 +290,9 @@
       "badge": "Architecture découplée",
       "cardTitle": "Un système, quatre couches",
       "cardText": "Backend, API, frontend et assistant IA — chacun avec un rôle clair.",
-      "bodyTitle": "Portfolio & assistant IA personnel",
-      "bodyText1": "Un site vitrine pensé comme un vrai produit : back-office Symfony pour la gestion des contenus, API Platform comme point d'entrée unique, frontend Next.js découplé, et un assistant IA qui présente mon profil et qualifie les demandes de projet à ma place.",
-      "bodyText2": "L'objectif : que le site lui-même démontre ma façon de concevoir une architecture — chaque brique remplaçable sans casser les autres.",
+      "bodyTitle": "Horlynat | Portail Digital",
+      "bodyText1": "Bien plus qu'une vitrine : une plateforme complète en production — espace client, devis qualifiés par l'assistant IA 24h/24, suivi de projets et facturation — pilotée depuis un back-office Symfony et servie par un frontend Next.js découplé via API Platform.",
+      "bodyText2": "C'est aussi ma meilleure démonstration : l'architecture que vous parcourez est celle que je conçois pour mes clients — chaque brique remplaçable sans casser les autres.",
       "linkText": "Voir le profil complet"
     },
     "list": {
@@ -310,14 +325,11 @@
       "invoicesLabel": "Factures liées",
       "viewAllInvoices": "Voir toutes mes factures"
     },
-    "invite": {
-      "badge": "Vous avez un projet à mettre en avant ?",
-      "text": "Décrivez-le-moi — client, contexte, technologies utilisées et résultat obtenu — et je remplace ces emplacements par vos vraies réalisations."
-    },
     "cta": {
       "title": "Un projet en tête ?",
       "sub": "Discutons de ce que vous voulez construire, ou laissez mon assistant qualifier votre demande en quelques questions.",
-      "linkText": "Voir mes compétences"
+      "linkText": "Voir mes compétences",
+      "proposeLinkText": "Proposer mon projet"
     }
   },
   "blog": {
@@ -326,6 +338,10 @@
     "titleAccent": "et retours d'expérience.",
     "sub": "Réflexions sur l'architecture, les choix techniques et ma vision du métier — entre développement, cybersécurité et assurance.",
     "empty": "Les articles seront affichés ici dès leur publication.",
+    "stats": {
+      "articles": "Articles publiés",
+      "topics": "Sujets abordés"
+    },
     "newsletter": {
       "title": "Suivre les prochains articles",
       "text": "Un e-mail occasionnel, pas de spam — seulement quand un nouvel article ou un nouveau projet sort.",
@@ -587,6 +603,7 @@
       "back": "Précédent",
       "next": "Suivant",
       "continueWithAssistant": "Continuer avec l'assistant",
+      "iaGenerating": "Préparation des questions...",
       "iaLabel": "Vérification par l'assistant",
       "iaQuestion": "Un dernier point avant l'envoi",
       "iaAnswerPlaceholder": "Votre réponse (optionnel)...",
@@ -660,6 +677,45 @@
       "errorPhoneRequired": "Un numéro de téléphone valide est requis pour ce canal de contact."
     }
   },
+  "helpCenter": {
+    "eyebrow": "Centre d'aide",
+    "title": "Des réponses,",
+    "titleAccent": "vite trouvées.",
+    "sub": "Comment fonctionne une collaboration avec moi, et les questions les plus fréquentes. Toujours coincé ? Le support répond directement.",
+    "docsHeading": "Comment ça marche",
+    "faqHeading": "Questions fréquentes",
+    "ctaTitle": "Vous ne trouvez pas votre réponse ?",
+    "ctaText": "Ouvrez un ticket de support, je vous réponds par email dès que possible.",
+    "ctaButton": "Contacter le support"
+  },
+  "supportTicket": {
+    "form": {
+      "eyebrow": "Support",
+      "title": "Ouvrir un",
+      "titleAccent": "ticket de support.",
+      "sub": "Décrivez votre problème, je vous réponds par email avec un lien pour suivre l'échange.",
+      "nameLabel": "Nom",
+      "emailLabel": "Email",
+      "subjectLabel": "Sujet",
+      "messageLabel": "Votre message",
+      "messagePlaceholder": "Décrivez votre problème ou votre question...",
+      "submit": "Envoyer le ticket",
+      "success": "Ticket envoyé — vous allez recevoir un email de confirmation avec un lien pour suivre l'échange.",
+      "error": "Une erreur est survenue, merci de réessayer.",
+      "rateLimited": "Trop de tentatives. Merci de patienter avant de réessayer."
+    },
+    "thread": {
+      "statusLabel": "Statut",
+      "youLabel": "Vous",
+      "supportLabel": "Support",
+      "replyLabel": "Ajouter une réponse",
+      "replyPlaceholder": "Votre message...",
+      "replySubmit": "Envoyer",
+      "replySuccess": "Votre réponse a été envoyée.",
+      "replyError": "Une erreur est survenue, merci de réessayer.",
+      "replyRateLimited": "Trop de tentatives. Merci de patienter avant de réessayer."
+    }
+  },
   "legal": {
     "mentions": {
       "title": "Mentions légales",
@@ -685,14 +741,15 @@
       "dataProject": "Demande de devis : catégorie de prestation, budget indicatif, délai souhaité, et toute précision apportée via l'assistant de qualification.",
       "dataFreelance": "Inscription freelance : spécialités, disponibilité, portfolio et présentation libre, fournis à votre initiative.",
       "dataTechnical": "Donnée technique : votre adresse IP est utilisée de façon transitoire (non stockée) pour limiter les tentatives abusives d'envoi de formulaires.",
+      "dataAiAssistant": "Assistant IA conversationnel : le texte des questions que vous lui posez est transmis à des prestataires IA tiers pour générer une réponse (voir « Destinataires des données »). Aucune trace de ce texte n'est conservée dans notre propre base — seules des métadonnées anonymisées le sont (longueur, coût, horodatage, empreinte non réversible de l'adresse IP).",
       "purposeTitle": "Finalité du traitement",
       "purposeText": "Ces informations sont utilisées uniquement pour qualifier votre demande, vous recontacter, gérer votre compte le cas échéant, établir un devis ou organiser un rendez-vous. Elles ne sont ni revendues ni utilisées à des fins publicitaires.",
       "legalBasisTitle": "Base légale",
       "legalBasisText": "Le traitement repose sur votre consentement explicite (cases à cocher des formulaires), sur l'exécution du contrat lorsque vous créez un compte, et sur l'intérêt légitime pour la prévention des abus (limitation du nombre de tentatives d'envoi).",
       "retentionTitle": "Durée de conservation",
-      "retentionText": "Les données d'un compte (client ou freelance) sont conservées tant que le compte reste actif. Les demandes de devis ou de rendez-vous non suivies d'effet sont conservées le temps nécessaire à leur traitement, puis supprimées.",
+      "retentionText": "Les données d'un compte (client ou freelance) sont conservées tant que le compte reste actif. Les demandes de devis ou de rendez-vous non suivies d'effet sont conservées le temps nécessaire à leur traitement, puis supprimées. Les métadonnées anonymisées des échanges avec l'assistant IA sont supprimées automatiquement après 90 jours.",
       "recipientsTitle": "Destinataires des données",
-      "recipientsText": "Vos données sont accessibles uniquement à Horlynat Mampassi Mbama, responsable du traitement. Aucune donnée n'est vendue, louée ou partagée avec des tiers à des fins commerciales ou publicitaires ; ce site n'utilise aucun outil d'analytics ou de tracking tiers.",
+      "recipientsText": "Vos données sont accessibles uniquement à Horlynat Mampassi Mbama, responsable du traitement. Aucune donnée n'est vendue, louée ou partagée avec des tiers à des fins commerciales ou publicitaires ; ce site n'utilise aucun outil d'analytics ou de tracking tiers. Exception technique : les questions posées à l'assistant IA sont transmises à Google (Gemini, recherche de contenu pertinent) et Anthropic (Claude, génération de la réponse), deux prestataires situés hors Union européenne agissant comme sous-traitants techniques pour cette seule fonctionnalité, dans le cadre de leurs conditions d'utilisation API respectives — jamais à des fins publicitaires de notre part.",
       "rightsTitle": "Vos droits",
       "rightsText": "Conformément aux principes du RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation et d'opposition concernant vos données personnelles, ainsi que d'un droit à la portabilité pour les données que vous avez fournies.",
       "rightsContact": "Pour exercer l'un de ces droits, contactez-nous via le <link>formulaire de contact</link>.",
@@ -757,7 +814,7 @@
   },
   "aiAssistant": {
     "title": "Assistant de Horlynat",
-    "sub": "répond à ma place — profil, projets, vision",
+    "sub": "En ligne",
     "greeting": "Bonjour, je suis l'assistant IA de Horlynat. Je peux vous présenter son profil, ses compétences, ses réalisations, sa vision du métier, ou qualifier votre demande de projet. Que voulez-vous savoir ?",
     "placeholder": "Posez votre question...",
     "send": "Envoyer",
@@ -774,7 +831,10 @@
     "answerRealisations": "Sa réalisation la plus aboutie à ce jour est ce portfolio lui-même : architecture Symfony/API Platform/Next.js avec un assistant IA intégré.",
     "answerPhilosophie": "Sa vision : la technologie ne vaut que si elle sert un besoin métier réel, et la cybersécurité doit être pensée dès la conception, pas ajoutée après coup.",
     "answerPourquoi": "Parce qu'il combine expertise métier (assurance, gestion des risques), cybersécurité, développement complet et design — rare de trouver tout ça chez une seule personne.",
-    "answerProjet": "Décrivez-moi le type de prestation, votre budget indicatif et votre délai souhaité, et je préparerai votre demande pour Horlynat."
+    "answerProjet": "Décrivez-moi le type de prestation, votre budget indicatif et votre délai souhaité, et je préparerai votre demande pour Horlynat.",
+    "thinking": "L'assistant réfléchit…",
+    "errorRateLimited": "Trop de questions envoyées. Merci de patienter un peu avant de réessayer.",
+    "errorUnavailable": "L'assistant conversationnel est momentanément indisponible."
   },
   "auth": {
     "login": {
@@ -801,7 +861,9 @@
       "resendVerificationLink": "Renvoyer le lien de vérification"
     },
     "forgotPassword": {
-      "title": "Mot de passe oublié",
+      "eyebrow": "Récupération de compte",
+      "title": "Réinitialisez votre",
+      "titleAccent": "mot de passe.",
       "subtitle": "Indiquez votre adresse email : si un compte existe, vous recevrez un lien pour réinitialiser votre mot de passe.",
       "emailLabel": "Adresse email",
       "emailPlaceholder": "vous@exemple.com",
@@ -891,6 +953,7 @@
         "settings": "Paramètres",
         "dataExport": "Exporter mes données",
         "deleteAccount": "Supprimer mon compte",
+        "help": "Aide",
         "groupActivity": "Mon activité",
         "groupAccount": "Mon compte",
         "groupDanger": "Zone sensible",
@@ -991,8 +1054,8 @@
       "phoneLabel": "Téléphone",
       "phoneLocked": "Non modifiable depuis votre espace. Contactez-nous si ce numéro a changé.",
       "bioLabel": "Présentation / bio",
-      "specialtiesLabel": "Spécialités (séparées par des virgules)",
-      "specialtiesPlaceholder": "Backend, Cybersécurité, UI...",
+      "specialtiesLabel": "Compétences et technologies utilisées au quotidien",
+      "specialtiesPlaceholder": "Ex : React, Symfony, PostgreSQL, Docker...",
       "availabilityLabel": "Disponibilité",
       "portfolioLabel": "Portfolio / lien",
       "submit": "Enregistrer les modifications",
@@ -1015,7 +1078,10 @@
         "lastLoginGroupTitle": "Dernière connexion",
         "lastLoginAtLabel": "Date",
         "lastLocationLabel": "Localisation approximative",
+        "lastLocationCoordinatesLabel": "Coordonnées géographiques",
         "lastDeviceLabel": "Appareil",
+        "lastDeviceTypeLabel": "Type d'appareil",
+        "lastDeviceBrandLabel": "Marque",
         "lastIpLabel": "Adresse IP"
       },
       "dataExport": {
@@ -1032,7 +1098,26 @@
         "confirmButton": "Oui, supprimer définitivement",
         "confirmPending": "Suppression…",
         "cancelButton": "Annuler"
-      }
+      },
+      "overview": {
+        "completeBadge": "Profil complet",
+        "portfolioLink": "Voir le portfolio",
+        "checklistTitle": "Ce qu'il vous reste à compléter",
+        "experienceValue": "{count, plural, one {# an d'expérience} other {# ans d'expérience}}"
+      },
+      "yearsOfExperienceLabel": "Années d'expérience",
+      "cityLabel": "Ville",
+      "linkedinLabel": "LinkedIn",
+      "githubLabel": "GitHub",
+      "languagesLabel": "Langues parlées",
+      "languageFrench": "Français",
+      "languageEnglish": "Anglais",
+      "languageSpanish": "Espagnol",
+      "languagePortuguese": "Portugais",
+      "professionalLinksLabel": "Lien professionnel (LinkedIn ou GitHub)",
+      "fieldLocked": "Non modifiable depuis votre espace. Contactez-nous si cette information a changé.",
+      "allFieldsLocked": "Toutes vos informations sont verrouillées. Contactez-nous pour toute modification.",
+      "completeCta": "Compléter mon profil"
     },
     "changePassword": {
       "title": "Changer le mot de passe",
@@ -1051,7 +1136,55 @@
       "statTotal": "Projets au total",
       "statActive": "En cours",
       "statUpcoming": "À venir",
-      "backOfficeHint": "Pour le suivi du temps, des dépenses et de l'historique détaillé, rendez-vous dans l'espace back-office."
+      "profileBanner": {
+        "title": "Complétez votre profil",
+        "body": "Votre profil est complété à {percent} %. Tant qu'il n'est pas à 100 %, vous ne pouvez pas participer activement aux projets (lecture seule) — aucun projet ne peut vous être confié en toute confiance sans un profil complet. Il vous manque :",
+        "cta": "Compléter mon profil"
+      }
+    },
+    "workspace": {
+      "backLink": "← Retour à la gestion de projet",
+      "readOnlyBanner": {
+        "title": "Espace en lecture seule",
+        "body": "Complétez votre profil à 100 % pour pouvoir participer à ce projet : commenter, mettre à jour vos tâches et saisir votre temps.",
+        "cta": "Compléter mon profil",
+        "discussionHint": "Complétez votre profil pour pouvoir écrire ici."
+      },
+      "team": {
+        "title": "Équipe du projet",
+        "ownerLabel": "Responsable",
+        "collaboratorLabel": "Collaborateur"
+      },
+      "tasks": {
+        "title": "Tâches",
+        "empty": "Aucune tâche pour ce projet.",
+        "notAssigned": "Non assignée",
+        "updateError": "Impossible de mettre à jour le statut de la tâche.",
+        "dueLabel": "Échéance",
+        "overdueLabel": "En retard",
+        "status": {
+          "todo": "À faire",
+          "in_progress": "En cours",
+          "done": "Terminée",
+          "blocked": "Bloquée"
+        }
+      },
+      "time": {
+        "title": "Temps passé",
+        "totalLabel": "Total équipe",
+        "mineLabel": "Mon total",
+        "historyEmpty": "Aucune saisie de temps pour ce projet.",
+        "formTitle": "Saisir du temps",
+        "hoursLabel": "Heures",
+        "minutesLabel": "Minutes",
+        "descriptionLabel": "Description",
+        "dateLabel": "Date",
+        "taskLabel": "Tâche liée",
+        "noTask": "Aucune tâche liée",
+        "submit": "Enregistrer",
+        "submitting": "Enregistrement…",
+        "success": "Temps enregistré."
+      }
     },
     "invoices": {
       "title": "Mes factures",
