@@ -28,18 +28,19 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final class FrontendRevalidationSubscriberTest extends TestCase
 {
+    /** @return LifecycleEventArgs<ObjectManager> */
     private function createArgs(object $entity): LifecycleEventArgs
     {
         return new LifecycleEventArgs($entity, $this->createStub(ObjectManager::class));
     }
 
+    /** @param string[] $expectedTags */
     #[DataProvider('entityTagProvider')]
     public function testPostPersistThenFlushDispatchesExpectedTag(object $entity, array $expectedTags): void
     {
         $dispatched = [];
         $bus = $this->createStub(MessageBusInterface::class);
-        $bus->method('dispatch')->willReturnCallback(function (object $message) use (&$dispatched) {
-            $this->assertInstanceOf(RevalidateFrontendMessage::class, $message);
+        $bus->method('dispatch')->willReturnCallback(function (RevalidateFrontendMessage $message) use (&$dispatched) {
             $dispatched[] = $message->tag;
 
             return new Envelope($message);
@@ -92,7 +93,7 @@ final class FrontendRevalidationSubscriberTest extends TestCase
     {
         $dispatched = [];
         $bus = $this->createStub(MessageBusInterface::class);
-        $bus->method('dispatch')->willReturnCallback(function (object $message) use (&$dispatched) {
+        $bus->method('dispatch')->willReturnCallback(function (RevalidateFrontendMessage $message) use (&$dispatched) {
             $dispatched[] = $message->tag;
 
             return new Envelope($message);
@@ -111,7 +112,7 @@ final class FrontendRevalidationSubscriberTest extends TestCase
     {
         $dispatched = [];
         $bus = $this->createStub(MessageBusInterface::class);
-        $bus->method('dispatch')->willReturnCallback(function (object $message) use (&$dispatched) {
+        $bus->method('dispatch')->willReturnCallback(function (RevalidateFrontendMessage $message) use (&$dispatched) {
             $dispatched[] = $message->tag;
 
             return new Envelope($message);
@@ -136,7 +137,7 @@ final class FrontendRevalidationSubscriberTest extends TestCase
     {
         $dispatched = [];
         $bus = $this->createStub(MessageBusInterface::class);
-        $bus->method('dispatch')->willReturnCallback(function (object $message) use (&$dispatched) {
+        $bus->method('dispatch')->willReturnCallback(function (RevalidateFrontendMessage $message) use (&$dispatched) {
             $dispatched[] = $message->tag;
 
             return new Envelope($message);
