@@ -218,11 +218,21 @@ services:
       # service backend ci-dessus).
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.5-flash-lite}
       - GEMINI_EMBEDDING_MODEL=${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
+      # RevalidateFrontendMessageHandler (App\Service\FrontendRevalidator)
+      # tourne ici — même variable que le service backend (cf. commentaire
+      # là-bas) : sans elle, %app.frontend_url% retombe sur le défaut .env
+      # http://localhost:3000, qui ne pointe vers rien dans ce conteneur.
+      - FRONTEND_URL=${NEXT_PUBLIC_SITE_URL}
     secrets:
       - app_secret
       - database_url
       - mailer_dsn
       - gemini_api_key
+      # RevalidateFrontendMessageHandler (App\Service\FrontendRevalidator) —
+      # sans ce secret, FrontendRevalidator::isConfigured() reste faux dans
+      # ce conteneur et la revalidation frontend est silencieusement ignorée
+      # (log info, aucune erreur) malgré un webhook fonctionnel côté cible.
+      - revalidate_secret
       - ntfy_dsn
       - offsite_s3_endpoint
       - offsite_s3_bucket
