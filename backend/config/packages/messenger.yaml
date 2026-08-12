@@ -24,5 +24,6 @@ framework:
             'App\Message\SendEmail': async
             'App\Message\AiAssistantIngestMessage': async
             'App\Message\OffsiteBackupMessage': async
+            'App\Message\RevalidateFrontendMessage': async
 
         failure_transport: failed
