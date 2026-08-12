@@ -300,7 +300,10 @@
       "title": "Projets publiés",
       "lede": "Filtrez par statut pour retrouver les projets en cours, terminés ou en collaboration.",
       "empty": "Les prochains projets seront affichés ici dès leur publication.",
-      "filterAll": "Tous"
+      "filterAll": "Tous",
+      "previous": "Précédent",
+      "next": "Suivant",
+      "pageIndicator": "Page {page} sur {total}"
     },
     "status": {
       "a_venir": "À venir",
