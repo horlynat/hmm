@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { Badge, ButtonLink, Card, HeroBackground, Reveal } from "@/components/ui";
+import { Badge, ButtonLink, Card, Reveal } from "@/components/ui";
+import { PageHero } from "@/components/sections/PageHero";
 import { ProjectCard } from "@/components/sections/ProjectCard";
 import { ArticleCard } from "@/components/sections/ArticleCard";
 import { TestimonialCard } from "@/components/sections/TestimonialCard";
@@ -166,103 +167,84 @@ export default async function HomePage({
 
   return (
     <>
-      <section className="relative overflow-hidden px-6 pt-16 pb-20">
-        <HeroBackground />
-
-        <div className="relative mx-auto grid max-w-[1120px] gap-12 md:grid-cols-[1.05fr_0.95fr] md:items-center">
-          <div>
-            <div
-              className="hero-in mb-4 flex flex-wrap items-center gap-x-4 gap-y-2"
-              style={{ animationDelay: "0s" }}
-            >
-              <Badge variant="accent">
-                <RoleRotator roles={content.heroRoles} />
-              </Badge>
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-muted)]">
-                <BriefcaseIcon />
-                {content.founderBadge}
-              </span>
-            </div>
-            {/* Pas d'animation d'entrée ici (contrairement au reste du hero) : ce
-                <h1> est le candidat LCP le plus probable de la page — Chrome ne
-                finalise la mesure LCP d'un élément qu'une fois son animation
-                d'opacité stabilisée, un fondu ajouterait donc directement son
-                délai+durée au LCP mesuré. */}
-            <h1 className="mb-5 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
-              {content.heroTitle}
-              <br />
-              <span className="text-brand-primary">{content.heroTitleAccent}</span>
-            </h1>
-            <p
-              className="hero-in mb-7 max-w-[48ch] text-[1.05rem] opacity-75"
-              style={{ animationDelay: "0.16s" }}
-            >
-              {content.heroSub}
-            </p>
-            <div
-              className="hero-in mb-7 flex flex-wrap items-center gap-x-6 gap-y-3"
-              style={{ animationDelay: "0.24s" }}
-            >
-              <ButtonLink href="/contact">{tc("ctaConfierProjet")}</ButtonLink>
-              <a
-                href="#freelance"
-                className="text-sm font-semibold text-brand-primary hover:underline"
-              >
-                {t("ctaFreelance")} →
-              </a>
-            </div>
-            <div
-              className="hero-in flex flex-wrap gap-2.5"
-              style={{ animationDelay: "0.32s" }}
-            >
-              <Badge variant="accent">Symfony</Badge>
-              <Badge variant="accent">API Platform</Badge>
-              <Badge variant="accent">Next.js</Badge>
-              <Badge variant="outline">Assistant IA</Badge>
-              <Badge variant="outline">Cybersécurité</Badge>
-            </div>
-          </div>
+      <PageHero
+        eyebrow={<RoleRotator roles={content.heroRoles} />}
+        eyebrowExtra={
+          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-muted)]">
+            <BriefcaseIcon />
+            {content.founderBadge}
+          </span>
+        }
+        title={content.heroTitle}
+        titleAccent={content.heroTitleAccent}
+        titleAccentOnNewLine
+        subtitle={content.heroSub}
+        aside={
           <Card variant="soft" className="hero-in p-6" style={{ animationDelay: "0.16s" }}>
             <ArchitectureDiagram caption={content.diagramCaption} />
           </Card>
-        </div>
-
-        <div className="relative mx-auto mt-16 max-w-3xl">
-          <Card
-            variant="soft"
-            className="hero-in p-6 sm:p-8"
-            style={{ animationDelay: "0.4s" }}
-          >
-            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5 text-center sm:gap-x-14">
-              <MiniStat num="10" label={t("stats.experience")} />
-              <span aria-hidden="true" className="hidden h-10 w-px bg-[var(--border-softer)] sm:block" />
-              <MiniStat num="15+" label={t("stats.projects")} />
-              <span aria-hidden="true" className="hidden h-10 w-px bg-[var(--border-softer)] sm:block" />
-              <MiniStat num={t("stats.open")} label={t("stats.freelance")} />
-            </div>
-            {testimonials[0] && (
-              <div className="mt-6 flex flex-col items-center gap-3 border-t border-[var(--border-softer)] pt-6 text-center">
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                  style={{
-                    fontFamily: "var(--font-heading)",
-                    background:
-                      "linear-gradient(135deg, var(--cta-gradient-from), var(--cta-gradient-to))",
-                  }}
-                >
-                  {getInitials(testimonials[0].author)}
-                </div>
-                <p className="max-w-[52ch] text-sm italic opacity-80">
-                  &ldquo;{testimonials[0].content}&rdquo;
-                </p>
-                <p className="text-xs font-semibold uppercase tracking-wide opacity-60">
-                  {testimonials[0].author}
-                </p>
+        }
+        footer={
+          <div className="relative mx-auto mt-16 max-w-3xl">
+            <Card
+              variant="soft"
+              className="hero-in p-6 sm:p-8"
+              style={{ animationDelay: "0.4s" }}
+            >
+              <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5 text-center sm:gap-x-14">
+                <MiniStat num="10" label={t("stats.experience")} />
+                <span aria-hidden="true" className="hidden h-10 w-px bg-[var(--border-softer)] sm:block" />
+                <MiniStat num="15+" label={t("stats.projects")} />
+                <span aria-hidden="true" className="hidden h-10 w-px bg-[var(--border-softer)] sm:block" />
+                <MiniStat num={t("stats.open")} label={t("stats.freelance")} />
               </div>
-            )}
-          </Card>
+              {testimonials[0] && (
+                <div className="mt-6 flex flex-col items-center gap-3 border-t border-[var(--border-softer)] pt-6 text-center">
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                    style={{
+                      fontFamily: "var(--font-heading)",
+                      background:
+                        "linear-gradient(135deg, var(--cta-gradient-from), var(--cta-gradient-to))",
+                    }}
+                  >
+                    {getInitials(testimonials[0].author)}
+                  </div>
+                  <p className="max-w-[52ch] text-sm italic opacity-80">
+                    &ldquo;{testimonials[0].content}&rdquo;
+                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-wide opacity-60">
+                    {testimonials[0].author}
+                  </p>
+                </div>
+              )}
+            </Card>
+          </div>
+        }
+      >
+        <div
+          className="hero-in mb-7 flex flex-wrap items-center gap-x-6 gap-y-3"
+          style={{ animationDelay: "0.24s" }}
+        >
+          <ButtonLink href="/contact">{tc("ctaConfierProjet")}</ButtonLink>
+          <a
+            href="#freelance"
+            className="text-sm font-semibold text-brand-primary hover:underline"
+          >
+            {t("ctaFreelance")} →
+          </a>
         </div>
-      </section>
+        <div
+          className="hero-in flex flex-wrap gap-2.5"
+          style={{ animationDelay: "0.32s" }}
+        >
+          <Badge variant="accent">Symfony</Badge>
+          <Badge variant="accent">API Platform</Badge>
+          <Badge variant="accent">Next.js</Badge>
+          <Badge variant="outline">Assistant IA</Badge>
+          <Badge variant="outline">Cybersécurité</Badge>
+        </div>
+      </PageHero>
 
       <section className="border-y border-[var(--border-softer)] bg-bg-card px-6 py-20">
         <div className="mx-auto grid max-w-[1120px] gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">

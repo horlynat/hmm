@@ -216,6 +216,11 @@
     "title": "Une palette large,",
     "titleAccent": "reliée par une seule logique.",
     "sub": "Développement web et mobile, IA, cybersécurité, assurance et design : des domaines qui se rejoignent dès qu'il s'agit de comprendre un besoin et d'y répondre par un système fiable.",
+    "stats": {
+      "total": "Compétences",
+      "categories": "Domaines",
+      "level": "Niveau moyen"
+    },
     "list": {
       "eyebrow": "Compétences",
       "title": "La stack utilisée au quotidien",
@@ -273,6 +278,11 @@
     "title": "Des systèmes livrés,",
     "titleAccent": "pas seulement des maquettes.",
     "sub": "Ce site en est la première preuve concrète. Les projets suivants viennent s'y ajouter au fil des missions.",
+    "stats": {
+      "statTotal": "Projets au total",
+      "statActive": "En cours",
+      "statCompleted": "Terminés"
+    },
     "caseStudy": {
       "eyebrow": "Étude de cas",
       "title": "Ce portfolio, comme démonstration",
@@ -280,9 +290,9 @@
       "badge": "Architecture découplée",
       "cardTitle": "Un système, quatre couches",
       "cardText": "Backend, API, frontend et assistant IA — chacun avec un rôle clair.",
-      "bodyTitle": "Portfolio & assistant IA personnel",
-      "bodyText1": "Un site vitrine pensé comme un vrai produit : back-office Symfony pour la gestion des contenus, API Platform comme point d'entrée unique, frontend Next.js découplé, et un assistant IA qui présente mon profil et qualifie les demandes de projet à ma place.",
-      "bodyText2": "L'objectif : que le site lui-même démontre ma façon de concevoir une architecture — chaque brique remplaçable sans casser les autres.",
+      "bodyTitle": "Horlynat | Portail Digital",
+      "bodyText1": "Bien plus qu'une vitrine : une plateforme complète en production — espace client, devis qualifiés par l'assistant IA 24h/24, suivi de projets et facturation — pilotée depuis un back-office Symfony et servie par un frontend Next.js découplé via API Platform.",
+      "bodyText2": "C'est aussi ma meilleure démonstration : l'architecture que vous parcourez est celle que je conçois pour mes clients — chaque brique remplaçable sans casser les autres.",
       "linkText": "Voir le profil complet"
     },
     "list": {
@@ -315,15 +325,11 @@
       "invoicesLabel": "Factures liées",
       "viewAllInvoices": "Voir toutes mes factures"
     },
-    "invite": {
-      "title": "Vous avez un projet à mettre en avant ?",
-      "text": "Décrivez-le-moi — client, contexte, technologies utilisées et résultat obtenu — et je remplace ces emplacements par vos vraies réalisations.",
-      "cta": "Proposer mon projet"
-    },
     "cta": {
       "title": "Un projet en tête ?",
       "sub": "Discutons de ce que vous voulez construire, ou laissez mon assistant qualifier votre demande en quelques questions.",
-      "linkText": "Voir mes compétences"
+      "linkText": "Voir mes compétences",
+      "proposeLinkText": "Proposer mon projet"
     }
   },
   "blog": {
@@ -332,6 +338,10 @@
     "titleAccent": "et retours d'expérience.",
     "sub": "Réflexions sur l'architecture, les choix techniques et ma vision du métier — entre développement, cybersécurité et assurance.",
     "empty": "Les articles seront affichés ici dès leur publication.",
+    "stats": {
+      "articles": "Articles publiés",
+      "topics": "Sujets abordés"
+    },
     "newsletter": {
       "title": "Suivre les prochains articles",
       "text": "Un e-mail occasionnel, pas de spam — seulement quand un nouvel article ou un nouveau projet sort.",

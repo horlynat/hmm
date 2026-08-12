@@ -216,6 +216,11 @@
     "title": "A wide range,",
     "titleAccent": "connected by a single logic.",
     "sub": "Web and mobile development, AI, cybersecurity, insurance and design: fields that seem unrelated, but converge as soon as it's about understanding a need and answering it with a reliable system.",
+    "stats": {
+      "total": "Skills",
+      "categories": "Domains",
+      "level": "Average level"
+    },
     "list": {
       "eyebrow": "Skills",
       "title": "The stack used daily",
@@ -273,6 +278,11 @@
     "title": "Systems that ship,",
     "titleAccent": "not just mockups.",
     "sub": "This site is the first concrete proof. The following projects will be added over time.",
+    "stats": {
+      "statTotal": "Total projects",
+      "statActive": "In progress",
+      "statCompleted": "Completed"
+    },
     "caseStudy": {
       "eyebrow": "Case study",
       "title": "This portfolio, as a demonstration",
@@ -280,9 +290,9 @@
       "badge": "Decoupled architecture",
       "cardTitle": "One system, four layers",
       "cardText": "Backend, API, frontend and AI assistant — each with a clear role.",
-      "bodyTitle": "Personal portfolio & AI assistant",
-      "bodyText1": "A showcase site designed like a real product: a Symfony back office for content management, API Platform as the single entry point, a decoupled Next.js frontend, and an AI assistant that presents my profile and qualifies project requests on my behalf.",
-      "bodyText2": "The goal: the site itself demonstrates how I design an architecture — every piece replaceable without breaking the others.",
+      "bodyTitle": "Horlynat | Portail Digital",
+      "bodyText1": "Much more than a showcase: a full platform running in production — client area, quote requests qualified by the AI assistant around the clock, project tracking and invoicing — managed from a Symfony back office and served by a decoupled Next.js frontend through API Platform.",
+      "bodyText2": "It's also my best demonstration: the architecture you're browsing is the very one I design for my clients — every piece replaceable without breaking the others.",
       "linkText": "See the full profile"
     },
     "list": {
@@ -315,15 +325,11 @@
       "invoicesLabel": "Related invoices",
       "viewAllInvoices": "View all my invoices"
     },
-    "invite": {
-      "title": "Have a project to showcase?",
-      "text": "Tell me about it — client, context, technologies used and outcome — and I'll replace these placeholders with your real work.",
-      "cta": "Suggest my project"
-    },
     "cta": {
       "title": "Got a project in mind?",
       "sub": "Let's talk about what you want to build, or let my assistant qualify your request in a few questions.",
-      "linkText": "See my skills"
+      "linkText": "See my skills",
+      "proposeLinkText": "Suggest my project"
     }
   },
   "blog": {
@@ -332,6 +338,10 @@
     "titleAccent": "and lessons learned.",
     "sub": "Thoughts on architecture, technical choices and my view of the craft — between development, cybersecurity and insurance.",
     "empty": "Articles will appear here as soon as they're published.",
+    "stats": {
+      "articles": "Published articles",
+      "topics": "Topics covered"
+    },
     "newsletter": {
       "title": "Follow upcoming articles",
       "text": "An occasional email, no spam — only when a new article or project comes out.",

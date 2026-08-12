@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
-import { Badge, ButtonLink, Card, HeroBackground, Reveal } from "@/components/ui";
+import { Badge, ButtonLink, Card, Reveal } from "@/components/ui";
+import { PageHero } from "@/components/sections/PageHero";
 import { SkillsByCategory } from "@/components/sections/SkillsByCategory";
 import { QualificationsList } from "@/components/sections/QualificationsList";
 import { Timeline } from "@/components/sections/Timeline";
@@ -51,45 +52,12 @@ export default async function AboutPage({
 
   return (
     <>
-      <section className="relative overflow-hidden px-6 pt-16 pb-20">
-        <HeroBackground />
-
-        <div className="relative mx-auto grid max-w-[1120px] gap-12 md:grid-cols-[1.05fr_0.95fr] md:items-center">
-          <div>
-            <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
-              {content.heroEyebrow}
-            </Badge>
-            {/* Pas d'animation ici : candidat LCP le plus probable de la page. */}
-            <h1 className="mb-5 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
-              {content.heroTitle} <span className="text-brand-primary">{content.heroTitleAccent}</span>
-            </h1>
-            <p
-              className="hero-in mb-7 max-w-[48ch] text-[1.05rem] opacity-75"
-              style={{ animationDelay: "0.16s" }}
-            >
-              {content.heroSub}
-            </p>
-            <div
-              className="hero-in mb-7 flex flex-wrap items-center gap-x-6 gap-y-3"
-              style={{ animationDelay: "0.24s" }}
-            >
-              <ButtonLink href="/contact">{tc("ctaConfierProjet")}</ButtonLink>
-              <a
-                href="/cv-horlynat-mampassi-mbama.pdf"
-                download
-                className="text-sm font-semibold text-brand-primary hover:underline"
-              >
-                {tc("ctaTelechargerCv")} →
-              </a>
-            </div>
-            <div className="hero-in flex flex-wrap gap-2.5" style={{ animationDelay: "0.32s" }}>
-              <Badge variant="accent">Symfony</Badge>
-              <Badge variant="accent">API Platform</Badge>
-              <Badge variant="accent">Next.js</Badge>
-              <Badge variant="outline">Assistant IA</Badge>
-              <Badge variant="outline">Cybersécurité</Badge>
-            </div>
-          </div>
+      <PageHero
+        eyebrow={content.heroEyebrow}
+        title={content.heroTitle}
+        titleAccent={content.heroTitleAccent}
+        subtitle={content.heroSub}
+        aside={
           <Card variant="soft" className="hero-in p-7 text-center" style={{ animationDelay: "0.16s" }}>
             <div
               className="mx-auto mb-4 flex h-[88px] w-[88px] items-center justify-center rounded-full text-2xl font-extrabold text-white"
@@ -131,8 +99,29 @@ export default async function AboutPage({
               {tc("ctaTelechargerCv")}
             </a>
           </Card>
+        }
+      >
+        <div
+          className="hero-in mb-7 flex flex-wrap items-center gap-x-6 gap-y-3"
+          style={{ animationDelay: "0.24s" }}
+        >
+          <ButtonLink href="/contact">{tc("ctaConfierProjet")}</ButtonLink>
+          <a
+            href="/cv-horlynat-mampassi-mbama.pdf"
+            download
+            className="text-sm font-semibold text-brand-primary hover:underline"
+          >
+            {tc("ctaTelechargerCv")} →
+          </a>
         </div>
-      </section>
+        <div className="hero-in flex flex-wrap gap-2.5" style={{ animationDelay: "0.32s" }}>
+          <Badge variant="accent">Symfony</Badge>
+          <Badge variant="accent">API Platform</Badge>
+          <Badge variant="accent">Next.js</Badge>
+          <Badge variant="outline">Assistant IA</Badge>
+          <Badge variant="outline">Cybersécurité</Badge>
+        </div>
+      </PageHero>
 
       <section className="px-6 py-16">
         <div className="mx-auto grid max-w-[1120px] gap-12 md:grid-cols-2 md:items-center">

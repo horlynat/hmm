@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
-import { Badge, HeroBackground, Reveal } from "@/components/ui";
+import { Card, Reveal } from "@/components/ui";
+import { PageHero } from "@/components/sections/PageHero";
 import { ForgotPasswordForm } from "@/components/sections/ForgotPasswordForm";
 import { getCurrentUser } from "@/lib/auth/session";
 import { redirect } from "@/i18n/navigation";
@@ -17,27 +18,43 @@ export default async function ForgotPasswordPage({
   }
 
   const t = await getTranslations({ locale, namespace: "auth.forgotPassword" });
+  // Mot de passe oublié est un frère direct de Connexion (même parcours d'auth) :
+  // on réutilise ses messages de confiance plutôt que d'en inventer de nouveaux.
+  const tLogin = await getTranslations({ locale, namespace: "auth.login" });
+
+  const trustItems: [string, string][] = [
+    ["🔒", tLogin("secureBadge1")],
+    ["🛡️", tLogin("secureBadge2")],
+    ["🔏", tLogin("secureBadge3")],
+  ];
 
   return (
     <>
-      <section className="relative overflow-hidden px-6 pt-16 pb-12">
-        <HeroBackground />
-        <div className="relative mx-auto max-w-[1120px]">
-          <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
-            {t("eyebrow")}
-          </Badge>
-          {/* Pas d'animation ici : candidat LCP le plus probable de la page. */}
-          <h1 className="mb-5 max-w-[24ch] text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
-            {t("title")} <span className="text-brand-primary">{t("titleAccent")}</span>
-          </h1>
-          <p
-            className="hero-in max-w-[56ch] text-[1.05rem] opacity-75"
-            style={{ animationDelay: "0.16s" }}
-          >
-            {t("subtitle")}
-          </p>
-        </div>
-      </section>
+      <PageHero
+        eyebrow={t("eyebrow")}
+        title={t("title")}
+        titleAccent={t("titleAccent")}
+        titleClassName="max-w-[24ch]"
+        subtitle={t("subtitle")}
+        subtitleClassName="max-w-[56ch]"
+        aside={
+          <Card variant="soft" className="hero-in p-7" style={{ animationDelay: "0.16s" }}>
+            <ul className="list-none space-y-4 p-0">
+              {trustItems.map(([icon, label]) => (
+                <li key={label} className="flex items-start gap-3">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-primary/10 text-lg"
+                  >
+                    {icon}
+                  </span>
+                  <span className="pt-1.5 text-sm font-medium">{label}</span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        }
+      />
 
       <section className="px-6 py-10">
         <div className="mx-auto max-w-[440px]">
