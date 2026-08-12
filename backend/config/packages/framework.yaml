@@ -85,6 +85,15 @@ framework:
             policy: fixed_window
             limit: 1
             interval: '1 day'
+        # Même anti-spam pour l'alerte de seuil intermédiaire (informative,
+        # ne coupe pas le chat) — limiter distinct de ai_assistant_budget_alert
+        # ci-dessus pour que les deux alertes restent dédupliquées indépendamment
+        # l'une de l'autre (le seuil peut être franchi un jour, le plafond un
+        # autre jour du même mois).
+        ai_assistant_budget_warning:
+            policy: fixed_window
+            limit: 1
+            interval: '1 day'
         # Génération des questions de qualification dynamiques du wizard de
         # devis (POST /api/quote/qualify) — App\Service\PublicSubmissionThrottler
         # ::assertQuoteQualifyAllowed(). Même profil que ai_assistant_chat :
