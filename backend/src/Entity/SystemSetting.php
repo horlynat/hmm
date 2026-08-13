@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\CurrencyEnum;
 use App\Enum\ThemeEnum;
 use App\Repository\SystemSettingRepository;
 use Doctrine\ORM\Mapping as ORM;
@@ -45,8 +46,8 @@ class SystemSetting
     private array $availableLocales = ['fr'];
 
     /** Devise d'affichage par défaut (dashboard admin + espace client) tant qu'aucune préférence n'est cookie-set — distincte de la devise fixe des budgets de projet (EUR, cf. CurrencyConversionService::PROJECT_LEDGER_CURRENCY). */
-    #[ORM\Column(length: 10)]
-    private string $defaultCurrency = 'USD';
+    #[ORM\Column(length: 10, enumType: CurrencyEnum::class)]
+    private CurrencyEnum $defaultCurrency = CurrencyEnum::USD;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
@@ -134,12 +135,12 @@ class SystemSetting
         return $this;
     }
 
-    public function getDefaultCurrency(): string
+    public function getDefaultCurrency(): CurrencyEnum
     {
         return $this->defaultCurrency;
     }
 
-    public function setDefaultCurrency(string $defaultCurrency): static
+    public function setDefaultCurrency(CurrencyEnum $defaultCurrency): static
     {
         $this->defaultCurrency = $defaultCurrency;
 
