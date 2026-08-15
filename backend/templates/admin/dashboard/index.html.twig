@@ -71,29 +71,29 @@
 		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 			<div class="soft-card p-6">
 				<div class="flex items-center justify-between mb-4">
-					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">CA Encaissé (Livré)</span>
+					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">CA Encaissé</span>
 					<div class="p-2 bg-emerald-50 text-success rounded-xl">
 						<i class="ti ti-coin text-xl"></i>
 					</div>
 				</div>
-				<div class="text-2xl font-bold tracking-tight">{{ stats.totalBudget|default(0)|money('EUR') }}</div>
+				<div class="text-2xl font-bold tracking-tight">{{ revenue.realizedRevenue|default(0)|money(revenue.ledgerCurrency|default('EUR')) }}</div>
 				<p class="text-xs text-success font-medium mt-2 flex items-center gap-1">
 					<i class="ti ti-arrow-up-right"></i>
-					Projets finalisés cette année
+					{{ revenue.realizedRevenueCount|default(0) }} facture{{ revenue.realizedRevenueCount > 1 ? 's' : '' }} payée{{ revenue.realizedRevenueCount > 1 ? 's' : '' }}
 				</p>
 			</div>
 
 			<div class="soft-card p-6">
 				<div class="flex items-center justify-between mb-4">
-					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">CA En Développement</span>
+					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">Facturé, en attente</span>
 					<div class="p-2 bg-blue-50 text-info rounded-xl">
-						<i class="ti ti-code text-xl"></i>
+						<i class="ti ti-file-invoice text-xl"></i>
 					</div>
 				</div>
-				<div class="text-2xl font-bold tracking-tight">{{ stats.remainingBudget|default(0)|money('EUR') }}</div>
+				<div class="text-2xl font-bold tracking-tight">{{ revenue.invoicedPending|default(0)|money(revenue.ledgerCurrency|default('EUR')) }}</div>
 				<p class="text-xs text-info font-medium mt-2 flex items-center gap-1">
 					<i class="ti ti-clock-hour-4"></i>
-					Production active en cours
+					{{ revenue.invoicedPendingCount|default(0) }} facture{{ revenue.invoicedPendingCount > 1 ? 's' : '' }} pas encore payée{{ revenue.invoicedPendingCount > 1 ? 's' : '' }} — pas du CA
 				</p>
 			</div>
 
@@ -108,6 +108,12 @@
 				<p class="text-xs text-brand-dark/60 mt-2">
 					Devis en attente
 				</p>
+				{% if revenue.pipelineQuoteCount|default(0) > 0 %}
+					<p class="text-[11px] text-brand-dark/40 mt-1.5 border-t border-gray-100 pt-1.5">
+						≈ {{ revenue.pipelineEstimate|money(revenue.ledgerCurrency|default('EUR')) }} estimés sur {{ revenue.pipelineQuoteCount }} devis actifs
+						<span class="italic">— pipeline, jamais compté au CA</span>
+					</p>
+				{% endif %}
 			</div>
 
 			<div class="soft-card p-6">

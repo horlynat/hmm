@@ -6,6 +6,7 @@ use App\Entity\Invoice;
 use App\Entity\Project;
 use App\Form\InvoiceType;
 use App\Security\Voter\ProjectVoter;
+use App\Service\AuditLogger;
 use App\Service\ProjectNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -23,7 +24,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class AdminInvoiceController extends AbstractController
 {
     #[Route('/new', name: 'new', methods: ['GET', 'POST'])]
-    public function new(Project $project, Request $request, EntityManagerInterface $entityManager, ProjectNotifier $projectNotifier): Response
+    public function new(Project $project, Request $request, EntityManagerInterface $entityManager, ProjectNotifier $projectNotifier, AuditLogger $auditLogger): Response
     {
         $this->denyAccessUnlessGranted(ProjectVoter::MANAGE_INVOICE, $project);
 
@@ -35,6 +36,9 @@ final class AdminInvoiceController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $project->addInvoice($invoice);
             $entityManager->persist($invoice);
+            $entityManager->flush();
+            // Deuxième flush requis : l'ID n'existe qu'après le premier (même motif qu'AdminAdminsController::create()).
+            $auditLogger->log(Invoice::class, $invoice->getId(), $invoice->getNumber(), 'created');
             $entityManager->flush();
             $projectNotifier->invoiceCreated($invoice);
             $this->addFlash('success', 'Facture créée. Le client a été notifié par email.');
@@ -54,6 +58,7 @@ final class AdminInvoiceController extends AbstractController
         #[MapEntity(id: 'invoiceId')] Invoice $invoice,
         Request $request,
         EntityManagerInterface $entityManager,
+        AuditLogger $auditLogger,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::MANAGE_INVOICE, $project);
 
@@ -67,6 +72,7 @@ final class AdminInvoiceController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $auditLogger->log(Invoice::class, $invoice->getId(), $invoice->getNumber(), 'updated');
             $entityManager->flush();
             $this->addFlash('success', 'Facture modifiée.');
 
@@ -87,6 +93,7 @@ final class AdminInvoiceController extends AbstractController
         Request $request,
         EntityManagerInterface $entityManager,
         ProjectNotifier $projectNotifier,
+        AuditLogger $auditLogger,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::MANAGE_INVOICE, $project);
 
@@ -98,6 +105,7 @@ final class AdminInvoiceController extends AbstractController
 
         if ($this->isCsrfTokenValid('invoice_'.$invoice->getId(), $request->request->get('_token'))) {
             $invoice->markPaid();
+            $auditLogger->log(Invoice::class, $invoice->getId(), $invoice->getNumber(), 'marked_paid');
             $entityManager->flush();
             $projectNotifier->invoicePaid($invoice);
             $this->addFlash('success', 'Facture marquée comme payée. Le client a été notifié par email.');
@@ -114,6 +122,7 @@ final class AdminInvoiceController extends AbstractController
         #[MapEntity(id: 'invoiceId')] Invoice $invoice,
         Request $request,
         EntityManagerInterface $entityManager,
+        AuditLogger $auditLogger,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::MANAGE_INVOICE, $project);
 
@@ -125,6 +134,7 @@ final class AdminInvoiceController extends AbstractController
 
         if ($this->isCsrfTokenValid('invoice_'.$invoice->getId(), $request->request->get('_token'))) {
             $invoice->markUnpaid();
+            $auditLogger->log(Invoice::class, $invoice->getId(), $invoice->getNumber(), 'marked_unpaid');
             $entityManager->flush();
             $this->addFlash('success', 'Facture remise en attente de paiement.');
         } else {
@@ -140,6 +150,7 @@ final class AdminInvoiceController extends AbstractController
         #[MapEntity(id: 'invoiceId')] Invoice $invoice,
         Request $request,
         EntityManagerInterface $entityManager,
+        AuditLogger $auditLogger,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::MANAGE_INVOICE, $project);
 
@@ -150,6 +161,7 @@ final class AdminInvoiceController extends AbstractController
         }
 
         if ($this->isCsrfTokenValid('delete_invoice_'.$invoice->getId(), $request->request->get('_token'))) {
+            $auditLogger->log(Invoice::class, $invoice->getId(), $invoice->getNumber(), 'deleted');
             $project->removeInvoice($invoice);
             $entityManager->remove($invoice);
             $entityManager->flush();

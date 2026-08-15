@@ -1,5 +1,6 @@
 {# 📌 Détection automatique de la route actuelle pour ouvrir le bon accordéon au chargement #}
 {% set currentRoute = app.request.attributes.get('_route') %}
+{% set isFinanceActive = currentRoute starts with 'admin_finance' %}
 {% set isContenuActive = currentRoute starts with 'admin_project' or currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_tag' or currentRoute starts with 'admin_article' or currentRoute starts with 'admin_course' or currentRoute starts with 'admin_experience' or currentRoute starts with 'admin_home_content' or currentRoute starts with 'admin_about_content' or currentRoute starts with 'admin_ai_assistant' %}
 {% set isUtilisateursActive = currentRoute starts with 'admin_admins' or currentRoute starts with 'admin_user' or currentRoute starts with 'admin_collaborator' or currentRoute starts with 'admin_contact' or currentRoute starts with 'admin_request' or currentRoute starts with 'admin_testimonial' %}
 {% set isSecuriteActive = currentRoute starts with 'admin_security_' %}
@@ -10,6 +11,11 @@
    de la méthode index() du contrôleur ciblé (voir routes admin_*), pas une approximation —
    sinon on retombe dans le problème d'origine (des liens visibles qui 403ent). #}
 {% set canViewDashboard = is_granted(constant('App\\Security\\Voter\\DashboardVoter::VIEW')) %}
+
+{% set canViewFinanceOverview = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
+{% set canViewFinanceInvoices = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
+{% set canViewFinanceExpenses = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
+{% set canViewFinanceSection = canViewFinanceOverview or canViewFinanceInvoices or canViewFinanceExpenses %}
 
 {% set canViewProjects = is_granted('ROLE_ADMIN') %}
 {% set canViewSkills = is_granted('ROLE_EDITOR') %}
@@ -83,6 +89,42 @@
 					<i class="ti ti-layout-dashboard text-lg"></i>
 					<span>Dashboard</span>
 				</a>
+			</div>
+		{% endif %}
+
+		<!-- ==========================================
+				     💰 FINANCE (ACCORDÉON)
+				     ========================================== -->
+		{% if canViewFinanceSection %}
+			<div x-data="{ open: {{ isFinanceActive ? 'true' : 'false' }} }">
+				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
+					<div class="flex items-center gap-3">
+						<i class="ti ti-report-money text-lg text-(--brand-dark)"></i>
+						<span>Finance</span>
+					</div>
+					<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+				</button>
+
+				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
+					{% if canViewFinanceOverview %}
+						<a href="{{ path('admin_finance_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute == 'admin_finance_index' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-chart-pie text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Vue d'ensemble
+						</a>
+					{% endif %}
+					{% if canViewFinanceInvoices %}
+						<a href="{{ path('admin_finance_invoices') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_invoices' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-file-invoice text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Factures
+						</a>
+					{% endif %}
+					{% if canViewFinanceExpenses %}
+						<a href="{{ path('admin_finance_expenses') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_expenses' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-receipt text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Dépenses
+						</a>
+					{% endif %}
+				</div>
 			</div>
 		{% endif %}
 

@@ -1,0 +1,133 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Finance — Factures{% endblock %}
+
+{% block body %}
+	<div>
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+			<div>
+				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+					<span class="ti ti-file-invoice text-brand-primary" aria-hidden="true"></span>
+					<span>Factures</span>
+				</h1>
+				<p class="text-sm opacity-60 mt-1">Tous projets confondus — la création et le paiement restent dans l'écran du projet concerné.</p>
+			</div>
+			<a href="{{ path('admin_finance_invoices_export', filters) }}" class="btn btn-secondary text-sm gap-2">
+				<span class="ti ti-download" aria-hidden="true"></span> Export CSV
+			</a>
+		</div>
+
+		<!-- 🔍 FILTRES -->
+		<form method="get" class="soft-card p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+			<select name="status" class="input input-select text-sm">
+				<option value="">Tous les statuts</option>
+				{% for status in statuses %}
+					<option value="{{ status.value }}" {{ filters.status == status.value ? 'selected' }}>{{ status.label }}</option>
+				{% endfor %}
+			</select>
+
+			<select name="project" class="input input-select text-sm">
+				<option value="">Tous les projets</option>
+				{% for p in projects %}
+					<option value="{{ p.id }}" {{ filters.project == p.id ? 'selected' }}>{{ p.title }}</option>
+				{% endfor %}
+			</select>
+
+			<select name="client" class="input input-select text-sm">
+				<option value="">Tous les clients</option>
+				{% for c in clients %}
+					<option value="{{ c.id }}" {{ filters.client == c.id ? 'selected' }}>{{ c.fullName ?? c.email }}</option>
+				{% endfor %}
+			</select>
+
+			<select name="currency" class="input input-select text-sm">
+				<option value="">Toutes les devises</option>
+				{% for currency in currencies %}
+					<option value="{{ currency }}" {{ filters.currency == currency ? 'selected' }}>{{ currency }}</option>
+				{% endfor %}
+			</select>
+
+			<input type="date" name="start" value="{{ filters.start }}" class="input text-sm" aria-label="Émise à partir du">
+			<input type="date" name="end" value="{{ filters.end }}" class="input text-sm" aria-label="Émise jusqu'au">
+
+			<select name="sort" class="input input-select text-sm">
+				<option value="issuedAt" {{ filters.sort == 'issuedAt' ? 'selected' }}>Trier : date d'émission</option>
+				<option value="dueDate" {{ filters.sort == 'dueDate' ? 'selected' }}>Trier : échéance</option>
+				<option value="amount" {{ filters.sort == 'amount' ? 'selected' }}>Trier : montant</option>
+				<option value="status" {{ filters.sort == 'status' ? 'selected' }}>Trier : statut</option>
+				<option value="number" {{ filters.sort == 'number' ? 'selected' }}>Trier : numéro</option>
+			</select>
+
+			<div class="flex gap-2">
+				<button type="submit" class="btn btn-primary text-sm flex-1">Filtrer</button>
+				<a href="{{ path('admin_finance_invoices') }}" class="btn btn-secondary text-sm" title="Réinitialiser">
+					<span class="ti ti-x text-base" aria-hidden="true"></span>
+				</a>
+			</div>
+		</form>
+
+		<!-- 📊 TABLEAU -->
+		<div class="soft-card overflow-hidden">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Numéro</th>
+						<th>Projet</th>
+						<th>Client</th>
+						<th>Montant</th>
+						<th>Statut</th>
+						<th>Émise le</th>
+						<th>Échéance</th>
+						<th class="w-16 text-right">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for invoice in invoices %}
+						<tr>
+							<td class="font-semibold text-brand-dark">{{ invoice.number }}</td>
+							<td class="text-sm">{{ invoice.project.title }}</td>
+							<td class="text-sm opacity-70">{{ invoice.project.client ? (invoice.project.client.fullName ?? invoice.project.client.email) : '—' }}</td>
+							<td class="text-sm font-semibold text-brand-dark">{{ invoice.amount|money(invoice.currency) }}</td>
+							<td><twig:Badge :variant="invoice.status.variant" icon="{{ invoice.status.icon }}">{{ invoice.status.label }}</twig:Badge></td>
+							<td class="text-sm opacity-70">{{ invoice.issuedAt ? invoice.issuedAt|date('d/m/Y') : '—' }}</td>
+							<td class="text-sm opacity-70">{{ invoice.dueDate ? invoice.dueDate|date('d/m/Y') : '—' }}</td>
+							<td class="text-right">
+								<a href="{{ path('admin_project_read', {id: invoice.project.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir dans le projet">
+									<span class="ti ti-eye text-lg block" aria-hidden="true"></span>
+								</a>
+							</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="8" class="text-center py-12 opacity-40">Aucune facture ne correspond aux critères.</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+		<!-- 📄 PAGINATION -->
+		{% if totalPages > 1 %}
+			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+				<span class="text-sm text-gray-500">Page <strong>{{ page }}</strong> sur <strong>{{ totalPages }}</strong></span>
+				<nav aria-label="Navigation des factures">
+					<ul class="flex items-center gap-1">
+						<li>
+							<a class="btn btn-secondary text-sm py-1.5 px-3 {{ page == 1 ? 'pointer-events-none opacity-40' }}" href="{{ path('admin_finance_invoices', filters|merge({page: page - 1})) }}">Précédent</a>
+						</li>
+						{% for p in 1..totalPages %}
+							<li>
+								<a class="btn text-sm py-1.5 px-3 {{ p == page ? 'btn-primary' : 'btn-secondary' }}" href="{{ path('admin_finance_invoices', filters|merge({page: p})) }}">{{ p }}</a>
+							</li>
+						{% endfor %}
+						<li>
+							<a class="btn btn-secondary text-sm py-1.5 px-3 {{ page == totalPages ? 'pointer-events-none opacity-40' }}" href="{{ path('admin_finance_invoices', filters|merge({page: page + 1})) }}">Suivant</a>
+						</li>
+					</ul>
+				</nav>
+			</div>
+		{% endif %}
+	</div>
+{% endblock %}

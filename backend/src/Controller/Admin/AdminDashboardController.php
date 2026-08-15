@@ -65,6 +65,10 @@ class AdminDashboardController extends AbstractController
         // Récupération des statistiques budgétaires globales
         $stats = Project::getBudgetStatistics($entityManager);
 
+        // Chiffre d'affaires : strictement distinct du budget des projets et
+        // du pipeline de devis (voir ProjectStatisticsService::getRevenueBreakdown()).
+        $revenue = $statisticsService->getRevenueBreakdown();
+
         // Nombre de projets groupés par statut
         $projectsByStatus = [];
         foreach (ProjectStatusEnum::cases() as $status) {
@@ -175,6 +179,7 @@ class AdminDashboardController extends AbstractController
 
         return $this->render('admin/dashboard/index.html.twig', [
             'stats' => $stats,
+            'revenue' => $revenue,
             'projectsByStatus' => $projectsByStatus,
             'topBudgetProjects' => $topBudgetProjects,
             'topSpentProjects' => $topSpentProjects,
