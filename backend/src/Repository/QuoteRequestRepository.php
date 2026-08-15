@@ -57,6 +57,28 @@ class QuoteRequestRepository extends ServiceEntityRepository
         ;
     }
 
+    /**
+     * Devis pas encore sortis du cycle commercial : en attente, acceptés ou
+     * suspendus. Sert de base au pipeline commercial (ProjectStatisticsService) —
+     * explicitement distinct du chiffre d'affaires, jamais additionné à lui.
+     *
+     * @return QuoteRequest[]
+     */
+    public function findActive(): array
+    {
+        return $this->createQueryBuilder('q')
+            ->andWhere('q.status IN (:statuses)')
+            ->setParameter('statuses', [
+                QuoteStatusEnum::PENDING,
+                QuoteStatusEnum::ACCEPTED,
+                QuoteStatusEnum::SUSPENDED,
+            ])
+            ->orderBy('q.id', 'DESC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
     //    /**
     //     * @return QuoteRequest[] Returns an array of QuoteRequest objects
     //     */

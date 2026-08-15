@@ -16,6 +16,7 @@ use App\Service\AuditLogger;
 use App\Service\EmailManager;
 use App\Service\MediaUploader;
 use App\Service\ProjectNotifier;
+use App\Service\QuoteBudgetParser;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -272,6 +273,7 @@ final class AdminQuoteRequestController extends AbstractController
         MediaUploader $mediaUploader,
         ProjectNotifier $projectNotifier,
         AuditLogger $auditLogger,
+        QuoteBudgetParser $quoteBudgetParser,
     ): Response {
         $this->denyAccessUnlessGranted(QuoteVoter::APPROVE, $quoteRequest);
 
@@ -300,7 +302,7 @@ final class AdminQuoteRequestController extends AbstractController
             ->setOwner($this->getAuthenticatedUser())
             ->setSourceQuoteRequest($quoteRequest);
 
-        $parsedBudget = $this->parseQuoteBudget($quoteRequest->getBudget());
+        $parsedBudget = $quoteBudgetParser->parse($quoteRequest->getBudget());
         if (null !== $parsedBudget) {
             $project->setBudget($parsedBudget);
         }
@@ -374,26 +376,6 @@ final class AdminQuoteRequestController extends AbstractController
             'project' => $project,
             'form' => $form->createView(),
         ]);
-    }
-
-    /** Budget libre du devis (ex. "5000", "5 000 €", "5000-8000") → montant décimal exploitable, ou null si non interprétable. */
-    private function parseQuoteBudget(?string $raw): ?string
-    {
-        if (null === $raw || '' === trim($raw)) {
-            return null;
-        }
-
-        // Ne garde que le premier nombre trouvé (utile pour les fourchettes "5000-8000" → 5000).
-        if (!preg_match('/\d[\d\s]*(?:[.,]\d+)?/', $raw, $matches)) {
-            return null;
-        }
-
-        $normalized = str_replace([' ', ','], ['', '.'], $matches[0]);
-        if (!is_numeric($normalized) || (float) $normalized <= 0) {
-            return null;
-        }
-
-        return number_format((float) $normalized, 2, '.', '');
     }
 
     private function generateInvoiceNumber(EntityManagerInterface $entityManager): string
