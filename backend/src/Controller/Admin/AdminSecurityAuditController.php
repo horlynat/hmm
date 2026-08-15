@@ -41,11 +41,13 @@ class AdminSecurityAuditController extends AbstractController
         'expense_removed' => 'Dépense retirée',
         'collaborator_added' => 'Collaborateur ajouté',
         'collaborator_removed' => 'Collaborateur retiré',
+        'marked_paid' => 'Marquée payée',
+        'marked_unpaid' => 'Remise en attente',
     ];
 
     /** Types d'entités trackées, dans l'ordre d'affichage du filtre. */
     private const TYPES = [
-        'Project', 'Article', 'Skill', 'SkillCategory', 'Tag', 'Course', 'Experience',
+        'Project', 'Invoice', 'Article', 'Skill', 'SkillCategory', 'Tag', 'Course', 'Experience',
         'Testimonial', 'ContactMessage', 'QuoteRequest', 'User',
     ];
 
