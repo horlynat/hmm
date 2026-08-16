@@ -1,7 +1,14 @@
 {# 📌 Détection automatique de la route actuelle pour ouvrir le bon accordéon au chargement #}
 {% set currentRoute = app.request.attributes.get('_route') %}
-{% set isFinanceActive = currentRoute starts with 'admin_finance' %}
-{% set isContenuActive = currentRoute starts with 'admin_project' or currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_tag' or currentRoute starts with 'admin_article' or currentRoute starts with 'admin_course' or currentRoute starts with 'admin_experience' or currentRoute starts with 'admin_home_content' or currentRoute starts with 'admin_about_content' or currentRoute starts with 'admin_ai_assistant' %}
+{# admin_project_statistics est exclu du préfixe admin_project ci-dessous : cette
+   page est rattachée à Finance (lien "Projets" de l'accordéon Finance), pas à
+   Contenu — Contenu n'a lui-même aucun lien vers cette route (son propre lien
+   "Projets" pointe vers admin_project_index). Sans cette exclusion, y accéder
+   depuis Finance ouvrait à tort l'accordéon Contenu et y surlignait "Projets"
+   comme actif alors que ce lien mène ailleurs — même principe que l'exclusion
+   admin_skill_category ci-dessous. #}
+{% set isFinanceActive = currentRoute starts with 'admin_finance' or currentRoute == 'admin_project_statistics' %}
+{% set isContenuActive = (currentRoute starts with 'admin_project' and currentRoute != 'admin_project_statistics') or currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_tag' or currentRoute starts with 'admin_article' or currentRoute starts with 'admin_course' or currentRoute starts with 'admin_experience' or currentRoute starts with 'admin_home_content' or currentRoute starts with 'admin_about_content' or currentRoute starts with 'admin_ai_assistant' %}
 {% set isUtilisateursActive = currentRoute starts with 'admin_admins' or currentRoute starts with 'admin_user' or currentRoute starts with 'admin_collaborator' or currentRoute starts with 'admin_contact' or currentRoute starts with 'admin_request' or currentRoute starts with 'admin_testimonial' %}
 {% set isSecuriteActive = currentRoute starts with 'admin_security_' %}
 {% set isParametresActive = currentRoute starts with 'admin_config' or currentRoute starts with 'admin_notification' or currentRoute starts with 'admin_integration' or currentRoute starts with 'admin_backup' %}
@@ -178,7 +185,7 @@
 
 				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
 					{% if canViewProjects %}
-						<a href="{{ path('admin_project_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_project' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+						<a href="{{ path('admin_project_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_project' and currentRoute != 'admin_project_statistics' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 							<i class="ti ti-briefcase text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 							Projets
 						</a>
