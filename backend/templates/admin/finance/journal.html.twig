@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Finance — Journal{% endblock %}
+
+{% block body %}
+	<div>
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="mb-8">
+			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+				<span class="ti ti-history text-brand-primary" aria-hidden="true"></span>
+				<span>Journal financier</span>
+			</h1>
+			<p class="text-sm opacity-60 mt-1">Qui a fait quoi sur les factures et les dépenses, et quand — les 100 dernières actions.</p>
+		</div>
+
+		<div class="soft-card overflow-hidden">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Élément</th>
+						<th>Action</th>
+						<th>Par</th>
+						<th>Date</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for entry in entries %}
+						<tr>
+							<td class="font-medium text-brand-dark">{{ entry.label }}</td>
+							<td><span class="badge bg-gray-100 text-brand-dark">{{ entry.actionLabel }}</span></td>
+							<td class="text-sm opacity-70">{{ entry.user ? (entry.user.fullName ?? entry.user.email) : 'Système' }}</td>
+							<td class="text-sm opacity-70 whitespace-nowrap">{{ entry.date|date('d/m/Y H:i') }}</td>
+						</tr>
+					{% else %}
+						<tr>
+							<td colspan="4" class="text-center py-12 opacity-40">Aucune action financière enregistrée pour l'instant.</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+{% endblock %}

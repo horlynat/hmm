@@ -15,7 +15,14 @@
 {% set canViewFinanceOverview = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
 {% set canViewFinanceInvoices = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
 {% set canViewFinanceExpenses = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
-{% set canViewFinanceSection = canViewFinanceOverview or canViewFinanceInvoices or canViewFinanceExpenses %}
+{% set canViewFinanceReports = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
+{% set canViewFinanceJournal = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
+{# admin_project_statistics (AdminProjectController::statistics()) et admin_request_index (QuoteVoter::VIEW)
+   existent déjà ailleurs dans ce menu — ces deux liens ne font que les rendre accessibles depuis Finance
+   aussi, avec exactement la même garde que leur contrôleur cible. #}
+{% set canViewFinanceProjects = is_granted('ROLE_ADMIN') %}
+{% set canViewFinancePipeline = is_granted(constant('App\\Security\\Voter\\QuoteVoter::VIEW')) %}
+{% set canViewFinanceSection = canViewFinanceOverview or canViewFinanceInvoices or canViewFinanceExpenses or canViewFinanceReports or canViewFinanceJournal or canViewFinanceProjects or canViewFinancePipeline %}
 
 {% set canViewProjects = is_granted('ROLE_ADMIN') %}
 {% set canViewSkills = is_granted('ROLE_EDITOR') %}
@@ -122,6 +129,30 @@
 						<a href="{{ path('admin_finance_expenses') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_expenses' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 							<i class="ti ti-receipt text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 							Dépenses
+						</a>
+					{% endif %}
+					{% if canViewFinanceProjects %}
+						<a href="{{ path('admin_project_statistics') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute == 'admin_project_statistics' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-briefcase text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Projets
+						</a>
+					{% endif %}
+					{% if canViewFinancePipeline %}
+						<a href="{{ path('admin_request_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_request' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-git-pull-request text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Pipeline
+						</a>
+					{% endif %}
+					{% if canViewFinanceReports %}
+						<a href="{{ path('admin_finance_reports') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_reports' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-chart-infographic text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Rapports
+						</a>
+					{% endif %}
+					{% if canViewFinanceJournal %}
+						<a href="{{ path('admin_finance_journal') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_journal' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-history text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Journal
 						</a>
 					{% endif %}
 				</div>

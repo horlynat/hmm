@@ -3,8 +3,8 @@
 namespace App\Tests\Service;
 
 use App\Service\CurrencyConversionService;
-use Psr\Log\NullLogger;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
@@ -75,7 +75,7 @@ final class CurrencyConversionServiceTest extends TestCase
     {
         $calls = 0;
         $httpClient = new MockHttpClient(function () use (&$calls) {
-            $calls++;
+            ++$calls;
 
             return $this->ratesResponse();
         });
@@ -110,5 +110,23 @@ final class CurrencyConversionServiceTest extends TestCase
         $result = $service->format('1234.50', 'USD', 'en');
 
         self::assertStringContainsString('1,234.50', $result);
+    }
+
+    public function testGetRatesSnapshotReturnsTheFullTable(): void
+    {
+        $httpClient = new MockHttpClient($this->ratesResponse());
+        $service = new CurrencyConversionService($httpClient, new ArrayAdapter(), new NullLogger());
+
+        self::assertEquals(['EUR' => 1.0, 'USD' => 1.1, 'XAF' => 655.957], $service->getRatesSnapshot());
+    }
+
+    public function testGetRatesSnapshotReturnsNullWhenProviderUnreachable(): void
+    {
+        $httpClient = new MockHttpClient(function () {
+            throw new \RuntimeException('Connexion refusée');
+        });
+        $service = new CurrencyConversionService($httpClient, new ArrayAdapter(), new NullLogger());
+
+        self::assertNull($service->getRatesSnapshot());
     }
 }

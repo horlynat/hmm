@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Project;
 use App\Entity\ProjectExpense;
+use App\Enum\ExpenseStatusEnum;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -169,5 +170,32 @@ class ProjectExpenseRepository extends ServiceEntityRepository
             ->orderBy('e.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * Totaux des dépenses approuvées, groupés par projet — seules les
+     * dépenses APPROVED impactent réellement le budget consommé
+     * (cf. docblock d'ExpenseStatusEnum). Montants déjà en EUR
+     * (CurrencyConversionService::PROJECT_LEDGER_CURRENCY), aucune
+     * conversion nécessaire ici contrairement aux factures.
+     *
+     * @return array<int, string> total approuvé indexé par id de projet
+     */
+    public function getApprovedTotalsByProject(): array
+    {
+        $rows = $this->createQueryBuilder('e')
+            ->select('IDENTITY(e.project) AS projectId', 'SUM(e.amount) AS total')
+            ->andWhere('e.status = :status')
+            ->setParameter('status', ExpenseStatusEnum::APPROVED)
+            ->groupBy('e.project')
+            ->getQuery()
+            ->getArrayResult();
+
+        $totals = [];
+        foreach ($rows as $row) {
+            $totals[(int) $row['projectId']] = $row['total'];
+        }
+
+        return $totals;
     }
 }

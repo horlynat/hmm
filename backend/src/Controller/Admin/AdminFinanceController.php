@@ -2,14 +2,18 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\Invoice;
 use App\Enum\ExpenseCategoryEnum;
 use App\Enum\ExpenseStatusEnum;
 use App\Enum\InvoiceStatusEnum;
+use App\Repository\AuditLogRepository;
 use App\Repository\InvoiceRepository;
 use App\Repository\ProjectExpenseRepository;
+use App\Repository\ProjectHistoryRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\FinanceVoter;
+use App\Service\CurrencyConversionService;
 use App\Service\FinanceCsvExporter;
 use App\Service\ProjectStatisticsService;
 use Doctrine\ORM\Tools\Pagination\Paginator;
@@ -52,6 +56,84 @@ final class AdminFinanceController extends AbstractController
         ]);
     }
 
+    #[Route('/reports', name: 'reports', methods: ['GET'])]
+    public function reports(ProjectStatisticsService $statisticsService, CurrencyConversionService $currencyConversionService): Response
+    {
+        $this->denyAccessUnlessGranted(FinanceVoter::VIEW);
+
+        return $this->render('admin/finance/reports.html.twig', [
+            'profitabilityByProject' => $statisticsService->getProfitabilityByProject(),
+            'profitabilityByClient' => $statisticsService->getProfitabilityByClient(),
+            'revenueByMonth' => $statisticsService->getRevenueByMonth(6),
+            'cashFlowForecast' => $statisticsService->getCashFlowForecast(3),
+            'exchangeRates' => $currencyConversionService->getRatesSnapshot(),
+            'ledgerCurrency' => CurrencyConversionService::PROJECT_LEDGER_CURRENCY,
+        ]);
+    }
+
+    /**
+     * Journal financier : fusion d'AuditLog (actions sur Invoice) et
+     * ProjectHistory (actions expense_*) — même mécanique de fusion
+     * qu'AdminSecurityAuditController::index(), mais filtrée à la source à
+     * ce qui touche vraiment l'argent, pas l'ensemble du back-office.
+     */
+    #[Route('/journal', name: 'journal', methods: ['GET'])]
+    public function journal(AuditLogRepository $auditLogRepository, ProjectHistoryRepository $projectHistoryRepository): Response
+    {
+        $this->denyAccessUnlessGranted(FinanceVoter::VIEW);
+
+        $entries = [];
+
+        foreach ($auditLogRepository->findRecent(200) as $auditLog) {
+            if (Invoice::class !== $auditLog->getEntityClass()) {
+                continue;
+            }
+
+            $entries[] = [
+                'date' => $auditLog->getCreatedAt(),
+                'label' => sprintf('Facture « %s »', $auditLog->getEntityLabel()),
+                'actionLabel' => $this->journalActionLabel($auditLog->getAction()),
+                'user' => $auditLog->getUser(),
+            ];
+        }
+
+        foreach ($projectHistoryRepository->findRecent(200) as $history) {
+            if (!str_starts_with($history->getAction(), 'expense_')) {
+                continue;
+            }
+
+            $entries[] = [
+                'date' => $history->getCreatedAt(),
+                'label' => sprintf('Projet « %s »', $history->getProject()->getTitle()),
+                'actionLabel' => $this->journalActionLabel($history->getAction()),
+                'user' => $history->getUser(),
+            ];
+        }
+
+        usort($entries, static fn (array $a, array $b): int => $b['date'] <=> $a['date']);
+
+        return $this->render('admin/finance/journal.html.twig', [
+            'entries' => array_slice($entries, 0, 100),
+        ]);
+    }
+
+    private function journalActionLabel(string $action): string
+    {
+        return match ($action) {
+            'created' => 'Création',
+            'updated' => 'Modification',
+            'deleted' => 'Suppression',
+            'marked_paid' => 'Marquée payée',
+            'marked_unpaid' => 'Remise en attente',
+            'expense_submitted' => 'Dépense soumise',
+            'expense_approved' => 'Dépense approuvée',
+            'expense_rejected' => 'Dépense refusée',
+            'expense_updated' => 'Dépense modifiée',
+            'expense_removed' => 'Dépense retirée',
+            default => ucfirst($action),
+        };
+    }
+
     #[Route('/invoices', name: 'invoices', methods: ['GET'])]
     public function invoices(
         Request $request,
@@ -61,11 +143,19 @@ final class AdminFinanceController extends AbstractController
     ): Response {
         $this->denyAccessUnlessGranted(FinanceVoter::VIEW);
 
-        [$sort, $direction] = $this->parseSort($request, ['issuedAt', 'dueDate', 'amount', 'status', 'number'], 'issuedAt');
+        [$sort, $direction] = $this->parseSort($request, ['issuedAt', 'dueDate', 'amount', 'status', 'number', 'project', 'client'], 'issuedAt');
         $page = max(1, (int) $request->query->get('page', 1));
 
+        // project/client trient sur les alias déjà joints par createFilteredQueryBuilder() (p.title/c.fullName),
+        // pas sur une colonne directe d'Invoice.
+        $sortColumn = match ($sort) {
+            'project' => 'p.title',
+            'client' => 'c.fullName',
+            default => 'i.'.$sort,
+        };
+
         $queryBuilder = $invoiceRepository->createFilteredQueryBuilder($this->parseInvoiceFilters($request))
-            ->orderBy('i.'.$sort, $direction);
+            ->orderBy($sortColumn, $direction);
 
         $paginator = new Paginator($queryBuilder);
         $totalPages = (int) ceil($paginator->count() / self::LIMIT);
@@ -190,9 +280,13 @@ final class AdminFinanceController extends AbstractController
     {
         return [
             'status' => $request->query->get('status') ?: null,
+            'overdue' => $request->query->get('overdue') ?: null,
             'project' => $request->query->get('project') ?: null,
             'client' => $request->query->get('client') ?: null,
             'currency' => $request->query->get('currency') ?: null,
+            'search' => $request->query->get('search') ?: null,
+            'min' => $request->query->get('min') ?: null,
+            'max' => $request->query->get('max') ?: null,
             'start' => $this->parseDate($request->query->get('start')),
             'end' => $this->parseDate($request->query->get('end'), endOfDay: true),
         ];
@@ -217,9 +311,13 @@ final class AdminFinanceController extends AbstractController
     {
         return [
             'status' => $request->query->get('status'),
+            'overdue' => $request->query->get('overdue'),
             'project' => $request->query->get('project'),
             'client' => $request->query->get('client'),
             'currency' => $request->query->get('currency'),
+            'search' => $request->query->get('search'),
+            'min' => $request->query->get('min'),
+            'max' => $request->query->get('max'),
             'start' => $request->query->get('start'),
             'end' => $request->query->get('end'),
             'sort' => $sort,
