@@ -861,7 +861,18 @@
       "noAccount": "Don't have an account yet?",
       "registerLink": "Create an account",
       "forgotPasswordLink": "Forgot your password?",
-      "resendVerificationLink": "Resend verification link"
+      "resendVerificationLink": "Resend verification link",
+      "twoFactor": {
+        "title": "Two-step verification",
+        "subtitle": "Enter the 6-digit code from your authenticator app, or one of your recovery codes.",
+        "codeLabel": "Verification code",
+        "codePlaceholder": "123456",
+        "submit": "Verify",
+        "back": "Use a different account",
+        "invalidCode": "Invalid code. Check your device's clock and try again.",
+        "tooManyAttempts": "Too many attempts. Please wait before trying again.",
+        "error": "Couldn't verify this code. Please try again."
+      }
     },
     "forgotPassword": {
       "eyebrow": "Account recovery",

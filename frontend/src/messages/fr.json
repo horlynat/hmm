@@ -861,7 +861,18 @@
       "noAccount": "Pas encore de compte ?",
       "registerLink": "Créer un compte",
       "forgotPasswordLink": "Mot de passe oublié ?",
-      "resendVerificationLink": "Renvoyer le lien de vérification"
+      "resendVerificationLink": "Renvoyer le lien de vérification",
+      "twoFactor": {
+        "title": "Vérification en deux étapes",
+        "subtitle": "Saisissez le code à 6 chiffres généré par votre application d'authentification, ou l'un de vos codes de récupération.",
+        "codeLabel": "Code de vérification",
+        "codePlaceholder": "123456",
+        "submit": "Vérifier",
+        "back": "Utiliser un autre compte",
+        "invalidCode": "Code invalide. Vérifiez l'heure de votre appareil et réessayez.",
+        "tooManyAttempts": "Trop de tentatives. Patientez avant de réessayer.",
+        "error": "Impossible de vérifier ce code. Veuillez réessayer."
+      }
     },
     "forgotPassword": {
       "eyebrow": "Récupération de compte",

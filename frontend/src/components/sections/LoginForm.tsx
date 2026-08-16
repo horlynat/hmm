@@ -9,15 +9,24 @@ import { Card } from "@/components/ui";
 import { TextInput, SubmitButton, FormMessage } from "@/components/ui/form";
 import { loginSchema, type LoginValues } from "@/lib/validation/schemas";
 import { Link, useRouter } from "@/i18n/navigation";
-import { login } from "@/lib/auth/actions";
+import { login, verifyLoginTwoFactor } from "@/lib/auth/actions";
 
 export function LoginForm() {
   const t = useTranslations("auth.login");
+  const t2fa = useTranslations("auth.login.twoFactor");
   const tv = useTranslations("validation");
   const router = useRouter();
   const [serverError, setServerError] = useState("");
   const [notVerifiedOpen, setNotVerifiedOpen] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Second temps de la connexion pour un compte protégé par la 2FA : présence
+  // d'un jeton de défi = on affiche le formulaire de code à la place du
+  // formulaire email/mot de passe (cf. login() dans lib/auth/actions.ts).
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [twoFactorSubmitting, setTwoFactorSubmitting] = useState(false);
+  const [twoFactorError, setTwoFactorError] = useState("");
 
   const {
     register,
@@ -52,6 +61,10 @@ export function LoginForm() {
   async function onSubmit(values: LoginValues) {
     setServerError("");
     const result = await login(values.email, values.password);
+    if (result.ok && result.requiresTwoFactor) {
+      setChallengeToken(result.challengeToken);
+      return;
+    }
     if (result.ok) {
       // push() vers /compte récupère déjà des données serveur fraîches pour
       // cette nouvelle route (donc la session vient d'être posée). Un
@@ -73,6 +86,85 @@ export function LoginForm() {
           : t("error"),
       );
     }
+  }
+
+  async function onSubmitTwoFactor(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!challengeToken) return;
+
+    setTwoFactorError("");
+    setTwoFactorSubmitting(true);
+    const result = await verifyLoginTwoFactor(challengeToken, twoFactorCode);
+    setTwoFactorSubmitting(false);
+
+    if (result.ok) {
+      // Même navigation que le login direct (cf. commentaire ci-dessus).
+      router.push({ pathname: "/compte", query: { welcome: "1" } });
+      return;
+    }
+
+    setTwoFactorError(
+      result.error === "invalid_code"
+        ? t2fa("invalidCode")
+        : result.error === "too_many_attempts"
+          ? t2fa("tooManyAttempts")
+          : t2fa("error"),
+    );
+  }
+
+  function onBackFromTwoFactor() {
+    setChallengeToken(null);
+    setTwoFactorCode("");
+    setTwoFactorError("");
+  }
+
+  if (challengeToken) {
+    return (
+      <Card variant="soft" className="p-8">
+        <div
+          aria-hidden="true"
+          className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-brand-primary/10 text-2xl"
+        >
+          🔐
+        </div>
+
+        <h2 className="mb-1.5 text-center text-base font-semibold">{t2fa("title")}</h2>
+        <p className="mb-5 text-center text-sm text-(--color-muted)">{t2fa("subtitle")}</p>
+
+        <form onSubmit={onSubmitTwoFactor} noValidate>
+          <TextInput
+            label={t2fa("codeLabel")}
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder={t2fa("codePlaceholder")}
+            value={twoFactorCode}
+            onChange={(e) => setTwoFactorCode(e.target.value)}
+            autoFocus
+          />
+
+          <SubmitButton
+            className="mt-2 w-full"
+            pending={twoFactorSubmitting}
+            pendingLabel={t2fa("submit")}
+          >
+            {t2fa("submit")}
+          </SubmitButton>
+
+          {twoFactorError && <FormMessage variant="error">{twoFactorError}</FormMessage>}
+        </form>
+
+        <p className="mt-4 text-center text-sm">
+          <button
+            type="button"
+            onClick={onBackFromTwoFactor}
+            className="font-semibold text-brand-primary hover:underline"
+          >
+            {t2fa("back")}
+          </button>
+        </p>
+      </Card>
+    );
   }
 
   return (
