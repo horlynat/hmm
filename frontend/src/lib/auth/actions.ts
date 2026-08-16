@@ -31,14 +31,26 @@ import type {
  */
 const ACCOUNT_NOT_VERIFIED_MESSAGE = "Votre compte n'est pas encore vérifié. Consultez vos emails pour l'activer.";
 
+export type LoginResult =
+  | { ok: true; requiresTwoFactor: false }
+  | { ok: true; requiresTwoFactor: true; challengeToken: string }
+  | { ok: false; error: string };
+
 /**
- * Connexion : POST /api/login_check (lexik JWT). En cas de succès, le token est
- * posé dans un cookie httpOnly. Le mot de passe ne transite que côté serveur.
+ * Connexion : POST /api/login_check (lexik JWT). En cas de succès direct, le
+ * token est posé dans un cookie httpOnly. Le mot de passe ne transite que
+ * côté serveur.
+ *
+ * Un compte protégé par la double authentification n'obtient pas son jeton
+ * ici : le backend répond { twoFactorRequired: true, challengeToken } à la
+ * place (App\Security\Api\TwoFactorAwareJwtSuccessHandler) — l'appelant doit
+ * alors demander le code à 6 chiffres et appeler verifyLoginTwoFactor()
+ * ci-dessous pour obtenir le vrai jeton.
  */
 export async function login(
   email: string,
   password: string,
-): Promise<ApiPostResult> {
+): Promise<LoginResult> {
   try {
     const res = await fetch(`${API_URL}/login_check`, {
       method: "POST",
@@ -69,6 +81,61 @@ export async function login(
       return { ok: false, error: message === ACCOUNT_NOT_VERIFIED_MESSAGE ? "not_verified" : "invalid_credentials" };
     }
 
+    const body = (await res.json()) as { token?: string; twoFactorRequired?: boolean; challengeToken?: string };
+
+    if (body.twoFactorRequired) {
+      if (!body.challengeToken) {
+        return { ok: false, error: "no_challenge_token" };
+      }
+
+      return { ok: true, requiresTwoFactor: true, challengeToken: body.challengeToken };
+    }
+
+    if (!body.token) {
+      return { ok: false, error: "no_token" };
+    }
+
+    await setSessionCookie(body.token);
+    return { ok: true, requiresTwoFactor: false };
+  } catch (error) {
+    console.error("[auth] login failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+/**
+ * Second temps de la connexion pour un compte 2FA : POST /api/login_check/2fa
+ * avec le jeton de défi (obtenu via login() ci-dessus) et le code à 6 chiffres
+ * (ou un code de récupération). En cas de succès, pose le vrai jeton comme
+ * login() le ferait directement.
+ */
+export async function verifyLoginTwoFactor(
+  challengeToken: string,
+  code: string,
+): Promise<ApiPostResult> {
+  try {
+    const res = await fetch(`${API_URL}/login_check/2fa`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ challengeToken, code }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      if (res.status === 429) {
+        return { ok: false, error: "too_many_attempts" };
+      }
+      if (res.status === 401) {
+        return { ok: false, error: "invalid_code" };
+      }
+
+      return { ok: false, error: `HTTP ${res.status}` };
+    }
+
     const body = (await res.json()) as { token?: string };
     if (!body.token) {
       return { ok: false, error: "no_token" };
@@ -77,7 +144,7 @@ export async function login(
     await setSessionCookie(body.token);
     return { ok: true };
   } catch (error) {
-    console.error("[auth] login failed", error);
+    console.error("[auth] verifyLoginTwoFactor failed", error);
     return { ok: false, error: "network_error" };
   }
 }
@@ -226,6 +293,103 @@ export async function resendVerificationEmail(): Promise<ApiPostResult> {
     return { ok: true };
   } catch (error) {
     console.error("[auth] resendVerificationEmail failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+export type TwoFactorSetupResult =
+  | { ok: true; secret: string; qrCodeDataUri: string }
+  | { ok: false; error: string };
+
+/**
+ * Démarre l'activation de la 2FA : POST /api/me/2fa/setup. Ne persiste rien
+ * côté serveur — le secret retourné doit être renvoyé tel quel à
+ * confirmTwoFactorSetup() ci-dessous pour être effectivement activé.
+ */
+export async function setupTwoFactor(): Promise<TwoFactorSetupResult> {
+  const token = await getToken();
+  if (!token) {
+    return { ok: false, error: "unauthenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/me/2fa/setup`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      return { ok: false, error: `HTTP ${res.status}` };
+    }
+
+    const body = (await res.json()) as { secret?: string; qrCodeDataUri?: string };
+    if (!body.secret || !body.qrCodeDataUri) {
+      return { ok: false, error: "invalid_response" };
+    }
+
+    return { ok: true, secret: body.secret, qrCodeDataUri: body.qrCodeDataUri };
+  } catch (error) {
+    console.error("[auth] setupTwoFactor failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+export type TwoFactorConfirmResult =
+  | { ok: true; recoveryCodes: string[] }
+  | { ok: false; error: string };
+
+/**
+ * Termine l'activation de la 2FA : POST /api/me/2fa/confirm avec le secret
+ * obtenu via setupTwoFactor() et le code à 6 chiffres saisi par l'utilisateur.
+ * En cas de succès, renvoie les codes de récupération — affichés une seule
+ * fois, l'appelant doit les faire noter avant de continuer.
+ */
+export async function confirmTwoFactorSetup(
+  secret: string,
+  code: string,
+): Promise<TwoFactorConfirmResult> {
+  const token = await getToken();
+  if (!token) {
+    return { ok: false, error: "unauthenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/me/2fa/confirm`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ secret, code }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      if (res.status === 429) {
+        return { ok: false, error: "too_many_attempts" };
+      }
+      if (res.status === 401) {
+        return { ok: false, error: "invalid_code" };
+      }
+
+      return { ok: false, error: `HTTP ${res.status}` };
+    }
+
+    const body = (await res.json()) as { recoveryCodes?: string[] };
+    if (!body.recoveryCodes) {
+      return { ok: false, error: "invalid_response" };
+    }
+
+    return { ok: true, recoveryCodes: body.recoveryCodes };
+  } catch (error) {
+    console.error("[auth] confirmTwoFactorSetup failed", error);
     return { ok: false, error: "network_error" };
   }
 }

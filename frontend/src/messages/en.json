@@ -861,7 +861,18 @@
       "noAccount": "Don't have an account yet?",
       "registerLink": "Create an account",
       "forgotPasswordLink": "Forgot your password?",
-      "resendVerificationLink": "Resend verification link"
+      "resendVerificationLink": "Resend verification link",
+      "twoFactor": {
+        "title": "Two-step verification",
+        "subtitle": "Enter the 6-digit code from your authenticator app, or one of your recovery codes.",
+        "codeLabel": "Verification code",
+        "codePlaceholder": "123456",
+        "submit": "Verify",
+        "back": "Use a different account",
+        "invalidCode": "Invalid code. Check your device's clock and try again.",
+        "tooManyAttempts": "Too many attempts. Please wait before trying again.",
+        "error": "Couldn't verify this code. Please try again."
+      }
     },
     "forgotPassword": {
       "eyebrow": "Account recovery",
@@ -1070,7 +1081,7 @@
         "emailUnverified": "Email address not verified",
         "twoFactorEnabled": "Two-factor authentication enabled",
         "twoFactorDisabled": "Two-factor authentication not enabled",
-        "twoFactorHint": "Currently managed from the back-office.",
+        "twoFactorHint": "Mandatory on your account — activated automatically at your first login.",
         "resendButton": "Resend verification email",
         "resendPending": "Sending…",
         "resendSuccess": "A new verification link has been sent to you.",
@@ -1085,7 +1096,32 @@
         "lastDeviceLabel": "Device",
         "lastDeviceTypeLabel": "Device type",
         "lastDeviceBrandLabel": "Brand",
-        "lastIpLabel": "IP address"
+        "lastIpLabel": "IP address",
+        "twoFactorSetup": {
+          "title": "Secure your account",
+          "subtitle": "Two-factor authentication is mandatory on your account. It takes less than a minute with your phone.",
+          "loading": "Generating your code…",
+          "qrAlt": "Two-factor authentication activation QR code",
+          "scanEyebrow": "Scan with your app",
+          "cantScan": "Can't scan it?",
+          "enterManually": "Enter the key manually",
+          "codeInstruction": "Enter the 6-digit code",
+          "codeLabel": "Verification code",
+          "codePlaceholder": "123456",
+          "submit": "Activate",
+          "invalidCode": "Invalid code. Check your device's clock and try again.",
+          "tooManyAttempts": "Too many attempts. Please wait before trying again.",
+          "error": "Couldn't activate two-factor authentication right now. Please try again.",
+          "loadError": "Couldn't generate your code. Please try again.",
+          "retry": "Retry",
+          "recoveryTitle": "Save your recovery codes",
+          "recoverySubtitle": "They let you sign in if you lose access to your authenticator app. They will never be shown again — write them down somewhere safe.",
+          "recoveryAck": "I've saved my codes, continue",
+          "copyAll": "Copy all codes",
+          "copied": "Copied",
+          "copySecret": "Copy key",
+          "appHint": "Google Authenticator, Authy, 1Password…"
+        }
       },
       "dataExport": {
         "title": "Export my data",
