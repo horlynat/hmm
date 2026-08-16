@@ -43,6 +43,7 @@ class TwoFactorController extends AbstractController
     {
         return $this->render('profile/two_factor/index.html.twig', [
             'user' => $this->getCurrentUser(),
+            'mandatory' => $this->isTwoFactorMandatoryForCurrentUser(),
         ]);
     }
 
@@ -118,6 +119,7 @@ class TwoFactorController extends AbstractController
             'secret' => $secret,
             'qrCodeDataUri' => $qrCode->getDataUri(),
             'error' => $error,
+            'mandatory' => $this->isTwoFactorMandatoryForCurrentUser(),
         ]);
     }
 
@@ -130,6 +132,18 @@ class TwoFactorController extends AbstractController
         $user = $this->getCurrentUser();
 
         if (!$user->isTotpAuthenticationEnabled()) {
+            return $this->redirectToRoute('profile_two_factor_index');
+        }
+
+        // La 2FA est obligatoire sur l'espace membre (cf. AccountStatusSubscriber,
+        // qui redirige tout compte client/collaborateur non équipé vers l'activation)
+        // — la désactiver soi-même viderait cette obligation de son sens. Seul un
+        // admin peut la désactiver de force en cas de perte d'accès
+        // (AdminSecurityTwoFactorController::disable(), procédure de secours
+        // documentée là-bas).
+        if ($this->isTwoFactorMandatoryForCurrentUser()) {
+            $this->addFlash('error', "La double authentification est obligatoire sur votre compte et ne peut pas être désactivée depuis cette page. Si vous avez perdu l'accès à votre application d'authentification, contactez le support.");
+
             return $this->redirectToRoute('profile_two_factor_index');
         }
 
@@ -229,6 +243,16 @@ class TwoFactorController extends AbstractController
         $this->addFlash('success', 'Nouveaux codes de récupération générés. Les anciens ne sont plus valides.');
 
         return $this->redirectToRoute('profile_two_factor_recovery_codes');
+    }
+
+    /**
+     * Même frontière que AccountStatusSubscriber : la 2FA est obligatoire pour
+     * tout compte de l'espace membre (client/collaborateur, ROLE_USER sans
+     * ROLE_EDITOR), jamais pour le back-office.
+     */
+    private function isTwoFactorMandatoryForCurrentUser(): bool
+    {
+        return !$this->isGranted('ROLE_EDITOR');
     }
 
     private function getCurrentUser(): User

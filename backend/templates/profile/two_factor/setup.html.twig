@@ -8,6 +8,15 @@
 		subtitle="Scannez ce QR code avec votre application d'authentification, puis saisissez le code à 6 chiffres qu'elle affiche pour confirmer." />
 
 	<div class="max-w-2xl space-y-4">
+		{% if mandatory %}
+			<div class="panel border-l-4 border-l-warning">
+				<div class="panel-body flex items-start gap-3">
+					<span class="ti ti-alert-triangle text-xl text-warning shrink-0" aria-hidden="true"></span>
+					<p class="field-hint">Cette étape est obligatoire sur votre compte — le reste de votre espace reste inaccessible tant qu'elle n'est pas terminée.</p>
+				</div>
+			</div>
+		{% endif %}
+
 		{% if error %}
 			<div class="field-error">{{ error }}</div>
 		{% endif %}

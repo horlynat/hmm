@@ -27,9 +27,15 @@
 						<td valign="top" style="padding:0 0 8px; font-size:14px;">Première connexion : utilisez « Mot de passe oublié ? » sur la page de connexion pour définir votre mot de passe.</td>
 					</tr>
 					<tr>
-						<td valign="top" style="padding:0 8px 0 0; color:#0077b6; font-weight:bold; font-size:14px;">3.</td>
-						<td valign="top" style="padding:0; font-size:14px;">Complétez votre profil depuis votre espace.</td>
+						<td valign="top" style="padding:{{ requiresTwoFactor ? '0 8px 8px 0' : '0 8px 0 0' }}; color:#0077b6; font-weight:bold; font-size:14px;">3.</td>
+						<td valign="top" style="padding:{{ requiresTwoFactor ? '0 0 8px' : '0' }}; font-size:14px;">Complétez votre profil depuis votre espace.</td>
 					</tr>
+					{% if requiresTwoFactor %}
+						<tr>
+							<td valign="top" style="padding:0 8px 0 0; color:#0077b6; font-weight:bold; font-size:14px;">4.</td>
+							<td valign="top" style="padding:0; font-size:14px;">Activez la double authentification (obligatoire, moins d'une minute) — vous y serez automatiquement invité(e) à la première connexion.</td>
+						</tr>
+					{% endif %}
 				</table>
 			</td>
 		</tr>
