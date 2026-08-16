@@ -66,6 +66,12 @@ nelmio_security:
                 - 'https://ui-avatars.com'
             connect-src:
                 - 'self'
+                # Uniquement pour les source maps (.css.map/.js.map) que les devtools du
+                # navigateur vont chercher automatiquement pour les assets Tabler Icons
+                # chargés depuis jsdelivr (cf. base.html.twig) — sans ça, violation CSP
+                # visible en console à chaque page (aucun impact fonctionnel, juste du
+                # bruit : le fichier .map n'est utile qu'au debug, jamais exécuté).
+                - 'https://cdn.jsdelivr.net'
             object-src:
                 - 'none'
             base-uri:

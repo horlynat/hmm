@@ -36,6 +36,18 @@ services:
         arguments:
             $targetDirectory: '%app.upload_dir%'
 
+    # Instance dédiée au logo (branding) : seul endroit de l'app où SVG/WEBP
+    # doivent être acceptés — SystemSettingType::logoFile les autorise déjà
+    # côté formulaire, mais l'instance par défaut de MediaUploader (jpeg/png/pdf
+    # uniquement) rejetait silencieusement ces deux formats à l'upload réel.
+    # Le service par défaut ci-dessus reste inchangé pour tous les autres
+    # usages (articles, projets, justificatifs de dépense, témoignages).
+    app.media_uploader.branding:
+        class: App\Service\MediaUploader
+        arguments:
+            $targetDirectory: '%app.upload_dir%'
+            $allowedMimeTypes: ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp']
+
     App\Service\JWTService:
         arguments:
             $secret: '%env(APP_JWTSECRET)%'

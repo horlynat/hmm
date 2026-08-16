@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class RegistrationController extends AbstractController
@@ -29,6 +30,7 @@ class RegistrationController extends AbstractController
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
         private AccountLinkResolver $accountLinkResolver,
+        private RoleHierarchyInterface $roleHierarchy,
     ) {
     }
 
@@ -117,6 +119,19 @@ class RegistrationController extends AbstractController
             $user->setIsVerified(true);
             $this->entityManager->flush();
 
+            // Même frontière que AccountStatusSubscriber/TwoFactorController : 2FA
+            // obligatoire pour l'espace membre (client/collaborateur), jamais pour
+            // le back-office. getReachableRoleNames() applique la hiérarchie
+            // (role_hierarchy, security.yaml) sur les rôles bruts de $user — on ne
+            // peut pas passer par isGranted() ici, la session courante n'est pas
+            // forcément celle du compte qu'on vérifie. Pas de lien dédié vers
+            // l'étape 2FA : AccountLinkResolver renvoie un chemin frontend
+            // (Next.js) pour ce profil d'utilisateur, et /profile/2fa/setup n'a
+            // pas d'équivalent connu côté frontend — le bouton "Accéder à mon
+            // espace" (déjà résolu correctement) suffit, AccountStatusSubscriber
+            // redirige automatiquement vers l'activation dès la 1ère page visitée.
+            $requiresTwoFactor = !\in_array('ROLE_EDITOR', $this->roleHierarchy->getReachableRoleNames($user->getRoles()), true);
+
             // ✅ sendAsync() — non-critique, pas de token expirant
             $this->emailManager->sendAsync(
                 to: $user->getEmail(),
@@ -126,6 +141,7 @@ class RegistrationController extends AbstractController
                     'fullName' => $user->getFullName(),
                     'user' => $user, // ✅ Passez l'objet user complet au template
                     'accountUrl' => $this->accountLinkResolver->resolve($user, 'profile_read', ['id' => $user->getId()], '/connexion'),
+                    'requiresTwoFactor' => $requiresTwoFactor,
                 ]
             );
 

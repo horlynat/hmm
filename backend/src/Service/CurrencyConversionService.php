@@ -81,7 +81,19 @@ class CurrencyConversionService
     }
 
     /**
-     * @return array<string, float>|null table de taux base EUR, ou null si le fournisseur est injoignable/invalide.
+     * Table de taux complète (base EUR), pour affichage informatif (ex. panneau
+     * "taux de change actuels" du module Finance) — convert() reste le seul
+     * point d'entrée pour une conversion réelle.
+     *
+     * @return array<string, float>|null null si le fournisseur est injoignable/invalide
+     */
+    public function getRatesSnapshot(): ?array
+    {
+        return $this->getRates();
+    }
+
+    /**
+     * @return array<string, float>|null table de taux base EUR, ou null si le fournisseur est injoignable/invalide
      */
     private function getRates(): ?array
     {

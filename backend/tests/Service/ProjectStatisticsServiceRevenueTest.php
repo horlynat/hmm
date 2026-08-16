@@ -6,6 +6,8 @@ use App\Entity\Invoice;
 use App\Entity\QuoteRequest;
 use App\Enum\InvoiceStatusEnum;
 use App\Enum\QuoteStatusEnum;
+use App\Repository\InvoiceRepository;
+use App\Repository\ProjectExpenseRepository;
 use App\Repository\QuoteRequestRepository;
 use App\Service\CurrencyConversionService;
 use App\Service\ProjectStatisticsService;
@@ -64,11 +66,14 @@ final class ProjectStatisticsServiceRevenueTest extends TestCase
             new NullLogger(),
         );
 
+        // Non utilisés par getRevenueBreakdown() : stubs vides, jamais interrogés dans ces tests.
         return new ProjectStatisticsService(
             $entityManager,
             $quoteRequestRepository,
             $currencyConversion,
             new QuoteBudgetParser(),
+            $this->createStub(InvoiceRepository::class),
+            $this->createStub(ProjectExpenseRepository::class),
         );
     }
 

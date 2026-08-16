@@ -49,6 +49,15 @@ framework:
             policy: fixed_window
             limit: 5
             interval: '15 minutes'
+        # Même anti-bruteforce que two_factor_attempt ci-dessus, mais pour le
+        # second temps de la connexion API (ApiTwoFactorLoginController) —
+        # limiteur dédié plutôt que réutiliser two_factor_attempt : deux flux de
+        # connexion distincts (web vs API), qui ne doivent pas partager leur
+        # compteur au risque de bloquer l'un à cause de tentatives sur l'autre.
+        api_login_2fa:
+            policy: fixed_window
+            limit: 5
+            interval: '15 minutes'
         # Anti-spam des notifications admin par email (ErrorNotifier) : au plus
         # 1 email par heure et par classe d'exception. Pool dédié (cache.yaml)
         # pour pouvoir le vider isolément sans affecter les autres limiteurs.

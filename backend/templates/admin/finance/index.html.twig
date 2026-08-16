@@ -58,7 +58,7 @@
 
 		<!-- ⚠️ ALERTES -->
 		<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-			<a href="{{ path('admin_finance_invoices', {status: 'pending'}) }}" class="soft-card p-5 flex items-center gap-4 hover:shadow-md transition">
+			<a href="{{ path('admin_finance_invoices', {overdue: 1}) }}" class="soft-card p-5 flex items-center gap-4 hover:shadow-md transition">
 				<div class="p-3 rounded-xl {{ overdueInvoicesCount > 0 ? 'bg-red-50 text-danger' : 'bg-gray-50 text-brand-dark/40' }}">
 					<i class="ti ti-alert-triangle text-xl"></i>
 				</div>

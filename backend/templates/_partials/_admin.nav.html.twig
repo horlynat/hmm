@@ -1,7 +1,14 @@
 {# 📌 Détection automatique de la route actuelle pour ouvrir le bon accordéon au chargement #}
 {% set currentRoute = app.request.attributes.get('_route') %}
-{% set isFinanceActive = currentRoute starts with 'admin_finance' %}
-{% set isContenuActive = currentRoute starts with 'admin_project' or currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_tag' or currentRoute starts with 'admin_article' or currentRoute starts with 'admin_course' or currentRoute starts with 'admin_experience' or currentRoute starts with 'admin_home_content' or currentRoute starts with 'admin_about_content' or currentRoute starts with 'admin_ai_assistant' %}
+{# admin_project_statistics est exclu du préfixe admin_project ci-dessous : cette
+   page est rattachée à Finance (lien "Projets" de l'accordéon Finance), pas à
+   Contenu — Contenu n'a lui-même aucun lien vers cette route (son propre lien
+   "Projets" pointe vers admin_project_index). Sans cette exclusion, y accéder
+   depuis Finance ouvrait à tort l'accordéon Contenu et y surlignait "Projets"
+   comme actif alors que ce lien mène ailleurs — même principe que l'exclusion
+   admin_skill_category ci-dessous. #}
+{% set isFinanceActive = currentRoute starts with 'admin_finance' or currentRoute == 'admin_project_statistics' %}
+{% set isContenuActive = (currentRoute starts with 'admin_project' and currentRoute != 'admin_project_statistics') or currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_tag' or currentRoute starts with 'admin_article' or currentRoute starts with 'admin_course' or currentRoute starts with 'admin_experience' or currentRoute starts with 'admin_home_content' or currentRoute starts with 'admin_about_content' or currentRoute starts with 'admin_ai_assistant' %}
 {% set isUtilisateursActive = currentRoute starts with 'admin_admins' or currentRoute starts with 'admin_user' or currentRoute starts with 'admin_collaborator' or currentRoute starts with 'admin_contact' or currentRoute starts with 'admin_request' or currentRoute starts with 'admin_testimonial' %}
 {% set isSecuriteActive = currentRoute starts with 'admin_security_' %}
 {% set isParametresActive = currentRoute starts with 'admin_config' or currentRoute starts with 'admin_notification' or currentRoute starts with 'admin_integration' or currentRoute starts with 'admin_backup' %}
@@ -15,7 +22,14 @@
 {% set canViewFinanceOverview = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
 {% set canViewFinanceInvoices = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
 {% set canViewFinanceExpenses = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
-{% set canViewFinanceSection = canViewFinanceOverview or canViewFinanceInvoices or canViewFinanceExpenses %}
+{% set canViewFinanceReports = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
+{% set canViewFinanceJournal = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
+{# admin_project_statistics (AdminProjectController::statistics()) et admin_request_index (QuoteVoter::VIEW)
+   existent déjà ailleurs dans ce menu — ces deux liens ne font que les rendre accessibles depuis Finance
+   aussi, avec exactement la même garde que leur contrôleur cible. #}
+{% set canViewFinanceProjects = is_granted('ROLE_ADMIN') %}
+{% set canViewFinancePipeline = is_granted(constant('App\\Security\\Voter\\QuoteVoter::VIEW')) %}
+{% set canViewFinanceSection = canViewFinanceOverview or canViewFinanceInvoices or canViewFinanceExpenses or canViewFinanceReports or canViewFinanceJournal or canViewFinanceProjects or canViewFinancePipeline %}
 
 {% set canViewProjects = is_granted('ROLE_ADMIN') %}
 {% set canViewSkills = is_granted('ROLE_EDITOR') %}
@@ -64,11 +78,15 @@
 	<div class="p-6 border-b border-gray-200 flex items-center gap-3 justify-between shrink-0">
 		<div class="flex items-center gap-3 min-w-0">
 			{% if settings.logoPath %}
-				<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-9 w-9 rounded-lg object-cover shrink-0">
+				{# Pas d'arrondi de conteneur : le logo (monogramme H) a déjà ses propres
+				   coins arrondis dessinés dans le fichier lui-même — en cumuler un second
+				   par-dessus (rounded-lg = 16px sur ce projet, très prononcé sur 36px)
+				   le fait paraître presque circulaire. #}
+				<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-9 w-9 object-contain shrink-0">
 			{% endif %}
 			<div class="min-w-0">
-				<h1 class="text-xl font-heading font-bold text-(--brand-dark) truncate">{{ settings.siteName }}</h1>
-				<p class="text-sm text-(--brand-dark) truncate">Portfolio Admin</p>
+				<h1 class="text-lg font-heading font-bold text-(--brand-dark) truncate">{{ settings.siteName }}</h1>
+				<p class="text-sm text-(--brand-dark) truncate">Admin | Portail Digital </p>
 			</div>
 		</div>
 		<button type="button" @click="mobileSidebarOpen = false" class="md:hidden p-1 rounded-lg text-(--brand-dark) hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Fermer le menu">
@@ -124,6 +142,30 @@
 							Dépenses
 						</a>
 					{% endif %}
+					{% if canViewFinanceProjects %}
+						<a href="{{ path('admin_project_statistics') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute == 'admin_project_statistics' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-briefcase text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Projets
+						</a>
+					{% endif %}
+					{% if canViewFinancePipeline %}
+						<a href="{{ path('admin_request_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_request' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-git-pull-request text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Pipeline
+						</a>
+					{% endif %}
+					{% if canViewFinanceReports %}
+						<a href="{{ path('admin_finance_reports') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_reports' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-chart-infographic text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Rapports
+						</a>
+					{% endif %}
+					{% if canViewFinanceJournal %}
+						<a href="{{ path('admin_finance_journal') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_journal' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-history text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Journal
+						</a>
+					{% endif %}
 				</div>
 			</div>
 		{% endif %}
@@ -143,7 +185,7 @@
 
 				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
 					{% if canViewProjects %}
-						<a href="{{ path('admin_project_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_project' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+						<a href="{{ path('admin_project_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_project' and currentRoute != 'admin_project_statistics' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 							<i class="ti ti-briefcase text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 							Projets
 						</a>
@@ -408,7 +450,8 @@
 
 	<!-- 🛟 PIED DE PAGE -->
 	<div class="p-4 border-t border-gray-200 bg-gray-50/50 shrink-0 text-center">
-		<p class="text-[11px] text-(--brand-dark) tracking-wide font-medium">Soft UI Dashboard v1.2</p>
+<p class="text-[11px] text-(--brand-dark) tracking-wide font-medium">Horlynat | Soft UI v1.2</p>
+
 	</div>
 </aside>
 {% endif %}
