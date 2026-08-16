@@ -2,16 +2,29 @@
 
 {% block title %}Votre ticket a été créé{% endblock %}
 {% block preheader %}Nous avons bien reçu votre demande de support.{% endblock %}
+{% block badge_label %}Support{% endblock %}
+{% block badge_color %}#f3e8ff{% endblock %}
+{% block badge_text_color %}#6b21a8{% endblock %}
 
 {% block body %}
-	<p style="margin:0 0 16px;">Bonjour <strong>{{ clientName }}</strong>,</p>
+	<h1 style="margin:0 0 16px; font-size:20px; color:#03045e;">Ticket bien reçu</h1>
 
-	<p style="margin:0 0 24px;">
-		Nous avons bien reçu votre ticket de support concernant « {{ subject }} ». Nous reviendrons vers vous dès que possible.
+	<p style="margin:0 0 16px;">Bonjour <strong>{{ clientName }}</strong>,</p>
+	<p style="margin:0 0 20px;">
+		Nous avons bien reçu votre demande de support et reviendrons vers vous dès que possible.
 	</p>
 
-	<p style="margin:0 0 24px;">
-		Vous pouvez suivre l'échange et ajouter des précisions à tout moment depuis ce lien :
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8fa; border:1px solid #d0d7de; border-radius:8px; margin:0 0 24px;">
+		<tr>
+			<td style="padding:14px 16px;">
+				<p style="margin:0 0 4px; font-size:12px; font-weight:bold; text-transform:uppercase; letter-spacing:0.04em; color:#6b21a8;">Objet du ticket</p>
+				<p style="margin:0; font-size:15px; font-weight:bold; color:#0b0e14;">{{ subject }}</p>
+			</td>
+		</tr>
+	</table>
+
+	<p style="margin:0 0 20px;">
+		Vous pouvez suivre l'échange et ajouter des précisions à tout moment depuis votre espace :
 	</p>
 
 	<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 8px;">

@@ -22,7 +22,13 @@
 			:root { --color-brand-primary: {{ settings.primaryColor }}; }
 		</style>
 
-		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+		{% if settings.logoPath %}
+			{# Pas de type= figé : le logo peut être SVG, PNG, JPG ou WEBP selon ce qui est
+			   téléversé dans Paramètres > Configuration (voir SystemSettingType::logoFile). #}
+			<link rel="icon" href="{{ settings.logoPath }}">
+		{% else %}
+			<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+		{% endif %}
 
 		{# Polices de marque (référencées par app.css : Inter/Nunito/JetBrains Mono).
 		   CSP OK : style-src fonts.googleapis.com, font-src fonts.gstatic.com. #}

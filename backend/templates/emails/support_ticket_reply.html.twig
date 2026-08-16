@@ -2,17 +2,21 @@
 
 {% block title %}Nouvelle réponse à votre ticket{% endblock %}
 {% block preheader %}Une réponse a été apportée à votre ticket « {{ subject }} ».{% endblock %}
+{% block badge_label %}Support{% endblock %}
+{% block badge_color %}#f3e8ff{% endblock %}
+{% block badge_text_color %}#6b21a8{% endblock %}
 
 {% block body %}
-	<p style="margin:0 0 16px;">Bonjour <strong>{{ clientName }}</strong>,</p>
+	<h1 style="margin:0 0 16px; font-size:20px; color:#03045e;">Nouvelle réponse</h1>
 
-	<p style="margin:0 0 16px;">
-		Vous avez reçu une nouvelle réponse concernant votre ticket « {{ subject }} » :
-	</p>
+	<p style="margin:0 0 8px;">Bonjour <strong>{{ clientName }}</strong>,</p>
+	<p style="margin:0 0 4px; font-size:12px; font-weight:bold; text-transform:uppercase; letter-spacing:0.04em; color:#6b21a8;">Ticket</p>
+	<p style="margin:0 0 16px; font-size:15px; font-weight:bold; color:#0b0e14;">{{ subject }}</p>
 
+	<p style="margin:0 0 8px; font-size:12px; font-weight:bold; text-transform:uppercase; letter-spacing:0.04em; color:#57606a;">Réponse</p>
 	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
 		<tr>
-			<td style="padding:16px; background-color:#f6f8fa; border-radius:8px; border:1px solid #d0d7de; font-size:14px; line-height:1.6; white-space:pre-line;">{{ replyBody }}</td>
+			<td style="padding:16px; background-color:#f6f8fa; border-left:3px solid #6b21a8; border-radius:0 8px 8px 0; font-size:14px; line-height:1.6; white-space:pre-line;">{{ replyBody }}</td>
 		</tr>
 	</table>
 
