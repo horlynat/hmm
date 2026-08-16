@@ -40,7 +40,7 @@
 
 		<form method="post" action="{{ path('admin_currency_set') }}" class="hidden sm:block">
 			<label for="admin-currency" class="sr-only">Devise d'affichage</label>
-			<select id="admin-currency" name="currency" onchange="this.form.submit()"
+			<select id="admin-currency" name="currency" onchange="this.form.requestSubmit()"
 					class="input input-select text-sm py-1.5 w-auto" aria-label="Devise d'affichage">
 				{% for currency in currency_choices() %}
 					<option value="{{ currency.value }}" {% if active_currency() == currency.value %}selected{% endif %}>{{ currency.getSymbol() }} {{ currency.value }}</option>

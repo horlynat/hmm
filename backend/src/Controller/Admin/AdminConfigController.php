@@ -11,6 +11,7 @@ use App\Service\AuditLogger;
 use App\Service\MediaUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,7 +30,7 @@ class AdminConfigController extends AbstractController
         Request $request,
         SystemSettingRepository $systemSettingRepository,
         EntityManagerInterface $entityManager,
-        MediaUploader $uploader,
+        #[Autowire(service: 'app.media_uploader.branding')] MediaUploader $uploader,
         AuditLogger $auditLogger,
     ): Response {
         $this->denyAccessUnlessGranted(SettingsVoter::VIEW_CONFIG);
