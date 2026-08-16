@@ -1102,7 +1102,10 @@
           "subtitle": "Two-factor authentication is mandatory on your account. It takes less than a minute with your phone.",
           "loading": "Generating your code…",
           "qrAlt": "Two-factor authentication activation QR code",
-          "cantScan": "Can't scan it? Enter this key manually:",
+          "scanEyebrow": "Scan with your app",
+          "cantScan": "Can't scan it?",
+          "enterManually": "Enter the key manually",
+          "codeInstruction": "Enter the 6-digit code",
           "codeLabel": "Verification code",
           "codePlaceholder": "123456",
           "submit": "Activate",
@@ -1114,8 +1117,8 @@
           "recoveryTitle": "Save your recovery codes",
           "recoverySubtitle": "They let you sign in if you lose access to your authenticator app. They will never be shown again — write them down somewhere safe.",
           "recoveryAck": "I've saved my codes, continue",
-          "scanStep": "Scan this QR code with your authenticator app",
-          "verifyStep": "Enter the 6-digit code it shows",
+          "copyAll": "Copy all codes",
+          "copied": "Copied",
           "copySecret": "Copy key",
           "appHint": "Google Authenticator, Authy, 1Password…"
         }

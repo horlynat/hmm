@@ -1102,7 +1102,10 @@
           "subtitle": "La double authentification est obligatoire sur votre espace. Comptez moins d'une minute avec votre téléphone.",
           "loading": "Génération de votre code…",
           "qrAlt": "QR code d'activation de la double authentification",
-          "cantScan": "Impossible de scanner ? Saisissez cette clé manuellement :",
+          "scanEyebrow": "Scanner avec votre application",
+          "cantScan": "Impossible de scanner ?",
+          "enterManually": "Saisir la clé manuellement",
+          "codeInstruction": "Entrez le code à 6 chiffres",
           "codeLabel": "Code de vérification",
           "codePlaceholder": "123456",
           "submit": "Activer",
@@ -1114,8 +1117,8 @@
           "recoveryTitle": "Conservez vos codes de récupération",
           "recoverySubtitle": "Ils vous permettent de vous connecter si vous perdez l'accès à votre application d'authentification. Ils ne seront plus jamais affichés — notez-les dans un endroit sûr.",
           "recoveryAck": "J'ai noté mes codes, continuer",
-          "scanStep": "Scannez ce QR code avec votre application d'authentification",
-          "verifyStep": "Entrez le code à 6 chiffres qu'elle affiche",
+          "copyAll": "Copier tous les codes",
+          "copied": "Copié",
           "copySecret": "Copier la clé",
           "appHint": "Google Authenticator, Authy, 1Password…"
         }
