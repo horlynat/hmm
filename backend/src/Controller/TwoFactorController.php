@@ -4,12 +4,10 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Security\TwoFactor\BackupCodeManager;
+use App\Security\TwoFactor\PendingTotpUser;
 use Doctrine\ORM\EntityManagerInterface;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
-use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
-use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
-use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface as TotpTwoFactorInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -72,7 +70,7 @@ class TwoFactorController extends AbstractController
             $session->set(self::SESSION_KEY, $secret);
         }
 
-        $pendingTotpUser = $this->createPendingTotpUser($user, $secret);
+        $pendingTotpUser = new PendingTotpUser($user->getTotpAuthenticationUsername(), $secret);
         $error = null;
 
         if ($request->isMethod('POST')) {
@@ -263,35 +261,5 @@ class TwoFactorController extends AbstractController
         }
 
         return $user;
-    }
-
-    /**
-     * Utilisateur "fantôme" au secret en attente, uniquement pour générer/vérifier
-     * le QR code — évite de muter l'entité Doctrine réelle avant confirmation.
-     */
-    private function createPendingTotpUser(User $user, string $secret): TotpTwoFactorInterface
-    {
-        return new class($user->getTotpAuthenticationUsername(), $secret) implements TotpTwoFactorInterface {
-            public function __construct(
-                private readonly ?string $username,
-                private readonly string $secret,
-            ) {
-            }
-
-            public function isTotpAuthenticationEnabled(): bool
-            {
-                return true;
-            }
-
-            public function getTotpAuthenticationUsername(): ?string
-            {
-                return $this->username;
-            }
-
-            public function getTotpAuthenticationConfiguration(): TotpConfigurationInterface
-            {
-                return new TotpConfiguration($this->secret, TotpConfiguration::ALGORITHM_SHA1, 30, 6);
-            }
-        };
     }
 }
