@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "@/i18n/navigation";
 import { AccountShell } from "@/components/sections/AccountShell";
+import { TwoFactorSetupGate } from "@/components/sections/TwoFactorSetupGate";
 import { getCurrentUser } from "@/lib/auth/session";
 
 /**
@@ -21,6 +22,25 @@ export default async function CompteLayout({
   if (!user) {
     redirect({ href: "/connexion", locale });
     return null;
+  }
+
+  // La 2FA est obligatoire sur l'espace membre (client/freelance/collaborateur
+  // non staff) — même frontière que le backend (App\EventSubscriber\
+  // AccountStatusSubscriber côté web, App\Security\Api\TwoFactorAwareJwtSuccessHandler
+  // à la connexion) : ROLE_EDITOR (collaborateur vetté par un admin) en est
+  // exempté, tout le reste doit l'activer avant d'accéder à quoi que ce soit
+  // sous /compte. Pas de redirection vers une route dédiée (qui obligerait à
+  // maintenir une liste d'exclusion façon SKIP_PATTERN, avec le même risque
+  // de boucle) : on affiche directement l'écran d'activation ICI, quelle que
+  // soit la page /compte/* demandée — TwoFactorSetupGate déclenche un
+  // router.refresh() une fois l'activation confirmée, qui refait ce rendu
+  // serveur et laisse la vraie page s'afficher normalement.
+  if (!user.roles.includes("ROLE_EDITOR") && !user.isTwoFactorEnabled) {
+    return (
+      <main id="main-content" className="flex-1">
+        <TwoFactorSetupGate />
+      </main>
+    );
   }
 
   const { attributions, isCollaborator } = user;

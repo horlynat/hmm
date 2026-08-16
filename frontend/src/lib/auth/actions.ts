@@ -297,6 +297,103 @@ export async function resendVerificationEmail(): Promise<ApiPostResult> {
   }
 }
 
+export type TwoFactorSetupResult =
+  | { ok: true; secret: string; qrCodeDataUri: string }
+  | { ok: false; error: string };
+
+/**
+ * Démarre l'activation de la 2FA : POST /api/me/2fa/setup. Ne persiste rien
+ * côté serveur — le secret retourné doit être renvoyé tel quel à
+ * confirmTwoFactorSetup() ci-dessous pour être effectivement activé.
+ */
+export async function setupTwoFactor(): Promise<TwoFactorSetupResult> {
+  const token = await getToken();
+  if (!token) {
+    return { ok: false, error: "unauthenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/me/2fa/setup`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      return { ok: false, error: `HTTP ${res.status}` };
+    }
+
+    const body = (await res.json()) as { secret?: string; qrCodeDataUri?: string };
+    if (!body.secret || !body.qrCodeDataUri) {
+      return { ok: false, error: "invalid_response" };
+    }
+
+    return { ok: true, secret: body.secret, qrCodeDataUri: body.qrCodeDataUri };
+  } catch (error) {
+    console.error("[auth] setupTwoFactor failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+export type TwoFactorConfirmResult =
+  | { ok: true; recoveryCodes: string[] }
+  | { ok: false; error: string };
+
+/**
+ * Termine l'activation de la 2FA : POST /api/me/2fa/confirm avec le secret
+ * obtenu via setupTwoFactor() et le code à 6 chiffres saisi par l'utilisateur.
+ * En cas de succès, renvoie les codes de récupération — affichés une seule
+ * fois, l'appelant doit les faire noter avant de continuer.
+ */
+export async function confirmTwoFactorSetup(
+  secret: string,
+  code: string,
+): Promise<TwoFactorConfirmResult> {
+  const token = await getToken();
+  if (!token) {
+    return { ok: false, error: "unauthenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/me/2fa/confirm`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ secret, code }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      if (res.status === 429) {
+        return { ok: false, error: "too_many_attempts" };
+      }
+      if (res.status === 401) {
+        return { ok: false, error: "invalid_code" };
+      }
+
+      return { ok: false, error: `HTTP ${res.status}` };
+    }
+
+    const body = (await res.json()) as { recoveryCodes?: string[] };
+    if (!body.recoveryCodes) {
+      return { ok: false, error: "invalid_response" };
+    }
+
+    return { ok: true, recoveryCodes: body.recoveryCodes };
+  } catch (error) {
+    console.error("[auth] confirmTwoFactorSetup failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
 /**
  * Demande de réinitialisation de mot de passe : POST /api/forgot-password.
  * Le backend répond toujours succès (anti-énumération), que le compte existe ou non.

@@ -1081,7 +1081,7 @@
         "emailUnverified": "Email address not verified",
         "twoFactorEnabled": "Two-factor authentication enabled",
         "twoFactorDisabled": "Two-factor authentication not enabled",
-        "twoFactorHint": "Currently managed from the back-office.",
+        "twoFactorHint": "Mandatory on your account — activated automatically at your first login.",
         "resendButton": "Resend verification email",
         "resendPending": "Sending…",
         "resendSuccess": "A new verification link has been sent to you.",
@@ -1096,7 +1096,25 @@
         "lastDeviceLabel": "Device",
         "lastDeviceTypeLabel": "Device type",
         "lastDeviceBrandLabel": "Brand",
-        "lastIpLabel": "IP address"
+        "lastIpLabel": "IP address",
+        "twoFactorSetup": {
+          "title": "Secure your account",
+          "subtitle": "Two-factor authentication is mandatory on your account. It takes less than a minute with your phone.",
+          "loading": "Generating your code…",
+          "qrAlt": "Two-factor authentication activation QR code",
+          "cantScan": "Can't scan it? Enter this key manually:",
+          "codeLabel": "Verification code",
+          "codePlaceholder": "123456",
+          "submit": "Activate",
+          "invalidCode": "Invalid code. Check your device's clock and try again.",
+          "tooManyAttempts": "Too many attempts. Please wait before trying again.",
+          "error": "Couldn't activate two-factor authentication right now. Please try again.",
+          "loadError": "Couldn't generate your code. Please try again.",
+          "retry": "Retry",
+          "recoveryTitle": "Save your recovery codes",
+          "recoverySubtitle": "They let you sign in if you lose access to your authenticator app. They will never be shown again — write them down somewhere safe.",
+          "recoveryAck": "I've saved my codes, continue"
+        }
       },
       "dataExport": {
         "title": "Export my data",

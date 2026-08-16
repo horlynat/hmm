@@ -1081,7 +1081,7 @@
         "emailUnverified": "Adresse email non vérifiée",
         "twoFactorEnabled": "Double authentification activée",
         "twoFactorDisabled": "Double authentification non activée",
-        "twoFactorHint": "Gérée depuis l'espace back-office pour l'instant.",
+        "twoFactorHint": "Obligatoire sur votre compte — activée automatiquement à votre première connexion.",
         "resendButton": "Renvoyer l'email de vérification",
         "resendPending": "Envoi en cours…",
         "resendSuccess": "Un nouveau lien de vérification vous a été envoyé.",
@@ -1096,7 +1096,25 @@
         "lastDeviceLabel": "Appareil",
         "lastDeviceTypeLabel": "Type d'appareil",
         "lastDeviceBrandLabel": "Marque",
-        "lastIpLabel": "Adresse IP"
+        "lastIpLabel": "Adresse IP",
+        "twoFactorSetup": {
+          "title": "Sécurisez votre compte",
+          "subtitle": "La double authentification est obligatoire sur votre espace. Comptez moins d'une minute avec votre téléphone.",
+          "loading": "Génération de votre code…",
+          "qrAlt": "QR code d'activation de la double authentification",
+          "cantScan": "Impossible de scanner ? Saisissez cette clé manuellement :",
+          "codeLabel": "Code de vérification",
+          "codePlaceholder": "123456",
+          "submit": "Activer",
+          "invalidCode": "Code invalide. Vérifiez l'heure de votre appareil et réessayez.",
+          "tooManyAttempts": "Trop de tentatives. Patientez avant de réessayer.",
+          "error": "Impossible d'activer la double authentification pour le moment. Réessayez.",
+          "loadError": "Impossible de générer votre code. Réessayez.",
+          "retry": "Réessayer",
+          "recoveryTitle": "Conservez vos codes de récupération",
+          "recoverySubtitle": "Ils vous permettent de vous connecter si vous perdez l'accès à votre application d'authentification. Ils ne seront plus jamais affichés — notez-les dans un endroit sûr.",
+          "recoveryAck": "J'ai noté mes codes, continuer"
+        }
       },
       "dataExport": {
         "title": "Exporter mes données",
