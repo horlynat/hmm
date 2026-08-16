@@ -106,7 +106,7 @@ export default async function ProjectDetailPage({
       />
       <section className="px-6 pt-14 pb-8">
         <div className="mx-auto max-w-[840px]">
-          <h1 className="mb-5 text-[clamp(2.25rem,4.5vw,3.75rem)] leading-[1.14]">
+          <h1 className="mb-5 text-[clamp(1.25rem,2.5vw,1.75rem)] leading-[1.14]">
             {project.title}
           </h1>
           <p className="mb-3 max-w-[65ch] text-[1.05rem] opacity-75">{project.description}</p>
