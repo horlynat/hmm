@@ -20,8 +20,13 @@ import "./js/idle-timeout.js";
 // premier chargement de page — donc pas de double init avec l'auto-démarrage
 // d'Alpine (Alpine.start(), déclenché par son propre script CDN).
 document.addEventListener("turbo:before-render", () => {
+    // ⚠️ Le build CSP expose `destroyTree`, PAS `destroy` (qui n'existe que sur le
+    // build standard alpinejs) — l'appeler par erreur lève un TypeError non
+    // rattrapé dans le pipeline de rendu de Turbo, ce qui lui fait perdre le fil
+    // et basculer sur un rechargement complet de la page (constaté en prod sur le
+    // lien Finance > Projets).
     if (window.Alpine) {
-        window.Alpine.destroy(document.body);
+        window.Alpine.destroyTree(document.body);
     }
 });
 
