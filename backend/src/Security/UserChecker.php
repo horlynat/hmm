@@ -3,7 +3,6 @@
 namespace App\Security;
 
 use App\Entity\User;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAccountStatusException;
 use Symfony\Component\Security\Core\User\UserCheckerInterface;
@@ -22,13 +21,17 @@ use Symfony\Component\Security\Core\User\UserInterface;
  * checkPostAuth s'exécute APRÈS la validation du mot de passe : les messages
  * de statut ne sont donc montrés qu'à quelqu'un qui a déjà prouvé qu'il connaît
  * le mot de passe, ce qui supprime le vecteur d'énumération.
+ *
+ * La 2FA d'un compte n'est plus traitée ici : jusqu'ici, un compte 2FA était
+ * purement et simplement bloqué sur /api/login_check (aucun vrai second
+ * facteur n'existait côté API, cf. historique de ce fichier), en attendant un
+ * vrai flux. C'est désormais TwoFactorAwareJwtSuccessHandler (décorateur du
+ * success handler lexik) qui prend le relais juste après ce checker : mot de
+ * passe validé ici, second facteur vérifié là-bas via
+ * ApiTwoFactorLoginController.
  */
 final class UserChecker implements UserCheckerInterface
 {
-    public function __construct(private readonly RequestStack $requestStack)
-    {
-    }
-
     public function checkPreAuth(UserInterface $user): void
     {
         // Volontairement vide : aucun contrôle de statut avant la validation du
@@ -48,23 +51,6 @@ final class UserChecker implements UserCheckerInterface
 
         if (!$user->isActive()) {
             throw new CustomUserMessageAccountStatusException('Votre compte a été désactivé. Contactez le support pour plus d\'informations.');
-        }
-
-        // scheb/2fa-bundle n'est câblé que sur le firewall web `main` (cf.
-        // security.yaml) : le firewall `api_login` (émission du JWT pour le
-        // frontend Next.js) ne pose jamais de second facteur. Sans ce garde-fou,
-        // un compte protégé par la 2FA obtenait quand même un JWT valide avec le
-        // seul mot de passe — la 2FA était donc contournable via l'API. On bloque
-        // ici, au même point que les contrôles ci-dessus (après le mot de passe,
-        // donc sans risque d'énumération), en attendant un vrai flux 2FA côté API.
-        $request = $this->requestStack->getCurrentRequest();
-        if (null !== $request
-            && str_starts_with($request->getPathInfo(), '/api/login_check')
-            && $user->isTotpAuthenticationEnabled()
-        ) {
-            throw new CustomUserMessageAccountStatusException(
-                "La double authentification est activée sur ce compte : connectez-vous depuis l'espace back-office pour l'instant.",
-            );
         }
     }
 }

@@ -22,6 +22,7 @@ class JWTService
     private const AUTH_VALIDITY = 3600; // 1 heure pour les tokens d'authentification
     private const EMAIL_VERIFICATION_VALIDITY = 86400; // 24 heures pour la vérification d'email
     private const PASSWORD_RESET_VALIDITY = 3600; // 1 heure pour la réinitialisation de mot de passe
+    private const API_TWO_FACTOR_CHALLENGE_VALIDITY = 300; // 5 min : le temps de saisir un code TOTP, pas plus
 
     // Limite de taille pour éviter les attaques DoS
     private const MAX_PAYLOAD_SIZE = 4096; // 4 Ko
@@ -97,6 +98,42 @@ class JWTService
         ];
 
         return $this->generate($header, $payload, $validity);
+    }
+
+    /**
+     * Génère un jeton de défi 2FA pour la connexion API (POST /api/login_check) :
+     * émis par TwoFactorAwareJwtSuccessHandler à la place du vrai JWT d'accès
+     * quand le compte a activé la double authentification, et échangé contre
+     * ce dernier par ApiTwoFactorLoginController une fois le code TOTP (ou un
+     * code de récupération) vérifié.
+     *
+     * Signé avec ce service (secret applicatif, %app.jwtsecret%) et non avec
+     * lexik/jwt-authentication-bundle (clés RSA dédiées à l'émission du vrai
+     * jeton d'accès) : les deux formats ne se recoupent pas, donc ce jeton de
+     * défi est structurellement inutilisable comme jeton Bearer sur le
+     * firewall API stateless (jwt: ~, cf. security.yaml) — aucun garde-fou
+     * supplémentaire n'est nécessaire pour l'empêcher d'accéder à /api/me &
+     * consorts avec le seul mot de passe.
+     *
+     * @throws InvalidArgumentException Si l'ID utilisateur est invalide
+     */
+    public function generateApiTwoFactorChallengeToken(int $userId): string
+    {
+        if ($userId <= 0) {
+            throw new InvalidArgumentException('L\'ID utilisateur doit être un entier positif.');
+        }
+
+        $header = [
+            'typ' => 'JWT',
+            'alg' => self::DEFAULT_ALGORITHM,
+        ];
+
+        $payload = [
+            'user_id' => $userId,
+            'purpose' => 'api_2fa_challenge',
+        ];
+
+        return $this->generate($header, $payload, self::API_TWO_FACTOR_CHALLENGE_VALIDITY);
     }
 
     /**
