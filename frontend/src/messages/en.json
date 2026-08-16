@@ -1113,7 +1113,11 @@
           "retry": "Retry",
           "recoveryTitle": "Save your recovery codes",
           "recoverySubtitle": "They let you sign in if you lose access to your authenticator app. They will never be shown again — write them down somewhere safe.",
-          "recoveryAck": "I've saved my codes, continue"
+          "recoveryAck": "I've saved my codes, continue",
+          "scanStep": "Scan this QR code with your authenticator app",
+          "verifyStep": "Enter the 6-digit code it shows",
+          "copySecret": "Copy key",
+          "appHint": "Google Authenticator, Authy, 1Password…"
         }
       },
       "dataExport": {

@@ -1113,7 +1113,11 @@
           "retry": "Réessayer",
           "recoveryTitle": "Conservez vos codes de récupération",
           "recoverySubtitle": "Ils vous permettent de vous connecter si vous perdez l'accès à votre application d'authentification. Ils ne seront plus jamais affichés — notez-les dans un endroit sûr.",
-          "recoveryAck": "J'ai noté mes codes, continuer"
+          "recoveryAck": "J'ai noté mes codes, continuer",
+          "scanStep": "Scannez ce QR code avec votre application d'authentification",
+          "verifyStep": "Entrez le code à 6 chiffres qu'elle affiche",
+          "copySecret": "Copier la clé",
+          "appHint": "Google Authenticator, Authy, 1Password…"
         }
       },
       "dataExport": {
