@@ -71,7 +71,11 @@
 	<div class="p-6 border-b border-gray-200 flex items-center gap-3 justify-between shrink-0">
 		<div class="flex items-center gap-3 min-w-0">
 			{% if settings.logoPath %}
-				<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-9 w-9 rounded-lg object-cover shrink-0">
+				{# Pas d'arrondi de conteneur : le logo (monogramme H) a déjà ses propres
+				   coins arrondis dessinés dans le fichier lui-même — en cumuler un second
+				   par-dessus (rounded-lg = 16px sur ce projet, très prononcé sur 36px)
+				   le fait paraître presque circulaire. #}
+				<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-9 w-9 object-contain shrink-0">
 			{% endif %}
 			<div class="min-w-0">
 				<h1 class="text-xl font-heading font-bold text-(--brand-dark) truncate">{{ settings.siteName }}</h1>
