@@ -11,6 +11,8 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Symfony\Component\Messenger\Event\WorkerRunningEvent;
+use Symfony\Component\Messenger\Worker;
 
 final class DoctrineConnectionPingSubscriberTest extends TestCase
 {
@@ -20,6 +22,11 @@ final class DoctrineConnectionPingSubscriberTest extends TestCase
         $requestType = $isMainRequest ? HttpKernelInterface::MAIN_REQUEST : HttpKernelInterface::SUB_REQUEST;
 
         return new RequestEvent($kernel, new Request(), $requestType);
+    }
+
+    private function createWorkerRunningEvent(bool $isWorkerIdle = false): WorkerRunningEvent
+    {
+        return new WorkerRunningEvent($this->createStub(Worker::class), $isWorkerIdle);
     }
 
     public function testDoesNothingWhenConnectionNotYetOpened(): void
@@ -76,5 +83,61 @@ final class DoctrineConnectionPingSubscriberTest extends TestCase
 
         $subscriber = new DoctrineConnectionPingSubscriber($connection, $logger);
         $subscriber->onKernelRequest($this->createEvent());
+    }
+
+    /**
+     * messenger-worker (docker-compose.prod.yml) consomme la file async
+     * jusqu'à 1h d'affilée avec sa propre connexion Doctrine, sans jamais
+     * passer par kernel.request — même angle mort que l'incident
+     * dark.horlynat.com/login, mais côté worker Messenger plutôt que HTTP.
+     */
+    public function testWorkerRunningDoesNothingWhenConnectionNotYetOpened(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->method('isConnected')->willReturn(false);
+        $connection->expects($this->never())->method('fetchOne');
+        $connection->expects($this->never())->method('close');
+
+        $subscriber = new DoctrineConnectionPingSubscriber($connection, $this->createStub(LoggerInterface::class));
+        $subscriber->onWorkerRunning($this->createWorkerRunningEvent());
+    }
+
+    public function testWorkerRunningPingsAliveConnectionAndDoesNotCloseIt(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->method('isConnected')->willReturn(true);
+        $connection->expects($this->once())->method('fetchOne')->with('SELECT 1')->willReturn(1);
+        $connection->expects($this->never())->method('close');
+
+        $subscriber = new DoctrineConnectionPingSubscriber($connection, $this->createStub(LoggerInterface::class));
+        // isWorkerIdle: true — un tick sans message doit sonder comme n'importe quel autre.
+        $subscriber->onWorkerRunning($this->createWorkerRunningEvent(isWorkerIdle: true));
+    }
+
+    /**
+     * Régression : le pendant messenger-worker de
+     * testClosesDeadConnectionSoDoctrineReopensOneOnNextUse ci-dessus — la
+     * boucle Worker::run() dispatche WorkerRunningEvent après CHAQUE
+     * itération (message traité ou non), donc la connexion se soigne avant
+     * la prochaine plutôt que de rester cassée jusqu'au recyclage du worker
+     * (jusqu'à 1h, cf. --time-limit=3600).
+     */
+    public function testWorkerRunningClosesDeadConnectionSoDoctrineReopensOneOnNextUse(): void
+    {
+        $connectionLost = new ConnectionLost(
+            PDODriverException::new(new \PDOException('SQLSTATE[HY000]: General error: 4031 The client was disconnected by the server because of inactivity.', 4031)),
+            null,
+        );
+
+        $connection = $this->createMock(Connection::class);
+        $connection->method('isConnected')->willReturn(true);
+        $connection->method('fetchOne')->willThrowException($connectionLost);
+        $connection->expects($this->once())->method('close');
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())->method('warning');
+
+        $subscriber = new DoctrineConnectionPingSubscriber($connection, $logger);
+        $subscriber->onWorkerRunning($this->createWorkerRunningEvent());
     }
 }
