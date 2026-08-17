@@ -64,10 +64,47 @@
    couleur accent), avec une respiration douce du halo pour rester
    "vivante" sans distraire. */
 .main-card {
+    position: relative;
     box-shadow:
         0 0 0 1px rgba(255, 255, 255, 0.14),
         0 0 50px 4px rgba(0, 180, 216, 0.22),
         0 30px 70px -20px rgba(0, 0, 0, 0.7);
+}
+
+/* Flux lumineux multicolores circulant autour de la carte principale : un
+   dégradé conique à 4 couleurs, découpé en anneau pur au bord de la carte
+   via un masque (padding = épaisseur de l'anneau, mask-composite: exclude
+   soustrait le content-box du bord complet) — seul le bord est peint,
+   jamais l'intérieur, le fond verre dépoli de la carte reste intact
+   dessous. La rotation fait "circuler" les couleurs le long du bord. */
+.main-card::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    padding: 2px;
+    background: conic-gradient(from 0deg,
+        transparent 0%,
+        #00b4d8 8%,
+        transparent 16%, transparent 25%,
+        #0077b6 33%,
+        transparent 41%, transparent 50%,
+        #7c3aed 58%,
+        transparent 66%, transparent 75%,
+        #ec4899 83%,
+        transparent 91%, transparent 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .main-card::after {
+        animation: border-flow 6s linear infinite;
+    }
+}
+@keyframes border-flow {
+    to { transform: rotate(360deg); }
 }
 @media (prefers-reduced-motion: no-preference) {
     .main-card {
