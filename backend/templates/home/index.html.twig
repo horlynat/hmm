@@ -70,17 +70,33 @@
 		<div class="flex-1 flex flex-col md:flex-row min-h-0">
 
 			{% if canViewAdministration %}
+				{# Constellation d'icônes autour de l'icône centrale : Administration
+				   n'est pas UNE destination simple comme Espace Projets à droite, mais
+				   la porte vers ~20 espaces de gestion à terme (finance, contenu,
+				   utilisateurs, sécurité, paramètres, support...) — la dissymétrie
+				   avec le panneau voisin (icône seule) porte cette différence de
+				   nature, pas juste une décoration ajoutée au hasard. #}
 				<a href="{{ path('admin_dashboard_index') }}"
-				   class="group relative flex-1 flex flex-col items-center justify-center gap-5 text-center px-8 py-10 overflow-hidden text-white bg-linear-to-br from-brand-dark via-[#0B1D8A] to-brand-primary transition-all duration-300 hover:flex-[1.08]">
+				   class="group relative flex-1 md:flex-[1.15] flex flex-col items-center justify-center gap-5 text-center px-8 py-10 overflow-hidden text-white bg-linear-to-br from-brand-dark via-[#0B1D8A] to-brand-primary transition-all duration-300 hover:flex-[1.25]">
 					<div class="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" aria-hidden="true"></div>
 					<div class="absolute right-10 bottom-0 h-48 w-48 rounded-full bg-brand-accent/20 blur-3xl" aria-hidden="true"></div>
 
-					<span class="relative flex h-24 w-24 items-center justify-center rounded-3xl text-5xl bg-white/10 backdrop-blur-sm ring-1 ring-white/20 shadow-2xl transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-						<i class="ti ti-building" aria-hidden="true"></i>
+					<span class="relative flex h-32 w-32 items-center justify-center">
+						{# Icônes satellites — chacune un domaine de gestion existant ou à venir. #}
+						<span class="absolute -top-1 left-1 flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm ring-1 ring-white/15 text-base -rotate-6 transition-transform duration-300 group-hover:-translate-y-1" aria-hidden="true"><i class="ti ti-report-money"></i></span>
+						<span class="absolute top-2 -right-3 flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm ring-1 ring-white/15 text-sm rotate-12 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true"><i class="ti ti-users"></i></span>
+						<span class="absolute -bottom-2 -left-3 flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm ring-1 ring-white/15 text-sm rotate-6 transition-transform duration-300 group-hover:-translate-x-1" aria-hidden="true"><i class="ti ti-shield-lock"></i></span>
+						<span class="absolute -bottom-1 right-0 flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm ring-1 ring-white/15 text-base -rotate-12 transition-transform duration-300 group-hover:translate-y-1" aria-hidden="true"><i class="ti ti-settings"></i></span>
+						<span class="absolute top-0 right-6 flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm ring-1 ring-white/15 text-xs rotate-3" aria-hidden="true"><i class="ti ti-folders"></i></span>
+						<span class="absolute bottom-1 left-8 flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm ring-1 ring-white/15 text-xs -rotate-3" aria-hidden="true"><i class="ti ti-chart-infographic"></i></span>
+
+						<span class="relative flex h-20 w-20 items-center justify-center rounded-3xl text-4xl bg-white/15 backdrop-blur-sm ring-1 ring-white/25 shadow-2xl transition-transform duration-300 group-hover:scale-110">
+							<i class="ti ti-building" aria-hidden="true"></i>
+						</span>
 					</span>
 					<span class="relative">
 						<span class="block font-heading font-bold text-2xl md:text-3xl">Administration</span>
-						<span class="block text-sm md:text-base text-white/70 mt-2 max-w-xs mx-auto">Pilotez l'activité : finance, contenu, utilisateurs, sécurité.</span>
+						<span class="block text-sm md:text-base text-white/70 mt-2 max-w-sm mx-auto">Finance, contenu, utilisateurs, sécurité, paramètres — une vingtaine d'espaces de gestion, tous ici.</span>
 					</span>
 					<span class="relative inline-flex items-center gap-2 rounded-full bg-white text-brand-dark px-5 py-2.5 text-sm font-heading font-semibold shadow-lg transition-transform duration-300 group-hover:translate-x-1">
 						Accéder à cet espace
