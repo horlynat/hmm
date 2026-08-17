@@ -138,7 +138,10 @@
     left: 50%;
     width: 0;
     height: 0;
-    transform: rotate(var(--angle)) translateX(min(230px, 38vw));
+    /* Même rayon que .orbit-ring (min(560px, 90vw) de diamètre / 2) : les
+       cartes reposent exactement sur le tracé du disque scintillant,
+       plutôt que de flotter en retrait à l'intérieur. */
+    transform: rotate(var(--angle)) translateX(min(280px, 45vw));
 }
 .orbit-card-wrap {
     transform: rotate(var(--counter-angle));
