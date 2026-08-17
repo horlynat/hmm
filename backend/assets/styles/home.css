@@ -144,7 +144,24 @@
     transform: rotate(var(--angle)) translateX(min(280px, 45vw));
 }
 .orbit-card-wrap {
-    transform: rotate(var(--counter-angle));
+    /* .orbit-item est un point 0×0 : sans ce recentrage, le contenu (une
+       carte bien réelle, ~90px de large) démarre en flux normal depuis ce
+       point — son coin haut-gauche y est ancré, pas son centre. Résultat :
+       chaque carte apparaissait décalée d'environ une demi-largeur/hauteur
+       de carte par rapport au point exact du cercle, dans une direction
+       fixe à l'écran (bas-droite) identique pour les 9, donc visuellement
+       "mal placées" (le décalage n'est pas corrigé par la contre-rotation,
+       qui tourne la carte autour de son propre centre sans la déplacer).
+       position:absolute + top/left:0 ancre le coin haut-gauche du wrap
+       exactement sur le pivot ; translate(-50%,-50%) — placé AVANT rotate
+       dans la liste, donc appliqué en premier, dans le repère naturel non
+       tourné — ramène ensuite son centre pile sur ce point, quel que soit
+       l'angle ; rotate() ne fait plus que remettre la carte droite, sans
+       plus jamais la déplacer. */
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translate(-50%, -50%) rotate(var(--counter-angle));
 }
 @media (max-width: 767px) {
     .orbit-ring {
@@ -171,6 +188,10 @@
         transform: none;
     }
     .orbit-card-wrap {
+        /* Le recentrage absolute/translate(-50%,-50%) n'a de sens qu'autour
+           du pivot du cercle ; en grille, la carte doit rester en flux
+           normal comme n'importe quelle case. */
+        position: static;
         transform: none;
     }
 }
