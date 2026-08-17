@@ -14,7 +14,7 @@
 
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 
 		{% include '_partials/_vite_fouc_guard.html.twig' %}
@@ -27,7 +27,7 @@
 			{{ vite_entry_script_tags('home') }}
 		{% endblock %}
 	</head>
-	<body class="h-screen flex flex-col overflow-hidden bg-brand-dark">
+	<body class="h-screen overflow-hidden bg-brand-dark">
 
 		{% set hour = "now"|date("G") %}
 		{% set greeting = hour < 12 ? 'Bonjour' : (hour < 18 ? 'Bon après-midi' : 'Bonsoir') %}
@@ -45,84 +45,122 @@
 		   atteindre cette page (cf. MemberProjectController::index()) : toujours visible. #}
 		{% set canViewAdministration = is_granted(constant('App\\Security\\Voter\\DashboardVoter::VIEW')) %}
 
-		{# 🏛️ EN-TÊTE — zone d'orientation : marque + salutation. Distincte des
-		   panneaux ci-dessous (fond plein uni, pas de dégradé) pour qu'on lise
-		   tout de suite la page en deux zones, pas un empilement flou. #}
-		<header class="shrink-0 text-center text-white px-6 py-7 animate-fade-in">
-			{% if settings.logoPath %}
-				<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-9 w-9 object-contain mx-auto mb-3">
-			{% endif %}
-			{% if app.user.primaryRole is defined and roleLabels[app.user.primaryRole] is defined %}
-				<span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-wide uppercase ring-1 ring-white/15">
-					<i class="ti ti-sparkles" aria-hidden="true"></i>
-					{{ roleLabels[app.user.primaryRole] }}
-				</span>
-			{% endif %}
-			<h1 class="mt-3 text-2xl md:text-[1.75rem] font-heading font-extrabold tracking-tight">
-				{{ greeting }}, {{ app.user.fullName ?? app.user.userIdentifier }} 👋
-			</h1>
-			<p class="mt-1 text-white/60 text-sm">Quel espace souhaitez-vous rejoindre ?</p>
-		</header>
+		<div class="relative h-full">
 
-		{# 🚪 LES DEUX PORTES — chaque panneau occupe toute la hauteur restante :
-		   pas de petites cartes perdues dans du vide, un choix structuré en
-		   deux zones pleines, égales, immédiatement lisibles. #}
-		<div class="flex-1 flex flex-col md:flex-row min-h-0">
+			{# 🪟 EN-TÊTE FLOTTANT — superposé, pas empilé : les panneaux occupent
+			   TOUTE la hauteur dès y=0, la marque flotte par-dessus en verre
+			   dépoli. Plus de zone "décorative" séparée du choix lui-même. #}
+			<header class="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-4 px-6 py-4 md:px-10 bg-linear-to-b from-black/25 to-transparent animate-fade-in">
+				<div class="flex items-center gap-2.5 text-white">
+					{% if settings.logoPath %}
+						<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-7 w-7 object-contain">
+					{% endif %}
+					<span class="font-heading font-bold text-sm tracking-tight">{{ settings.siteName }}</span>
+				</div>
+				<div class="flex items-center gap-3 text-white text-right">
+					<span class="hidden sm:block text-sm text-white/70">{{ greeting }}, {{ app.user.fullName ?? app.user.userIdentifier }}</span>
+					{% if app.user.primaryRole is defined and roleLabels[app.user.primaryRole] is defined %}
+						<span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-wide uppercase ring-1 ring-white/15 backdrop-blur-sm">
+							{{ roleLabels[app.user.primaryRole] }}
+						</span>
+					{% endif %}
+				</div>
+			</header>
 
-			{% if canViewAdministration %}
-				{# Constellation d'icônes autour de l'icône centrale : Administration
-				   n'est pas UNE destination simple comme Espace Projets à droite, mais
-				   la porte vers ~20 espaces de gestion à terme (finance, contenu,
-				   utilisateurs, sécurité, paramètres, support...) — la dissymétrie
-				   avec le panneau voisin (icône seule) porte cette différence de
-				   nature, pas juste une décoration ajoutée au hasard. #}
-				<a href="{{ path('admin_dashboard_index') }}"
-				   class="group relative flex-1 md:flex-[1.15] flex flex-col items-center justify-center gap-5 text-center px-8 py-10 overflow-hidden text-white bg-linear-to-br from-brand-dark via-[#0B1D8A] to-brand-primary transition-all duration-300 hover:flex-[1.25]">
-					<div class="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" aria-hidden="true"></div>
-					<div class="absolute right-10 bottom-0 h-48 w-48 rounded-full bg-brand-accent/20 blur-3xl" aria-hidden="true"></div>
+			{# 🚪 LES DEUX PORTES : contraste de DENSITÉ plutôt que jumelage —
+			   Administration porte visuellement le poids d'un système à 20
+			   espaces (réseau de nœuds, chiffre géant en filigrane, matière),
+			   Espace Projets reste volontairement épuré : il EST une seule
+			   destination, il n'a pas à feindre la même densité. #}
+			<div class="h-full flex flex-col md:flex-row">
 
-					<span class="relative flex h-32 w-32 items-center justify-center">
-						{# Icônes satellites — chacune un domaine de gestion existant ou à venir. #}
-						<span class="absolute -top-1 left-1 flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm ring-1 ring-white/15 text-base -rotate-6 transition-transform duration-300 group-hover:-translate-y-1" aria-hidden="true"><i class="ti ti-report-money"></i></span>
-						<span class="absolute top-2 -right-3 flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm ring-1 ring-white/15 text-sm rotate-12 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true"><i class="ti ti-users"></i></span>
-						<span class="absolute -bottom-2 -left-3 flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm ring-1 ring-white/15 text-sm rotate-6 transition-transform duration-300 group-hover:-translate-x-1" aria-hidden="true"><i class="ti ti-shield-lock"></i></span>
-						<span class="absolute -bottom-1 right-0 flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm ring-1 ring-white/15 text-base -rotate-12 transition-transform duration-300 group-hover:translate-y-1" aria-hidden="true"><i class="ti ti-settings"></i></span>
-						<span class="absolute top-0 right-6 flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm ring-1 ring-white/15 text-xs rotate-3" aria-hidden="true"><i class="ti ti-folders"></i></span>
-						<span class="absolute bottom-1 left-8 flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm ring-1 ring-white/15 text-xs -rotate-3" aria-hidden="true"><i class="ti ti-chart-infographic"></i></span>
+				{% if canViewAdministration %}
+					<a href="{{ path('admin_dashboard_index') }}"
+					   class="group relative flex-1 md:flex-[1.2] flex flex-col items-center justify-center gap-6 text-center px-8 pt-24 pb-12 overflow-hidden text-white bg-brand-dark transition-[flex-grow] duration-500 ease-out hover:flex-[1.4]">
 
-						<span class="relative flex h-20 w-20 items-center justify-center rounded-3xl text-4xl bg-white/15 backdrop-blur-sm ring-1 ring-white/25 shadow-2xl transition-transform duration-300 group-hover:scale-110">
+						{# Filigrane "20" — le concept rendu visible, pas juste raconté. #}
+						<span class="pointer-events-none select-none absolute -left-6 -bottom-16 font-heading font-black leading-none text-white/[0.05] text-[22rem] md:text-[28rem]" aria-hidden="true">20</span>
+
+						{# Réseau de nœuds : un vrai schéma de système, pas des icônes dans des bulles. #}
+						<svg class="pointer-events-none absolute inset-0 h-full w-full opacity-[0.35] animate-pulse" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+							<g stroke="#ffffff" stroke-width="1" opacity="0.4">
+								<line x1="60" y1="80" x2="140" y2="50"/>
+								<line x1="140" y1="50" x2="220" y2="90"/>
+								<line x1="220" y1="90" x2="320" y2="60"/>
+								<line x1="320" y1="60" x2="400" y2="100"/>
+								<line x1="60" y1="80" x2="40" y2="200"/>
+								<line x1="140" y1="50" x2="150" y2="180"/>
+								<line x1="220" y1="90" x2="260" y2="210"/>
+								<line x1="320" y1="60" x2="380" y2="220"/>
+								<line x1="400" y1="100" x2="450" y2="180"/>
+								<line x1="40" y1="200" x2="150" y2="180"/>
+								<line x1="150" y1="180" x2="260" y2="210"/>
+								<line x1="260" y1="210" x2="380" y2="220"/>
+								<line x1="380" y1="220" x2="450" y2="180"/>
+								<line x1="40" y1="200" x2="80" y2="320"/>
+								<line x1="150" y1="180" x2="190" y2="300"/>
+								<line x1="260" y1="210" x2="300" y2="330"/>
+								<line x1="380" y1="220" x2="420" y2="340"/>
+								<line x1="80" y1="320" x2="190" y2="300"/>
+								<line x1="190" y1="300" x2="300" y2="330"/>
+								<line x1="300" y1="330" x2="420" y2="340"/>
+								<line x1="80" y1="320" x2="60" y2="440"/>
+								<line x1="190" y1="300" x2="170" y2="420"/>
+								<line x1="300" y1="330" x2="290" y2="450"/>
+								<line x1="420" y1="340" x2="400" y2="430"/>
+								<line x1="60" y1="440" x2="170" y2="420"/>
+								<line x1="170" y1="420" x2="290" y2="450"/>
+								<line x1="290" y1="450" x2="400" y2="430"/>
+								<line x1="170" y1="420" x2="140" y2="520"/>
+								<line x1="290" y1="450" x2="260" y2="500"/>
+							</g>
+							<g fill="#ffffff">
+								<circle cx="60" cy="80" r="4"/><circle cx="140" cy="50" r="4"/><circle cx="220" cy="90" r="4"/><circle cx="320" cy="60" r="4"/><circle cx="400" cy="100" r="4"/>
+								<circle cx="450" cy="180" r="4"/><circle cx="40" cy="200" r="4"/><circle cx="150" cy="180" r="4"/><circle cx="260" cy="210" r="4"/><circle cx="380" cy="220" r="4"/>
+								<circle cx="80" cy="320" r="4"/><circle cx="190" cy="300" r="4"/><circle cx="300" cy="330" r="4"/><circle cx="420" cy="340" r="4"/>
+								<circle cx="60" cy="440" r="4"/><circle cx="170" cy="420" r="4"/><circle cx="290" cy="450" r="4"/><circle cx="400" cy="430" r="4"/>
+								<circle cx="140" cy="520" r="4"/><circle cx="260" cy="500" r="4"/>
+							</g>
+						</svg>
+
+						<span class="relative flex h-16 w-16 items-center justify-center rounded-2xl text-3xl bg-white text-brand-dark shadow-2xl transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6">
 							<i class="ti ti-building" aria-hidden="true"></i>
 						</span>
+						<span class="relative">
+							<span class="flex items-center justify-center gap-2 text-white/50 text-xs font-heading font-bold tracking-[0.3em] uppercase mb-2">
+								<span class="h-px w-6 bg-white/30"></span>01
+							</span>
+							<span class="block font-heading font-extrabold text-4xl md:text-5xl tracking-tight">Administration</span>
+							<span class="block text-sm md:text-base text-white/60 mt-3 max-w-sm mx-auto leading-relaxed">Finance, contenu, utilisateurs, sécurité, paramètres — une vingtaine d'espaces de gestion, tous ici.</span>
+						</span>
+						<span class="relative inline-flex items-center gap-2 rounded-full bg-white text-brand-dark px-6 py-3 text-sm font-heading font-bold shadow-xl transition-all duration-300 group-hover:gap-3.5 group-hover:shadow-2xl">
+							Accéder à cet espace
+							<i class="ti ti-arrow-right" aria-hidden="true"></i>
+						</span>
+					</a>
+				{% endif %}
+
+				<a href="{{ path('member_project_index') }}"
+				   class="group relative flex-1 flex flex-col items-center justify-center gap-6 text-center px-8 pt-24 pb-12 overflow-hidden text-white bg-linear-to-br from-brand-primary to-brand-accent transition-[flex-grow] duration-500 ease-out hover:flex-[1.15]">
+					<div class="pointer-events-none absolute -right-20 -bottom-20 h-96 w-96 rounded-full bg-white/10 blur-3xl animate-pulse" aria-hidden="true"></div>
+
+					<span class="relative flex h-16 w-16 items-center justify-center rounded-2xl text-3xl bg-white text-brand-primary shadow-2xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
+						<i class="ti ti-briefcase" aria-hidden="true"></i>
 					</span>
 					<span class="relative">
-						<span class="block font-heading font-bold text-2xl md:text-3xl">Administration</span>
-						<span class="block text-sm md:text-base text-white/70 mt-2 max-w-sm mx-auto">Finance, contenu, utilisateurs, sécurité, paramètres — une vingtaine d'espaces de gestion, tous ici.</span>
+						<span class="flex items-center justify-center gap-2 text-white/60 text-xs font-heading font-bold tracking-[0.3em] uppercase mb-2">
+							<span class="h-px w-6 bg-white/40"></span>02
+						</span>
+						<span class="block font-heading font-extrabold text-4xl md:text-5xl tracking-tight">Espace Projets</span>
+						<span class="block text-sm md:text-base text-white/75 mt-3 max-w-xs mx-auto leading-relaxed">Suivez vos projets et échangez avec l'équipe.</span>
 					</span>
-					<span class="relative inline-flex items-center gap-2 rounded-full bg-white text-brand-dark px-5 py-2.5 text-sm font-heading font-semibold shadow-lg transition-transform duration-300 group-hover:translate-x-1">
+					<span class="relative inline-flex items-center gap-2 rounded-full bg-white text-brand-primary px-6 py-3 text-sm font-heading font-bold shadow-xl transition-all duration-300 group-hover:gap-3.5 group-hover:shadow-2xl">
 						Accéder à cet espace
 						<i class="ti ti-arrow-right" aria-hidden="true"></i>
 					</span>
 				</a>
-			{% endif %}
 
-			<a href="{{ path('member_project_index') }}"
-			   class="group relative flex-1 flex flex-col items-center justify-center gap-5 text-center px-8 py-10 overflow-hidden text-white bg-linear-to-br from-brand-primary via-[#0090CE] to-brand-accent transition-all duration-300 hover:flex-[1.08]">
-				<div class="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" aria-hidden="true"></div>
-				<div class="absolute left-10 bottom-0 h-48 w-48 rounded-full bg-brand-dark/20 blur-3xl" aria-hidden="true"></div>
-
-				<span class="relative flex h-24 w-24 items-center justify-center rounded-3xl text-5xl bg-white/10 backdrop-blur-sm ring-1 ring-white/20 shadow-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
-					<i class="ti ti-briefcase" aria-hidden="true"></i>
-				</span>
-				<span class="relative">
-					<span class="block font-heading font-bold text-2xl md:text-3xl">Espace Projets</span>
-					<span class="block text-sm md:text-base text-white/70 mt-2 max-w-xs mx-auto">Suivez vos projets et échangez avec l'équipe.</span>
-				</span>
-				<span class="relative inline-flex items-center gap-2 rounded-full bg-white text-brand-primary px-5 py-2.5 text-sm font-heading font-semibold shadow-lg transition-transform duration-300 group-hover:translate-x-1">
-					Accéder à cet espace
-					<i class="ti ti-arrow-right" aria-hidden="true"></i>
-				</span>
-			</a>
-
+			</div>
 		</div>
 	</body>
 </html>
