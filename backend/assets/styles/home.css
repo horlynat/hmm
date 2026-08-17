@@ -26,24 +26,27 @@
     height: min(560px, 90vw);
 }
 
-/* Piste circulaire scintillante derrière les cartes : anneau fin + un
-   dégradé conique qui tourne lentement, lu comme un reflet qui balaie le
-   cercle plutôt qu'une simple rotation d'objet. Sous la carte centrale et
-   les cartes (z-index), purement décoratif (pointer-events: none). */
+/* Carte circulaire scintillante qui porte les 9 cartes : un disque (dégradé
+   radial, pour lire un vrai "fond" et pas juste un contour) surmonté d'un
+   dégradé conique qui tourne lentement, comme un reflet qui balaie le
+   cercle. Sous les cartes (z-index), purement décoratif (pointer-events:
+   none) — les cartes elles-mêmes restent le seul contenu cliquable. */
 .orbit-ring::before {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.14);
-    background: conic-gradient(from 0deg,
-        transparent 0deg,
-        rgba(255, 255, 255, 0.35) 10deg,
-        transparent 20deg,
-        transparent 180deg,
-        rgba(0, 180, 216, 0.3) 190deg,
-        transparent 200deg,
-        transparent 360deg);
+    background:
+        conic-gradient(from 0deg,
+            transparent 0deg,
+            rgba(255, 255, 255, 0.35) 10deg,
+            transparent 20deg,
+            transparent 180deg,
+            rgba(0, 180, 216, 0.3) 190deg,
+            transparent 200deg,
+            transparent 360deg),
+        radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 72%);
     pointer-events: none;
     z-index: 0;
 }
@@ -56,33 +59,33 @@
     to { transform: rotate(360deg); }
 }
 
-/* Carte centrale — profondeur (ombre portée large) + bordure lumineuse
-   (fin liseré clair + halo de couleur accent), avec une respiration douce
-   du halo pour rester "vivante" sans distraire. */
-.hub-card {
-    z-index: 2;
+/* Carte principale — contient l'intitulé et la carte circulaire. Profondeur
+   (ombre portée large) + bordure lumineuse (fin liseré clair + halo de
+   couleur accent), avec une respiration douce du halo pour rester
+   "vivante" sans distraire. */
+.main-card {
     box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.5),
-        0 0 26px 2px rgba(0, 180, 216, 0.45),
-        0 22px 45px -12px rgba(0, 0, 0, 0.65);
+        0 0 0 1px rgba(255, 255, 255, 0.14),
+        0 0 50px 4px rgba(0, 180, 216, 0.22),
+        0 30px 70px -20px rgba(0, 0, 0, 0.7);
 }
 @media (prefers-reduced-motion: no-preference) {
-    .hub-card {
-        animation: hub-glow 3.5s ease-in-out infinite;
+    .main-card {
+        animation: main-card-glow 4s ease-in-out infinite;
     }
 }
-@keyframes hub-glow {
+@keyframes main-card-glow {
     0%, 100% {
         box-shadow:
-            0 0 0 1px rgba(255, 255, 255, 0.5),
-            0 0 26px 2px rgba(0, 180, 216, 0.45),
-            0 22px 45px -12px rgba(0, 0, 0, 0.65);
+            0 0 0 1px rgba(255, 255, 255, 0.14),
+            0 0 50px 4px rgba(0, 180, 216, 0.22),
+            0 30px 70px -20px rgba(0, 0, 0, 0.7);
     }
     50% {
         box-shadow:
-            0 0 0 1px rgba(255, 255, 255, 0.7),
-            0 0 38px 6px rgba(0, 180, 216, 0.65),
-            0 22px 45px -12px rgba(0, 0, 0, 0.65);
+            0 0 0 1px rgba(255, 255, 255, 0.22),
+            0 0 70px 8px rgba(0, 180, 216, 0.35),
+            0 30px 70px -20px rgba(0, 0, 0, 0.7);
     }
 }
 

@@ -107,34 +107,21 @@
 			</div>
 		</header>
 
-		{# 🪐 ANNEAU ORBITAL — les espaces de premier niveau de l'entreprise,
-		   pas les modules internes de l'un d'eux. Accessible et existant ->
-		   carte active ; sinon -> désactivée, illustrative, jamais cliquable. #}
+		{# 🪐 CARTE PRINCIPALE — contient l'intitulé "Vos espaces de travail"
+		   et la carte circulaire (l'anneau) qui porte les 9 espaces de
+		   premier niveau de l'entreprise, jamais les modules internes de
+		   l'un d'eux. Accessible et existant -> carte active ; sinon ->
+		   désactivée, illustrative, jamais cliquable. #}
 		<main class="relative z-10 flex flex-col items-center px-4 pt-2 pb-16">
-			<p class="text-center text-white/50 text-xs font-heading font-bold tracking-[0.3em] uppercase mb-2">
-				<span class="inline-block h-px w-6 bg-white/30 align-middle mr-2"></span>
-				Vos espaces de travail
-				<span class="inline-block h-px w-6 bg-white/30 align-middle ml-2"></span>
-			</p>
+			<div class="main-card flex flex-col items-center rounded-[2.5rem] bg-white/[0.04] backdrop-blur-md px-6 py-10 md:px-14 md:py-12">
+				<p class="text-center text-white/50 text-xs font-heading font-bold tracking-[0.3em] uppercase mb-2">
+					<span class="inline-block h-px w-6 bg-white/30 align-middle mr-2"></span>
+					Vos espaces de travail
+					<span class="inline-block h-px w-6 bg-white/30 align-middle ml-2"></span>
+				</p>
 
-			<div class="orbit-ring my-8">
-				{# Carte centrale — identité de l'entreprise, jamais un lien
-				   (ni "Administration" ni aucun autre espace : elle ne doit
-				   pas rejouer la fuite corrigée plus haut). Masquée sous md,
-				   l'anneau devenant une grille en mobile (cf. home.css), un
-				   centre en position absolue s'y superposerait aux cartes. #}
-				<div class="hub-card hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-36 w-36 flex-col items-center justify-center gap-2 text-center rounded-full bg-white/10 backdrop-blur-md px-4">
-					{% if settings.logoPath %}
-						<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-10 w-10 object-contain">
-					{% else %}
-						<span class="flex h-10 w-10 items-center justify-center rounded-full text-2xl bg-white text-brand-dark">
-							<i class="ti ti-hexagon" aria-hidden="true"></i>
-						</span>
-					{% endif %}
-					<span class="font-heading font-bold text-sm leading-tight">{{ settings.siteName }}</span>
-				</div>
-
-				{% for space in spaces %}
+				<div class="orbit-ring my-8">
+					{% for space in spaces %}
 					<div class="orbit-item" style="--angle: {{ (loop.index0 * 40) - 90 }}deg;">
 						<div class="orbit-card-wrap" style="--counter-angle: {{ 90 - (loop.index0 * 40) }}deg;">
 							{% if space.href %}
@@ -155,6 +142,7 @@
 						</div>
 					</div>
 				{% endfor %}
+				</div>
 			</div>
 		</main>
 	</body>
