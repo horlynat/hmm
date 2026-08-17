@@ -1,0 +1,7 @@
+/* Bundle Vite dédié à la page d'accueil (templates/home/index.html.twig),
+   même principe que login.css : document HTML autonome, jamais
+   base.html.twig — cette page ne doit présenter ni la barre latérale ni
+   l'en-tête admin, elle précède le choix de l'un ou l'autre espace.
+   @import donne accès à tout le système de design existant (tokens
+   @theme, .soft-card, .btn, etc.) sans rien dupliquer. */
+@import "./app.css";

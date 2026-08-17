@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+{% set settings = systemSettingRepository.getSettings() %}
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>{{ settings.siteName }} — Accueil</title>
+
+		{% if settings.logoPath %}
+			<link rel="icon" href="{{ settings.logoPath }}">
+		{% else %}
+			<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+		{% endif %}
+
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+		{% include '_partials/_vite_fouc_guard.html.twig' %}
+
+		{% block stylesheets %}
+			{{ vite_entry_link_tags('home') }}
+		{% endblock %}
+
+		{% block javascripts %}
+			{{ vite_entry_script_tags('home') }}
+		{% endblock %}
+	</head>
+	<body class="bg-bg-default text-brand-dark min-h-screen flex flex-col">
+
+		{% set hour = "now"|date("G") %}
+		{% set greeting = hour < 12 ? 'Bonjour' : (hour < 18 ? 'Bon après-midi' : 'Bonsoir') %}
+		{% set roleLabels = {
+			'ROLE_USER': 'Client',
+			'ROLE_EDITOR': 'Collaborateur',
+			'ROLE_MODERATOR': 'Modérateur',
+			'ROLE_MANAGER': 'Manager',
+			'ROLE_ADMIN': 'Administrateur',
+			'ROLE_SUPER_ADMIN': 'Super Administrateur',
+		} %}
+		{# Même garde exacte que la route ciblée (DashboardVoter::VIEW, ROLE_ADMIN) —
+		   jamais une carte visible qui mènerait à un refus d'accès. L'espace projets,
+		   lui, n'a aucune garde propre au-delà du plancher ROLE_USER déjà requis pour
+		   atteindre cette page (cf. MemberProjectController::index()) : toujours visible. #}
+		{% set canViewAdministration = is_granted(constant('App\\Security\\Voter\\DashboardVoter::VIEW')) %}
+
+		<main class="flex-1 flex items-center justify-center px-4 py-12">
+			<div class="w-full max-w-2xl">
+
+				<div class="text-center mb-10">
+					{% if app.user.primaryRole is defined and roleLabels[app.user.primaryRole] is defined %}
+						<span class="inline-flex items-center gap-1.5 rounded-full bg-brand-primary/10 text-brand-primary px-3 py-1 text-xs font-semibold tracking-wide uppercase">
+							<i class="ti ti-sparkles" aria-hidden="true"></i>
+							{{ roleLabels[app.user.primaryRole] }}
+						</span>
+					{% endif %}
+					<h1 class="mt-4 text-3xl font-heading font-extrabold tracking-tight text-balance">
+						{{ greeting }}, {{ app.user.fullName ?? app.user.userIdentifier }} 👋
+					</h1>
+					<p class="mt-2 text-brand-dark/60">Quel espace souhaitez-vous rejoindre ?</p>
+				</div>
+
+				<div class="grid grid-cols-1 {% if canViewAdministration %}sm:grid-cols-2{% endif %} gap-5">
+
+					{% if canViewAdministration %}
+						<a href="{{ path('admin_dashboard_index') }}" class="soft-card group p-8 flex flex-col items-center text-center gap-4">
+							<span class="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl bg-brand-dark/10 text-brand-dark transition-transform group-hover:scale-105">
+								<i class="ti ti-building" aria-hidden="true"></i>
+							</span>
+							<span>
+								<span class="block font-heading font-bold text-lg">Administration</span>
+								<span class="block text-sm text-brand-dark/60 mt-1">Pilotez l'activité : finance, contenu, utilisateurs, sécurité.</span>
+							</span>
+						</a>
+					{% endif %}
+
+					<a href="{{ path('member_project_index') }}" class="soft-card group p-8 flex flex-col items-center text-center gap-4">
+						<span class="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl bg-brand-primary/10 text-brand-primary transition-transform group-hover:scale-105">
+							<i class="ti ti-briefcase" aria-hidden="true"></i>
+						</span>
+						<span>
+							<span class="block font-heading font-bold text-lg">Espace Projets</span>
+							<span class="block text-sm text-brand-dark/60 mt-1">Suivez vos projets et échangez avec l'équipe.</span>
+						</span>
+					</a>
+
+				</div>
+			</div>
+		</main>
+	</body>
+</html>
