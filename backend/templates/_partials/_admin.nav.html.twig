@@ -100,15 +100,22 @@
 		<!-- ==========================================
 				     📌 PRINCIPAL
 				     ========================================== -->
-		{% if canViewDashboard %}
-			<div>
-				<p class="text-[10px] uppercase text-(--brand-dark) font-bold mb-1.5 ml-3 tracking-wider">Principal</p>
+		<div>
+			<p class="text-[10px] uppercase text-(--brand-dark) font-bold mb-1.5 ml-3 tracking-wider">Principal</p>
+			{# Accueil : sans garde propre, le nav entier est déjà gardé ROLE_EDITOR
+			   ci-dessus (bloc englobant) — c'est justement le point de cette page,
+			   voir HomeController. #}
+			<a href="{{ path('home_index') }}" class="flex items-center px-3 py-2 rounded-xl transition gap-3 font-medium text-(--brand-dark) hover:bg-brand-light/20 hover:text-(--brand-primary) {% if currentRoute == 'home_index' %}bg-brand-light/30 text-(--brand-primary) font-semibold{% endif %}">
+				<i class="ti ti-home text-lg"></i>
+				<span>Accueil</span>
+			</a>
+			{% if canViewDashboard %}
 				<a href="{{ path('admin_dashboard_index') }}" class="flex items-center px-3 py-2 rounded-xl transition gap-3 font-medium text-(--brand-dark) hover:bg-brand-light/20 hover:text-(--brand-primary) {% if currentRoute == 'admin_dashboard_index' %}bg-brand-light/30 text-(--brand-primary) font-semibold{% endif %}">
 					<i class="ti ti-layout-dashboard text-lg"></i>
 					<span>Dashboard</span>
 				</a>
-			</div>
-		{% endif %}
+			{% endif %}
+		</div>
 
 		<!-- ==========================================
 				     💰 FINANCE (ACCORDÉON)

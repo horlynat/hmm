@@ -7,22 +7,18 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
- * Page d'accueil PUBLIQUE du portail back-office — volontairement hors de
- * Controller/Admin/ (par convention dans ce projet, tout ce qui y vit
- * suppose un accès déjà authentifié) et hors de tout access_control
- * protégé : accessible à quiconque, avant connexion, quel que soit son
- * futur rôle une fois connecté.
+ * Page d'accueil du back-office : point d'entrée à part du tableau de bord
+ * (admin_dashboard_index, réservé ROLE_ADMIN+ et inchangé — cette page ne
+ * remplace ni ne modifie la redirection existante de SecurityAuthenticator),
+ * accessible à toute l'équipe back-office (ROLE_EDITOR et plus, cf.
+ * access_control ^/$ dans security.yaml) une fois connectée.
  *
- * Ne remplace ni ne modifie le flux existant : SecurityAuthenticator et la
- * redirection post-connexion (admin_dashboard_index pour ROLE_ADMIN+,
- * profile_read sinon) restent inchangés. Cette page est un point d'entrée
- * additionnel, pas un nouveau maillon de la chaîne d'authentification.
- *
- * Document HTML autonome (templates/home/index.html.twig), ne pas confondre
- * avec les pages admin qui étendent base.html.twig : ce dernier inclut
- * _header.html.twig, qui accède à app.user.* sans garde de nullité (sûr
- * uniquement pour un utilisateur déjà authentifié) — voir security.yaml
- * pour l'access_control PUBLIC_ACCESS associé à cette route.
+ * Volontairement sans requête coûteuse : un hub de navigation, pas un
+ * second tableau de bord. Toute la personnalisation (rôle affiché, sections
+ * visibles, heure de la journée) est calculée côté Twig à partir de
+ * app.user et is_granted(), à l'identique de _admin.nav.html.twig — même
+ * source de vérité que le menu, pas de logique dupliquée en PHP qui
+ * pourrait diverger de lui.
  */
 class HomeController extends AbstractController
 {

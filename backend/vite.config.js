@@ -14,7 +14,6 @@ export default defineConfig({
             input: {
                 app: "./assets/app.js",
                 login: "./assets/js/login.js",
-                home: "./assets/js/home.js",
                 register: "./assets/js/register.js",
                 dashboard: "./assets/js/dashboard.js",
                 project: "./assets/js/project.js",

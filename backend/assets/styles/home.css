@@ -1,6 +1,0 @@
-/* Bundle Vite dédié à la page d'accueil publique (templates/home/index.html.twig),
-   même principe que login.css : document HTML autonome, hors base.html.twig
-   (qui inclut _header.html.twig, non sûr pour un visiteur anonyme — accès
-   non gardés à app.user.*). @import donne accès à tout le système de design
-   existant (tokens @theme, .soft-card, .btn, etc.) sans rien dupliquer. */
-@import "./app.css";
