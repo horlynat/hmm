@@ -109,6 +109,22 @@
 			</p>
 
 			<div class="orbit-ring my-8">
+				{# Carte centrale — identité de l'entreprise, jamais un lien
+				   (ni "Administration" ni aucun autre espace : elle ne doit
+				   pas rejouer la fuite corrigée plus haut). Masquée sous md,
+				   l'anneau devenant une grille en mobile (cf. home.css), un
+				   centre en position absolue s'y superposerait aux cartes. #}
+				<div class="hub-card hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 text-center rounded-3xl bg-white/10 backdrop-blur-md px-6 py-5">
+					{% if settings.logoPath %}
+						<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-10 w-10 object-contain">
+					{% else %}
+						<span class="flex h-10 w-10 items-center justify-center rounded-2xl text-2xl bg-white text-brand-dark">
+							<i class="ti ti-hexagon" aria-hidden="true"></i>
+						</span>
+					{% endif %}
+					<span class="font-heading font-bold text-sm">{{ settings.siteName }}</span>
+				</div>
+
 				{% for space in spaces %}
 					<div class="orbit-item" style="--angle: {{ (loop.index0 * 90) - 90 }}deg;">
 						<div class="orbit-card-wrap" style="--counter-angle: {{ 90 - (loop.index0 * 90) }}deg;">
