@@ -5,7 +5,6 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Form\ProfileType;
 use App\Form\ResetPasswordFormType;
-use App\Security\Voter\UserVoter;
 use App\Service\DeviceParser;
 use App\Service\GeolocationService;
 use App\Service\ProfileCompletionService;
@@ -18,23 +17,29 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
- * Page de profil (self-service) : accessible dès ROLE_USER, mais uniquement pour
- * soi-même. Un administrateur peut consulter/modifier le profil d'un autre
- * utilisateur (UserVoter::VIEW / EDIT / RESET_PASSWORD, mêmes règles que les
- * contrôleurs Admin*), un simple client ne le peut jamais.
+ * Page de profil de l'espace membre (self-service uniquement) : un client ou
+ * un collaborateur/freelance ne gère jamais que son propre compte ici, jamais
+ * celui d'un autre (contrairement au back-office, il n'existe pas de notion
+ * d'admin consultant la fiche d'un tiers dans cet espace — pas de paramètre
+ * {id}, toujours le compte actuellement connecté). Rendue avec le gabarit
+ * de l'espace membre (member/base.html.twig, aside collaborateur/freelance),
+ * jamais l'en-tête ni l'aside admin.
+ *
+ * Distinct de App\Controller\Admin\AdminProfileController (/admin/profil),
+ * qui gère le même besoin côté back-office, avec en plus la consultation/
+ * édition d'un autre compte par un administrateur.
  */
-#[Route('/profile', name: 'profile_', methods: ['GET', 'POST'])]
+#[Route('/user/profil', name: 'member_profile_', methods: ['GET', 'POST'])]
 #[IsGranted('ROLE_USER')]
-class ProfileController extends AbstractController
+class MemberProfileController extends AbstractController
 {
-    #[Route('/{id}', name: 'read', requirements: ['id' => '\d+'], methods: ['GET'])]
+    #[Route('', name: 'read', methods: ['GET'])]
     public function read(
-        User $user,
         ProfileCompletionService $completionService,
         GeolocationService $geolocationService,
-        DeviceParser $deviceParser
+        DeviceParser $deviceParser,
     ): Response {
-        $this->denyAccessUnlessSelfOrGranted(UserVoter::VIEW, $user);
+        $user = $this->currentUser();
 
         $completionPercentage = $completionService->calculateCompletionPercentage($user);
 
@@ -44,7 +49,7 @@ class ProfileController extends AbstractController
             $location = $geolocationService->getLocationFromIp($user->getLastIp());
         }
 
-        return $this->render('profile/profile.html.twig', [
+        return $this->render('member/profile/read.html.twig', [
             'user' => $user,
             'completionPercentage' => $completionPercentage,
             'location' => $location,
@@ -52,14 +57,13 @@ class ProfileController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/update', name: 'update', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
+    #[Route('/modifier', name: 'update', methods: ['GET', 'POST'])]
     public function update(
         Request $request,
-        User $user,
         EntityManagerInterface $entityManager,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
     ): Response {
-        $this->denyAccessUnlessSelfOrGranted(UserVoter::EDIT, $user);
+        $user = $this->currentUser();
 
         $form = $this->createForm(ProfileType::class, $user, [
             'isCollaborator' => \in_array('ROLE_EDITOR', $user->getRoles(), true),
@@ -77,7 +81,8 @@ class ProfileController extends AbstractController
                     $user->setPasswordChangedAt(new \DateTimeImmutable());
                 } else {
                     $form->get('plainPassword')->addError(new \Symfony\Component\Form\FormError('Les mots de passe ne correspondent pas.'));
-                    return $this->render('profile/update.html.twig', [
+
+                    return $this->render('member/profile/update.html.twig', [
                         'user' => $user,
                         'form' => $form->createView(),
                     ]);
@@ -88,23 +93,23 @@ class ProfileController extends AbstractController
             $entityManager->flush();
 
             $this->addFlash('success', 'Profil mis à jour avec succès !');
-            return $this->redirectToRoute('profile_read', ['id' => $user->getId()]);
+
+            return $this->redirectToRoute('member_profile_read');
         }
 
-        return $this->render('profile/update.html.twig', [
+        return $this->render('member/profile/update.html.twig', [
             'user' => $user,
             'form' => $form->createView(),
         ]);
     }
 
-    #[Route('/{id}/change-password', name: 'change_password', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
+    #[Route('/mot-de-passe', name: 'change_password', methods: ['GET', 'POST'])]
     public function changePassword(
         Request $request,
-        User $user,
         EntityManagerInterface $entityManager,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
     ): Response {
-        $this->denyAccessUnlessSelfOrGranted(UserVoter::RESET_PASSWORD, $user);
+        $user = $this->currentUser();
 
         // Formulaire dédié (2 champs) plutôt que ProfileType + validation_groups :
         // ProfileType a 10 champs mappés sur le même User, donc form_end(form)
@@ -125,31 +130,32 @@ class ProfileController extends AbstractController
                 $entityManager->flush();
 
                 $this->addFlash('success', 'Mot de passe changé avec succès !');
-                return $this->redirectToRoute('profile_read', ['id' => $user->getId()]);
-            } else {
-                $form->get('plainPassword')->addError(new \Symfony\Component\Form\FormError('Les mots de passe ne correspondent pas.'));
+
+                return $this->redirectToRoute('member_profile_read');
             }
+            $form->get('plainPassword')->addError(new \Symfony\Component\Form\FormError('Les mots de passe ne correspondent pas.'));
         }
 
-        return $this->render('profile/_change_password.html.twig', [
+        return $this->render('member/profile/change_password.html.twig', [
             'user' => $user,
             'form' => $form->createView(),
         ]);
     }
 
     /**
-     * Autorise l'action si $user est le compte connecté, sinon retombe sur
-     * $attribute (UserVoter), qui gère les règles admin (self-service exclu :
-     * un simple ROLE_USER ne passe jamais ce second cas, seul un admin le peut).
+     * #[IsGranted('ROLE_USER')] au niveau classe garantit un utilisateur
+     * authentifié avant l'entrée dans toute action ; ce point unique évite de
+     * répéter le contrôle de type (Symfony\Bundle\...\getUser() reste
+     * ?UserInterface au niveau des types).
      */
-    private function denyAccessUnlessSelfOrGranted(string $attribute, User $user): void
+    private function currentUser(): User
     {
-        $currentUser = $this->getUser();
+        $user = $this->getUser();
 
-        if ($currentUser instanceof User && $user->getId() === $currentUser->getId()) {
-            return;
+        if (!$user instanceof User) {
+            throw $this->createAccessDeniedException();
         }
 
-        $this->denyAccessUnlessGranted($attribute, $user);
+        return $user;
     }
 }

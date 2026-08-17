@@ -2,7 +2,6 @@
 
 namespace App\Tests\Security;
 
-use App\Entity\User;
 use App\Repository\UserRepository;
 use App\Security\SecurityAuthenticator;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -24,15 +23,6 @@ final class SecurityAuthenticatorTest extends TestCase
         );
 
         return new SecurityAuthenticator($urlGenerator, $this->createStub(UserRepository::class), $limiter);
-    }
-
-    private function createUserWithId(int $id): User
-    {
-        $user = new User();
-        $property = new \ReflectionProperty(User::class, 'id');
-        $property->setValue($user, $id);
-
-        return $user;
     }
 
     public function testStartRedirectsToLoginAndSetsReturnCookieForProtectedPath(): void
@@ -100,21 +90,20 @@ final class SecurityAuthenticatorTest extends TestCase
         $this->assertSame('/admin/dashboard', $response->headers->get('Location'));
     }
 
-    public function testOnAuthenticationSuccessFallsBackToProfileReadForNonAdmin(): void
+    public function testOnAuthenticationSuccessFallsBackToMemberProfileReadForNonAdmin(): void
     {
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $urlGenerator->expects($this->once())->method('generate')->with('profile_read', ['id' => 42])->willReturn('/profile/42');
+        $urlGenerator->expects($this->once())->method('generate')->with('member_profile_read')->willReturn('/user/profil');
 
         $authenticator = $this->createAuthenticator($urlGenerator);
         $request = Request::create('/login');
 
         $token = $this->createStub(TokenInterface::class);
         $token->method('getRoleNames')->willReturn(['ROLE_USER']);
-        $token->method('getUser')->willReturn($this->createUserWithId(42));
 
         $response = $authenticator->onAuthenticationSuccess($request, $token, 'main');
 
-        $this->assertSame('/profile/42', $response->headers->get('Location'));
+        $this->assertSame('/user/profil', $response->headers->get('Location'));
     }
 
     private function findCookie(Response $response, string $name): ?\Symfony\Component\HttpFoundation\Cookie

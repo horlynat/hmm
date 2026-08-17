@@ -1,0 +1,197 @@
+/* Bundle Vite dédié à la page d'accueil (templates/home/index.html.twig),
+   même principe que login.css : document HTML autonome, jamais
+   base.html.twig — cette page ne doit présenter ni la barre latérale ni
+   l'en-tête admin, elle précède le choix de l'un ou l'autre espace.
+   @import donne accès à tout le système de design existant (tokens
+   @theme, .soft-card, .btn, etc.) sans rien dupliquer. */
+@import "./app.css";
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Anneau orbital des espaces de premier niveau (page d'accueil) — les 9
+   domaines de l'entreprise (Administration, Espace Projets, Hébergement,
+   Marketing, Gestion des risques, Cybersécurité, Formations, Référencement
+   SEO, Partenaires) disposés en cercle autour du centre, comme des planètes.
+   Jamais les modules internes de l'un de ces domaines (cf. commentaire en
+   tête de home/index.html.twig) — seul leur nombre à ce niveau (9) peut
+   grandir si de nouveaux domaines apparaissent, jamais leur détail interne.
+   Angle/rayon poussés depuis Twig via --angle/--counter-angle (un par
+   carte : 360°/9 = 40° d'écart) ; la carte elle-même est contre-tournée de
+   --counter-angle pour rester lisible malgré la rotation du pivot.
+   Sous le point de rupture md (leur inutile sur mobile : pas la place pour
+   un cercle), retombe en simple grille 3 colonnes.
+──────────────────────────────────────────────────────────────────────── */
+.orbit-ring {
+    position: relative;
+    width: min(560px, 90vw);
+    height: min(560px, 90vw);
+}
+
+/* Carte circulaire scintillante qui porte les 9 cartes : un disque (dégradé
+   radial, pour lire un vrai "fond" et pas juste un contour) surmonté d'un
+   dégradé conique qui tourne lentement, comme un reflet qui balaie le
+   cercle. Sous les cartes (z-index), purement décoratif (pointer-events:
+   none) — les cartes elles-mêmes restent le seul contenu cliquable. */
+.orbit-ring::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background:
+        conic-gradient(from 0deg,
+            transparent 0deg,
+            rgba(255, 255, 255, 0.35) 10deg,
+            transparent 20deg,
+            transparent 180deg,
+            rgba(0, 180, 216, 0.3) 190deg,
+            transparent 200deg,
+            transparent 360deg),
+        radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 72%);
+    pointer-events: none;
+    z-index: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .orbit-ring::before {
+        animation: orbit-shimmer 7s linear infinite;
+    }
+}
+@keyframes orbit-shimmer {
+    to { transform: rotate(360deg); }
+}
+
+/* Carte principale — contient l'intitulé et la carte circulaire. Profondeur
+   (ombre portée large) + bordure lumineuse (fin liseré clair + halo de
+   couleur accent), avec une respiration douce du halo pour rester
+   "vivante" sans distraire. */
+.main-card {
+    position: relative;
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.14),
+        0 0 50px 4px rgba(0, 180, 216, 0.22),
+        0 30px 70px -20px rgba(0, 0, 0, 0.7);
+}
+
+/* Flux lumineux multicolores circulant autour de la carte principale — un
+   conic-gradient centré ne convient pas à un RECTANGLE : la rotation
+   déforme le tracé en faisceau qui balaie plutôt qu'un flux régulier qui
+   suit le contour (coins compris). Tracé SVG à la place (markup dans
+   home/index.html.twig) : 4 comètes de couleur suivent le même rect
+   (coins arrondis inclus, via rx), pathLength="100" normalise le
+   périmètre pour rester correct quelle que soit la taille réelle de la
+   carte. stroke-dasharray = un court segment visible + un long vide ;
+   l'animation fait glisser stroke-dashoffset sur un tour complet, et
+   chaque comète démarre décalée d'un quart de cycle pour rester
+   régulièrement répartie sur tout le pourtour en continu. */
+.main-card-flow {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}
+.flow-rect {
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-dasharray: 9 91;
+}
+.flow-rect-1 { stroke: #00b4d8; filter: drop-shadow(0 0 4px #00b4d8); }
+.flow-rect-2 { stroke: #0077b6; filter: drop-shadow(0 0 4px #0077b6); }
+.flow-rect-3 { stroke: #7c3aed; filter: drop-shadow(0 0 4px #7c3aed); }
+.flow-rect-4 { stroke: #ec4899; filter: drop-shadow(0 0 4px #ec4899); }
+@media (prefers-reduced-motion: no-preference) {
+    .flow-rect {
+        animation: flow-move 7s linear infinite;
+    }
+    .flow-rect-2 { animation-delay: -1.75s; }
+    .flow-rect-3 { animation-delay: -3.5s; }
+    .flow-rect-4 { animation-delay: -5.25s; }
+}
+@keyframes flow-move {
+    to { stroke-dashoffset: -100; }
+}
+@media (prefers-reduced-motion: no-preference) {
+    .main-card {
+        animation: main-card-glow 4s ease-in-out infinite;
+    }
+}
+@keyframes main-card-glow {
+    0%, 100% {
+        box-shadow:
+            0 0 0 1px rgba(255, 255, 255, 0.14),
+            0 0 50px 4px rgba(0, 180, 216, 0.22),
+            0 30px 70px -20px rgba(0, 0, 0, 0.7);
+    }
+    50% {
+        box-shadow:
+            0 0 0 1px rgba(255, 255, 255, 0.22),
+            0 0 70px 8px rgba(0, 180, 216, 0.35),
+            0 30px 70px -20px rgba(0, 0, 0, 0.7);
+    }
+}
+
+.orbit-item {
+    z-index: 1;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    /* Même rayon que .orbit-ring (min(560px, 90vw) de diamètre / 2) : les
+       cartes reposent exactement sur le tracé du disque scintillant,
+       plutôt que de flotter en retrait à l'intérieur. */
+    transform: rotate(var(--angle)) translateX(min(280px, 45vw));
+}
+.orbit-card-wrap {
+    /* .orbit-item est un point 0×0 : sans ce recentrage, le contenu (une
+       carte bien réelle, ~90px de large) démarre en flux normal depuis ce
+       point — son coin haut-gauche y est ancré, pas son centre. Résultat :
+       chaque carte apparaissait décalée d'environ une demi-largeur/hauteur
+       de carte par rapport au point exact du cercle, dans une direction
+       fixe à l'écran (bas-droite) identique pour les 9, donc visuellement
+       "mal placées" (le décalage n'est pas corrigé par la contre-rotation,
+       qui tourne la carte autour de son propre centre sans la déplacer).
+       position:absolute + top/left:0 ancre le coin haut-gauche du wrap
+       exactement sur le pivot ; translate(-50%,-50%) — placé AVANT rotate
+       dans la liste, donc appliqué en premier, dans le repère naturel non
+       tourné — ramène ensuite son centre pile sur ce point, quel que soit
+       l'angle ; rotate() ne fait plus que remettre la carte droite, sans
+       plus jamais la déplacer. */
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translate(-50%, -50%) rotate(var(--counter-angle));
+}
+@media (max-width: 767px) {
+    .orbit-ring {
+        width: 100%;
+        height: auto;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.85rem;
+    }
+    /* Grille, plus de cercle : la piste scintillante n'a plus de sens ici
+       (la carte centrale est déjà masquée en Twig via hidden md:flex). */
+    .orbit-ring::before {
+        display: none;
+    }
+    .orbit-item {
+        position: static;
+        /* La règle de base fixe width/height à 0 (pivot ponctuel nécessaire
+           à la rotation) — sans ce reset, chaque case de la grille reste
+           large de 0, son contenu déborde et casse la hauteur des rangées
+           (constaté : le bandeau Espace Projets qui suit se superposait
+           aux cartes). */
+        width: auto;
+        height: auto;
+        transform: none;
+    }
+    .orbit-card-wrap {
+        /* Le recentrage absolute/translate(-50%,-50%) n'a de sens qu'autour
+           du pivot du cercle ; en grille, la carte doit rester en flux
+           normal comme n'importe quelle case. */
+        position: static;
+        transform: none;
+    }
+}

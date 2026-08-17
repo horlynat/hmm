@@ -52,7 +52,16 @@
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Configuration de Base
+   @layer base : sans lui, ces règles restent "hors couche" et l'emportent
+   TOUJOURS sur les utilitaires Tailwind (@layer utilities), quelle que soit
+   leur spécificité CSS — c'est le comportement des Cascade Layers, pas un
+   bug de sélecteur. Concrètement : `<body class="bg-brand-dark">` continuait
+   d'afficher `background-color` du `body{}` ci-dessous envers et contre tout.
+   Avec `@layer base`, l'ordre canonique de Tailwind (theme, base,
+   components, utilities — @layer déclaré par `@import "tailwindcss"`)
+   s'applique enfin : les utilitaires reprennent la priorité attendue.
 ───────────────────────────────────────────────────────────────────────────── */
+@layer base {
 /* Alpine.js : masque les éléments x-cloak jusqu'à l'initialisation (anti-flash) */
 [x-cloak] { display: none !important; }
 
@@ -73,10 +82,15 @@ h1, h2, h3, .heading {
     color: var(--color-brand-dark);
     @apply font-bold tracking-tight;
 }
+}
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Composants d'Interface Épurés
+   @layer components : même raison qu'au-dessus — sans elle, .card/.btn/.panel/
+   etc. l'emportaient eux aussi toujours sur les utilitaires Tailwind
+   combinées avec eux dans un même class="", au lieu de se laisser surcharger.
 ───────────────────────────────────────────────────────────────────────────── */
+@layer components {
 
 /* Card Structurelle standard */
 .card {
@@ -382,10 +396,12 @@ summary:focus-visible {
 .dark .badge-danger  { color: #fca5a5; }
 .dark .badge-warning { color: #fcd34d; }
 .dark .badge-info    { color: #7dd3fc; }
+}
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Accessibilité & Performance (Respect des préférences système)
 ───────────────────────────────────────────────────────────────────────────── */
+@layer base {
 @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {
         animation-delay: -1ms !important;
@@ -394,4 +410,5 @@ summary:focus-visible {
         transition-duration: 1ms !important;
         scroll-behavior: auto !important;
     }
+}
 }
