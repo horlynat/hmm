@@ -83,24 +83,78 @@ final class SecurityAuthenticatorTest extends TestCase
     }
 
     #[DataProvider('unsafeReturnPathProvider')]
-    public function testOnAuthenticationSuccessRejectsUnsafeCookieAndFallsBackToAdminDashboard(string $unsafePath): void
+    public function testOnAuthenticationSuccessRejectsUnsafeCookieAndFallsBackToAdminHome(string $unsafePath): void
     {
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $urlGenerator->expects($this->once())->method('generate')->with('admin_dashboard_index')->willReturn('/admin/dashboard');
+        $urlGenerator->expects($this->once())->method('generate')->with('admin_home_index')->willReturn('/admin');
 
         $authenticator = $this->createAuthenticator($urlGenerator);
         $request = Request::create('/login');
         $request->cookies->set('idle_return_to', $unsafePath);
 
         $token = $this->createStub(TokenInterface::class);
-        $token->method('getRoleNames')->willReturn(['ROLE_ADMIN']);
+        // Chaîne héritée complète (role_hierarchy) : un vrai
+        // TokenInterface::getRoleNames() ne renvoie jamais que le seul rôle
+        // directement attribué.
+        $token->method('getRoleNames')->willReturn(['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_MODERATOR', 'ROLE_EDITOR', 'ROLE_USER']);
 
         $response = $authenticator->onAuthenticationSuccess($request, $token, 'main');
 
-        $this->assertSame('/admin/dashboard', $response->headers->get('Location'));
+        $this->assertSame('/admin', $response->headers->get('Location'));
     }
 
-    public function testOnAuthenticationSuccessFallsBackToProfileReadForNonAdmin(): void
+    /**
+     * Régression : avant ce comportement, seul ROLE_ADMIN atterrissait
+     * quelque part d'utile après connexion (admin_dashboard_index) —
+     * Éditeur/Modérateur/Manager retombaient sur leur propre fiche profil,
+     * sans aucun point d'entrée vers les espaces auxquels ils ont pourtant
+     * accès (cf. AdminHomeController). ROLE_EDITOR est le vrai plancher
+     * d'accès back-office (access_control ^/admin dans security.yaml), pas
+     * ROLE_ADMIN.
+     */
+    /**
+     * @param array<int, string> $roles
+     */
+    #[DataProvider('backofficeRoleProvider')]
+    public function testOnAuthenticationSuccessRedirectsAnyBackofficeRoleToAdminHome(array $roles): void
+    {
+        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator->expects($this->once())->method('generate')->with('admin_home_index')->willReturn('/admin');
+
+        $authenticator = $this->createAuthenticator($urlGenerator);
+        $request = Request::create('/login');
+
+        $token = $this->createStub(TokenInterface::class);
+        $token->method('getRoleNames')->willReturn($roles);
+
+        $response = $authenticator->onAuthenticationSuccess($request, $token, 'main');
+
+        $this->assertSame('/admin', $response->headers->get('Location'));
+    }
+
+    /**
+     * Rôles pleinement résolus (role_hierarchy de security.yaml) : un vrai
+     * TokenInterface::getRoleNames() renvoie toute la chaîne héritée, pas
+     * seulement le rôle directement attribué.
+     *
+     * @return iterable<string, array{0: array<int, string>}>
+     */
+    public static function backofficeRoleProvider(): iterable
+    {
+        yield 'Éditeur' => [['ROLE_EDITOR', 'ROLE_USER']];
+        yield 'Modérateur' => [['ROLE_MODERATOR', 'ROLE_EDITOR', 'ROLE_USER']];
+        yield 'Manager' => [['ROLE_MANAGER', 'ROLE_MODERATOR', 'ROLE_EDITOR', 'ROLE_USER']];
+        yield 'Administrateur' => [['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_MODERATOR', 'ROLE_EDITOR', 'ROLE_USER']];
+        yield 'Super Administrateur' => [['ROLE_SUPER_ADMIN', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_MODERATOR', 'ROLE_EDITOR', 'ROLE_USER']];
+    }
+
+    /**
+     * Un compte client (ROLE_USER seul, sans ROLE_EDITOR) n'a accès à rien
+     * sous /admin (access_control) — s'il se connecte malgré tout via ce
+     * formulaire, il atterrit sur sa propre fiche profil plutôt que sur un
+     * hub back-office qui lui serait de toute façon inaccessible.
+     */
+    public function testOnAuthenticationSuccessFallsBackToProfileReadWhenNoBackofficeRole(): void
     {
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
         $urlGenerator->expects($this->once())->method('generate')->with('profile_read', ['id' => 42])->willReturn('/profile/42');

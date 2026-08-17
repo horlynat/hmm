@@ -87,8 +87,13 @@ class SecurityAuthenticator extends AbstractLoginFormAuthenticator
             return $response;
         }
 
-        if (in_array('ROLE_ADMIN', $token->getRoleNames(), true)) {
-            return new RedirectResponse($this->urlGenerator->generate('admin_dashboard_index'));
+        // ROLE_EDITOR est le plancher réel d'accès au back-office (cf.
+        // access_control ^/admin dans security.yaml) — pas ROLE_ADMIN : un
+        // compte client (ROLE_USER seul) qui se connecte malgré tout via ce
+        // formulaire (celui du back-office) n'a accès à rien sous /admin et
+        // continue donc d'atterrir sur sa propre fiche profil ci-dessous.
+        if (in_array('ROLE_EDITOR', $token->getRoleNames(), true)) {
+            return new RedirectResponse($this->urlGenerator->generate('admin_home_index'));
         }
 
         /** @var User $user */
