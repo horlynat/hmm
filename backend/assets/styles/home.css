@@ -71,40 +71,45 @@
         0 30px 70px -20px rgba(0, 0, 0, 0.7);
 }
 
-/* Flux lumineux multicolores circulant autour de la carte principale : un
-   dégradé conique à 4 couleurs, découpé en anneau pur au bord de la carte
-   via un masque (padding = épaisseur de l'anneau, mask-composite: exclude
-   soustrait le content-box du bord complet) — seul le bord est peint,
-   jamais l'intérieur, le fond verre dépoli de la carte reste intact
-   dessous. La rotation fait "circuler" les couleurs le long du bord. */
-.main-card::after {
-    content: "";
+/* Flux lumineux multicolores circulant autour de la carte principale — un
+   conic-gradient centré ne convient pas à un RECTANGLE : la rotation
+   déforme le tracé en faisceau qui balaie plutôt qu'un flux régulier qui
+   suit le contour (coins compris). Tracé SVG à la place (markup dans
+   home/index.html.twig) : 4 comètes de couleur suivent le même rect
+   (coins arrondis inclus, via rx), pathLength="100" normalise le
+   périmètre pour rester correct quelle que soit la taille réelle de la
+   carte. stroke-dasharray = un court segment visible + un long vide ;
+   l'animation fait glisser stroke-dashoffset sur un tour complet, et
+   chaque comète démarre décalée d'un quart de cycle pour rester
+   régulièrement répartie sur tout le pourtour en continu. */
+.main-card-flow {
     position: absolute;
-    inset: -2px;
-    border-radius: inherit;
-    padding: 2px;
-    background: conic-gradient(from 0deg,
-        transparent 0%,
-        #00b4d8 8%,
-        transparent 16%, transparent 25%,
-        #0077b6 33%,
-        transparent 41%, transparent 50%,
-        #7c3aed 58%,
-        transparent 66%, transparent 75%,
-        #ec4899 83%,
-        transparent 91%, transparent 100%);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-            mask-composite: exclude;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
     pointer-events: none;
 }
-@media (prefers-reduced-motion: no-preference) {
-    .main-card::after {
-        animation: border-flow 6s linear infinite;
-    }
+.flow-rect {
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-dasharray: 9 91;
 }
-@keyframes border-flow {
-    to { transform: rotate(360deg); }
+.flow-rect-1 { stroke: #00b4d8; filter: drop-shadow(0 0 4px #00b4d8); }
+.flow-rect-2 { stroke: #0077b6; filter: drop-shadow(0 0 4px #0077b6); }
+.flow-rect-3 { stroke: #7c3aed; filter: drop-shadow(0 0 4px #7c3aed); }
+.flow-rect-4 { stroke: #ec4899; filter: drop-shadow(0 0 4px #ec4899); }
+@media (prefers-reduced-motion: no-preference) {
+    .flow-rect {
+        animation: flow-move 7s linear infinite;
+    }
+    .flow-rect-2 { animation-delay: -1.75s; }
+    .flow-rect-3 { animation-delay: -3.5s; }
+    .flow-rect-4 { animation-delay: -5.25s; }
+}
+@keyframes flow-move {
+    to { stroke-dashoffset: -100; }
 }
 @media (prefers-reduced-motion: no-preference) {
     .main-card {
