@@ -16,7 +16,7 @@ framework:
         cookie_secure: auto
         cookie_samesite: strict
         cookie_httponly: true
-        handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
+        handler_id: App\Session\ReconnectingPdoSessionHandler
         # Filet de sécurité côté serveur : le timeout d'inactivité de 10 min
         # (assets/js/idle-timeout.js) est désactivable en coupant JavaScript.
         # Au-delà de 30 min sans la moindre requête, la session expire aussi

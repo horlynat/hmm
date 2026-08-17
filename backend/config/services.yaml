@@ -126,17 +126,12 @@ services:
         arguments:
             $fallbackPolicy: '%app.notifier.fallback_policy%'
 
-    # ✅ Sessions stockées en base (voir admin/security/sessions) : PdoSessionHandler a
-    #    besoin d'un PDO natif, on le récupère depuis la connexion Doctrine existante.
-    app.pdo_native_connection:
-        class: PDO
-        factory: ['@doctrine.dbal.default_connection', 'getNativeConnection']
-
-    Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler:
-        arguments:
-            - '@app.pdo_native_connection'
-            # lock_mode LOCK_ADVISORY (1) : la connexion PDO est partagée avec l'ORM,
-            # le mode par défaut LOCK_TRANSACTIONAL ouvre une transaction PDO qui entre
-            # en conflit avec celles de Doctrine ("There is already an active
-            # transaction"). LOCK_ADVISORY verrouille sans transaction.
-            - lock_mode: 1
+    # ✅ Sessions stockées en base (voir admin/security/sessions) : voir
+    #    App\Session\ReconnectingPdoSessionHandler pour pourquoi ce n'est PAS
+    #    un simple partage du PDO natif de Doctrine via un factory ('app.
+    #    pdo_native_connection', retiré — un factory Symfony n'est appelé
+    #    qu'une fois et son résultat figé rend PdoSessionHandler aveugle à
+    #    toute reconnexion Doctrine survenant après coup dans la vie d'un
+    #    worker FrankenPHP). config/packages/framework.yaml pointe
+    #    `session.handler_id` vers cette classe (autowirée automatiquement,
+    #    aucune déclaration explicite nécessaire ici).
