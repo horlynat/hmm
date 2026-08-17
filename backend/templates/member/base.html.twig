@@ -52,7 +52,7 @@
 				</a>
 
 				<p class="text-[10px] uppercase text-(--brand-dark)/50 font-bold mt-5 mb-1.5 ml-3 tracking-wider">Mon compte</p>
-				<a href="{{ path('profile_read', {'id': app.user.id}) }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-(--brand-dark) hover:bg-brand-light/20 hover:text-(--brand-primary) transition {% if currentRoute starts with 'profile_read' or currentRoute starts with 'profile_update' %}bg-brand-light/30 text-(--brand-primary) font-semibold{% endif %}">
+				<a href="{{ path('member_profile_read') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-(--brand-dark) hover:bg-brand-light/20 hover:text-(--brand-primary) transition {% if currentRoute starts with 'member_profile_read' or currentRoute starts with 'member_profile_update' %}bg-brand-light/30 text-(--brand-primary) font-semibold{% endif %}">
 					<span class="ti ti-user-circle text-lg" aria-hidden="true"></span>
 					Mon profil
 				</a>

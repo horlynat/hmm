@@ -91,10 +91,7 @@ class SecurityAuthenticator extends AbstractLoginFormAuthenticator
             return new RedirectResponse($this->urlGenerator->generate('admin_dashboard_index'));
         }
 
-        /** @var User $user */
-        $user = $token->getUser();
-
-        return new RedirectResponse($this->urlGenerator->generate('profile_read', ['id' => $user->getId()]));
+        return new RedirectResponse($this->urlGenerator->generate('member_profile_read'));
     }
 
     /**

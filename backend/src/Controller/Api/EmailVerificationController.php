@@ -124,7 +124,7 @@ final class EmailVerificationController extends AbstractController
             context: [
                 'fullName' => $user->getFullName(),
                 'user' => $user,
-                'accountUrl' => $this->accountLinkResolver->resolve($user, 'profile_read', ['id' => $user->getId()], '/connexion'),
+                'accountUrl' => $this->accountLinkResolver->resolve($user, 'admin_profile_read', ['id' => $user->getId()], '/connexion'),
             ],
         );
 

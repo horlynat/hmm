@@ -15,7 +15,7 @@
 		<nav class="flex items-center text-xs md:text-sm text-gray-500 overflow-x-auto whitespace-nowrap py-1" aria-label="Fil d'Ariane">
 			{# "Accueil" pointe vers le dashboard (ROLE_ADMIN) si accessible, sinon vers le
 			   profil : seule page garantie accessible à tout ROLE_USER — jamais un lien mort. #}
-			<a href="{{ is_granted(constant('App\\Security\\Voter\\DashboardVoter::VIEW')) ? path('admin_dashboard_index') : path('profile_read', {'id': app.user.id}) }}" class="flex items-center text-(--brand-primary) font-bold hover:text-brand-accent transition">
+			<a href="{{ is_granted(constant('App\\Security\\Voter\\DashboardVoter::VIEW')) ? path('admin_dashboard_index') : path('admin_profile_read', {'id': app.user.id}) }}" class="flex items-center text-(--brand-primary) font-bold hover:text-brand-accent transition">
 				<span class="ti ti-home text-base mr-1" aria-hidden="true"></span>
 				Accueil
 			</a>
@@ -89,13 +89,13 @@
 
 				<hr class="my-1.5 border-gray-100 dark:border-gray-700">
 
-				<a href="{{ path('profile_read', {'id': app.user.id}) }}" role="menuitem" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+				<a href="{{ path('admin_profile_read', {'id': app.user.id}) }}" role="menuitem" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
 					<span class="ti ti-user-circle text-base mr-3 text-gray-400" aria-hidden="true"></span>Voir mon profil
 				</a>
-				<a href="{{ path('profile_update', {'id': app.user.id}) }}" role="menuitem" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+				<a href="{{ path('admin_profile_update', {'id': app.user.id}) }}" role="menuitem" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
 					<span class="ti ti-edit text-base mr-3 text-gray-400" aria-hidden="true"></span>Modifier le profil
 				</a>
-				<a href="{{ path('profile_change_password', {'id': app.user.id}) }}" role="menuitem" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+				<a href="{{ path('admin_profile_change_password', {'id': app.user.id}) }}" role="menuitem" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
 					<span class="ti ti-lock-cog text-base mr-3 text-gray-400" aria-hidden="true"></span>Changer le mot de passe
 				</a>
 				<a href="{{ path('profile_two_factor_index') }}" role="menuitem" class="flex items-center px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition">

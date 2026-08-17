@@ -1,16 +1,13 @@
-{% extends 'base.html.twig' %}
+{# templates/member/profile/read.html.twig
+   Fiche de profil de l'espace membre — toujours le compte connecté
+   (member_profile_read, self-service uniquement, pas d'id). Gabarit espace
+   membre : member/base.html.twig (aside collaborateur/freelance/client),
+   jamais l'en-tête ni l'aside admin. #}
+{% extends 'member/base.html.twig' %}
 
-{% block title %}Profil{% endblock %}
+{% set routePrefix = 'member_profile_' %}
 
-{% block stylesheets %}
-	{{ parent() }}
-	{{ vite_entry_link_tags('profile') }}
-{% endblock %}
-
-{% block javascripts %}
-	{{ parent() }}
-	{{ vite_entry_script_tags('profile') }}
-{% endblock %}
+{% block title %}Mon profil{% endblock %}
 
 {% block body %}
 

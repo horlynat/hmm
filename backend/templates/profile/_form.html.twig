@@ -112,7 +112,7 @@
 </div>
 
 <div class="flex justify-end gap-3">
-	<a href="{{ path('profile_read', {'id': user.id}) }}" class="btn btn-secondary">Annuler</a>
+	<a href="{{ path(routePrefix ~ 'read', {'id': user.id}) }}" class="btn btn-secondary">Annuler</a>
 	<button type="submit" class="btn btn-primary gap-2">
 		<span class="ti ti-device-floppy" aria-hidden="true"></span>
 		Enregistrer les modifications
