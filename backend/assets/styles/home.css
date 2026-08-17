@@ -7,21 +7,23 @@
 @import "./app.css";
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Anneau orbital des espaces de premier niveau (page d'accueil) — les
+   Anneau orbital des espaces de premier niveau (page d'accueil) — les 9
    domaines de l'entreprise (Administration, Espace Projets, Hébergement,
-   Marketing...) disposés en cercle autour du centre, comme des planètes.
+   Marketing, Gestion des risques, Cybersécurité, Formations, Référencement
+   SEO, Partenaires) disposés en cercle autour du centre, comme des planètes.
    Jamais les modules internes de l'un de ces domaines (cf. commentaire en
-   tête de home/index.html.twig) — la liste reste donc courte.
+   tête de home/index.html.twig) — seul leur nombre à ce niveau (9) peut
+   grandir si de nouveaux domaines apparaissent, jamais leur détail interne.
    Angle/rayon poussés depuis Twig via --angle/--counter-angle (un par
-   carte : 360°/4 = 90° d'écart) ; la carte elle-même est contre-tournée de
+   carte : 360°/9 = 40° d'écart) ; la carte elle-même est contre-tournée de
    --counter-angle pour rester lisible malgré la rotation du pivot.
    Sous le point de rupture md (leur inutile sur mobile : pas la place pour
-   un cercle), retombe en simple grille 2 colonnes.
+   un cercle), retombe en simple grille 3 colonnes.
 ──────────────────────────────────────────────────────────────────────── */
 .orbit-ring {
     position: relative;
-    width: min(420px, 80vw);
-    height: min(420px, 80vw);
+    width: min(560px, 90vw);
+    height: min(560px, 90vw);
 }
 
 /* Piste circulaire scintillante derrière les cartes : anneau fin + un
@@ -91,7 +93,7 @@
     left: 50%;
     width: 0;
     height: 0;
-    transform: rotate(var(--angle)) translateX(min(170px, 32vw));
+    transform: rotate(var(--angle)) translateX(min(230px, 38vw));
 }
 .orbit-card-wrap {
     transform: rotate(var(--counter-angle));
@@ -101,7 +103,7 @@
         width: 100%;
         height: auto;
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 0.85rem;
     }
     /* Grille, plus de cercle : la piste scintillante n'a plus de sens ici

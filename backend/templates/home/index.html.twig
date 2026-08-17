@@ -51,11 +51,20 @@
 		   "Finance" ou "Sécurité" y existe, même grisé. #}
 		{% set canViewDashboard = is_granted(constant('App\\Security\\Voter\\DashboardVoter::VIEW')) %}
 
+		{# `exists` distingue "l'espace existe mais votre rôle n'y donne pas
+		   accès" (Administration) de "l'espace n'est pas encore construit"
+		   (les 7 autres, pour l'instant) — seule cette distinction pilote le
+		   texte de l'info-bulle des cartes désactivées, jamais le libellé. #}
 		{% set spaces = [
-			{ label: 'Administration', icon: 'ti-building', href: canViewDashboard ? path('admin_dashboard_index') : null },
-			{ label: 'Espace Projets', icon: 'ti-briefcase', href: path('member_project_index') },
-			{ label: 'Hébergement', icon: 'ti-server', href: null },
-			{ label: 'Marketing', icon: 'ti-speakerphone', href: null },
+			{ label: 'Administration', icon: 'ti-building', href: canViewDashboard ? path('admin_dashboard_index') : null, exists: true },
+			{ label: 'Espace Projets', icon: 'ti-briefcase', href: path('member_project_index'), exists: true },
+			{ label: 'Hébergement', icon: 'ti-server', href: null, exists: false },
+			{ label: 'Marketing', icon: 'ti-speakerphone', href: null, exists: false },
+			{ label: 'Gestion des risques', icon: 'ti-alert-triangle', href: null, exists: false },
+			{ label: 'Cybersécurité', icon: 'ti-shield-lock', href: null, exists: false },
+			{ label: 'Formations', icon: 'ti-school', href: null, exists: false },
+			{ label: 'Référencement SEO', icon: 'ti-search', href: null, exists: false },
+			{ label: 'Partenaires', icon: 'ti-handshake', href: null, exists: false },
 		] %}
 
 		{# 🌌 FOND — décor neutre (réseau de nœuds), commun à toute
@@ -114,20 +123,20 @@
 				   pas rejouer la fuite corrigée plus haut). Masquée sous md,
 				   l'anneau devenant une grille en mobile (cf. home.css), un
 				   centre en position absolue s'y superposerait aux cartes. #}
-				<div class="hub-card hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 text-center rounded-3xl bg-white/10 backdrop-blur-md px-6 py-5">
+				<div class="hub-card hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-36 w-36 flex-col items-center justify-center gap-2 text-center rounded-full bg-white/10 backdrop-blur-md px-4">
 					{% if settings.logoPath %}
 						<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-10 w-10 object-contain">
 					{% else %}
-						<span class="flex h-10 w-10 items-center justify-center rounded-2xl text-2xl bg-white text-brand-dark">
+						<span class="flex h-10 w-10 items-center justify-center rounded-full text-2xl bg-white text-brand-dark">
 							<i class="ti ti-hexagon" aria-hidden="true"></i>
 						</span>
 					{% endif %}
-					<span class="font-heading font-bold text-sm">{{ settings.siteName }}</span>
+					<span class="font-heading font-bold text-sm leading-tight">{{ settings.siteName }}</span>
 				</div>
 
 				{% for space in spaces %}
-					<div class="orbit-item" style="--angle: {{ (loop.index0 * 90) - 90 }}deg;">
-						<div class="orbit-card-wrap" style="--counter-angle: {{ 90 - (loop.index0 * 90) }}deg;">
+					<div class="orbit-item" style="--angle: {{ (loop.index0 * 40) - 90 }}deg;">
+						<div class="orbit-card-wrap" style="--counter-angle: {{ 90 - (loop.index0 * 40) }}deg;">
 							{% if space.href %}
 								<a href="{{ space.href }}" class="group flex flex-col items-center gap-2 w-20 md:w-24 text-center">
 									<span class="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl text-2xl bg-white text-brand-primary shadow-xl ring-1 ring-white/40 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
@@ -136,7 +145,7 @@
 									<span class="text-xs md:text-sm font-heading font-semibold text-white">{{ space.label }}</span>
 								</a>
 							{% else %}
-								<div class="flex flex-col items-center gap-2 w-20 md:w-24 text-center cursor-not-allowed" title="{{ space.href is null and space.label in ['Hébergement', 'Marketing'] ? 'Espace à venir' : 'Non accessible à votre rôle' }}">
+								<div class="flex flex-col items-center gap-2 w-20 md:w-24 text-center cursor-not-allowed" title="{{ space.exists ? 'Non accessible à votre rôle' : 'Espace à venir' }}">
 									<span class="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl text-2xl bg-white/5 text-white/30 border border-dashed border-white/15">
 										<i class="ti {{ space.icon }}" aria-hidden="true"></i>
 									</span>
