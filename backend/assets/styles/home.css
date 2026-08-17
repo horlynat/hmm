@@ -5,3 +5,52 @@
    @import donne accès à tout le système de design existant (tokens
    @theme, .soft-card, .btn, etc.) sans rien dupliquer. */
 @import "./app.css";
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Anneau orbital des espaces de gestion (page d'accueil) — les 9 premières
+   cartes d'accès disposées en cercle autour du centre, comme des planètes.
+   Angle/rayon poussés depuis Twig via --angle/--counter-angle (un par
+   carte : 360°/9 = 40° d'écart) ; la carte elle-même est contre-tournée de
+   --counter-angle pour rester lisible malgré la rotation du pivot.
+   Sous le point de rupture md (leur inutile sur mobile : pas la place pour
+   un cercle), retombe en simple grille 3 colonnes.
+──────────────────────────────────────────────────────────────────────── */
+.orbit-ring {
+    position: relative;
+    width: min(560px, 90vw);
+    height: min(560px, 90vw);
+}
+.orbit-item {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    transform: rotate(var(--angle)) translateX(min(230px, 38vw));
+}
+.orbit-card-wrap {
+    transform: rotate(var(--counter-angle));
+}
+@media (max-width: 767px) {
+    .orbit-ring {
+        width: 100%;
+        height: auto;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.85rem;
+    }
+    .orbit-item {
+        position: static;
+        /* La règle de base fixe width/height à 0 (pivot ponctuel nécessaire
+           à la rotation) — sans ce reset, chaque case de la grille reste
+           large de 0, son contenu déborde et casse la hauteur des rangées
+           (constaté : le bandeau Espace Projets qui suit se superposait
+           aux cartes). */
+        width: auto;
+        height: auto;
+        transform: none;
+    }
+    .orbit-card-wrap {
+        transform: none;
+    }
+}

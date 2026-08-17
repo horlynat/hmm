@@ -27,7 +27,7 @@
 			{{ vite_entry_script_tags('home') }}
 		{% endblock %}
 	</head>
-	<body class="h-screen overflow-hidden bg-brand-dark">
+	<body class="min-h-screen relative overflow-x-hidden bg-brand-dark text-white">
 
 		{% set hour = "now"|date("G") %}
 		{% set greeting = hour < 12 ? 'Bonjour' : (hour < 18 ? 'Bon après-midi' : 'Bonsoir') %}
@@ -39,128 +39,163 @@
 			'ROLE_ADMIN': 'Administrateur',
 			'ROLE_SUPER_ADMIN': 'Super Administrateur',
 		} %}
-		{# Même garde exacte que la route ciblée (DashboardVoter::VIEW, ROLE_ADMIN) —
-		   jamais un panneau visible qui mènerait à un refus d'accès. L'espace projets,
-		   lui, n'a aucune garde propre au-delà du plancher ROLE_USER déjà requis pour
-		   atteindre cette page (cf. MemberProjectController::index()) : toujours visible. #}
-		{% set canViewAdministration = is_granted(constant('App\\Security\\Voter\\DashboardVoter::VIEW')) %}
 
-		<div class="relative h-full">
+		{# 🔒 Mêmes voters qu'_admin.nav.html.twig (source de vérité partagée).
+		   Différence volontaire avec avant : une carte NON accessible ne
+		   disparaît plus, elle reste visible mais désactivée — la consigne
+		   est de montrer l'ensemble des 20 espaces à terme, accessibles ou
+		   non selon le rôle, jamais de faire comme s'ils n'existaient pas. #}
+		{% set canViewDashboard = is_granted(constant('App\\Security\\Voter\\DashboardVoter::VIEW')) %}
 
-			{# 🪟 EN-TÊTE FLOTTANT — superposé, pas empilé : les panneaux occupent
-			   TOUTE la hauteur dès y=0, la marque flotte par-dessus en verre
-			   dépoli. Plus de zone "décorative" séparée du choix lui-même. #}
-			<header class="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-4 px-6 py-4 md:px-10 bg-linear-to-b from-black/25 to-transparent animate-fade-in">
-				<div class="flex items-center gap-2.5 text-white">
-					{% if settings.logoPath %}
-						<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-7 w-7 object-contain">
-					{% endif %}
-					<span class="font-heading font-bold text-sm tracking-tight">{{ settings.siteName }}</span>
-				</div>
-				<div class="flex items-center gap-3 text-white text-right">
-					<span class="hidden sm:block text-sm text-white/70">{{ greeting }}, {{ app.user.fullName ?? app.user.userIdentifier }}</span>
-					{% if app.user.primaryRole is defined and roleLabels[app.user.primaryRole] is defined %}
-						<span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-wide uppercase ring-1 ring-white/15 backdrop-blur-sm">
-							{{ roleLabels[app.user.primaryRole] }}
-						</span>
-					{% endif %}
-				</div>
-			</header>
+		{% set canViewFinanceOverview = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
+		{% set canViewFinanceProjects = is_granted('ROLE_ADMIN') %}
+		{% set canViewFinancePipeline = is_granted(constant('App\\Security\\Voter\\QuoteVoter::VIEW')) %}
+		{% set canViewFinanceSection = canViewFinanceOverview or canViewFinanceProjects or canViewFinancePipeline %}
+		{% set financeHref = canViewFinanceOverview ? path('admin_finance_index') : (canViewFinanceProjects ? path('admin_project_statistics') : path('admin_request_index')) %}
 
-			{# 🚪 LES DEUX PORTES : contraste de DENSITÉ plutôt que jumelage —
-			   Administration porte visuellement le poids d'un système à 20
-			   espaces (réseau de nœuds, chiffre géant en filigrane, matière),
-			   Espace Projets reste volontairement épuré : il EST une seule
-			   destination, il n'a pas à feindre la même densité. #}
-			<div class="h-full flex flex-col md:flex-row">
+		{% set canViewProjects = is_granted('ROLE_ADMIN') %}
+		{% set canViewSkills = is_granted('ROLE_EDITOR') %}
+		{% set canViewArticles = is_granted(constant('App\\Security\\Voter\\ArticleVoter::VIEW')) %}
+		{% set canViewContenuSection = canViewProjects or canViewSkills or canViewArticles %}
+		{% set contenuHref = canViewProjects ? path('admin_project_index') : (canViewSkills ? path('admin_skill_index') : path('admin_article_index')) %}
 
-				{% if canViewAdministration %}
-					<a href="{{ path('admin_dashboard_index') }}"
-					   class="group relative flex-1 md:flex-[1.2] flex flex-col items-center justify-center gap-6 text-center px-8 pt-24 pb-12 overflow-hidden text-white bg-brand-dark transition-[flex-grow] duration-500 ease-out hover:flex-[1.4]">
+		{% set canViewAdmins = is_granted('ROLE_ADMIN') %}
+		{% set canViewContacts = is_granted(constant('App\\Security\\Voter\\ContactVoter::VIEW')) %}
+		{% set canViewQuoteRequests = is_granted(constant('App\\Security\\Voter\\QuoteVoter::VIEW')) %}
+		{% set canViewUtilisateursSection = canViewAdmins or canViewContacts or canViewQuoteRequests %}
+		{% set utilisateursHref = canViewAdmins ? path('admin_admins_index') : (canViewContacts ? path('admin_contact_index') : path('admin_request_index')) %}
 
-						{# Filigrane "20" — le concept rendu visible, pas juste raconté. #}
-						<span class="pointer-events-none select-none absolute -left-6 -bottom-16 font-heading font-black leading-none text-white/[0.05] text-[22rem] md:text-[28rem]" aria-hidden="true">20</span>
+		{% set canViewSecurityLogs = is_granted(constant('App\\Security\\Voter\\SecurityVoter::VIEW_LOGS')) %}
+		{% set canViewSecuritySessions = is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_SESSIONS')) %}
+		{% set canViewSecurity2fa = is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_2FA')) %}
+		{% set canViewSecuriteSection = canViewSecurityLogs or canViewSecuritySessions or canViewSecurity2fa %}
+		{% set securiteHref = canViewSecurityLogs ? path('admin_security_log_index') : (canViewSecuritySessions ? path('admin_security_session_index') : path('admin_security_two_factor_index')) %}
 
-						{# Réseau de nœuds : un vrai schéma de système, pas des icônes dans des bulles. #}
-						<svg class="pointer-events-none absolute inset-0 h-full w-full opacity-[0.35] animate-pulse" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-							<g stroke="#ffffff" stroke-width="1" opacity="0.4">
-								<line x1="60" y1="80" x2="140" y2="50"/>
-								<line x1="140" y1="50" x2="220" y2="90"/>
-								<line x1="220" y1="90" x2="320" y2="60"/>
-								<line x1="320" y1="60" x2="400" y2="100"/>
-								<line x1="60" y1="80" x2="40" y2="200"/>
-								<line x1="140" y1="50" x2="150" y2="180"/>
-								<line x1="220" y1="90" x2="260" y2="210"/>
-								<line x1="320" y1="60" x2="380" y2="220"/>
-								<line x1="400" y1="100" x2="450" y2="180"/>
-								<line x1="40" y1="200" x2="150" y2="180"/>
-								<line x1="150" y1="180" x2="260" y2="210"/>
-								<line x1="260" y1="210" x2="380" y2="220"/>
-								<line x1="380" y1="220" x2="450" y2="180"/>
-								<line x1="40" y1="200" x2="80" y2="320"/>
-								<line x1="150" y1="180" x2="190" y2="300"/>
-								<line x1="260" y1="210" x2="300" y2="330"/>
-								<line x1="380" y1="220" x2="420" y2="340"/>
-								<line x1="80" y1="320" x2="190" y2="300"/>
-								<line x1="190" y1="300" x2="300" y2="330"/>
-								<line x1="300" y1="330" x2="420" y2="340"/>
-								<line x1="80" y1="320" x2="60" y2="440"/>
-								<line x1="190" y1="300" x2="170" y2="420"/>
-								<line x1="300" y1="330" x2="290" y2="450"/>
-								<line x1="420" y1="340" x2="400" y2="430"/>
-								<line x1="60" y1="440" x2="170" y2="420"/>
-								<line x1="170" y1="420" x2="290" y2="450"/>
-								<line x1="290" y1="450" x2="400" y2="430"/>
-								<line x1="170" y1="420" x2="140" y2="520"/>
-								<line x1="290" y1="450" x2="260" y2="500"/>
-							</g>
-							<g fill="#ffffff">
-								<circle cx="60" cy="80" r="4"/><circle cx="140" cy="50" r="4"/><circle cx="220" cy="90" r="4"/><circle cx="320" cy="60" r="4"/><circle cx="400" cy="100" r="4"/>
-								<circle cx="450" cy="180" r="4"/><circle cx="40" cy="200" r="4"/><circle cx="150" cy="180" r="4"/><circle cx="260" cy="210" r="4"/><circle cx="380" cy="220" r="4"/>
-								<circle cx="80" cy="320" r="4"/><circle cx="190" cy="300" r="4"/><circle cx="300" cy="330" r="4"/><circle cx="420" cy="340" r="4"/>
-								<circle cx="60" cy="440" r="4"/><circle cx="170" cy="420" r="4"/><circle cx="290" cy="450" r="4"/><circle cx="400" cy="430" r="4"/>
-								<circle cx="140" cy="520" r="4"/><circle cx="260" cy="500" r="4"/>
-							</g>
-						</svg>
+		{% set canViewConfig = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_CONFIG')) %}
+		{% set canViewNotifications = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_NOTIFICATIONS')) %}
+		{% set canViewParametresSection = canViewConfig or canViewNotifications %}
+		{% set parametresHref = canViewConfig ? path('admin_config_index') : path('admin_notification_index') %}
 
-						<span class="relative flex h-16 w-16 items-center justify-center rounded-2xl text-3xl bg-white text-brand-dark shadow-2xl transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6">
-							<i class="ti ti-building" aria-hidden="true"></i>
-						</span>
-						<span class="relative">
-							<span class="flex items-center justify-center gap-2 text-white/50 text-xs font-heading font-bold tracking-[0.3em] uppercase mb-2">
-								<span class="h-px w-6 bg-white/30"></span>01
-							</span>
-							<span class="block font-heading font-extrabold text-4xl md:text-5xl tracking-tight">Administration</span>
-							<span class="block text-sm md:text-base text-white/60 mt-3 max-w-sm mx-auto leading-relaxed">Finance, contenu, utilisateurs, sécurité, paramètres — une vingtaine d'espaces de gestion, tous ici.</span>
-						</span>
-						<span class="relative inline-flex items-center gap-2 rounded-full bg-white text-brand-dark px-6 py-3 text-sm font-heading font-bold shadow-xl transition-all duration-300 group-hover:gap-3.5 group-hover:shadow-2xl">
-							Accéder à cet espace
-							<i class="ti ti-arrow-right" aria-hidden="true"></i>
-						</span>
-					</a>
+		{% set canViewSupportDocs = is_granted('ROLE_EDITOR') %}
+		{% set canViewSupportTickets = is_granted(constant('App\\Security\\Voter\\SupportTicketVoter::VIEW')) %}
+		{% set canViewSupportSection = canViewSupportDocs or canViewSupportTickets %}
+		{% set supportHref = canViewSupportDocs ? path('admin_support_docs_index') : path('admin_support_ticket_index') %}
+
+		{# Les 9 premières cartes des ~20 espaces de gestion à terme. Les deux
+		   dernières n'ont volontairement pas de route (href null) : rien
+		   n'existe encore derrière, mieux vaut le dire clairement ("Bientôt")
+		   que d'inventer un lien vers une page qui n'existe pas. #}
+		{% set spaces = [
+			{ label: 'Vue globale', icon: 'ti-layout-dashboard', href: canViewDashboard ? path('admin_dashboard_index') : null },
+			{ label: 'Finance', icon: 'ti-report-money', href: canViewFinanceSection ? financeHref : null },
+			{ label: 'Contenu', icon: 'ti-folders', href: canViewContenuSection ? contenuHref : null },
+			{ label: 'Utilisateurs', icon: 'ti-users', href: canViewUtilisateursSection ? utilisateursHref : null },
+			{ label: 'Sécurité', icon: 'ti-shield-lock', href: canViewSecuriteSection ? securiteHref : null },
+			{ label: 'Paramètres', icon: 'ti-settings', href: canViewParametresSection ? parametresHref : null },
+			{ label: 'Support', icon: 'ti-help-circle', href: canViewSupportSection ? supportHref : null },
+			{ label: 'Bientôt', icon: 'ti-hourglass', href: null },
+			{ label: 'Bientôt', icon: 'ti-hourglass', href: null },
+		] %}
+
+		{# 🌌 FOND — celui du panneau Administration étendu à toute la page :
+		   réseau de nœuds + "20" géant en filigrane, le décor qui portait le
+		   concept "20 espaces" habille maintenant l'ensemble de l'écran. #}
+		<span class="pointer-events-none select-none fixed -left-10 -bottom-24 font-heading font-black leading-none text-white/[0.04] text-[26rem] md:text-[32rem] z-0" aria-hidden="true">20</span>
+		<svg class="pointer-events-none fixed inset-0 h-full w-full opacity-[0.25] animate-pulse z-0" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+			<g stroke="#ffffff" stroke-width="1" opacity="0.4">
+				<line x1="90" y1="100" x2="210" y2="60"/><line x1="210" y1="60" x2="340" y2="110"/><line x1="340" y1="110" x2="490" y2="70"/><line x1="490" y1="70" x2="620" y2="130"/>
+				<line x1="90" y1="100" x2="60" y2="260"/><line x1="210" y1="60" x2="230" y2="230"/><line x1="340" y1="110" x2="400" y2="270"/><line x1="490" y1="70" x2="580" y2="280"/><line x1="620" y1="130" x2="700" y2="250"/>
+				<line x1="60" y1="260" x2="230" y2="230"/><line x1="230" y1="230" x2="400" y2="270"/><line x1="400" y1="270" x2="580" y2="280"/><line x1="580" y1="280" x2="700" y2="250"/>
+				<line x1="60" y1="260" x2="110" y2="430"/><line x1="230" y1="230" x2="270" y2="410"/><line x1="400" y1="270" x2="430" y2="440"/><line x1="580" y1="280" x2="600" y2="450"/>
+				<line x1="110" y1="430" x2="270" y2="410"/><line x1="270" y1="410" x2="430" y2="440"/><line x1="430" y1="440" x2="600" y2="450"/>
+				<line x1="110" y1="430" x2="90" y2="600"/><line x1="270" y1="410" x2="240" y2="590"/><line x1="430" y1="440" x2="400" y2="610"/><line x1="600" y1="450" x2="620" y2="620"/>
+				<line x1="90" y1="600" x2="240" y2="590"/><line x1="240" y1="590" x2="400" y2="610"/><line x1="400" y1="610" x2="620" y2="620"/>
+				<line x1="240" y1="590" x2="210" y2="740"/><line x1="400" y1="610" x2="420" y2="750"/>
+			</g>
+			<g fill="#ffffff">
+				<circle cx="90" cy="100" r="3.5"/><circle cx="210" cy="60" r="3.5"/><circle cx="340" cy="110" r="3.5"/><circle cx="490" cy="70" r="3.5"/><circle cx="620" cy="130" r="3.5"/>
+				<circle cx="60" cy="260" r="3.5"/><circle cx="230" cy="230" r="3.5"/><circle cx="400" cy="270" r="3.5"/><circle cx="580" cy="280" r="3.5"/><circle cx="700" cy="250" r="3.5"/>
+				<circle cx="110" cy="430" r="3.5"/><circle cx="270" cy="410" r="3.5"/><circle cx="430" cy="440" r="3.5"/><circle cx="600" cy="450" r="3.5"/>
+				<circle cx="90" cy="600" r="3.5"/><circle cx="240" cy="590" r="3.5"/><circle cx="400" cy="610" r="3.5"/><circle cx="620" cy="620" r="3.5"/>
+				<circle cx="210" cy="740" r="3.5"/><circle cx="420" cy="750" r="3.5"/>
+			</g>
+		</svg>
+
+		{# 🪟 EN-TÊTE FLOTTANT #}
+		<header class="relative z-20 flex items-center justify-between gap-4 px-6 py-4 md:px-10 animate-fade-in">
+			<div class="flex items-center gap-2.5">
+				{% if settings.logoPath %}
+					<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-7 w-7 object-contain">
 				{% endif %}
-
-				<a href="{{ path('member_project_index') }}"
-				   class="group relative flex-1 flex flex-col items-center justify-center gap-6 text-center px-8 pt-24 pb-12 overflow-hidden text-white bg-linear-to-br from-brand-primary to-brand-accent transition-[flex-grow] duration-500 ease-out hover:flex-[1.15]">
-					<div class="pointer-events-none absolute -right-20 -bottom-20 h-96 w-96 rounded-full bg-white/10 blur-3xl animate-pulse" aria-hidden="true"></div>
-
-					<span class="relative flex h-16 w-16 items-center justify-center rounded-2xl text-3xl bg-white text-brand-primary shadow-2xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
-						<i class="ti ti-briefcase" aria-hidden="true"></i>
-					</span>
-					<span class="relative">
-						<span class="flex items-center justify-center gap-2 text-white/60 text-xs font-heading font-bold tracking-[0.3em] uppercase mb-2">
-							<span class="h-px w-6 bg-white/40"></span>02
-						</span>
-						<span class="block font-heading font-extrabold text-4xl md:text-5xl tracking-tight">Espace Projets</span>
-						<span class="block text-sm md:text-base text-white/75 mt-3 max-w-xs mx-auto leading-relaxed">Suivez vos projets et échangez avec l'équipe.</span>
-					</span>
-					<span class="relative inline-flex items-center gap-2 rounded-full bg-white text-brand-primary px-6 py-3 text-sm font-heading font-bold shadow-xl transition-all duration-300 group-hover:gap-3.5 group-hover:shadow-2xl">
-						Accéder à cet espace
-						<i class="ti ti-arrow-right" aria-hidden="true"></i>
-					</span>
-				</a>
-
+				<span class="font-heading font-bold text-sm tracking-tight">{{ settings.siteName }}</span>
 			</div>
-		</div>
+			<div class="flex items-center gap-3 text-right">
+				<span class="hidden sm:block text-sm text-white/70">{{ greeting }}, {{ app.user.fullName ?? app.user.userIdentifier }}</span>
+				{% if app.user.primaryRole is defined and roleLabels[app.user.primaryRole] is defined %}
+					<span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-wide uppercase ring-1 ring-white/15 backdrop-blur-sm">
+						{{ roleLabels[app.user.primaryRole] }}
+					</span>
+				{% endif %}
+			</div>
+		</header>
+
+		{# 🪐 ANNEAU ORBITAL — les 9 premières cartes disposées en cercle autour
+		   du centre, comme des astres. Accessible et existant -> carte active ;
+		   sinon -> désactivée, illustrative, jamais cliquable. #}
+		<main class="relative z-10 flex flex-col items-center px-4 pt-2 pb-16">
+			<p class="text-center text-white/50 text-xs font-heading font-bold tracking-[0.3em] uppercase mb-2">
+				<span class="inline-block h-px w-6 bg-white/30 align-middle mr-2"></span>
+				Administration — 9 sur 20 espaces
+				<span class="inline-block h-px w-6 bg-white/30 align-middle ml-2"></span>
+			</p>
+
+			<div class="orbit-ring my-8">
+				{# Centre : identité, pas un lien — les 9 espaces sont les vraies portes.
+				   Masqué sous md : l'anneau devient une grille en mobile (cf. home.css),
+				   un centre en position absolue s'y superposerait aux cartes. #}
+				<div class="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 text-center">
+					<span class="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl bg-white text-brand-dark shadow-2xl">
+						<i class="ti ti-building" aria-hidden="true"></i>
+					</span>
+					<span class="font-heading font-bold text-sm">Administration</span>
+				</div>
+
+				{% for space in spaces %}
+					<div class="orbit-item" style="--angle: {{ (loop.index0 * 40) - 90 }}deg;">
+						<div class="orbit-card-wrap" style="--counter-angle: {{ 90 - (loop.index0 * 40) }}deg;">
+							{% if space.href %}
+								<a href="{{ space.href }}" class="group flex flex-col items-center gap-2 w-20 md:w-24 text-center">
+									<span class="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl text-2xl bg-white text-brand-primary shadow-xl ring-1 ring-white/40 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
+										<i class="ti {{ space.icon }}" aria-hidden="true"></i>
+									</span>
+									<span class="text-xs md:text-sm font-heading font-semibold text-white">{{ space.label }}</span>
+								</a>
+							{% else %}
+								<div class="flex flex-col items-center gap-2 w-20 md:w-24 text-center cursor-not-allowed" title="{{ space.label == 'Bientôt' ? 'Espace à venir' : 'Non accessible à votre rôle' }}">
+									<span class="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl text-2xl bg-white/5 text-white/30 border border-dashed border-white/15">
+										<i class="ti {{ space.icon }}" aria-hidden="true"></i>
+									</span>
+									<span class="text-xs md:text-sm font-heading font-semibold text-white/30">{{ space.label }}</span>
+								</div>
+							{% endif %}
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+
+			{# 🧳 ESPACE PROJETS — catégoriquement différent des 9 espaces ci-dessus
+			   (une seule destination, pas une porte vers d'autres) : volontairement
+			   hors de l'anneau, traité à part plutôt que noyé comme une 10e carte. #}
+			<a href="{{ path('member_project_index') }}" class="group relative mt-4 flex w-full max-w-md items-center gap-4 rounded-2xl bg-linear-to-r from-brand-primary to-brand-accent px-6 py-4 shadow-2xl transition-transform duration-300 hover:scale-[1.02]">
+				<span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 text-2xl backdrop-blur-sm">
+					<i class="ti ti-briefcase" aria-hidden="true"></i>
+				</span>
+				<span class="flex-1 text-left">
+					<span class="block font-heading font-bold">Espace Projets</span>
+					<span class="block text-xs text-white/75">Suivez vos projets, échangez avec l'équipe</span>
+				</span>
+				<i class="ti ti-arrow-right text-lg transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true"></i>
+			</a>
+		</main>
 	</body>
 </html>
