@@ -83,6 +83,7 @@ security:
 
     # 🔒 Contrôle d'accès par rôle
     access_control:
+        - { path: ^/$, roles: PUBLIC_ACCESS }                # Accueil du portail (HomeController) — vitrine publique avant connexion, ^/admin ci-dessous reste seul gardé
         - { path: ^/admin, roles: ROLE_EDITOR }             # Back-office ouvert dès le rang Éditeur (le détail des actions est géré par les Voters)
         - { path: ^/projects, roles: ROLE_USER }            # Projets accessibles aux utilisateurs connectés
         - { path: ^/mes-devis, roles: ROLE_USER }           # Devis (lecture seule, propriétaire uniquement) accessibles aux utilisateurs connectés
