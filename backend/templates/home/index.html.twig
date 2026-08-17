@@ -40,67 +40,26 @@
 			'ROLE_SUPER_ADMIN': 'Super Administrateur',
 		} %}
 
-		{# 🔒 Mêmes voters qu'_admin.nav.html.twig (source de vérité partagée).
-		   Différence volontaire avec avant : une carte NON accessible ne
-		   disparaît plus, elle reste visible mais désactivée — la consigne
-		   est de montrer l'ensemble des 20 espaces à terme, accessibles ou
-		   non selon le rôle, jamais de faire comme s'ils n'existaient pas. #}
+		{# 🔒 Cette page accueille TOUT LE MONDE (ROLE_USER et plus, admin ou
+		   non) avant le choix d'un espace — elle ne doit donc jamais exposer
+		   que des DOMAINES de premier niveau (mêmes portes que la répartition
+		   /admin vs /projects de l'application), jamais le détail des modules
+		   internes de l'un d'eux. La structure interne de l'administration
+		   (ses ~20 espaces de gestion) est du ressort d'une page à l'intérieur
+		   de /admin, jamais de celle-ci : un client ou un collaborateur qui
+		   ne verra jamais /admin n'a aucune raison de savoir qu'un module
+		   "Finance" ou "Sécurité" y existe, même grisé. #}
 		{% set canViewDashboard = is_granted(constant('App\\Security\\Voter\\DashboardVoter::VIEW')) %}
 
-		{% set canViewFinanceOverview = is_granted(constant('App\\Security\\Voter\\FinanceVoter::VIEW')) %}
-		{% set canViewFinanceProjects = is_granted('ROLE_ADMIN') %}
-		{% set canViewFinancePipeline = is_granted(constant('App\\Security\\Voter\\QuoteVoter::VIEW')) %}
-		{% set canViewFinanceSection = canViewFinanceOverview or canViewFinanceProjects or canViewFinancePipeline %}
-		{% set financeHref = canViewFinanceOverview ? path('admin_finance_index') : (canViewFinanceProjects ? path('admin_project_statistics') : path('admin_request_index')) %}
-
-		{% set canViewProjects = is_granted('ROLE_ADMIN') %}
-		{% set canViewSkills = is_granted('ROLE_EDITOR') %}
-		{% set canViewArticles = is_granted(constant('App\\Security\\Voter\\ArticleVoter::VIEW')) %}
-		{% set canViewContenuSection = canViewProjects or canViewSkills or canViewArticles %}
-		{% set contenuHref = canViewProjects ? path('admin_project_index') : (canViewSkills ? path('admin_skill_index') : path('admin_article_index')) %}
-
-		{% set canViewAdmins = is_granted('ROLE_ADMIN') %}
-		{% set canViewContacts = is_granted(constant('App\\Security\\Voter\\ContactVoter::VIEW')) %}
-		{% set canViewQuoteRequests = is_granted(constant('App\\Security\\Voter\\QuoteVoter::VIEW')) %}
-		{% set canViewUtilisateursSection = canViewAdmins or canViewContacts or canViewQuoteRequests %}
-		{% set utilisateursHref = canViewAdmins ? path('admin_admins_index') : (canViewContacts ? path('admin_contact_index') : path('admin_request_index')) %}
-
-		{% set canViewSecurityLogs = is_granted(constant('App\\Security\\Voter\\SecurityVoter::VIEW_LOGS')) %}
-		{% set canViewSecuritySessions = is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_SESSIONS')) %}
-		{% set canViewSecurity2fa = is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_2FA')) %}
-		{% set canViewSecuriteSection = canViewSecurityLogs or canViewSecuritySessions or canViewSecurity2fa %}
-		{% set securiteHref = canViewSecurityLogs ? path('admin_security_log_index') : (canViewSecuritySessions ? path('admin_security_session_index') : path('admin_security_two_factor_index')) %}
-
-		{% set canViewConfig = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_CONFIG')) %}
-		{% set canViewNotifications = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_NOTIFICATIONS')) %}
-		{% set canViewParametresSection = canViewConfig or canViewNotifications %}
-		{% set parametresHref = canViewConfig ? path('admin_config_index') : path('admin_notification_index') %}
-
-		{% set canViewSupportDocs = is_granted('ROLE_EDITOR') %}
-		{% set canViewSupportTickets = is_granted(constant('App\\Security\\Voter\\SupportTicketVoter::VIEW')) %}
-		{% set canViewSupportSection = canViewSupportDocs or canViewSupportTickets %}
-		{% set supportHref = canViewSupportDocs ? path('admin_support_docs_index') : path('admin_support_ticket_index') %}
-
-		{# Les 9 premières cartes des ~20 espaces de gestion à terme. Les deux
-		   dernières n'ont volontairement pas de route (href null) : rien
-		   n'existe encore derrière, mieux vaut le dire clairement ("Bientôt")
-		   que d'inventer un lien vers une page qui n'existe pas. #}
 		{% set spaces = [
-			{ label: 'Vue globale', icon: 'ti-layout-dashboard', href: canViewDashboard ? path('admin_dashboard_index') : null },
-			{ label: 'Finance', icon: 'ti-report-money', href: canViewFinanceSection ? financeHref : null },
-			{ label: 'Contenu', icon: 'ti-folders', href: canViewContenuSection ? contenuHref : null },
-			{ label: 'Utilisateurs', icon: 'ti-users', href: canViewUtilisateursSection ? utilisateursHref : null },
-			{ label: 'Sécurité', icon: 'ti-shield-lock', href: canViewSecuriteSection ? securiteHref : null },
-			{ label: 'Paramètres', icon: 'ti-settings', href: canViewParametresSection ? parametresHref : null },
-			{ label: 'Support', icon: 'ti-help-circle', href: canViewSupportSection ? supportHref : null },
-			{ label: 'Bientôt', icon: 'ti-hourglass', href: null },
-			{ label: 'Bientôt', icon: 'ti-hourglass', href: null },
+			{ label: 'Administration', icon: 'ti-building', href: canViewDashboard ? path('admin_dashboard_index') : null },
+			{ label: 'Espace Projets', icon: 'ti-briefcase', href: path('member_project_index') },
+			{ label: 'Hébergement', icon: 'ti-server', href: null },
+			{ label: 'Marketing', icon: 'ti-speakerphone', href: null },
 		] %}
 
-		{# 🌌 FOND — celui du panneau Administration étendu à toute la page :
-		   réseau de nœuds + "20" géant en filigrane, le décor qui portait le
-		   concept "20 espaces" habille maintenant l'ensemble de l'écran. #}
-		<span class="pointer-events-none select-none fixed -left-10 -bottom-24 font-heading font-black leading-none text-white/[0.04] text-[26rem] md:text-[32rem] z-0" aria-hidden="true">20</span>
+		{# 🌌 FOND — décor neutre (réseau de nœuds), commun à toute
+		   l'application, jamais spécifique à l'un des espaces qu'elle relie. #}
 		<svg class="pointer-events-none fixed inset-0 h-full w-full opacity-[0.25] animate-pulse z-0" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
 			<g stroke="#ffffff" stroke-width="1" opacity="0.4">
 				<line x1="90" y1="100" x2="210" y2="60"/><line x1="210" y1="60" x2="340" y2="110"/><line x1="340" y1="110" x2="490" y2="70"/><line x1="490" y1="70" x2="620" y2="130"/>
@@ -139,30 +98,20 @@
 			</div>
 		</header>
 
-		{# 🪐 ANNEAU ORBITAL — les 9 premières cartes disposées en cercle autour
-		   du centre, comme des astres. Accessible et existant -> carte active ;
-		   sinon -> désactivée, illustrative, jamais cliquable. #}
+		{# 🪐 ANNEAU ORBITAL — les espaces de premier niveau de l'entreprise,
+		   pas les modules internes de l'un d'eux. Accessible et existant ->
+		   carte active ; sinon -> désactivée, illustrative, jamais cliquable. #}
 		<main class="relative z-10 flex flex-col items-center px-4 pt-2 pb-16">
 			<p class="text-center text-white/50 text-xs font-heading font-bold tracking-[0.3em] uppercase mb-2">
 				<span class="inline-block h-px w-6 bg-white/30 align-middle mr-2"></span>
-				Administration — 9 sur 20 espaces
+				Vos espaces de travail
 				<span class="inline-block h-px w-6 bg-white/30 align-middle ml-2"></span>
 			</p>
 
 			<div class="orbit-ring my-8">
-				{# Centre : identité, pas un lien — les 9 espaces sont les vraies portes.
-				   Masqué sous md : l'anneau devient une grille en mobile (cf. home.css),
-				   un centre en position absolue s'y superposerait aux cartes. #}
-				<div class="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 text-center">
-					<span class="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl bg-white text-brand-dark shadow-2xl">
-						<i class="ti ti-building" aria-hidden="true"></i>
-					</span>
-					<span class="font-heading font-bold text-sm">Administration</span>
-				</div>
-
 				{% for space in spaces %}
-					<div class="orbit-item" style="--angle: {{ (loop.index0 * 40) - 90 }}deg;">
-						<div class="orbit-card-wrap" style="--counter-angle: {{ 90 - (loop.index0 * 40) }}deg;">
+					<div class="orbit-item" style="--angle: {{ (loop.index0 * 90) - 90 }}deg;">
+						<div class="orbit-card-wrap" style="--counter-angle: {{ 90 - (loop.index0 * 90) }}deg;">
 							{% if space.href %}
 								<a href="{{ space.href }}" class="group flex flex-col items-center gap-2 w-20 md:w-24 text-center">
 									<span class="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl text-2xl bg-white text-brand-primary shadow-xl ring-1 ring-white/40 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
@@ -171,7 +120,7 @@
 									<span class="text-xs md:text-sm font-heading font-semibold text-white">{{ space.label }}</span>
 								</a>
 							{% else %}
-								<div class="flex flex-col items-center gap-2 w-20 md:w-24 text-center cursor-not-allowed" title="{{ space.label == 'Bientôt' ? 'Espace à venir' : 'Non accessible à votre rôle' }}">
+								<div class="flex flex-col items-center gap-2 w-20 md:w-24 text-center cursor-not-allowed" title="{{ space.href is null and space.label in ['Hébergement', 'Marketing'] ? 'Espace à venir' : 'Non accessible à votre rôle' }}">
 									<span class="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl text-2xl bg-white/5 text-white/30 border border-dashed border-white/15">
 										<i class="ti {{ space.icon }}" aria-hidden="true"></i>
 									</span>
@@ -182,20 +131,6 @@
 					</div>
 				{% endfor %}
 			</div>
-
-			{# 🧳 ESPACE PROJETS — catégoriquement différent des 9 espaces ci-dessus
-			   (une seule destination, pas une porte vers d'autres) : volontairement
-			   hors de l'anneau, traité à part plutôt que noyé comme une 10e carte. #}
-			<a href="{{ path('member_project_index') }}" class="group relative mt-4 flex w-full max-w-md items-center gap-4 rounded-2xl bg-linear-to-r from-brand-primary to-brand-accent px-6 py-4 shadow-2xl transition-transform duration-300 hover:scale-[1.02]">
-				<span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 text-2xl backdrop-blur-sm">
-					<i class="ti ti-briefcase" aria-hidden="true"></i>
-				</span>
-				<span class="flex-1 text-left">
-					<span class="block font-heading font-bold">Espace Projets</span>
-					<span class="block text-xs text-white/75">Suivez vos projets, échangez avec l'équipe</span>
-				</span>
-				<i class="ti ti-arrow-right text-lg transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true"></i>
-			</a>
 		</main>
 	</body>
 </html>

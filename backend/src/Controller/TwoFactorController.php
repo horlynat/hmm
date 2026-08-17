@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Security\TwoFactor\BackupCodeManager;
 use App\Security\TwoFactor\PendingTotpUser;
+use App\Service\AccountLinkResolver;
 use Doctrine\ORM\EntityManagerInterface;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
@@ -36,12 +37,18 @@ class TwoFactorController extends AbstractController
     /** Codes de récupération en clair, stockés en session le temps d'un seul affichage. */
     private const RECOVERY_CODES_SESSION_KEY = 'two_factor_recovery_codes_once';
 
+    public function __construct(
+        private readonly AccountLinkResolver $accountLinkResolver,
+    ) {
+    }
+
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(): Response
     {
         return $this->render('profile/two_factor/index.html.twig', [
             'user' => $this->getCurrentUser(),
             'mandatory' => $this->isTwoFactorMandatoryForCurrentUser(),
+            'layout' => $this->layout(),
         ]);
     }
 
@@ -118,6 +125,7 @@ class TwoFactorController extends AbstractController
             'qrCodeDataUri' => $qrCode->getDataUri(),
             'error' => $error,
             'mandatory' => $this->isTwoFactorMandatoryForCurrentUser(),
+            'layout' => $this->layout(),
         ]);
     }
 
@@ -173,6 +181,7 @@ class TwoFactorController extends AbstractController
 
         return $this->render('profile/two_factor/disable.html.twig', [
             'error' => $error,
+            'layout' => $this->layout(),
         ]);
     }
 
@@ -201,6 +210,7 @@ class TwoFactorController extends AbstractController
         return $this->render('profile/two_factor/recovery_codes.html.twig', [
             'codes' => $codes,
             'remaining' => $backupCodeManager->countRemaining($user),
+            'layout' => $this->layout(),
         ]);
     }
 
@@ -251,6 +261,19 @@ class TwoFactorController extends AbstractController
     private function isTwoFactorMandatoryForCurrentUser(): bool
     {
         return !$this->isGranted('ROLE_EDITOR');
+    }
+
+    /**
+     * Contrôleur unique et partagé (la logique 2FA ne diffère jamais selon le
+     * rôle), mais le gabarit doit suivre le même partage que les profils
+     * (AdminProfileController / MemberProfileController) : jamais l'aside
+     * admin pour un compte de l'espace membre.
+     */
+    private function layout(): string
+    {
+        return $this->accountLinkResolver->isBackOfficeUser($this->getCurrentUser())
+            ? 'base.html.twig'
+            : 'member/base.html.twig';
     }
 
     private function getCurrentUser(): User
