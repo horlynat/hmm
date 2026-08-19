@@ -7,6 +7,7 @@ use App\Form\UserType;
 use App\Repository\UserRepository;
 use App\Security\Voter\UserVoter;
 use App\Service\AccountWelcomeNotifier;
+use App\Service\AuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
@@ -63,7 +64,7 @@ final class AdminCollaboratorController extends AbstractController
     }
 
     #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
-    public function create(Request $request): Response
+    public function create(Request $request, AuditLogger $auditLogger): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
@@ -78,6 +79,9 @@ final class AdminCollaboratorController extends AbstractController
             $this->handlePassword($user, $form);
 
             $this->entityManager->persist($user);
+            $this->entityManager->flush();
+
+            $auditLogger->log(User::class, $user->getId(), $user->getEmail(), 'created');
             $this->entityManager->flush();
             $this->accountWelcomeNotifier->accountCreated($user, 'collaborateur');
 
@@ -102,7 +106,7 @@ final class AdminCollaboratorController extends AbstractController
     }
 
     #[Route('/{id}/update', name: 'update', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
-    public function update(Request $request, User $user): Response
+    public function update(Request $request, User $user, AuditLogger $auditLogger): Response
     {
         $this->denyAccessUnlessGranted(UserVoter::EDIT, $user);
 
@@ -112,6 +116,7 @@ final class AdminCollaboratorController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $this->handlePassword($user, $form);
             $user->setUpdatedAt(new \DateTimeImmutable());
+            $auditLogger->log(User::class, $user->getId(), $user->getEmail(), 'updated');
             $this->entityManager->flush();
 
             $this->addFlash('success', sprintf('Le compte collaborateur #%d a été mis à jour avec succès.', $user->getId()));
@@ -125,11 +130,12 @@ final class AdminCollaboratorController extends AbstractController
     }
 
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function delete(Request $request, User $user): Response
+    public function delete(Request $request, User $user, AuditLogger $auditLogger): Response
     {
         $this->denyAccessUnlessGranted(UserVoter::DELETE, $user);
 
         if ($this->isCsrfTokenValid('admin_collaborator_delete_' . $user->getId(), $request->request->get('_token'))) {
+            $auditLogger->log(User::class, $user->getId(), $user->getEmail(), 'deleted');
             $this->entityManager->remove($user);
             $this->entityManager->flush();
 

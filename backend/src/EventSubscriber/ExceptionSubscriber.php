@@ -17,8 +17,8 @@ use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
 /**
  * Premier subscriber au niveau HttpKernel de l'application (les autres
- * EventSubscriber existants — AlertNotificationSubscriber, UserRoleSubscriber
- * — sont des event listeners Doctrine ORM, pas kernel.exception).
+ * EventSubscriber existants — ex: AlertNotificationSubscriber — sont des
+ * event listeners Doctrine ORM, pas kernel.exception).
  *
  * Rôle strictement limité à la journalisation (bon canal Monolog) et à la
  * notification admin (ErrorNotifier) pour les erreurs graves. Ne construit

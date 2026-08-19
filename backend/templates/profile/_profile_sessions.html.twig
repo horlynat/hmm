@@ -1,0 +1,57 @@
+{# templates/profile/_profile_sessions.html.twig
+   Partagé entre admin/profile/* et member/profile/* (même principe que
+   _profile_security.html.twig). Attend `mySessions` (liste) et
+   `currentSessionId` en scope — n'apparaît que quand on consulte SON PROPRE
+   profil (cf. MemberProfileController::read() toujours self, et
+   AdminProfileController::read() qui ne peuple mySessions que si
+   user === utilisateur connecté). Révocation via SelfSessionController,
+   ouvert à tout utilisateur authentifié : jamais besoin d'un rôle particulier
+   pour gérer ses propres appareils. #}
+
+{% if mySessions is not null %}
+	<div class="panel mt-4">
+		<div class="panel-header">
+			<h2 class="panel-title flex items-center gap-2">
+				<span class="ti ti-devices" aria-hidden="true"></span>
+				Mes appareils connectés
+			</h2>
+			<p class="text-xs opacity-50 mt-1">Les appareils où votre compte est encore connecté.</p>
+		</div>
+		<div class="panel-body">
+			<div class="divide-y divide-gray-100 dark:divide-gray-700">
+				{% for entry in mySessions %}
+					{% set userSession = entry.session %}
+					<div class="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+						<div class="flex items-center gap-3 min-w-0">
+							<span class="ti {{ entry.device.type == 'Smartphone' or entry.device.type == 'Tablette' ? 'ti-device-mobile' : 'ti-device-desktop' }} text-lg opacity-60 shrink-0" aria-hidden="true"></span>
+							<div class="min-w-0">
+								<p class="text-sm font-medium text-(--brand-dark) truncate">{{ entry.device.label }}</p>
+								<p class="text-xs opacity-50">
+									{{ userSession.ip ?? '—' }} · Ouverte le {{ userSession.createdAt|date('d/m/Y H:i') }}
+								</p>
+							</div>
+						</div>
+						<div class="shrink-0 flex items-center gap-2">
+							{% if userSession.sessionId == currentSessionId %}
+								<twig:Badge variant="info">Cet appareil</twig:Badge>
+							{% else %}
+								{% if entry.state == 'expired' %}
+									<twig:Badge variant="warning">Expirée</twig:Badge>
+								{% endif %}
+								<form method="post" action="{{ path('self_session_revoke', {id: userSession.id}) }}" onsubmit="return confirm('Déconnecter cet appareil ?');">
+									<input type="hidden" name="_token" value="{{ csrf_token('self_session_revoke_' ~ userSession.id) }}">
+									<button type="submit" class="btn btn-ghost btn-sm text-danger gap-1.5">
+										<span class="ti ti-logout" aria-hidden="true"></span>
+										Déconnecter
+									</button>
+								</form>
+							{% endif %}
+						</div>
+					</div>
+				{% else %}
+					<twig:EmptyState text="Aucun autre appareil connecté." icon="ti-devices" />
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+{% endif %}

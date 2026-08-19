@@ -110,6 +110,24 @@ final class AccountStatusSubscriber implements EventSubscriberInterface
             return;
         }
 
+        if ($user->isLocked()) {
+            $event->setController(fn () => new RedirectResponse($this->urlGenerator->generate(
+                $isAdminArea ? 'admin_account_blocked' : 'profile_account_blocked',
+                ['reason' => 'locked'],
+            )));
+
+            return;
+        }
+
+        if ($user->isExpired()) {
+            $event->setController(fn () => new RedirectResponse($this->urlGenerator->generate(
+                $isAdminArea ? 'admin_account_blocked' : 'profile_account_blocked',
+                ['reason' => 'expired'],
+            )));
+
+            return;
+        }
+
         // 2FA obligatoire sur l'espace membre (client/collaborateur) uniquement —
         // le back-office (ROLE_EDITOR+) a sa propre gestion, hors périmètre ici.
         if (!$isAdminArea && !$user->isTotpAuthenticationEnabled()) {

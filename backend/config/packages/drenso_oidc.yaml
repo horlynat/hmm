@@ -1,0 +1,18 @@
+# SSO (OpenID Connect) — optionnel. Tant qu'OIDC_CLIENT_ID est vide (.env),
+# le bouton de connexion SSO reste masqué (cf. SecurityController::login())
+# et ce client n'est jamais réellement sollicité — rien n'est cassé pour la
+# connexion locale existante, qui reste le chemin principal. Compatible tout
+# IdP OIDC standard (testé par le mainteneur avec Keycloak, Microsoft Entra
+# ID, Auth0/Okta, ADFS — cf. vendor/drenso/symfony-oidc-bundle/README.md).
+#
+# ⚠️ OIDC_WELL_KNOWN_URL, lui, ne doit JAMAIS être vide, même désactivé — cf.
+# le commentaire détaillé dans .env à côté de sa déclaration : le
+# constructeur d'OidcClient valide sa SYNTAXE dès l'instanciation du service
+# (pas de requête réseau), et une chaîne vide fait planter tout le firewall
+# "main" en 500 (constaté en direct, cf. historique de ce fichier).
+drenso_oidc:
+    clients:
+        default:
+            well_known_url: '%env(OIDC_WELL_KNOWN_URL)%'
+            client_id: '%env(OIDC_CLIENT_ID)%'
+            client_secret: '%env(OIDC_CLIENT_SECRET)%'

@@ -529,7 +529,12 @@
 										{% if invoice.overdue %} (en retard){% endif %}
 									</td>
 									<td class="p-4 text-right font-extrabold text-brand-dark text-sm whitespace-nowrap">{{ invoice.amount|money(invoice.currency) }}</td>
-									<td class="p-4"><twig:Badge :variant="invoice.status.variant" icon="{{ invoice.status.icon }}">{{ invoice.status.label }}</twig:Badge></td>
+									<td class="p-4">
+										<twig:Badge :variant="invoice.status.variant" icon="{{ invoice.status.icon }}">{{ invoice.status.label }}</twig:Badge>
+										{% if invoice.wasCreatedAndMarkedPaidBySamePerson %}
+											<span class="ti ti-user-exclamation text-warning ml-1" aria-hidden="true" title="Créée et marquée payée par le même compte ({{ invoice.markedPaidBy.email }}) — séparation des tâches non respectée."></span>
+										{% endif %}
+									</td>
 									{% if canManageInvoice %}
 										<td class="p-4 text-center whitespace-nowrap">
 											<a href="{{ path('admin_invoice_edit', {id: project.id, invoiceId: invoice.id}) }}" class="text-(--brand-primary) hover:underline font-semibold text-xs">Modifier</a>

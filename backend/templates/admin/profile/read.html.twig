@@ -17,6 +17,12 @@
 		{% include 'profile/_profile_security.html.twig' %}
 	</div>
 
+	{% if user === app.user and user.hasSuperAdminEntitlement %}
+		<div class="mt-4">
+			{% include 'profile/_profile_elevation.html.twig' %}
+		</div>
+	{% endif %}
+
 	{% if 'ROLE_EDITOR' in user.roles %}
 		<div class="mt-4">
 			{% include 'profile/_profile_collaborator.html.twig' %}
@@ -26,5 +32,7 @@
 	<div class="mt-4">
 		{% include 'profile/_profile_activity.html.twig' %}
 	</div>
+
+	{% include 'profile/_profile_sessions.html.twig' %}
 
 {% endblock %}

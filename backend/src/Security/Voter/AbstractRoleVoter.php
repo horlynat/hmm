@@ -3,6 +3,7 @@
 namespace App\Security\Voter;
 
 use App\Entity\User;
+use App\Service\PermissionRegistry;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
@@ -16,6 +17,13 @@ use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
  * notion de propriétaire, de statut verrouillé, etc.) — pour ce niveau de
  * finesse, un Voter dédié (ex: ProjectVoter, UserVoter) reste préférable.
  *
+ * Le seuil retourné par getRequiredRole() (codé en dur dans chaque sous-
+ * classe) reste la vérité de dernier recours, mais passe d'abord par
+ * PermissionRegistry qui peut le remplacer par une valeur pilotée en base
+ * (cf. son docblock pour les garanties fail-safe et le périmètre exact —
+ * SecurityVoter/SettingsVoter ne sont jamais concernés même en passant par
+ * cette classe commune).
+ *
  * @extends Voter<string, mixed>
  */
 abstract class AbstractRoleVoter extends Voter
@@ -25,6 +33,7 @@ abstract class AbstractRoleVoter extends Voter
     public function __construct(
         private readonly RoleHierarchyInterface $roleHierarchy,
         private readonly LoggerInterface $logger,
+        private readonly PermissionRegistry $permissionRegistry,
     ) {
     }
 
@@ -46,17 +55,20 @@ abstract class AbstractRoleVoter extends Voter
             return false;
         }
 
+        $effectiveRole = $this->permissionRegistry->resolveRole($attribute, $requiredRole);
+
         $user = $token->getUser();
         if (!$user instanceof User) {
             return false;
         }
 
-        $decision = $this->hasRole($user, $requiredRole);
+        $decision = $this->hasRole($user, $effectiveRole);
 
         $this->logger->info(sprintf('%s : décision d\'autorisation évaluée', static::class), [
             'user_id'       => $user->getId(),
             'action'        => $attribute,
-            'required_role' => $requiredRole,
+            'required_role' => $effectiveRole,
+            'coded_default' => $requiredRole,
             'decision'      => $decision ? 'GRANTED' : 'DENIED',
         ]);
 

@@ -37,12 +37,24 @@ class UserSession
     #[Groups(['api_admin'])]
     private ?string $userAgent = null;
 
-    public function __construct(User $user, string $sessionId, ?string $ip = null, ?string $userAgent = null)
+    /**
+     * LoginHistory créée dans la même méthode (LoginListener::onLogin()), au même
+     * instant, avec les mêmes ip/user-agent — permet d'afficher la localisation
+     * déjà résolue par EnrichLoginLocationMessageHandler sans dupliquer l'appel de
+     * géolocalisation ni stocker une seconde fois la même donnée.
+     */
+    #[ORM\ManyToOne(targetEntity: LoginHistory::class)]
+    #[ORM\JoinColumn(name: 'login_history_id', nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['api_admin'])]
+    private ?LoginHistory $loginHistory = null;
+
+    public function __construct(User $user, string $sessionId, ?string $ip = null, ?string $userAgent = null, ?LoginHistory $loginHistory = null)
     {
         $this->user = $user;
         $this->sessionId = $sessionId;
         $this->ip = $ip;
         $this->userAgent = $userAgent;
+        $this->loginHistory = $loginHistory;
     }
 
     public function getId(): ?int
@@ -68,5 +80,10 @@ class UserSession
     public function getUserAgent(): ?string
     {
         return $this->userAgent;
+    }
+
+    public function getLoginHistory(): ?LoginHistory
+    {
+        return $this->loginHistory;
     }
 }

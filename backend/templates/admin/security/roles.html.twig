@@ -3,18 +3,26 @@
 {% block title %}Rôles & Permissions{% endblock %}
 
 {% block body %}
-	<twig:PageHeader title="Rôles & Permissions" subtitle="Hiérarchie des rôles et matrice des permissions appliquées par les Voters." icon="ti-key" />
+	<twig:PageHeader title="Rôles & Permissions" subtitle="Hiérarchie des rôles et matrice des permissions appliquées par les Voters." icon="ti-key">
+		{% if is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_PERMISSIONS')) %}
+			<a href="{{ path('admin_security_permission_index') }}" class="btn btn-secondary gap-2">
+				<span class="ti ti-adjustments-alt" aria-hidden="true"></span> Éditer les permissions dynamiques
+			</a>
+		{% endif %}
+	</twig:PageHeader>
 
 	<div class="panel mb-8">
 		<div class="panel-header"><h2 class="panel-title">Hiérarchie des rôles</h2></div>
 		<div class="panel-body">
 			<div class="flex flex-wrap items-center gap-2">
 				{% for role in roles %}
-					<span class="badge badge-info">{{ role }} <span class="opacity-60">({{ roleCounts[role] }})</span></span>
+					<a href="{{ path('admin_security_role_show', {role: role}) }}" class="badge badge-info hover:opacity-75 transition" title="Voir les comptes {{ role }}">
+						{{ role }} <span class="opacity-60">({{ roleCounts[role] }})</span>
+					</a>
 					{% if not loop.last %}<span class="ti ti-chevron-right text-sm opacity-40" aria-hidden="true"></span>{% endif %}
 				{% endfor %}
 			</div>
-			<p class="text-xs opacity-50 mt-3">Chaque rôle hérite de tous les droits du rôle précédent (cf. <code>security.yaml</code> → <code>role_hierarchy</code>).</p>
+			<p class="text-xs opacity-50 mt-3">Chaque rôle hérite de tous les droits du rôle précédent (cf. <code>security.yaml</code> → <code>role_hierarchy</code>). Cliquer sur un rôle affiche les comptes qui le portent.</p>
 		</div>
 	</div>
 

@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Invoice;
 use App\Entity\Project;
+use App\Entity\User;
 use App\Form\InvoiceType;
 use App\Security\Voter\ProjectVoter;
 use App\Service\AuditLogger;
@@ -30,6 +31,8 @@ final class AdminInvoiceController extends AbstractController
 
         $invoice = new Invoice();
         $invoice->setProject($project);
+        $user = $this->getUser();
+        $invoice->setCreatedBy($user instanceof User ? $user : null);
         $form = $this->createForm(InvoiceType::class, $invoice);
         $form->handleRequest($request);
 
@@ -104,8 +107,20 @@ final class AdminInvoiceController extends AbstractController
         }
 
         if ($this->isCsrfTokenValid('invoice_'.$invoice->getId(), $request->request->get('_token'))) {
+            $currentUser = $this->getUser();
             $invoice->markPaid();
-            $auditLogger->log(Invoice::class, $invoice->getId(), $invoice->getNumber(), 'marked_paid');
+            $invoice->setMarkedPaidBy($currentUser instanceof User ? $currentUser : null);
+
+            // Séparation des tâches : ne bloque jamais (cf. docblock de
+            // Invoice::wasCreatedAndMarkedPaidBySamePerson()), seulement tracé
+            // pour une revue humaine a posteriori — action d'audit distincte,
+            // pas juste 'marked_paid', pour rester repérable dans le journal.
+            $auditLogger->log(
+                Invoice::class,
+                $invoice->getId(),
+                $invoice->getNumber(),
+                $invoice->wasCreatedAndMarkedPaidBySamePerson() ? 'marked_paid_by_creator' : 'marked_paid',
+            );
             $entityManager->flush();
             $projectNotifier->invoicePaid($invoice);
             $this->addFlash('success', 'Facture marquée comme payée. Le client a été notifié par email.');

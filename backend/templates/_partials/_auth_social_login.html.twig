@@ -1,4 +1,7 @@
-{# Paramètre attendu : `separatorLabel` (ex: "Ou continuez avec"). #}
+{# Paramètre attendu : `separatorLabel` (ex: "Ou continuez avec"). Paramètre
+   optionnel `oidcConfigured` (SecurityController::login() uniquement — cf.
+   `is defined` ci-dessous pour rester sans danger sur les pages qui
+   n'exposent pas cette variable, ex: register.html.twig). #}
 {# Google/GitHub ne sont pas encore intégrés côté serveur (pas de bundle OAuth) :
    les boutons sont visuellement désactivés plutôt que des liens morts "#"
    qui laissaient croire à une fonctionnalité active qui ne fait rien. #}
@@ -11,6 +14,13 @@
 			<span class="bg-white px-2 text-gray-500">{{ separatorLabel }}</span>
 		</div>
 	</div>
+
+	{% if oidcConfigured is defined and oidcConfigured %}
+		<a href="{{ path('login_oidc') }}" class="mt-6 flex items-center justify-center gap-2 rounded-full border border-(--brand-primary) bg-brand-light/10 p-3 text-sm font-semibold text-(--brand-primary) hover:bg-brand-light/20 transition">
+			<span class="ti ti-shield-lock text-lg" aria-hidden="true"></span>
+			Connexion via SSO (fournisseur d'identité de l'organisation)
+		</a>
+	{% endif %}
 
 	<div class="mt-6 grid grid-cols-2 gap-4">
 		<!-- Google (bientôt disponible) -->

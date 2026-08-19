@@ -75,11 +75,18 @@ final class ExpenseWorkflow
             ->setApprovedAt(new \DateTimeImmutable());
 
         $project->recalculateSpent();
-        $project->addToHistory('expense_approved', $approver, sprintf(
-            'Dépense approuvée: %s (%s)',
-            $expense->getFormattedAmount(),
-            $expense->getCategory()->getLabel(),
-        ));
+
+        // Séparation des tâches : ne bloque jamais (cf. Invoice::wasCreatedAndMarkedPaidBySamePerson()),
+        // seulement tracé sous une action distincte pour rester repérable dans l'historique/audit.
+        $project->addToHistory(
+            $expense->wasSubmittedAndApprovedBySamePerson() ? 'expense_approved_by_submitter' : 'expense_approved',
+            $approver,
+            sprintf(
+                'Dépense approuvée: %s (%s)',
+                $expense->getFormattedAmount(),
+                $expense->getCategory()->getLabel(),
+            ),
+        );
 
         $this->em->flush();
     }

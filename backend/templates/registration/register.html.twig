@@ -9,7 +9,12 @@
 			{% endblock %}
 		</title>
 
-		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+		{% set settings = systemSettingRepository.getSettings() %}
+		{% if settings.logoPath %}
+			<link rel="icon" href="{{ settings.logoPath }}">
+		{% else %}
+			<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+		{% endif %}
 		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
 		{% include '_partials/_vite_fouc_guard.html.twig' %}
@@ -22,31 +27,30 @@
 			{{ vite_entry_script_tags('register') }}
 		{% endblock %}
 	</head>
-	<body class="h-screen bg-bg-default">
-		<div class="login-container">
-			{% include '_partials/_auth_illustration.html.twig' %}
+	<body>
+		<div class="auth-editorial">
+			{% include '_partials/_auth_hero.html.twig' %}
 
-			<!-- Colonne droite -->
-			<div class="flex items-center justify-center px-0 py-12 lg:px-8">
-				<div class="w-full max-w-md bg-white/80 backdrop-blur-xl shadow-2xl rounded-2xl p-10 border border-white/30">
-					<h1 class="text-center text-3xl font-extrabold tracking-tight text-blue-900 mb-8">
-						🚀 Créer un compte
-					</h1>
+			<div class="auth-form-side">
+			<div class="w-full max-w-sm animate-fade-in">
+				<h1 class="text-2xl font-extrabold tracking-tight text-brand-dark mb-8">
+					Créer un compte
+				</h1>
 
-					<!-- Messages flash -->
-					{% for message in app.flashes('verify_email_error') %}
-						<div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg border border-red-300 text-sm">
-							{{ message }}
-						</div>
-					{% endfor %}
+				<!-- Messages flash -->
+				{% for message in app.flashes('verify_email_error') %}
+					<div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg border border-red-300 text-sm">
+						{{ message }}
+					</div>
+				{% endfor %}
 
-					{% for message in app.flashes('error') %}
-						<div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg border border-red-300 text-sm">
-							{{ message }}
-						</div>
-					{% endfor %}
+				{% for message in app.flashes('error') %}
+					<div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg border border-red-300 text-sm">
+						{{ message }}
+					</div>
+				{% endfor %}
 
-					{{ form_start(registrationForm, {
+				{{ form_start(registrationForm, {
                         'attr': {
                             'id': 'registerForm',
                             'class': 'space-y-6',
@@ -54,10 +58,10 @@
                         }
                     }) }}
 
-					<!-- Champ Email -->
-					<div class="relative">
-						<label for="registrationForm_email" class="label block">E-mail : </label>
-						{{ form_widget(registrationForm.email, {
+				<!-- Champ Email -->
+				<div class="relative">
+					<label for="registrationForm_email" class="label block">E-mail : </label>
+					{{ form_widget(registrationForm.email, {
 							'attr': {
 								'id': 'registrationForm_email',
 								'class': 'input input-email input-primary w-full',
@@ -65,15 +69,15 @@
 								'autocomplete': 'email'
 							}
 						}) }}
-						<p id="emailHelper" class="text-sm mt-1"></p>
-						<!-- ✅ helper -->
-						<p class="text-sm text-red-600 mt-1">{{ form_errors(registrationForm.email) }}</p>
-					</div>
+					<p id="emailHelper" class="text-sm mt-1"></p>
+					<!-- ✅ helper -->
+					<p class="text-sm text-red-600 mt-1">{{ form_errors(registrationForm.email) }}</p>
+				</div>
 
-					<!-- Champ Mot de passe -->
-					<div class="relative">
-						<label for="registrationForm_plainPassword" class="label block">Mot de passe : </label>
-						{{ form_widget(registrationForm.plainPassword, {
+				<!-- Champ Mot de passe -->
+				<div class="relative">
+					<label for="registrationForm_plainPassword" class="label block">Mot de passe : </label>
+					{{ form_widget(registrationForm.plainPassword, {
 							'attr': {
 								'id': 'registrationForm_plainPassword',
 								'class': 'input input-password input-primary w-full',
@@ -81,58 +85,57 @@
 								'autocomplete': 'new-password'
 							}
 						}) }}
-						<p id="passwordHelper" class="text-sm mt-1"></p>
-						<!-- ✅ helper -->
-						<p class="text-sm text-red-600 mt-1">{{ form_errors(registrationForm.plainPassword) }}</p>
+					<p id="passwordHelper" class="text-sm mt-1"></p>
+					<!-- ✅ helper -->
+					<p class="text-sm text-red-600 mt-1">{{ form_errors(registrationForm.plainPassword) }}</p>
 
-						<!-- Barre de force du mot de passe -->
-						<div class="w-full h-2 bg-gray-200 rounded mt-2">
-							<div id="passwordStrength" class="h-2 rounded transition-all duration-300 ease-in-out" style="width: 0%;"></div>
-						</div>
-						<p id="passwordStrengthText" class="text-xs text-gray-500 mt-1">Utilisez au moins 8 caractères avec des lettres et des chiffres</p>
+					<!-- Barre de force du mot de passe -->
+					<div class="w-full h-2 bg-gray-200 rounded mt-2">
+						<div id="passwordStrength" class="h-2 rounded transition-all duration-300 ease-in-out" style="width: 0%;"></div>
 					</div>
+					<p id="passwordStrengthText" class="text-xs text-gray-500 mt-1">Utilisez au moins 8 caractères avec des lettres et des chiffres</p>
+				</div>
 
-					<!-- Champ RGPD -->
-					<div class="flex items-start space-x-2">
-						{{ form_widget(registrationForm.agreeTerms, {
+				<!-- Champ RGPD -->
+				<div class="flex items-start space-x-2">
+					{{ form_widget(registrationForm.agreeTerms, {
 							'attr': {
 								'id': 'registrationForm_agreeTerms',
 								'class': 'input-checkbox mt-1'
 							}
 						}) }}
-						<label for="registrationForm_agreeTerms" class="label text-sm">
-							J'accepte les
-							<a href="#" class="text-blue-900 font-semibold hover:underline">conditions générales</a>
-							et la
-							<a href="#" class="text-blue-900 font-semibold hover:underline">politique de confidentialité</a>
-						</label>
-						<p id="rgpdHelper" class="text-sm mt-1"></p>
-						<!-- ✅ helper -->
-						<p class="text-sm text-red-600 mt-1">{{ form_errors(registrationForm.agreeTerms) }}</p>
-					</div>
-
-
-
-					<!-- CSRF Token -->
-					{{ form_row(registrationForm._token) }}
-
-					<!-- Bouton d'inscription -->
-					<button type="submit" class="btn btn-primary w-full" id="registerSubmit">
-						✅ S'inscrire
-					</button>
-
-					{{ form_end(registrationForm) }}
-
-					{% include '_partials/_auth_social_login.html.twig' with { separatorLabel: 'Ou inscrivez-vous avec' } %}
-
-					<!-- Lien vers la connexion -->
-					<p class="mt-6 text-center text-sm text-gray-500">
-						Déjà un compte ?
-						<a href="{{ path('login') }}" class="font-semibold text-blue-900 hover:underline">Connectez-vous</a>
-					</p>
+					<label for="registrationForm_agreeTerms" class="label text-sm">
+						J'accepte les
+						<a href="#" class="text-brand-primary font-semibold hover:underline">conditions générales</a>
+						et la
+						<a href="#" class="text-brand-primary font-semibold hover:underline">politique de confidentialité</a>
+					</label>
+					<p id="rgpdHelper" class="text-sm mt-1"></p>
+					<!-- ✅ helper -->
+					<p class="text-sm text-red-600 mt-1">{{ form_errors(registrationForm.agreeTerms) }}</p>
 				</div>
+
+
+
+				<!-- CSRF Token -->
+				{{ form_row(registrationForm._token) }}
+
+				<!-- Bouton d'inscription -->
+				<button type="submit" class="btn btn-primary w-full" id="registerSubmit">
+					S'inscrire
+				</button>
+
+				{{ form_end(registrationForm) }}
+
+				{% include '_partials/_auth_social_login.html.twig' with { separatorLabel: 'Ou inscrivez-vous avec' } %}
+
+				<!-- Lien vers la connexion -->
+				<p class="mt-6 text-center text-sm text-gray-500">
+					Déjà un compte ?
+					<a href="{{ path('login') }}" class="font-semibold text-brand-primary hover:underline">Connectez-vous</a>
+				</p>
+			</div>
 			</div>
 		</div>
-
 	</body>
 </html>

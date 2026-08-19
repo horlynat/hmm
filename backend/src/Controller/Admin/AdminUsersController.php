@@ -7,6 +7,7 @@ use App\Form\UserType;
 use App\Repository\UserRepository;
 use App\Security\Voter\UserVoter;
 use App\Service\AccountWelcomeNotifier;
+use App\Service\AuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
@@ -62,7 +63,7 @@ final class AdminUsersController extends AbstractController
      * - Persiste l’utilisateur en base.
      */
     #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
-    public function create(Request $request): Response
+    public function create(Request $request, AuditLogger $auditLogger): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
@@ -74,6 +75,9 @@ final class AdminUsersController extends AbstractController
             $this->handlePassword($user, $form);
 
             $this->entityManager->persist($user);
+            $this->entityManager->flush();
+
+            $auditLogger->log(User::class, $user->getId(), $user->getEmail(), 'created');
             $this->entityManager->flush();
             $this->accountWelcomeNotifier->accountCreated($user, 'client');
 
@@ -117,7 +121,7 @@ final class AdminUsersController extends AbstractController
      * - Met à jour la date de modification.
      */
     #[Route('/{id}/edit', name: 'update', methods: ['GET', 'POST'])]
-    public function update(Request $request, int $id): Response
+    public function update(Request $request, int $id, AuditLogger $auditLogger): Response
     {
         $user = $this->userRepository->find($id);
 
@@ -134,6 +138,7 @@ final class AdminUsersController extends AbstractController
             $this->handlePassword($user, $form);
 
             $user->setUpdatedAt(new \DateTimeImmutable());
+            $auditLogger->log(User::class, $user->getId(), $user->getEmail(), 'updated');
             $this->entityManager->flush();
 
             $this->addFlash('success', sprintf('Utilisateur #%d mis à jour avec succès !', $user->getId()));
@@ -153,7 +158,7 @@ final class AdminUsersController extends AbstractController
      * - Supprime l’utilisateur si valide.
      */
     #[Route('/{id}', name: 'delete', methods: ['POST'])]
-    public function delete(Request $request, int $id): Response
+    public function delete(Request $request, int $id, AuditLogger $auditLogger): Response
     {
         $user = $this->userRepository->find($id);
 
@@ -164,6 +169,7 @@ final class AdminUsersController extends AbstractController
         $this->denyAccessUnlessGranted(UserVoter::DELETE, $user);
 
         if ($this->isCsrfTokenValid('delete'.$user->getId(), $request->request->get('_token'))) {
+            $auditLogger->log(User::class, $user->getId(), $user->getEmail(), 'deleted');
             $this->entityManager->remove($user);
             $this->entityManager->flush();
 

@@ -19,6 +19,24 @@
 					<a href="mailto:contact@horlynat.com?subject=Compte%20d%C3%A9sactiv%C3%A9%20-%20demande%20d%27assistance" class="btn btn-primary inline-flex items-center gap-2">
 						<span class="ti ti-mail text-base" aria-hidden="true"></span>Contacter le support
 					</a>
+				{% elseif reason == 'locked' %}
+					<div class="mx-auto mb-4 w-14 h-14 rounded-full bg-warning/20 flex items-center justify-center">
+						<span class="ti ti-lock text-amber-600 text-3xl" aria-hidden="true"></span>
+					</div>
+					<h1 class="text-xl font-semibold mb-2">Compte temporairement verrouillé</h1>
+					<p class="text-gray-600 mb-6">Trop de tentatives de connexion échouées. Réessayez dans quelques minutes, ou contactez le support si ce n'est pas vous.</p>
+					<a href="mailto:contact@horlynat.com?subject=Compte%20verrouill%C3%A9%20-%20demande%20d%27assistance" class="btn btn-primary inline-flex items-center gap-2">
+						<span class="ti ti-mail text-base" aria-hidden="true"></span>Contacter le support
+					</a>
+				{% elseif reason == 'expired' %}
+					<div class="mx-auto mb-4 w-14 h-14 rounded-full bg-danger/10 flex items-center justify-center">
+						<span class="ti ti-calendar-x text-danger text-3xl" aria-hidden="true"></span>
+					</div>
+					<h1 class="text-xl font-semibold mb-2">Compte expiré</h1>
+					<p class="text-gray-600 mb-6">La durée d'accès de ce compte est arrivée à son terme. Contactez le support pour la prolonger.</p>
+					<a href="mailto:contact@horlynat.com?subject=Compte%20expir%C3%A9%20-%20demande%20d%27assistance" class="btn btn-primary inline-flex items-center gap-2">
+						<span class="ti ti-mail text-base" aria-hidden="true"></span>Contacter le support
+					</a>
 				{% else %}
 					<div class="mx-auto mb-4 w-14 h-14 rounded-full bg-warning/20 flex items-center justify-center">
 						<span class="ti ti-mail-opened text-amber-600 text-3xl" aria-hidden="true"></span>
@@ -45,6 +63,24 @@
 					<h2 class="text-lg font-semibold mb-2">Compte désactivé</h2>
 					<p class="text-gray-600 mb-6">L'accès à votre profil est bloqué. Contactez le support par email pour assurer le suivi de votre demande.</p>
 					<a href="mailto:contact@horlynat.com?subject=Compte%20d%C3%A9sactiv%C3%A9%20-%20demande%20d%27assistance" class="btn btn-primary inline-flex items-center gap-2 mb-3">
+						<span class="ti ti-mail text-base" aria-hidden="true"></span>Contacter le support
+					</a>
+				{% elseif reason == 'locked' %}
+					<div class="mx-auto mb-4 w-14 h-14 rounded-full bg-warning/20 flex items-center justify-center">
+						<span class="ti ti-lock text-amber-600 text-3xl" aria-hidden="true"></span>
+					</div>
+					<h2 class="text-lg font-semibold mb-2">Compte temporairement verrouillé</h2>
+					<p class="text-gray-600 mb-6">Trop de tentatives de connexion échouées. Réessayez dans quelques minutes, ou contactez le support si ce n'est pas vous.</p>
+					<a href="mailto:contact@horlynat.com?subject=Compte%20verrouill%C3%A9%20-%20demande%20d%27assistance" class="btn btn-primary inline-flex items-center gap-2 mb-3">
+						<span class="ti ti-mail text-base" aria-hidden="true"></span>Contacter le support
+					</a>
+				{% elseif reason == 'expired' %}
+					<div class="mx-auto mb-4 w-14 h-14 rounded-full bg-danger/10 flex items-center justify-center">
+						<span class="ti ti-calendar-x text-danger text-3xl" aria-hidden="true"></span>
+					</div>
+					<h2 class="text-lg font-semibold mb-2">Compte expiré</h2>
+					<p class="text-gray-600 mb-6">La durée d'accès de ce compte est arrivée à son terme. Contactez le support pour la prolonger.</p>
+					<a href="mailto:contact@horlynat.com?subject=Compte%20expir%C3%A9%20-%20demande%20d%27assistance" class="btn btn-primary inline-flex items-center gap-2 mb-3">
 						<span class="ti ti-mail text-base" aria-hidden="true"></span>Contacter le support
 					</a>
 				{% else %}

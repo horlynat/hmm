@@ -49,6 +49,9 @@
             "migrations/.gitignore"
         ]
     },
+    "drenso/symfony-oidc-bundle": {
+        "version": "v4.5.0"
+    },
     "friendsofphp/php-cs-fixer": {
         "version": "3.95",
         "recipe": {

@@ -1,0 +1,48 @@
+{# templates/profile/_profile_elevation.html.twig
+   PAM (Privileged Access Management) en libre-service — n'a de sens que sur
+   SON PROPRE profil (PrivilegeElevationController n'agit jamais que sur
+   l'appelant) et seulement pour un compte ayant l'entitlement Super Admin ;
+   les deux conditions sont vérifiées par l'appelant avant include. #}
+<div class="panel border-l-4 {{ user.superAdminElevated ? 'border-warning' : 'border-gray-200' }}">
+	<div class="panel-header">
+		<h2 class="panel-title flex items-center gap-2">
+			<span class="ti ti-key" aria-hidden="true"></span>
+			Mode Super Administrateur
+		</h2>
+	</div>
+	<div class="panel-body space-y-4">
+		{% if user.superAdminElevated %}
+			<div class="flex items-center justify-between">
+				<p class="text-sm text-gray-500">Statut</p>
+				<twig:Badge variant="warning" icon="ti-alert-triangle">
+					Actif jusqu'à {{ user.superAdminElevatedUntil|date('H:i') }}
+				</twig:Badge>
+			</div>
+			<p class="text-xs opacity-60">Les droits Super Administrateur (restauration de sauvegarde, édition des permissions dynamiques, gestion d'un autre Super Admin…) sont actifs pour cette fenêtre seulement. Redevient Administrateur simple automatiquement à l'expiration.</p>
+			<form method="post" action="{{ path('profile_elevation_deactivate') }}">
+				<input type="hidden" name="_token" value="{{ csrf_token('profile_elevation_deactivate') }}">
+				<button type="submit" class="btn btn-secondary btn-sm gap-1.5">
+					<span class="ti ti-lock" aria-hidden="true"></span>
+					Désactiver maintenant
+				</button>
+			</form>
+		{% else %}
+			<div class="flex items-center justify-between">
+				<p class="text-sm text-gray-500">Statut</p>
+				<twig:Badge variant="neutral" icon="ti-lock">Dormant</twig:Badge>
+			</div>
+			<p class="text-xs opacity-60">Ce compte a le droit Super Administrateur mais ne l'exerce pas par défaut (principe du moindre privilège). Ressaisissez votre mot de passe pour l'activer 30 minutes.</p>
+			<form method="post" action="{{ path('profile_elevation_activate') }}" class="flex flex-wrap items-end gap-2">
+				<input type="hidden" name="_token" value="{{ csrf_token('profile_elevation_activate') }}">
+				<div class="flex-1 min-w-[180px]">
+					<label for="elevation-password" class="sr-only">Mot de passe</label>
+					<input id="elevation-password" type="password" name="password" placeholder="Votre mot de passe" autocomplete="current-password" class="input w-full" required>
+				</div>
+				<button type="submit" class="btn btn-primary btn-sm gap-1.5">
+					<span class="ti ti-key" aria-hidden="true"></span>
+					Activer 30 min
+				</button>
+			</form>
+		{% endif %}
+	</div>
+</div>

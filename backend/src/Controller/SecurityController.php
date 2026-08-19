@@ -12,8 +12,10 @@ use App\Service\EmailManager;
 use App\Service\JWTService;
 use App\Service\PublicSubmissionThrottler;
 use Doctrine\ORM\EntityManagerInterface;
+use Drenso\OidcBundle\OidcClientInterface;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,8 +34,11 @@ class SecurityController extends AbstractController
     }
 
     #[Route(path: '/login', name: 'login')]
-    public function login(AuthenticationUtils $authenticationUtils): Response
-    {
+    public function login(
+        AuthenticationUtils $authenticationUtils,
+        #[Autowire(env: 'OIDC_CLIENT_ID')]
+        string $oidcClientId,
+    ): Response {
         // if ($this->getUser()) {
         //     return $this->redirectToRoute('target_path');
         // }
@@ -44,7 +49,26 @@ class SecurityController extends AbstractController
         // last username entered by the user
         $lastUsername = $authenticationUtils->getLastUsername();
 
-        return $this->render('security/login.html.twig', ['last_username' => $lastUsername, 'error' => $error]);
+        return $this->render('security/login.html.twig', [
+            'last_username' => $lastUsername,
+            'error' => $error,
+            // Bouton SSO masqué tant qu'aucun IdP n'est configuré (.env.local) —
+            // cf. drenso_oidc.yaml et App\Security\OidcUserProvider.
+            'oidcConfigured' => '' !== $oidcClientId,
+        ]);
+    }
+
+    /**
+     * Amorce le flux SSO (OIDC) — redirige vers le fournisseur d'identité
+     * configuré. N'apparaît que si un IdP est réellement configuré (bouton
+     * masqué sinon, cf. login() ci-dessus) ; si appelée quand même sans
+     * configuration, generateAuthorizationRedirect() échoue proprement côté
+     * bundle plutôt que de planter silencieusement.
+     */
+    #[Route(path: '/login/oidc', name: 'login_oidc')]
+    public function loginOidc(OidcClientInterface $oidcClient): Response
+    {
+        return $oidcClient->generateAuthorizationRedirect();
     }
 
     #[Route(path: '/logout', name: 'logout')]

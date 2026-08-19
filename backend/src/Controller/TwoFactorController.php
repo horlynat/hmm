@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Security\TwoFactor\BackupCodeManager;
 use App\Security\TwoFactor\PendingTotpUser;
 use App\Service\AccountLinkResolver;
+use App\Service\SecretEncryptor;
 use Doctrine\ORM\EntityManagerInterface;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
@@ -58,6 +59,7 @@ class TwoFactorController extends AbstractController
         TotpAuthenticatorInterface $totpAuthenticator,
         EntityManagerInterface $entityManager,
         BackupCodeManager $backupCodeManager,
+        SecretEncryptor $secretEncryptor,
         #[Autowire(service: 'limiter.two_factor_setup')]
         RateLimiterFactory $twoFactorSetupLimiter,
     ): Response {
@@ -94,7 +96,7 @@ class TwoFactorController extends AbstractController
                 $code = (string) $request->request->get('code', '');
 
                 if ($totpAuthenticator->checkCode($pendingTotpUser, $code)) {
-                    $user->setTotpSecret($secret);
+                    $user->setTotpSecret($secretEncryptor->encrypt($secret));
                     $user->setIsTwoFactorEnabled(true);
                     // Génère les codes de récupération dès l'activation : c'est le
                     // seul moment où ils seront affichés en clair.

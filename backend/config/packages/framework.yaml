@@ -41,6 +41,14 @@ framework:
             policy: fixed_window
             limit: 5
             interval: '1 minute'
+        # Anti-bruteforce de la re-saisie du mot de passe pour l'élévation PAM
+        # temporaire de ROLE_SUPER_ADMIN (App\Controller\PrivilegeElevationController)
+        # — l'appelant est déjà authentifié, mais un mot de passe compromis
+        # sans 2FA active ne doit pas suffire à élever indéfiniment par essais.
+        privilege_elevation:
+            policy: fixed_window
+            limit: 5
+            interval: '1 minute'
         # Anti-bruteforce du code TOTP à la connexion (/2fa_check). Scheb ne
         # limite pas nativement les tentatives ; sans ce garde-fou, un code à
         # 6 chiffres (1 000 000 de combinaisons, fenêtre TOTP ~30-90s) resterait

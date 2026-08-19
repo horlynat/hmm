@@ -232,6 +232,18 @@ class ProjectExpense
     }
 
     /**
+     * Séparation des tâches (SoD) : le même compte a soumis la dépense ET
+     * l'a approuvée. Ne bloque jamais l'action (cf. Invoice::wasCreatedAndMarkedPaidBySamePerson()
+     * et ExpenseWorkflow::approve()) — une petite structure peut n'avoir
+     * qu'un seul opérateur habilité. Seulement tracé, pour une revue humaine
+     * a posteriori.
+     */
+    public function wasSubmittedAndApprovedBySamePerson(): bool
+    {
+        return $this->user === $this->approvedBy;
+    }
+
+    /**
      * Retourne le montant proprement formaté avec le symbole monétaire.
      */
     public function getFormattedAmount(): string

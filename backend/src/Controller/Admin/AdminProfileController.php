@@ -3,11 +3,14 @@
 namespace App\Controller\Admin;
 
 use App\Entity\User;
+use App\Entity\UserSession;
 use App\Form\ProfileType;
 use App\Form\ResetPasswordFormType;
+use App\Repository\UserSessionRepository;
 use App\Security\Voter\UserVoter;
 use App\Service\DeviceParser;
 use App\Service\GeolocationService;
+use App\Service\LiveSessionStateResolver;
 use App\Service\ProfileCompletionService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -39,6 +42,9 @@ class AdminProfileController extends AbstractController
         ProfileCompletionService $completionService,
         GeolocationService $geolocationService,
         DeviceParser $deviceParser,
+        UserSessionRepository $userSessionRepository,
+        LiveSessionStateResolver $liveSessionStateResolver,
+        Request $request,
     ): Response {
         $this->denyAccessUnlessSelfOrGranted(UserVoter::VIEW, $user);
 
@@ -50,12 +56,58 @@ class AdminProfileController extends AbstractController
             $location = $geolocationService->getLocationFromIp($user->getLastIp());
         }
 
+        // "Mes appareils connectés" n'a de sens que sur SON PROPRE profil — un
+        // admin qui consulte la fiche d'un autre administrateur voit déjà le
+        // bouton "Déconnecter partout" (admin/admins/read.html.twig), qui couvre
+        // ce besoin-là sans exposer le détail par appareil d'un tiers ici.
+        $mySessions = null;
+        if ($user === $this->getUser()) {
+            $mySessions = $this->buildMySessions($user, $userSessionRepository, $liveSessionStateResolver, $deviceParser);
+        }
+
         return $this->render('admin/profile/read.html.twig', [
             'user' => $user,
             'completionPercentage' => $completionPercentage,
             'location' => $location,
             'deviceInfo' => $deviceParser->parse($user->getLastDevice()),
+            'mySessions' => $mySessions,
+            'currentSessionId' => $request->getSession()->getId(),
         ]);
+    }
+
+    /**
+     * Même logique que MemberProfileController::buildMySessions() — dupliquée
+     * volontairement (deux petits contrôleurs indépendants plutôt qu'un
+     * service partagé pour ~15 lignes, cf. principe déjà appliqué à
+     * SessionCsvExporter/FinanceCsvExporter dans ce projet).
+     *
+     * @return list<array{session: UserSession, state: string, device: array{type: string, brand: ?string, model: ?string, os: ?string, browser: ?string, label: string, isBot: bool}}>
+     */
+    private function buildMySessions(User $user, UserSessionRepository $userSessionRepository, LiveSessionStateResolver $liveSessionStateResolver, DeviceParser $deviceParser): array
+    {
+        $liveSessions = $liveSessionStateResolver->resolveAll();
+
+        $entries = [];
+        foreach ($userSessionRepository->findByUserOrderedByCreatedAt($user) as $userSession) {
+            $live = $liveSessions[$userSession->getSessionId()] ?? null;
+            $state = match (true) {
+                null === $live => 'ended',
+                $live['active'] => 'active',
+                default => 'expired',
+            };
+
+            if ('ended' === $state) {
+                continue;
+            }
+
+            $entries[] = [
+                'session' => $userSession,
+                'state' => $state,
+                'device' => $deviceParser->parse($userSession->getUserAgent()),
+            ];
+        }
+
+        return array_reverse($entries);
     }
 
     #[Route('/{id}/update', name: 'update', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]

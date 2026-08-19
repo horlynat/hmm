@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 use App\Entity\User;
 use App\Security\TwoFactor\BackupCodeManager;
 use App\Security\TwoFactor\PendingTotpUser;
+use App\Service\SecretEncryptor;
 use Doctrine\ORM\EntityManagerInterface;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
@@ -80,6 +81,7 @@ final class ApiTwoFactorSetupController extends AbstractController
         TotpAuthenticatorInterface $totpAuthenticator,
         EntityManagerInterface $entityManager,
         BackupCodeManager $backupCodeManager,
+        SecretEncryptor $secretEncryptor,
         #[Autowire(service: 'limiter.two_factor_setup')]
         RateLimiterFactory $twoFactorSetupLimiter,
     ): JsonResponse {
@@ -113,7 +115,7 @@ final class ApiTwoFactorSetupController extends AbstractController
             return $this->json(['detail' => "Code invalide. Vérifiez l'heure de votre appareil et réessayez."], Response::HTTP_UNAUTHORIZED);
         }
 
-        $user->setTotpSecret($secret);
+        $user->setTotpSecret($secretEncryptor->encrypt($secret));
         $user->setIsTwoFactorEnabled(true);
         // Générés dès l'activation : c'est le seul moment où ils seront
         // renvoyés en clair — comme côté web, aucune procédure ne les
