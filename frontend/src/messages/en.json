@@ -817,9 +817,10 @@
   },
   "aiAssistant": {
     "title": "Horlynat's assistant",
-    "sub": "Online",
+    "sub": "Replies in seconds",
+    "startersLabel": "Quick start",
     "greeting": "Hello, I'm Horlynat's AI assistant. I can introduce his profile, skills, projects, view of the craft, or qualify your project request. What would you like to know?",
-    "placeholder": "Ask your question...",
+    "placeholder": "Type your question…",
     "send": "Send",
     "close": "Close the assistant",
     "chipPresentation": "Who is Horlynat?",
