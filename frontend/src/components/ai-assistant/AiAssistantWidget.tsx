@@ -248,73 +248,84 @@ export function AiAssistantWidget({ settings, entries }: AiAssistantWidgetProps)
           )}
         </div>
 
-        {chipsToShow.length > 0 && (
-          <div className="px-5 pb-4">
-            {chipsAreStarters && (
-              <p className="mb-2 font-mono text-[0.65rem] uppercase tracking-wide" style={{ color: "var(--assistant-text-dim)" }}>
-                {t("startersLabel")}
-              </p>
-            )}
-            <div className="flex flex-wrap gap-2">
-              {suggestions === null
-                ? (typed ? matchingEntries : starterEntries).map((entry) => (
-                    <button
-                      key={entry.id}
-                      type="button"
-                      onClick={() => askChip(entry)}
-                      className="rounded-full px-3 py-2 font-mono text-[0.7rem] font-medium transition-colors"
-                      style={{ border: "1px solid var(--assistant-border)", color: "var(--assistant-accent)" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--assistant-accent-soft)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >
-                      {entry.chipLabel}
-                    </button>
-                  ))
-                : suggestions.map((suggestion, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      disabled={pending}
-                      onClick={() => askSuggestion(suggestion)}
-                      className="rounded-full px-3 py-2 font-mono text-[0.7rem] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                      style={{ border: "1px solid var(--assistant-border)", color: "var(--assistant-accent)" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--assistant-accent-soft)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
+        <div className="relative">
+          {chipsToShow.length > 0 && (
+            <div className="assistant-chip-popup pointer-events-none absolute inset-x-4 bottom-full z-10 mb-3 flex justify-center">
+              <div
+                className="pointer-events-auto max-h-40 w-full overflow-y-auto rounded-2xl p-3"
+                style={{
+                  background: "var(--assistant-bg)",
+                  border: "1px solid var(--assistant-border)",
+                  boxShadow: "0 12px 28px -8px var(--assistant-shadow)",
+                }}
+              >
+                {chipsAreStarters && (
+                  <p className="mb-2 font-mono text-[0.65rem] uppercase tracking-wide" style={{ color: "var(--assistant-text-dim)" }}>
+                    {t("startersLabel")}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {suggestions === null
+                    ? (typed ? matchingEntries : starterEntries).map((entry) => (
+                        <button
+                          key={entry.id}
+                          type="button"
+                          onClick={() => askChip(entry)}
+                          className="rounded-full px-3 py-2 font-mono text-[0.7rem] font-medium transition-colors"
+                          style={{ border: "1px solid var(--assistant-border)", color: "var(--assistant-accent)" }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--assistant-accent-soft)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                        >
+                          {entry.chipLabel}
+                        </button>
+                      ))
+                    : suggestions.map((suggestion, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          disabled={pending}
+                          onClick={() => askSuggestion(suggestion)}
+                          className="rounded-full px-3 py-2 font-mono text-[0.7rem] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                          style={{ border: "1px solid var(--assistant-border)", color: "var(--assistant-accent)" }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--assistant-accent-soft)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="p-4" style={{ borderTop: "1px solid var(--assistant-border)" }}>
-          <div
-            className="flex items-center gap-2 rounded-full py-2 pl-5 pr-2"
-            style={{ background: "var(--assistant-surface)", border: "1px solid var(--assistant-border)" }}
-          >
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") send();
-              }}
-              type="text"
-              placeholder={t("placeholder")}
-              disabled={pending}
-              className="min-w-0 flex-1 bg-transparent text-[0.92rem] outline-none placeholder:opacity-50 disabled:cursor-not-allowed"
-              style={{ color: "var(--assistant-text)" }}
-            />
-            <button
-              type="button"
-              onClick={send}
-              disabled={pending || !input.trim()}
-              aria-label={t("send")}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-opacity disabled:opacity-40"
-              style={{ background: "var(--assistant-accent)" }}
+          <div className="p-4" style={{ borderTop: "1px solid var(--assistant-border)" }}>
+            <div
+              className="flex items-center gap-2 rounded-full py-2 pl-5 pr-2"
+              style={{ background: "var(--assistant-surface)", border: "1px solid var(--assistant-border)" }}
             >
-              <Send className="h-4 w-4 text-white" strokeWidth={2.25} />
-            </button>
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") send();
+                }}
+                type="text"
+                placeholder={t("placeholder")}
+                disabled={pending}
+                className="min-w-0 flex-1 bg-transparent text-[0.92rem] outline-none placeholder:opacity-50 disabled:cursor-not-allowed"
+                style={{ color: "var(--assistant-text)" }}
+              />
+              <button
+                type="button"
+                onClick={send}
+                disabled={pending || !input.trim()}
+                aria-label={t("send")}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-opacity disabled:opacity-40"
+                style={{ background: "var(--assistant-accent)" }}
+              >
+                <Send className="h-4 w-4 text-white" strokeWidth={2.25} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
