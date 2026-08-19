@@ -117,6 +117,10 @@ services:
       - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-sonnet-5}
       - CLAUDE_MODEL_FALLBACK=${CLAUDE_MODEL_FALLBACK:-claude-haiku-4-5-20251001}
       - ASSISTANT_MONTHLY_BUDGET_USD=${ASSISTANT_MONTHLY_BUDGET_USD:-20}
+      # Seuil intermédiaire : alerte email informative, le chat reste actif
+      # (cf. App\Service\AiAssistantBudgetGuard::maybeWarn — seul le plafond
+      # ci-dessus coupe réellement le chat).
+      - ASSISTANT_BUDGET_ALERT_THRESHOLD_USD=${ASSISTANT_BUDGET_ALERT_THRESHOLD_USD:-0}
     secrets:
       - app_secret
       - jwt_passphrase
