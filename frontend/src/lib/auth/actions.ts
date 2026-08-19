@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { API_URL } from "./config";
 import {
   clearSessionCookie,
@@ -31,6 +32,29 @@ import type {
  */
 const ACCOUNT_NOT_VERIFIED_MESSAGE = "Votre compte n'est pas encore vérifié. Consultez vos emails pour l'activer.";
 
+/**
+ * IP + User-Agent du vrai visiteur, à transmettre explicitement aux appels
+ * backend liés à la connexion (login_check, 2fa). Sans ça, le backend ne
+ * voit que la requête serveur-à-serveur émise par CE conteneur Next.js
+ * (172.18.0.x) : LoginHistory/UserSession enregistraient donc son IP interne
+ * (jamais géolocalisable) et son User-Agent par défaut — que
+ * matomo/device-detector classe comme "Robot (Generic Bot)" côté admin,
+ * laissant croire à tort qu'un bot s'était connecté à la place du client.
+ * SYMFONY_TRUSTED_PROXIES couvre déjà le réseau Docker interne (cf.
+ * main/infra/README.md) : le backend fait confiance à ces en-têtes venant de
+ * ce conteneur. Même pattern que app/api/ai-assistant/chat/route.ts.
+ */
+async function forwardedVisitorHeaders(): Promise<Record<string, string>> {
+  const h = await headers();
+  const forwardedFor = h.get("x-forwarded-for") ?? h.get("x-real-ip") ?? "";
+  const userAgent = h.get("user-agent") ?? "";
+
+  return {
+    ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
+    ...(userAgent ? { "User-Agent": userAgent } : {}),
+  };
+}
+
 export type LoginResult =
   | { ok: true; requiresTwoFactor: false }
   | { ok: true; requiresTwoFactor: true; challengeToken: string }
@@ -57,6 +81,7 @@ export async function login(
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        ...(await forwardedVisitorHeaders()),
       },
       body: JSON.stringify({ email, password }),
       cache: "no-store",
@@ -119,6 +144,7 @@ export async function verifyLoginTwoFactor(
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        ...(await forwardedVisitorHeaders()),
       },
       body: JSON.stringify({ challengeToken, code }),
       cache: "no-store",

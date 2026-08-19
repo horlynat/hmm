@@ -6,7 +6,31 @@
  * ou une ressource momentanément non exposée publiquement.
  */
 
+import { headers } from "next/headers";
+
 const API_URL = process.env.API_URL ?? "http://127.0.0.1:8000/api";
+
+/**
+ * IP + User-Agent du vrai visiteur, à transmettre aux POST backend émis par
+ * ce client (inscription, contact, devis, témoignages...). Sans ça, le
+ * backend ne voit que la requête serveur-à-serveur de CE conteneur Next.js —
+ * les rate limiters IP (registration_attempt, public_form_submission) et les
+ * journaux deviennent aveugles à la vraie origine. SYMFONY_TRUSTED_PROXIES
+ * couvre déjà le réseau Docker interne (cf. main/infra/README.md). Même
+ * pattern que src/lib/auth/actions.ts et app/api/ai-assistant/chat/route.ts.
+ * Toujours appelé depuis une Server Action / route handler (jamais un
+ * contexte statique/ISR) : `headers()` y est valide.
+ */
+async function forwardedVisitorHeaders(): Promise<Record<string, string>> {
+  const h = await headers();
+  const forwardedFor = h.get("x-forwarded-for") ?? h.get("x-real-ip") ?? "";
+  const userAgent = h.get("user-agent") ?? "";
+
+  return {
+    ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
+    ...(userAgent ? { "User-Agent": userAgent } : {}),
+  };
+}
 
 /**
  * Délai maximal d'un appel API. Sans lui, un backend lent ou injoignable
@@ -115,6 +139,7 @@ export async function apiPost<T extends object>(
         "Content-Type": "application/ld+json",
         Accept: "application/ld+json",
         ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+        ...(await forwardedVisitorHeaders()),
       },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(API_TIMEOUT_MS),
@@ -154,6 +179,7 @@ export async function apiPostWithData<T>(
         "Content-Type": "application/ld+json",
         Accept: "application/ld+json",
         ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+        ...(await forwardedVisitorHeaders()),
       },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(options.timeoutMs ?? API_TIMEOUT_MS),
