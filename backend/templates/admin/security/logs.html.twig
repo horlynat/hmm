@@ -27,6 +27,14 @@
 					{% if purgeableTotal > 0 %}<span class="badge bg-warning text-white">{{ purgeableTotal }}</span>{% endif %}
 				</button>
 			</form>
+			{% set grandTotal = totalLoginsCount + totalFailedCount %}
+			<form method="post" action="{{ path('admin_security_log_purge_all') }}" onsubmit="return confirm('Supprimer DÉFINITIVEMENT tout le journal : {{ totalLoginsCount }} connexion(s) réussie(s) et {{ totalFailedCount }} tentative(s) échouée(s), y compris les plus récentes (aucune condition de rétention) ? Cette action est irréversible.');">
+				<input type="hidden" name="_token" value="{{ csrf_token('admin_security_log_purge_all') }}">
+				<button type="submit" class="btn btn-danger gap-2" {{ grandTotal == 0 ? 'disabled' : '' }} title="{{ grandTotal > 0 ? ('Supprimer les ' ~ grandTotal ~ ' log(s), sans condition de rétention') : 'Le journal est déjà vide' }}">
+					<span class="ti ti-trash" aria-hidden="true"></span> Tout supprimer
+					{% if grandTotal > 0 %}<span class="badge bg-danger text-white">{{ grandTotal }}</span>{% endif %}
+				</button>
+			</form>
 		{% endif %}
 	</twig:PageHeader>
 

@@ -162,4 +162,23 @@ class FailedLoginAttemptRepository extends ServiceEntityRepository
             ->getQuery()
             ->execute();
     }
+
+    public function countAll(): int
+    {
+        return (int) $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Purge totale, sans condition de rétention — cf. LoginHistoryRepository::deleteAll().
+     */
+    public function deleteAll(): int
+    {
+        return $this->createQueryBuilder('f')
+            ->delete()
+            ->getQuery()
+            ->execute();
+    }
 }

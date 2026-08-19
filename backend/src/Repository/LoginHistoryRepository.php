@@ -108,4 +108,26 @@ class LoginHistoryRepository extends ServiceEntityRepository
             ->getQuery()
             ->execute();
     }
+
+    public function countAll(): int
+    {
+        return (int) $this->createQueryBuilder('l')
+            ->select('COUNT(l.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Purge totale, sans condition de rétention — distincte de deleteOlderThan()
+     * (nettoyage volumétrie/RGPD standard) : ici un admin vide délibérément
+     * tout le journal, y compris les entrées récentes (ex: environnement de
+     * dev/démo). Bulk DELETE (DQL), pas de flush requis côté appelant.
+     */
+    public function deleteAll(): int
+    {
+        return $this->createQueryBuilder('l')
+            ->delete()
+            ->getQuery()
+            ->execute();
+    }
 }

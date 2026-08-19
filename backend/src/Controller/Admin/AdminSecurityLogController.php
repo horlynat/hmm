@@ -126,6 +126,8 @@ class AdminSecurityLogController extends AbstractController
             'purgeableFailedCount' => $failedLoginAttemptRepository->countOlderThan($failedRetentionThreshold),
             'loginRetentionDays' => SecurityLogRetentionPolicy::LOGIN_HISTORY_RETENTION_DAYS,
             'failedRetentionDays' => SecurityLogRetentionPolicy::FAILED_ATTEMPT_RETENTION_DAYS,
+            'totalLoginsCount' => $loginHistoryRepository->countAll(),
+            'totalFailedCount' => $failedLoginAttemptRepository->countAll(),
         ]);
     }
 
@@ -286,6 +288,46 @@ class AdminSecurityLogController extends AbstractController
         $this->addFlash('success', $total > 0
             ? sprintf('%d connexion(s) réussie(s) et %d tentative(s) échouée(s) purgées (au-delà de la durée de rétention).', $deletedLogins, $deletedFailed)
             : 'Rien à purger : aucun log au-delà de la durée de rétention.');
+
+        return $this->redirectToRoute('admin_security_log_index');
+    }
+
+    /**
+     * Purge totale immédiate — supprime TOUT le journal, y compris les
+     * entrées récentes, sans condition de rétention (contrairement à purge()
+     * ci-dessus). Utile pour vider un environnement de dev/démo ; en prod,
+     * préférer purge() sauf besoin explicite. Mêmes garde-fous (CSRF, audit)
+     * qu'une suppression partielle — supprimer le journal de sécurité
+     * lui-même doit toujours laisser une trace.
+     */
+    #[Route('/purge-all', name: 'purge_all', methods: ['POST'])]
+    public function purgeAll(Request $request, LoginHistoryRepository $loginHistoryRepository, FailedLoginAttemptRepository $failedLoginAttemptRepository, AuditLogger $auditLogger, EntityManagerInterface $entityManager): Response
+    {
+        $this->denyAccessUnlessGranted(SecurityVoter::MANAGE_LOGS);
+
+        if (!$this->isCsrfTokenValid('admin_security_log_purge_all', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide. Action annulée.');
+
+            return $this->redirectToRoute('admin_security_log_index');
+        }
+
+        $deletedLogins = $loginHistoryRepository->deleteAll();
+        $deletedFailed = $failedLoginAttemptRepository->deleteAll();
+        $total = $deletedLogins + $deletedFailed;
+
+        if ($deletedLogins > 0) {
+            $auditLogger->log(LoginHistory::class, 0, sprintf('%d ligne(s)', $deletedLogins), 'security_log_purged_all', sprintf('Purge totale : %d connexion(s) réussie(s) supprimée(s) (sans condition de rétention).', $deletedLogins));
+        }
+        if ($deletedFailed > 0) {
+            $auditLogger->log(FailedLoginAttempt::class, 0, sprintf('%d ligne(s)', $deletedFailed), 'security_log_purged_all', sprintf('Purge totale : %d tentative(s) échouée(s) supprimée(s) (sans condition de rétention).', $deletedFailed));
+        }
+        if ($total > 0) {
+            $entityManager->flush();
+        }
+
+        $this->addFlash('success', $total > 0
+            ? sprintf('Purge totale : %d connexion(s) réussie(s) et %d tentative(s) échouée(s) supprimées.', $deletedLogins, $deletedFailed)
+            : 'Rien à purger : le journal est déjà vide.');
 
         return $this->redirectToRoute('admin_security_log_index');
     }
