@@ -2,7 +2,9 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\PermissionDefinition;
 use App\Entity\User;
+use App\Repository\PermissionDefinitionRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\SecurityVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -31,14 +33,19 @@ class AdminSecurityRoleController extends AbstractController
     private const ROLES = ['USER', 'EDITOR', 'MODERATOR', 'MANAGER', 'ADMIN', 'SUPER_ADMIN'];
 
     #[Route('/', name: 'index', methods: ['GET'])]
-    public function index(UserRepository $userRepository): Response
+    public function index(UserRepository $userRepository, PermissionDefinitionRepository $permissionDefinitionRepository): Response
     {
         $this->denyAccessUnlessGranted(SecurityVoter::VIEW_ROLES);
 
+        $allUsers = $userRepository->findAll();
+
         return $this->render('admin/security/roles.html.twig', [
             'roles' => self::ROLES,
-            'permissionGroups' => $this->getPermissionMatrix(),
-            'roleCounts' => $this->countUsersByRole($userRepository->findAll()),
+            'permissionGroups' => $this->getDynamicPermissionMatrix($permissionDefinitionRepository),
+            'fixedPermissionGroups' => $this->getFixedPermissionMatrix(),
+            'contextualRules' => $this->getContextualRules(),
+            'roleCounts' => $this->countUsersByRole($allUsers),
+            'privilegedUsers' => $this->getPrivilegedUsers($allUsers),
         ]);
     }
 
@@ -92,59 +99,111 @@ class AdminSecurityRoleController extends AbstractController
     }
 
     /**
-     * @return array<string, array<string, int>> Groupe => [permission => index minimum dans self::ROLES]
+     * Catalogue dynamique (Articles, Contacts, Formations, Tableau de bord,
+     * Finance, Devis, Compétences, Support, Témoignages) — lu en direct
+     * depuis PermissionDefinition/Role (cf. PermissionRegistry), jamais
+     * recopié à la main : source unique avec la page d'édition
+     * (/admin/security/permissions/), qui consulte les mêmes lignes.
+     *
+     * @return array<string, array<string, int>> Groupe => [code => rang minimum (Role::rank, 0-5)]
      */
-    private function getPermissionMatrix(): array
+    private function getDynamicPermissionMatrix(PermissionDefinitionRepository $repository): array
+    {
+        $matrix = [];
+        foreach ($repository->findAllOrdered() as $definition) {
+            /** @var PermissionDefinition $definition */
+            $matrix[$definition->getCategory()][$definition->getCode()] = $definition->getCurrentRole()->getRank();
+        }
+
+        return $matrix;
+    }
+
+    /**
+     * Sécurité et Paramètres : seuils codés en dur dans les Voters
+     * eux-mêmes (SecurityVoter/SettingsVoter), jamais consultables via
+     * PermissionRegistry — cf. PermissionRegistry::NON_OVERRIDABLE_PREFIXES.
+     * Recopiés ici pour affichage uniquement ; en cas de désaccord, le code
+     * du Voter fait foi. À tenir synchronisé si un Voter change.
+     *
+     * @return array<string, array<string, int>> Groupe => [code => rang minimum]
+     */
+    private function getFixedPermissionMatrix(): array
     {
         return [
-            'Projets' => [
-                'PROJECT_VIEW' => 0,
-                'PROJECT_EDIT' => 1,
-                'PROJECT_DELETE' => 3,
-                'PROJECT_MANAGE_BUDGET' => 3,
-                'PROJECT_CHANGE_STATUS' => 1,
-            ],
-            'Articles' => [
-                'ARTICLE_VIEW' => 0,
-                'ARTICLE_CREATE' => 1,
-                'ARTICLE_EDIT' => 1,
-                'ARTICLE_DELETE' => 2,
-                'ARTICLE_PUBLISH' => 2,
-            ],
-            'Utilisateurs' => [
-                'USER_VIEW' => 2,
-                'USER_EDIT' => 3,
-                'USER_DELETE' => 4,
-                'USER_BAN' => 2,
-                'USER_IMPERSONATE' => 5,
-                'USER_CHANGE_ROLE' => 4,
-            ],
-            'Contacts' => [
-                'CONTACT_VIEW' => 2,
-                'CONTACT_REPLY' => 2,
-                'CONTACT_DELETE' => 3,
-            ],
-            'Devis' => [
-                'QUOTE_VIEW' => 3,
-                'QUOTE_APPROVE' => 3,
-                'QUOTE_CONVERT' => 4,
-            ],
-            'Témoignages' => [
-                'TESTIMONIAL_APPROVE' => 2,
-                'TESTIMONIAL_FEATURE' => 3,
-            ],
             'Sécurité' => [
                 'SECURITY_VIEW_LOGS' => 4,
+                'SECURITY_MANAGE_2FA' => 4,
                 'SECURITY_FORCE_LOGOUT' => 4,
                 'SECURITY_MANAGE_SESSIONS' => 4,
-                'SECURITY_MANAGE_2FA' => 4,
+                'SECURITY_VIEW_ROLES' => 4,
                 'SECURITY_VIEW_POLICIES' => 4,
+                'SECURITY_VIEW_AUDIT' => 4,
                 'SECURITY_MANAGE_IP_BLOCKS' => 4,
                 'SECURITY_MANAGE_LOGS' => 4,
-                'SECURITY_VIEW_AUDIT' => 4,
-                'DASHBOARD_EXPORT' => 3,
+                'SECURITY_MANAGE_PERMISSIONS' => 5,
+            ],
+            'Paramètres' => [
+                'SETTINGS_VIEW_CONFIG' => 4,
+                'SETTINGS_MANAGE_CONFIG' => 4,
+                'SETTINGS_VIEW_NOTIFICATIONS' => 4,
+                'SETTINGS_MANAGE_NOTIFICATIONS' => 4,
+                'SETTINGS_VIEW_INTEGRATIONS' => 4,
+                'SETTINGS_MANAGE_INTEGRATIONS' => 4,
+                'SETTINGS_VIEW_BACKUPS' => 4,
+                'SETTINGS_CREATE_BACKUP' => 4,
+                'SETTINGS_DOWNLOAD_BACKUP' => 4,
+                'SETTINGS_DELETE_BACKUP' => 5,
+                'SETTINGS_RESTORE_BACKUP' => 5,
             ],
         ];
+    }
+
+    /**
+     * Project/User (ABAC) : pas un simple seuil de rôle, donc pas de grille
+     * de cases (trompeur — cf. docblocks de ProjectVoter/UserVoter pour le
+     * détail complet). Résumé en langage clair pour compléter la matrice.
+     *
+     * @return array<string, string> Groupe => résumé de la règle contextuelle
+     */
+    private function getContextualRules(): array
+    {
+        return [
+            'Projets' => "Un rôle seul ne suffit pas : les actions de gestion (approuver une dépense, gérer une facture) exigent d'être Admin ET affecté au projet. Certaines actions sont bloquées si le projet est terminé ou suspendu, quel que soit le rôle.",
+            'Utilisateurs' => "Auto-suppression toujours bloquée, quel que soit le rôle. Un compte Super Admin ne peut être modifié/supprimé que par un acteur actuellement élevé (élévation temporaire, cf. PAM) — un Super Admin \"au repos\" est protégé comme un Admin normal.",
+        ];
+    }
+
+    /**
+     * Comptes à privilèges élevés (rôle principal au-dessus de USER, mais en
+     * dessous de SUPER_ADMIN) — liste de revue rapide, style "qui a plus que
+     * le strict nécessaire ?" (cf. revue périodique des accès). Les Super
+     * Admins sont volontairement exclus : ils passent par le PAM (élévation
+     * temporaire tracée, cf. PrivilegeElevationController), pas par cette
+     * liste de vigilance sur le personnel "en dessous".
+     *
+     * @param User[] $allUsers
+     *
+     * @return array<int, array{user: User, role: string, readRoute: string}>
+     */
+    private function getPrivilegedUsers(array $allUsers): array
+    {
+        $privileged = array_values(array_filter(
+            $allUsers,
+            static fn (User $user): bool => !\in_array($user->getPrimaryRole(), ['ROLE_USER', 'ROLE_SUPER_ADMIN'], true),
+        ));
+
+        usort($privileged, function (User $a, User $b): int {
+            $rankA = array_search(str_replace('ROLE_', '', $a->getPrimaryRole()), self::ROLES, true);
+            $rankB = array_search(str_replace('ROLE_', '', $b->getPrimaryRole()), self::ROLES, true);
+
+            return $rankB <=> $rankA ?: strcasecmp($a->getFullName() ?? $a->getEmail(), $b->getFullName() ?? $b->getEmail());
+        });
+
+        return array_map(fn (User $user) => [
+            'user' => $user,
+            'role' => str_replace('ROLE_', '', $user->getPrimaryRole()),
+            'readRoute' => $this->accountRouteFor($user, 'read'),
+        ], $privileged);
     }
 
     /**

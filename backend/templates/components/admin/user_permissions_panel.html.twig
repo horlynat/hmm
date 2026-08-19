@@ -1,0 +1,43 @@
+{# templates/components/admin/user_permissions_panel.html.twig
+   Carte « Permissions de ce compte » — cf. src/Twig/Components/Admin/UserPermissionsPanel.php
+   pour le calcul (source unique avec /admin/security/permissions/). #}
+<div class="card space-y-4" {{ attributes }}>
+	<div class="flex items-center justify-between border-b border-gray-100 pb-2">
+		<h3 class="text-xs font-bold uppercase tracking-wider opacity-40">
+			Permissions de ce compte
+		</h3>
+		<a href="{{ path('admin_security_role_show', {role: this.primaryRole|replace({'ROLE_': ''})}) }}" class="text-xs text-brand-primary hover:underline whitespace-nowrap">
+			Voir le rôle
+		</a>
+	</div>
+
+	<p class="text-sm">
+		Rôle effectif : <span class="badge bg-brand-light text-brand-primary">{{ this.primaryRole|replace({'ROLE_': ''}) }}</span>
+	</p>
+
+	{% set granted = this.grantedPermissions %}
+	{% if granted is empty %}
+		<p class="text-sm opacity-60">Aucune permission du catalogue dynamique à ce niveau de rôle.</p>
+	{% else %}
+		<div class="space-y-3">
+			{% for group, permissions in granted %}
+				<div>
+					<p class="text-xs font-bold opacity-60 uppercase mb-1">{{ group }}</p>
+					<div class="flex flex-wrap gap-1">
+						{% for permission in permissions %}
+							<span class="badge bg-gray-100 text-gray-700 font-mono text-[0.65rem]" title="{{ permission.label }}">{{ permission.code }}</span>
+						{% endfor %}
+					</div>
+				</div>
+			{% endfor %}
+		</div>
+	{% endif %}
+
+	{% if this.hasContextualRules %}
+		<p class="text-xs opacity-60 border-t border-gray-100 pt-3">
+			<span class="ti ti-alert-triangle text-warning" aria-hidden="true"></span>
+			Ce rôle est aussi concerné par des règles contextuelles (Projets/Utilisateurs) qui dépendent de la donnée, pas seulement du rôle —
+			<a href="{{ path('admin_security_role_index') }}" class="text-brand-primary hover:underline">voir le détail</a>.
+		</p>
+	{% endif %}
+</div>

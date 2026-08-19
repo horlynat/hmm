@@ -11,51 +11,150 @@
 		{% endif %}
 	</twig:PageHeader>
 
-	<div class="panel mb-8">
-		<div class="panel-header"><h2 class="panel-title">Hiérarchie des rôles</h2></div>
-		<div class="panel-body">
-			<div class="flex flex-wrap items-center gap-2">
-				{% for role in roles %}
-					<a href="{{ path('admin_security_role_show', {role: role}) }}" class="badge badge-info hover:opacity-75 transition" title="Voir les comptes {{ role }}">
-						{{ role }} <span class="opacity-60">({{ roleCounts[role] }})</span>
-					</a>
-					{% if not loop.last %}<span class="ti ti-chevron-right text-sm opacity-40" aria-hidden="true"></span>{% endif %}
+	<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+		<!-- 📖 CONTENU (66%) -->
+		<div class="lg:col-span-2 space-y-6">
+			<div class="panel">
+				<div class="panel-header"><h2 class="panel-title">Hiérarchie des rôles</h2></div>
+				<div class="panel-body">
+					<div class="flex flex-wrap items-center gap-2">
+						{% for role in roles %}
+							<a href="{{ path('admin_security_role_show', {role: role}) }}" class="badge badge-info hover:opacity-75 transition" title="Voir les comptes {{ role }}">
+								{{ role }} <span class="opacity-60">({{ roleCounts[role] }})</span>
+							</a>
+							{% if not loop.last %}<span class="ti ti-chevron-right text-sm opacity-40" aria-hidden="true"></span>{% endif %}
+						{% endfor %}
+					</div>
+					<p class="text-xs opacity-50 mt-3">Chaque rôle hérite de tous les droits du rôle précédent (cf. <code>security.yaml</code> → <code>role_hierarchy</code>). Cliquer sur un rôle affiche les comptes qui le portent.</p>
+				</div>
+			</div>
+
+			{% if contextualRules is not empty %}
+				<div class="panel border-l-4 border-warning">
+					<div class="panel-header"><h2 class="panel-title">Règles contextuelles (ABAC)</h2></div>
+					<div class="panel-body space-y-4">
+						<p class="text-sm opacity-70">Ces zones ne se réduisent pas à un seuil de rôle — la donnée compte autant que le rôle. Pas de grille de cases ici, elle serait trompeuse.</p>
+						{% for group, rule in contextualRules %}
+							<div>
+								<h4 class="text-sm font-bold text-(--brand-dark) mb-1">{{ group }}</h4>
+								<p class="text-sm opacity-80">{{ rule }}</p>
+							</div>
+						{% endfor %}
+					</div>
+				</div>
+			{% endif %}
+
+			{% for group, permissions in permissionGroups %}
+				<div class="panel">
+					<div class="panel-header"><h3 class="panel-title">{{ group }}</h3></div>
+					<div class="table-wrap border-0">
+						<table class="table">
+							<caption class="sr-only">Matrice des permissions — {{ group }}</caption>
+							<thead>
+								<tr>
+									<th scope="col">Permission</th>
+									{% for role in roles %}<th scope="col" class="text-center">{{ role|replace({'ROLE_': ''}) }}</th>{% endfor %}
+								</tr>
+							</thead>
+							<tbody>
+								{% for permission, minRoleIndex in permissions %}
+									<tr>
+										<td class="font-mono text-xs">{{ permission }}</td>
+										{% for role in roles %}
+											<td class="text-center">
+												{% if loop.index0 >= minRoleIndex %}
+													<span class="ti ti-circle-check text-success text-base" aria-label="Autorisé"></span>
+												{% else %}
+													<span class="ti ti-circle-x text-gray-300 dark:text-gray-600 text-base" aria-label="Refusé"></span>
+												{% endif %}
+											</td>
+										{% endfor %}
+									</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			{% endfor %}
+
+			<div class="panel">
+				<div class="panel-header">
+					<h3 class="panel-title">Sécurité &amp; Paramètres</h3>
+					<span class="text-xs opacity-50 ml-2">Fixé dans le code, non modifiable ici</span>
+				</div>
+				{% for group, permissions in fixedPermissionGroups %}
+					<div class="table-wrap border-0 {% if not loop.first %}border-t border-gray-100{% endif %}">
+						<table class="table">
+							<caption class="sr-only">Matrice des permissions — {{ group }}</caption>
+							<thead>
+								<tr>
+									<th scope="col">{{ group }}</th>
+									{% for role in roles %}<th scope="col" class="text-center">{{ role|replace({'ROLE_': ''}) }}</th>{% endfor %}
+								</tr>
+							</thead>
+							<tbody>
+								{% for permission, minRoleIndex in permissions %}
+									<tr>
+										<td class="font-mono text-xs">{{ permission }}</td>
+										{% for role in roles %}
+											<td class="text-center">
+												{% if loop.index0 >= minRoleIndex %}
+													<span class="ti ti-circle-check text-success text-base" aria-label="Autorisé"></span>
+												{% else %}
+													<span class="ti ti-circle-x text-gray-300 dark:text-gray-600 text-base" aria-label="Refusé"></span>
+												{% endif %}
+											</td>
+										{% endfor %}
+									</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
 				{% endfor %}
 			</div>
-			<p class="text-xs opacity-50 mt-3">Chaque rôle hérite de tous les droits du rôle précédent (cf. <code>security.yaml</code> → <code>role_hierarchy</code>). Cliquer sur un rôle affiche les comptes qui le portent.</p>
 		</div>
-	</div>
 
-	{% for group, permissions in permissionGroups %}
-		<div class="panel mb-6">
-			<div class="panel-header"><h3 class="panel-title">{{ group }}</h3></div>
-			<div class="table-wrap border-0">
-				<table class="table">
-					<caption class="sr-only">Matrice des permissions — {{ group }}</caption>
-					<thead>
-						<tr>
-							<th scope="col">Permission</th>
-							{% for role in roles %}<th scope="col" class="text-center">{{ role|replace({'ROLE_': ''}) }}</th>{% endfor %}
-						</tr>
-					</thead>
-					<tbody>
-						{% for permission, minRoleIndex in permissions %}
-							<tr>
-								<td class="font-mono text-xs">{{ permission }}</td>
-								{% for role in roles %}
-									<td class="text-center">
-										{% if loop.index0 >= minRoleIndex %}
-											<span class="ti ti-circle-check text-success text-base" aria-label="Autorisé"></span>
-										{% else %}
-											<span class="ti ti-circle-x text-gray-300 dark:text-gray-600 text-base" aria-label="Refusé"></span>
-										{% endif %}
-									</td>
-								{% endfor %}
-							</tr>
+		<!-- ⚠️ ASIDE (33%) : comptes à privilèges élevés -->
+		<aside class="space-y-6 lg:sticky lg:top-6">
+			<div class="card space-y-4">
+				<div class="border-b border-gray-100 pb-2">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40">
+						Comptes à privilèges élevés
+					</h3>
+					<p class="text-xs opacity-50 mt-1">Rôle au-dessus d'Utilisateur, hors Super Admin (élévation PAM auditée séparément). À revoir périodiquement.</p>
+				</div>
+
+				{% if privilegedUsers is empty %}
+					<p class="text-sm opacity-60 py-2">Aucun compte à privilèges élevés (hors Super Admin) pour le moment.</p>
+				{% else %}
+					<ul class="divide-y divide-gray-100">
+						{% for entry in privilegedUsers %}
+							<li class="py-3 first:pt-0 last:pb-0">
+								<a href="{{ path(entry.readRoute, {id: entry.user.id}) }}" class="flex items-center justify-between gap-2 group">
+									<span class="min-w-0">
+										<span class="block font-medium text-sm text-(--brand-dark) truncate group-hover:text-brand-primary transition">{{ entry.user.fullName ?? entry.user.email }}</span>
+										<span class="block text-xs opacity-50 truncate">{{ entry.user.email }}</span>
+									</span>
+									<span class="badge {{ entry.role == 'ADMIN' ? 'badge-danger' : (entry.role == 'MANAGER' ? 'badge-warning' : 'badge-info') }} shrink-0">{{ entry.role }}</span>
+								</a>
+							</li>
 						{% endfor %}
-					</tbody>
-				</table>
+					</ul>
+				{% endif %}
 			</div>
-		</div>
-	{% endfor %}
+
+			<div class="card">
+				<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 mb-3">
+					Super Admins
+				</h3>
+				<p class="text-sm">
+					<span class="badge badge-neutral">{{ roleCounts['SUPER_ADMIN'] }}</span>
+					compte(s) — dormants par défaut, élevés temporairement via le PAM.
+				</p>
+				<a href="{{ path('admin_security_role_show', {role: 'SUPER_ADMIN'}) }}" class="text-xs text-brand-primary hover:underline mt-2 inline-block">Voir la liste</a>
+			</div>
+		</aside>
+
+	</div>
 {% endblock %}
