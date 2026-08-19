@@ -386,6 +386,26 @@
       opacity: 0.8;
     }
   }
+  /* Popup de puces (suggestions/démarrage) : flotte au-dessus de la barre de
+     saisie plutôt que de réduire la hauteur de la zone de conversation. */
+  @keyframes assistant-chip-popup-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .assistant-chip-popup > div {
+    animation: assistant-chip-popup-in 0.18s ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .assistant-chip-popup > div {
+      animation: none;
+    }
+  }
   /* Bouton flottant : même grammaire hover que .btn-primary (translate-y +
      ombre qui s'accentue), mais l'ombre ne peut pas passer par une classe
      Tailwind shadow-* ici — box-shadow est déjà posé en inline style (couleur

@@ -817,9 +817,10 @@
   },
   "aiAssistant": {
     "title": "Assistant de Horlynat",
-    "sub": "En ligne",
+    "sub": "Réponse en quelques secondes",
+    "startersLabel": "Pour démarrer",
     "greeting": "Bonjour, je suis l'assistant IA de Horlynat. Je peux vous présenter son profil, ses compétences, ses réalisations, sa vision du métier, ou qualifier votre demande de projet. Que voulez-vous savoir ?",
-    "placeholder": "Posez votre question...",
+    "placeholder": "Écrivez votre question…",
     "send": "Envoyer",
     "close": "Fermer l'assistant",
     "chipPresentation": "Qui est Horlynat ?",

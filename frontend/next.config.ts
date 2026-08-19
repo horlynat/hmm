@@ -45,6 +45,13 @@ const nextConfig: NextConfig = {
   output: "standalone",
   // Ne pas divulguer la stack via l'en-tête X-Powered-By.
   poweredByHeader: false,
+  // Next.js bloque par défaut les requêtes cross-origin vers les ressources
+  // dev (chunks _next/static, HMR) si l'origine visitée n'est pas exactement
+  // celle sur laquelle le serveur a démarré (localhost) — accéder au site via
+  // 127.0.0.1 déclenchait donc un 403 sur chaque chunk JS (page bloquée sur
+  // "Chargement…", widget assistant IA jamais monté). Dev uniquement, sans
+  // effet en prod (le serveur n'écoute alors plus qu'un vrai domaine public).
+  ...(isDev ? { allowedDevOrigins: ["127.0.0.1"] } : {}),
   turbopack: {
     root: path.join(__dirname),
   },

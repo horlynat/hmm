@@ -42,12 +42,12 @@ describe("AiAssistantWidget", () => {
     vi.restoreAllMocks();
   });
 
-  it("n'affiche aucune puce à l'ouverture, avant toute frappe", () => {
+  it("affiche les puces de démarrage dès l'ouverture, avant toute frappe (zéro friction au premier clic)", () => {
     render(<AiAssistantWidget settings={settings} entries={entries} />);
     openWidget();
 
-    expect(screen.queryByRole("button", { name: "Qui est Horlynat ?" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Ses compétences" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qui est Horlynat ?" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ses compétences" })).toBeInTheDocument();
   });
 
   it("suggère les puces FAQ correspondantes pendant la frappe, avant tout échange réel", () => {
@@ -63,8 +63,10 @@ describe("AiAssistantWidget", () => {
     expect(screen.getByRole("button", { name: "Ses compétences" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Qui est Horlynat ?" })).not.toBeInTheDocument();
 
+    // Champ vidé, avant tout échange réel : retour aux puces de démarrage (toutes).
     fireEvent.change(field, { target: { value: "" } });
-    expect(screen.queryByRole("button", { name: "Ses compétences" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qui est Horlynat ?" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ses compétences" })).toBeInTheDocument();
   });
 
   it("remplace les puces statiques par les suggestions contextuelles après un vrai échange", async () => {
