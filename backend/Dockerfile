@@ -45,6 +45,10 @@ USER root
 
 # pdo_mysql, pas pdo_pgsql : les migrations committées sont écrites en
 # dialecte MySQL (cf. infra/README.md §4).
+# gd : requis par endroid/qr-code (QR code d'activation 2FA, cf.
+# TwoFactorController/ApiTwoFactorSetupController) — absent jusqu'ici, ce qui
+# faisait planter en 500 tout utilisateur essayant d'activer sa 2FA en prod
+# ("Unable to generate image: please check if the GD extension is enabled").
 # su-exec : permet à docker-entrypoint.sh de démarrer en root (nécessaire
 # pour lire les secrets Docker, cf. commentaire dans ce script) puis de
 # basculer sur www-data juste avant d'exécuter frankenphp.
@@ -56,6 +60,7 @@ RUN install-php-extensions \
     opcache \
     apcu \
     bcmath \
+    gd \
     && apk add --no-cache su-exec
 
 ENV APP_ENV=prod \

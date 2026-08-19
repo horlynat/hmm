@@ -5,8 +5,10 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Form\ProfileType;
 use App\Form\ResetPasswordFormType;
+use App\Repository\UserSessionRepository;
 use App\Service\DeviceParser;
 use App\Service\GeolocationService;
+use App\Service\LiveSessionStateResolver;
 use App\Service\ProfileCompletionService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -38,6 +40,9 @@ class MemberProfileController extends AbstractController
         ProfileCompletionService $completionService,
         GeolocationService $geolocationService,
         DeviceParser $deviceParser,
+        UserSessionRepository $userSessionRepository,
+        LiveSessionStateResolver $liveSessionStateResolver,
+        Request $request,
     ): Response {
         $user = $this->currentUser();
 
@@ -54,6 +59,8 @@ class MemberProfileController extends AbstractController
             'completionPercentage' => $completionPercentage,
             'location' => $location,
             'deviceInfo' => $deviceParser->parse($user->getLastDevice()),
+            'mySessions' => $this->buildMySessions($user, $userSessionRepository, $liveSessionStateResolver, $deviceParser),
+            'currentSessionId' => $request->getSession()->getId(),
         ]);
     }
 
@@ -157,5 +164,43 @@ class MemberProfileController extends AbstractController
         }
 
         return $user;
+    }
+
+    /**
+     * Alimente le bloc "Mes appareils connectés" (partagé avec
+     * AdminProfileController::read() — cf. _partials/_my_sessions.html.twig).
+     * Uniquement les sessions ACTIVES ou EXPIRÉES : une session déjà "terminée"
+     * n'a rien à révoquer, l'afficher n'apporterait rien à l'utilisateur.
+     *
+     * @return list<array{session: \App\Entity\UserSession, state: string, device: array{type: string, brand: ?string, model: ?string, os: ?string, browser: ?string, label: string, isBot: bool}}>
+     */
+    private function buildMySessions(User $user, UserSessionRepository $userSessionRepository, LiveSessionStateResolver $liveSessionStateResolver, DeviceParser $deviceParser): array
+    {
+        $liveSessions = $liveSessionStateResolver->resolveAll();
+
+        $entries = [];
+        foreach ($userSessionRepository->findByUserOrderedByCreatedAt($user) as $userSession) {
+            $live = $liveSessions[$userSession->getSessionId()] ?? null;
+            $state = match (true) {
+                null === $live => 'ended',
+                $live['active'] => 'active',
+                default => 'expired',
+            };
+
+            if ('ended' === $state) {
+                continue;
+            }
+
+            $entries[] = [
+                'session' => $userSession,
+                'state' => $state,
+                'device' => $deviceParser->parse($userSession->getUserAgent()),
+            ];
+        }
+
+        // Plus récente en premier — "mes appareils" se lit naturellement du plus
+        // au moins récent, contrairement à la liste admin (triée par ancienneté
+        // pour l'éviction de capacité).
+        return array_reverse($entries);
     }
 }

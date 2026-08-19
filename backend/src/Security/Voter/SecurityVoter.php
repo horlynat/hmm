@@ -22,6 +22,19 @@ class SecurityVoter extends AbstractRoleVoter
     public const VIEW_ROLES = 'SECURITY_VIEW_ROLES';
     public const VIEW_POLICIES = 'SECURITY_VIEW_POLICIES';
     public const VIEW_AUDIT = 'SECURITY_VIEW_AUDIT';
+    public const MANAGE_IP_BLOCKS = 'SECURITY_MANAGE_IP_BLOCKS';
+    public const MANAGE_LOGS = 'SECURITY_MANAGE_LOGS';
+
+    /**
+     * Éditer le catalogue de permissions dynamiques (PermissionRegistry) —
+     * volontairement au-dessus du seuil ROLE_ADMIN du reste de cette classe :
+     * cette action peut changer QUI peut faire QUOI ailleurs dans l'app, donc
+     * un rang de confiance strictement supérieur à celui qu'elle gouverne.
+     * Rappel : ce code lui-même (préfixe SECURITY_) n'est jamais consultable
+     * dynamiquement, cf. PermissionRegistry::NON_OVERRIDABLE_PREFIXES —
+     * personne ne peut s'auto-attribuer ce droit en le modifiant en base.
+     */
+    public const MANAGE_PERMISSIONS = 'SECURITY_MANAGE_PERMISSIONS';
 
     protected function getRequiredRole(string $attribute, mixed $subject): ?string
     {
@@ -33,6 +46,9 @@ class SecurityVoter extends AbstractRoleVoter
             self::VIEW_ROLES === $attribute && null === $subject => 'ROLE_ADMIN',
             self::VIEW_POLICIES === $attribute && null === $subject => 'ROLE_ADMIN',
             self::VIEW_AUDIT === $attribute && null === $subject => 'ROLE_ADMIN',
+            self::MANAGE_IP_BLOCKS === $attribute && null === $subject => 'ROLE_ADMIN',
+            self::MANAGE_LOGS === $attribute && null === $subject => 'ROLE_ADMIN',
+            self::MANAGE_PERMISSIONS === $attribute && null === $subject => 'ROLE_SUPER_ADMIN',
             default => null,
         };
     }

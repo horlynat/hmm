@@ -57,7 +57,8 @@
 {% set canViewSecurityAudit = is_granted(constant('App\\Security\\Voter\\SecurityVoter::VIEW_AUDIT')) %}
 {% set canViewSecurity2fa = is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_2FA')) %}
 {% set canViewSecurityPolicies = is_granted(constant('App\\Security\\Voter\\SecurityVoter::VIEW_POLICIES')) %}
-{% set canViewSecuriteSection = canViewSecurityLogs or canViewSecuritySessions or canViewSecurityRoles or canViewSecurityAudit or canViewSecurity2fa or canViewSecurityPolicies %}
+{% set canManagePermissions = is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_PERMISSIONS')) %}
+{% set canViewSecuriteSection = canViewSecurityLogs or canViewSecuritySessions or canViewSecurityRoles or canViewSecurityAudit or canViewSecurity2fa or canViewSecurityPolicies or canManagePermissions %}
 
 {% set canViewConfig = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_CONFIG')) %}
 {% set canViewNotifications = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_NOTIFICATIONS')) %}
@@ -341,6 +342,12 @@
 						<a href="{{ path('admin_security_role_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_role' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 							<i class="ti ti-key text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 							Rôles & Perms
+						</a>
+					{% endif %}
+					{% if canManagePermissions %}
+						<a href="{{ path('admin_security_permission_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_permission' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-adjustments-alt text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Permissions dynamiques
 						</a>
 					{% endif %}
 					{% if canViewSecurityAudit %}

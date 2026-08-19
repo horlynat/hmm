@@ -5,6 +5,10 @@ security:
             entity:
                 class: App\Entity\User
                 property: email
+        # Dédié au listener `oidc` ci-dessous (App\Security\OidcUserProvider) —
+        # ne provisionne jamais de compte, cf. son docblock.
+        oidc_user_provider:
+            id: App\Security\OidcUserProvider
 
     # 🔒 Encodage des mots de passe
     password_hashers:
@@ -20,6 +24,7 @@ security:
         api_login:
             pattern: ^/api/login_check
             stateless: true
+            provider: app_user_provider
             user_checker: App\Security\UserChecker
             json_login:
                 check_path: /api/login_check
@@ -52,6 +57,12 @@ security:
             provider: app_user_provider
             user_checker: App\Security\UserChecker
             custom_authenticator: App\Security\SecurityAuthenticator
+            # Deux authenticators sur ce firewall (le formulaire local +
+            # oidc ci-dessous) obligent à choisir explicitement lequel gère
+            # un accès anonyme à une page protégée — la connexion locale
+            # reste le point d'entrée par défaut, le SSO n'est jamais que
+            # l'option secondaire déclenchée par le bouton dédié.
+            entry_point: App\Security\SecurityAuthenticator
             logout:
                 path: logout
                 target: login
@@ -69,6 +80,25 @@ security:
             two_factor:
                 auth_form_path: 2fa_login
                 check_path: 2fa_login_check
+            # SSO (OIDC) — second chemin de connexion, coexiste avec
+            # custom_authenticator ci-dessus (Symfony essaie chaque
+            # authenticator du firewall, celui dont supports() répond true
+            # sur la requête courante gagne — l'OIDC authenticator ne
+            # S'AUTHENTIFIE que sur check_path).
+            #
+            # ⚠️ Mais le service OidcClient est INSTANCIÉ à chaque requête sur
+            # ce firewall (le container construit tous les authenticators
+            # configurés, pas seulement celui qui va servir) — constaté en
+            # direct : avec OIDC_WELL_KNOWN_URL vide, TOUT /login/* renvoyait
+            # une 500 avant même d'atteindre un contrôleur. C'est pour ça que
+            # cette variable garde une URL factice mais syntaxiquement valide
+            # même sans IdP configuré (cf. .env) — sans quoi ce bloc `oidc`
+            # casserait la connexion locale, pas seulement le SSO.
+            oidc:
+                client: default
+                provider: oidc_user_provider
+                check_path: /login/oidc-check
+                user_identifier_property: email
             lazy: true
 
     # 🔒 Hiérarchie des rôles
@@ -95,4 +125,8 @@ security:
         - { path: ^/register, roles: ROLE_ADMIN }           # Inscription réservée aux admins (création d'un compte administrateur). L'inscription publique passe par le frontend Next.js (ApiResource *Registration)
         - { path: ^/verify/email, roles: PUBLIC_ACCESS }    # Vérification email publique
         - { path: ^/api, roles: PUBLIC_ACCESS }              # Sécurité déléguée à API Platform (attribut `security` par opération, cf. *ApiResource)
+        - { path: ^/2fa, role: IS_AUTHENTICATED_2FA_IN_PROGRESS } # /2fa + /2fa_check (formulaire + vérification) : le token Scheb en cours de 2FA ne porte aucun rôle métier tant que le second facteur n'est pas validé — sans cette règle, le catch-all ci-dessous bloquerait la connexion de tout compte 2FA avant même d'atteindre l'écran de code.
+        - { path: ^/logout, roles: PUBLIC_ACCESS }           # Toujours atteignable (y compris session déjà partiellement invalidée), pour ne jamais piéger un utilisateur qui veut se déconnecter.
+        - { path: ^/_(profiler|wdt), roles: PUBLIC_ACCESS }  # Barre de debug Symfony (dev uniquement, cf. config/routes/web_profiler.yaml — routes absentes en prod, règle inerte hors dev) : chargée en AJAX sur CHAQUE page, y compris /login avant authentification — sans cette règle le catch-all ci-dessous la bloquait (régression constatée en direct : /_wdt/... redirigeait vers /login).
+        - { path: ^/, roles: ROLE_USER }                     # 🔒 Deny-by-default : filet de sécurité final. Toute route qui ne matche aucun motif ci-dessus exigeait implicitement PUBLIC_ACCESS ; désormais ROLE_USER est le plancher minimum, même pour un contrôleur qui oublierait #[IsGranted(...)].
    

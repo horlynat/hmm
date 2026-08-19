@@ -43,12 +43,29 @@ class AdminSecurityAuditController extends AbstractController
         'collaborator_removed' => 'Collaborateur retiré',
         'marked_paid' => 'Marquée payée',
         'marked_unpaid' => 'Remise en attente',
+        'suspended' => 'Suspension',
+        'resumed' => 'Reprise',
+        'created_from_quote' => 'Créé depuis un devis',
+        'replied' => 'Réponse envoyée',
+        'resolved' => 'Résolution',
+        'force_logout' => 'Déconnexion forcée',
+        'force_logout_all' => 'Déconnexion forcée (toutes les sessions)',
+        'force_logout_everywhere' => 'Déconnexion forcée (partout)',
+        'ip_blocked' => 'IP bloquée',
+        'ip_unblocked' => 'IP débloquée',
+        'security_log_purged' => 'Purge du journal de connexions',
+        'permission_role_changed' => 'Rôle de permission modifié',
+        'permission_role_reset' => 'Rôle de permission réinitialisé',
+        'marked_paid_by_creator' => 'Marquée payée par son propre créateur (SoD)',
+        'super_admin_elevated' => 'Élévation Super Admin activée',
+        'super_admin_deelevated' => 'Élévation Super Admin désactivée',
     ];
 
     /** Types d'entités trackées, dans l'ordre d'affichage du filtre. */
     private const TYPES = [
         'Project', 'Invoice', 'Article', 'Skill', 'SkillCategory', 'Tag', 'Course', 'Experience',
-        'Testimonial', 'ContactMessage', 'QuoteRequest', 'User',
+        'Testimonial', 'ContactMessage', 'QuoteRequest', 'User', 'BlockedIp', 'LoginHistory', 'FailedLoginAttempt',
+        'PermissionDefinition',
     ];
 
     #[Route('/', name: 'index', methods: ['GET'])]

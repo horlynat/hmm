@@ -20,7 +20,9 @@ class ProfileAccountStatusController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_USER');
 
-        $reason = 'unverified' === $request->query->get('reason') ? 'unverified' : 'disabled';
+        $reason = \in_array($request->query->get('reason'), ['unverified', 'locked', 'expired'], true)
+            ? $request->query->get('reason')
+            : 'disabled';
 
         return $this->render('profile/account_blocked.html.twig', ['reason' => $reason]);
     }

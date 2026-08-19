@@ -54,6 +54,46 @@ final class UserCheckerTest extends TestCase
         $this->createChecker()->checkPostAuth($this->createUser(false, true));
     }
 
+    public function testLockedUserIsRejectedPostAuth(): void
+    {
+        $user = $this->createUser(true, true);
+        $user->setLockedUntil(new \DateTimeImmutable('+15 minutes'));
+
+        $this->expectException(CustomUserMessageAccountStatusException::class);
+        $this->expectExceptionMessageMatches('/verrouillé/');
+
+        $this->createChecker()->checkPostAuth($user);
+    }
+
+    public function testUserWithExpiredLockPassesPostAuth(): void
+    {
+        $user = $this->createUser(true, true);
+        $user->setLockedUntil(new \DateTimeImmutable('-1 minute'));
+
+        $this->createChecker()->checkPostAuth($user);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testExpiredAccountIsRejectedPostAuth(): void
+    {
+        $user = $this->createUser(true, true);
+        $user->setAccountExpiresAt(new \DateTimeImmutable('-1 day'));
+
+        $this->expectException(CustomUserMessageAccountStatusException::class);
+        $this->expectExceptionMessageMatches('/expiré/');
+
+        $this->createChecker()->checkPostAuth($user);
+    }
+
+    public function testAccountWithFutureExpirationPassesPostAuth(): void
+    {
+        $user = $this->createUser(true, true);
+        $user->setAccountExpiresAt(new \DateTimeImmutable('+1 year'));
+
+        $this->createChecker()->checkPostAuth($user);
+        $this->addToAssertionCount(1);
+    }
+
     public function testNonAppUserIsIgnored(): void
     {
         // Un UserInterface qui n'est pas notre entité (improbable, mais la

@@ -39,7 +39,7 @@
 				<i class="ti ti-mail-forward text-lg transition-transform group-hover:scale-110"></i>
 				<span>Traiter les Devis</span>
 			</a>
-			<a href="#" class="flex items-center gap-3 p-3.5 bg-purple-500/5 hover:bg-purple-500/10 text-purple-700 rounded-xl font-semibold transition text-sm group">
+			<a href="{{ path('admin_config_index') }}" class="flex items-center gap-3 p-3.5 bg-purple-500/5 hover:bg-purple-500/10 text-purple-700 rounded-xl font-semibold transition text-sm group">
 				<i class="ti ti-adjustments text-lg transition-transform group-hover:scale-110"></i>
 				<span>Paramètres Serveur</span>
 			</a>
@@ -49,19 +49,36 @@
 				     🛑 ZONE D'ALERTE SYSTEME / DANGER (Si incident existant)
 				     ========================================== -->
 		{% if stats.criticalIncidentsCount is defined and stats.criticalIncidentsCount > 0 %}
-			<div class="mb-8 border border-red-200 bg-red-50/50 rounded-2xl p-4 flex items-start gap-4 animate-pulse-danger">
-				<div class="p-3 bg-danger text-white rounded-xl shadow-sm">
+			<div class="mb-8 border border-red-200 bg-red-50/50 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4 animate-pulse-danger">
+				<div class="p-3 bg-danger text-white rounded-xl shadow-sm shrink-0">
 					<i class="ti ti-alert-triangle text-xl"></i>
 				</div>
 				<div class="flex-1">
-					<h3 class="font-heading font-bold text-red-900 text-base">Alerte critique système en cours</h3>
-					<p class="text-sm text-red-700/90 mt-0.5">Il y a
-						{{ stats.criticalIncidentsCount }}
-						problème(s) nécessitant une intervention immédiate (projets bloqués ou erreurs serveurs).</p>
+					<h3 class="font-heading font-bold text-red-900 text-base">Ça demande une action maintenant</h3>
+					<p class="text-sm text-red-700/90 mt-0.5">
+						{% if stats.overBudgetCount > 0 %}
+							{{ stats.overBudgetCount }} projet{{ stats.overBudgetCount > 1 ? 's' : '' }} en dépassement de budget
+						{% endif %}
+						{% if stats.overBudgetCount > 0 and overdueInvoicesCount > 0 %}
+							·
+						{% endif %}
+						{% if overdueInvoicesCount > 0 %}
+							{{ overdueInvoicesCount }} facture{{ overdueInvoicesCount > 1 ? 's' : '' }} en retard de paiement
+						{% endif %}
+					</p>
 				</div>
-				<a href="#" class="px-4 py-2 bg-danger hover:bg-red-700 text-white text-xs font-semibold rounded-xl transition shadow-sm">
-					Résoudre l'incident
-				</a>
+				<div class="flex items-center gap-2 shrink-0">
+					{% if stats.overBudgetCount > 0 %}
+						<a href="{{ path('admin_dashboard_projects', {budget_status: 'over'}) }}" class="px-4 py-2 bg-danger hover:bg-red-700 text-white text-xs font-semibold rounded-xl transition shadow-sm">
+							Voir les projets
+						</a>
+					{% endif %}
+					{% if overdueInvoicesCount > 0 %}
+						<a href="{{ path('admin_finance_index') }}" class="px-4 py-2 border border-danger text-danger hover:bg-red-100 text-xs font-semibold rounded-xl transition">
+							Voir les factures
+						</a>
+					{% endif %}
+				</div>
 			</div>
 		{% endif %}
 
@@ -158,6 +175,13 @@
 				<twig:DashboardTile route="admin_experience_index" icon="ti-history" :count="experiencesCount|default(0)" label="Expériences" :warn="false" />
 			</div>
 
+			<p class="text-xs uppercase text-brand-dark/40 font-bold tracking-wider mb-2">Finance & Support</p>
+			<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+				<twig:DashboardTile route="admin_finance_index" icon="ti-file-invoice" :count="overdueInvoicesCount|default(0)" label="Factures en retard" :warn="true" />
+				<twig:DashboardTile route="admin_finance_index" icon="ti-receipt-2" :count="pendingExpensesCount|default(0)" label="Dépenses à approuver" :warn="true" />
+				<twig:DashboardTile route="admin_support_ticket_index" icon="ti-headset" :count="openTicketsCount|default(0)" label="Tickets support ouverts" :warn="true" />
+			</div>
+
 			<p class="text-xs uppercase text-brand-dark/40 font-bold tracking-wider mb-2">Modération</p>
 			<div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
 				<twig:DashboardTile route="admin_testimonial_index" icon="ti-message-star" :count="pendingTestimonialsCount|default(0)" label="Témoignages en attente" :warn="true" />
@@ -179,6 +203,64 @@
 					</div>
 				</div>
 			{% endfor %}
+		</div>
+
+		<!-- ==========================================
+				     🚨 ALERTES BUDGET PROJETS
+				     (déjà calculées par le contrôleur, jamais affichées jusqu'ici)
+				     ========================================== -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+			<div class="soft-card p-6">
+				<div class="flex justify-between items-center mb-4">
+					<h2 class="text-lg font-heading font-bold flex items-center gap-2">
+						<i class="ti ti-alert-triangle text-danger"></i>
+						En dépassement de budget
+					</h2>
+					<span class="text-xs font-bold text-danger">{{ overBudgetProjects|length }}</span>
+				</div>
+				<div class="divide-y divide-gray-100">
+					{% for project in overBudgetProjects|slice(0, 5) %}
+						<a href="{{ path('admin_project_read', {id: project.id}) }}" class="flex items-center justify-between py-3 first:pt-0 hover:opacity-70 transition">
+							<div class="min-w-0">
+								<h4 class="font-medium text-sm truncate">{{ project.title }}</h4>
+								<p class="text-xs text-brand-dark/50 truncate">{{ project.owner.fullName ?? project.owner.email }}</p>
+							</div>
+							<span class="text-xs font-bold text-danger shrink-0 pl-3">{{ project.spent|money('EUR') }} / {{ project.budget|money('EUR') }}</span>
+						</a>
+					{% else %}
+						<div class="text-center py-8 text-sm text-brand-dark/40">
+							<i class="ti ti-circle-check text-2xl block mb-2 text-gray-300"></i>
+							Aucun projet en dépassement.
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+
+			<div class="soft-card p-6">
+				<div class="flex justify-between items-center mb-4">
+					<h2 class="text-lg font-heading font-bold flex items-center gap-2">
+						<i class="ti ti-gauge text-warning"></i>
+						Budget presque épuisé
+					</h2>
+					<span class="text-xs font-bold text-warning">{{ lowBudgetProjects|length }}</span>
+				</div>
+				<div class="divide-y divide-gray-100">
+					{% for project in lowBudgetProjects|slice(0, 5) %}
+						<a href="{{ path('admin_project_read', {id: project.id}) }}" class="flex items-center justify-between py-3 first:pt-0 hover:opacity-70 transition">
+							<div class="min-w-0">
+								<h4 class="font-medium text-sm truncate">{{ project.title }}</h4>
+								<p class="text-xs text-brand-dark/50 truncate">{{ project.owner.fullName ?? project.owner.email }}</p>
+							</div>
+							<span class="text-xs font-bold text-warning shrink-0 pl-3">{{ project.getBudgetPercentageUsed()|default(0) }}% utilisé</span>
+						</a>
+					{% else %}
+						<div class="text-center py-8 text-sm text-brand-dark/40">
+							<i class="ti ti-circle-check text-2xl block mb-2 text-gray-300"></i>
+							Aucun projet à moins de 10% de budget restant.
+						</div>
+					{% endfor %}
+				</div>
+			</div>
 		</div>
 
 		<!-- ==========================================
@@ -343,41 +425,65 @@
 		</div>
 
 		<!-- ==========================================
-				     💎 TOP PROJETS EN COURS DE VALORISATION
+				     💎 TOP PROJETS + 👥 CLIENTS LES PLUS ACTIFS
 				     ========================================== -->
-		<div class="soft-card p-6">
-			<div class="flex justify-between items-center mb-4">
-				<h2 class="text-lg font-heading font-bold">Top Projets Stratégiques (Finances & Délais)</h2>
-				<a href="{{ path('admin_dashboard_projects') }}" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
-			</div>
-			<div class="overflow-x-auto">
-				<table class="w-full text-left text-sm border-collapse">
-					<thead>
-						<tr class="border-b border-gray-100 text-brand-dark/40 text-xs font-bold uppercase tracking-wider">
-							<th class="pb-3 font-semibold">Projet</th>
-							<th class="pb-3 font-semibold">Client / Pilote</th>
-							<th class="pb-3 font-semibold">Budget Total</th>
-							<th class="pb-3 font-semibold">Progression Production</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-gray-50">
-						{% for project in topBudgetProjects|slice(0, 4) %}
-							<tr>
-								<td class="py-4 font-medium text-gray-900">{{ project.title }}</td>
-								<td class="py-4 text-brand-dark/70">{{ project.owner.fullName ?? project.owner.email }}</td>
-								<td class="py-4 font-semibold">{{ project.budget|money('EUR') }}</td>
-								<td class="py-4">
-									<div class="flex items-center gap-3 max-w-xs">
-										<div class="w-full bg-gray-100 rounded-full h-2">
-											<div class="bg-brand-primary h-2 rounded-full transition-all" style="width: {{ project.getBudgetPercentageUsed()|default(0) }}%"></div>
-										</div>
-										<span class="text-xs font-bold text-brand-dark/60">{{ project.getBudgetPercentageUsed()|default(0) }}%</span>
-									</div>
-								</td>
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+			<div class="soft-card p-6 lg:col-span-2">
+				<div class="flex justify-between items-center mb-4">
+					<h2 class="text-lg font-heading font-bold">Top Projets Stratégiques (Finances & Délais)</h2>
+					<a href="{{ path('admin_dashboard_projects') }}" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
+				</div>
+				<div class="overflow-x-auto">
+					<table class="w-full text-left text-sm border-collapse">
+						<thead>
+							<tr class="border-b border-gray-100 text-brand-dark/40 text-xs font-bold uppercase tracking-wider">
+								<th class="pb-3 font-semibold">Projet</th>
+								<th class="pb-3 font-semibold">Client / Pilote</th>
+								<th class="pb-3 font-semibold">Budget Total</th>
+								<th class="pb-3 font-semibold">Progression Production</th>
 							</tr>
-						{% endfor %}
-					</tbody>
-				</table>
+						</thead>
+						<tbody class="divide-y divide-gray-50">
+							{% for project in topBudgetProjects|slice(0, 4) %}
+								<tr>
+									<td class="py-4 font-medium text-gray-900">{{ project.title }}</td>
+									<td class="py-4 text-brand-dark/70">{{ project.owner.fullName ?? project.owner.email }}</td>
+									<td class="py-4 font-semibold">{{ project.budget|money('EUR') }}</td>
+									<td class="py-4">
+										<div class="flex items-center gap-3 max-w-xs">
+											<div class="w-full bg-gray-100 rounded-full h-2">
+												<div class="bg-brand-primary h-2 rounded-full transition-all" style="width: {{ project.getBudgetPercentageUsed()|default(0) }}%"></div>
+											</div>
+											<span class="text-xs font-bold text-brand-dark/60">{{ project.getBudgetPercentageUsed()|default(0) }}%</span>
+										</div>
+									</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<!-- Clients les plus actifs : déjà calculé par le contrôleur (propriétaires
+			     de projets, triés par nombre de projets), jamais affiché jusqu'ici. -->
+			<div class="soft-card p-6">
+				<h2 class="text-lg font-heading font-bold mb-4">Clients les Plus Actifs</h2>
+				<div class="divide-y divide-gray-100">
+					{% for user in activeUsers %}
+						<a href="{{ path('admin_users_read', {id: user.id}) }}" class="flex items-center gap-3 py-3 first:pt-0 hover:opacity-70 transition">
+							<img class="h-9 w-9 rounded-xl border border-gray-100 shadow-sm" src="https://ui-avatars.com/api/?background=eaeaea&color=333&name={{ (user.fullName ?? user.email)|url_encode }}" alt="">
+							<div class="flex-1 min-w-0">
+								<h4 class="font-medium text-sm truncate">{{ user.fullName ?? user.email }}</h4>
+								<p class="text-xs text-brand-dark/50 truncate">{{ user.ownedProjects|length }} projet{{ user.ownedProjects|length > 1 ? 's' : '' }}</p>
+							</div>
+						</a>
+					{% else %}
+						<div class="text-center py-8 text-sm text-brand-dark/40">
+							<i class="ti ti-users text-2xl block mb-2 text-gray-300"></i>
+							Aucun client avec un projet en cours.
+						</div>
+					{% endfor %}
+				</div>
 			</div>
 		</div>
 

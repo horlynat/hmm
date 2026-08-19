@@ -69,11 +69,22 @@
 							<span class="ti ti-edit text-sm" aria-hidden="true"></span>
 							<span>Modifier</span>
 						</a>
+						{% if is_granted(constant('App\\Security\\Voter\\SecurityVoter::FORCE_LOGOUT'), user) %}
+							<form method="post" action="{{ path('admin_security_session_revoke_for_user', {id: user.id}) }}" onsubmit="return confirm('Déconnecter {{ user.email }} de tous ses appareils ? Un email l\'en informera.');">
+								<input type="hidden" name="_token" value="{{ csrf_token('admin_security_session_revoke_user_' ~ user.id) }}">
+								<button type="submit" class="btn btn-secondary w-full text-sm gap-2 text-danger">
+									<span class="ti ti-logout text-sm" aria-hidden="true"></span>
+									<span>Déconnecter partout</span>
+								</button>
+							</form>
+						{% endif %}
 						<div class="w-full [&>div]:w-full [&_.btn]:w-full text-center">
 							<twig:DeleteModal :id="user.id" :action="path('admin_users_delete', {id: user.id})" :token="csrf_token('delete' ~ user.id)" :label="user.fullName ?? user.email" entity="ce client" />
 						</div>
 					</div>
 				</div>
+
+				<twig:admin:user_permissions_panel :user="user"/>
 			</div>
 
 		</div>

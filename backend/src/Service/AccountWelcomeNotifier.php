@@ -26,6 +26,10 @@ final class AccountWelcomeNotifier
 
     public function accountCreated(User $user, string $roleLabel): void
     {
+        if ($user->isSystemAccount()) {
+            return;
+        }
+
         $email = $user->getEmail();
         if ('' === $email) {
             return;

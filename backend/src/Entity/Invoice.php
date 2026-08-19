@@ -80,6 +80,25 @@ class Invoice
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $reminderSentAt = null;
 
+    /**
+     * Séparation des tâches (SoD) : traçabilité de qui a créé la facture et
+     * qui l'a marquée payée — nullable (comptes supprimés, factures
+     * antérieures à ce champ). Ne bloque jamais l'action même si c'est le
+     * même compte (cf. AdminInvoiceController::markPaid()) : une petite
+     * structure peut n'avoir qu'un seul opérateur habilité, un blocage
+     * strict la rendrait inutilisable. Seulement tracé et visible (badge +
+     * audit), pour permettre une revue humaine a posteriori.
+     */
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'created_by_id', nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['api_admin'])]
+    private ?User $createdBy = null;
+
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'marked_paid_by_id', nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['api_admin'])]
+    private ?User $markedPaidBy = null;
+
     public function __construct()
     {
         $this->issuedAt = new \DateTimeImmutable();
@@ -264,6 +283,49 @@ class Invoice
         $this->reminderSentAt = new \DateTimeImmutable();
 
         return $this;
+    }
+
+    public function getCreatedBy(): ?User
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?User $createdBy): static
+    {
+        $this->createdBy = $createdBy;
+
+        return $this;
+    }
+
+    public function getMarkedPaidBy(): ?User
+    {
+        return $this->markedPaidBy;
+    }
+
+    public function setMarkedPaidBy(?User $markedPaidBy): static
+    {
+        $this->markedPaidBy = $markedPaidBy;
+
+        return $this;
+    }
+
+    /**
+     * Séparation des tâches non respectée : le même compte a créé la facture
+     * ET l'a marquée payée. Faux si l'un des deux acteurs est inconnu (champ
+     * introduit après coup, ou compte depuis supprimé) — on ne signale que ce
+     * qu'on peut affirmer avec certitude.
+     */
+    public function wasCreatedAndMarkedPaidBySamePerson(): bool
+    {
+        // Comparaison d'identité d'objet, pas d'ID : deux User fraîchement
+        // instanciés (non persistés) ont tous les deux un ID null, ce qui
+        // donnerait un faux positif "même personne" en comparant les ID.
+        // Une entité chargée deux fois dans la même requête reste le même
+        // objet PHP grâce à l'identity map de Doctrine — cette comparaison
+        // est donc fiable pour les deux User réellement persistés.
+        return null !== $this->createdBy
+            && null !== $this->markedPaidBy
+            && $this->createdBy === $this->markedPaidBy;
     }
 
     public function getFormattedAmount(): string

@@ -1,0 +1,201 @@
+{# templates/admin/security/log_show.html.twig
+   Vue détail d'une ligne du journal de connexions (succès ou échec) — cf.
+   AdminSecurityLogController::showSuccess()/showFailed(). Un seul template
+   pour les deux cas : les variables passées par le contrôleur (ip, email,
+   device, location, coordinates, isBlocked, related*) sont déjà normalisées,
+   seuls les champs propres à `entry` (motif d'échec, lien utilisateur…)
+   dépendent de `tab`. #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Détail —
+	{{ tab == 'success' ? 'connexion réussie' : 'tentative échouée' }}
+{% endblock %}
+
+{% block body %}
+	<div>
+		<div class="mb-6 flex items-center justify-between flex-wrap gap-3">
+			<a href="{{ path('admin_security_log_index', {tab: tab}) }}" class="btn btn-secondary gap-2 px-3 py-2 text-sm w-fit">
+				<span class="ti ti-arrow-left text-base" aria-hidden="true"></span>
+				<span>Retour au journal</span>
+			</a>
+			{% if tab == 'success' %}
+				<twig:Badge variant="success" icon="ti-login">Connexion réussie</twig:Badge>
+			{% else %}
+				<twig:Badge variant="danger" icon="ti-shield-x">Tentative échouée</twig:Badge>
+			{% endif %}
+		</div>
+
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+			<!-- 📖 CONTENU (70%) -->
+			<div class="lg:col-span-2 space-y-6">
+
+				<div class="card">
+					<h1 class="text-xl font-heading font-bold text-(--brand-dark)">
+						{{ tab == 'success' ? (entry.user.fullName ?? entry.user.email) : entry.email }}
+					</h1>
+					<p class="text-sm opacity-60 mb-4">
+						{{ (tab == 'success' ? entry.loginAt : entry.createdAt)|date('d/m/Y à H:i:s') }}
+					</p>
+
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+						<div>
+							<p class="text-xs opacity-60 uppercase font-bold">Email</p>
+							<p class="text-(--brand-dark) font-bold break-all">{{ email }}</p>
+						</div>
+						<div>
+							<p class="text-xs opacity-60 uppercase font-bold">Adresse IP</p>
+							<div class="flex items-center gap-2">
+								<p class="text-(--brand-dark) font-bold font-mono">{{ ip ?? 'Non enregistrée' }}</p>
+								{% if isBlocked %}<twig:Badge variant="neutral">Bloquée</twig:Badge>{% endif %}
+							</div>
+						</div>
+						{% if tab == 'failed' %}
+							<div>
+								<p class="text-xs opacity-60 uppercase font-bold">Motif de l'échec</p>
+								<p class="text-(--brand-dark) font-bold">{{ entry.reasonLabel }}</p>
+							</div>
+						{% else %}
+							<div>
+								<p class="text-xs opacity-60 uppercase font-bold">Compte</p>
+								<p class="text-(--brand-dark) font-bold">#{{ entry.user.id }} — {{ entry.user.email }}</p>
+							</div>
+						{% endif %}
+						<div>
+							<p class="text-xs opacity-60 uppercase font-bold">Localisation</p>
+							<p class="text-(--brand-dark) font-bold">{{ location ?? 'Inconnue' }}</p>
+						</div>
+					</div>
+
+					{% if ip %}
+						<div class="border-t border-gray-100 pt-4 mt-4">
+							{% include 'admin/security/_partials/_block_ip_button.html.twig' with {ip: ip, isBlocked: isBlocked, autoReason: (tab == 'success' ? 'Depuis le détail d\'une connexion réussie.' : (entry.reasonLabel ~ ' — depuis le détail du journal.'))} %}
+						</div>
+					{% endif %}
+				</div>
+
+				<div class="card">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 mb-4">
+						Appareil
+					</h3>
+					{% if device.isBot %}
+						<p class="text-(--brand-dark) font-bold flex items-center gap-2">
+							<span class="ti ti-robot text-lg" aria-hidden="true"></span> {{ device.label }}
+						</p>
+					{% else %}
+						<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+							<div>
+								<p class="text-xs opacity-60 uppercase font-bold">Type</p>
+								<p class="text-(--brand-dark) font-bold">{{ device.type }}</p>
+							</div>
+							<div>
+								<p class="text-xs opacity-60 uppercase font-bold">Appareil</p>
+								<p class="text-(--brand-dark) font-bold">{{ device.brand ?? device.model ?? '—' }}</p>
+							</div>
+							<div>
+								<p class="text-xs opacity-60 uppercase font-bold">Système</p>
+								<p class="text-(--brand-dark) font-bold">{{ device.os ?? '—' }}</p>
+							</div>
+							<div>
+								<p class="text-xs opacity-60 uppercase font-bold">Navigateur</p>
+								<p class="text-(--brand-dark) font-bold">{{ device.browser ?? '—' }}</p>
+							</div>
+						</div>
+					{% endif %}
+					<p class="text-xs opacity-50 mt-4 pt-4 border-t border-gray-100 font-mono break-all">
+						{{ tab == 'success' ? (entry.device ?? '—') : (entry.userAgent ?? '—') }}
+					</p>
+				</div>
+
+				{% if coordinates and coordinates.latitude and coordinates.longitude %}
+					<div class="card">
+						<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 mb-4">
+							Coordonnées
+						</h3>
+						<p class="text-sm opacity-70 mb-3">{{ coordinates.latitude }}, {{ coordinates.longitude }}</p>
+						<a href="https://www.openstreetmap.org/?mlat={{ coordinates.latitude }}&amp;mlon={{ coordinates.longitude }}#map=10/{{ coordinates.latitude }}/{{ coordinates.longitude }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm gap-2 w-fit">
+							<span class="ti ti-map-pin text-base" aria-hidden="true"></span> Voir sur la carte
+						</a>
+					</div>
+				{% endif %}
+			</div>
+
+			<!-- ⚙️ CORRÉLATION (30%) -->
+			<div class="space-y-6">
+				{% if tab == 'success' %}
+					<div class="card">
+						<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 mb-3">
+							Voir aussi
+						</h3>
+						<a href="{{ path('admin_security_session_index', {search: email}) }}" class="btn btn-secondary w-full text-sm gap-2">
+							<span class="ti ti-devices text-sm" aria-hidden="true"></span>
+							<span>Sessions de ce compte</span>
+						</a>
+					</div>
+				{% endif %}
+
+				<div class="card">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 mb-3">
+						Autres connexions réussies — {{ email }}
+					</h3>
+					{% if relatedLogins is empty %}
+						<p class="text-sm opacity-50">Aucune autre connexion enregistrée.</p>
+					{% else %}
+						<ul class="space-y-2">
+							{% for login in relatedLogins %}
+								<li class="text-sm flex items-center justify-between gap-2">
+									<a href="{{ path('admin_security_log_show_success', {id: login.id}) }}" class="hover:text-(--brand-primary)">
+										{{ login.loginAt|date('d/m/Y H:i') }}
+									</a>
+									<span class="font-mono text-xs opacity-60">{{ login.ip ?? '—' }}</span>
+								</li>
+							{% endfor %}
+						</ul>
+					{% endif %}
+				</div>
+
+				<div class="card">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 mb-3">
+						Autres échecs — même IP
+					</h3>
+					{% if not ip %}
+						<p class="text-sm opacity-50">IP non enregistrée.</p>
+					{% elseif relatedFailedByIp is empty %}
+						<p class="text-sm opacity-50">Aucune autre tentative depuis {{ ip }}.</p>
+					{% else %}
+						<ul class="space-y-2">
+							{% for attempt in relatedFailedByIp %}
+								<li class="text-sm flex items-center justify-between gap-2">
+									<a href="{{ path('admin_security_log_show_failed', {id: attempt.id}) }}" class="hover:text-(--brand-primary)">
+										{{ attempt.createdAt|date('d/m/Y H:i') }}
+									</a>
+									<span class="text-xs opacity-60 truncate max-w-28" title="{{ attempt.email }}">{{ attempt.email }}</span>
+								</li>
+							{% endfor %}
+						</ul>
+					{% endif %}
+				</div>
+
+				<div class="card">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 mb-3">
+						Autres échecs — même email
+					</h3>
+					{% if relatedFailedByEmail is empty %}
+						<p class="text-sm opacity-50">Aucune autre tentative échouée pour {{ email }}.</p>
+					{% else %}
+						<ul class="space-y-2">
+							{% for attempt in relatedFailedByEmail %}
+								<li class="text-sm flex items-center justify-between gap-2">
+									<a href="{{ path('admin_security_log_show_failed', {id: attempt.id}) }}" class="hover:text-(--brand-primary)">
+										{{ attempt.createdAt|date('d/m/Y H:i') }}
+									</a>
+									<span class="font-mono text-xs opacity-60">{{ attempt.ip ?? '—' }}</span>
+								</li>
+							{% endfor %}
+						</ul>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

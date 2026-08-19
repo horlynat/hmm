@@ -52,5 +52,13 @@ final class UserChecker implements UserCheckerInterface
         if (!$user->isActive()) {
             throw new CustomUserMessageAccountStatusException('Votre compte a été désactivé. Contactez le support pour plus d\'informations.');
         }
+
+        if ($user->isLocked()) {
+            throw new CustomUserMessageAccountStatusException('Votre compte est temporairement verrouillé suite à plusieurs échecs de connexion. Réessayez plus tard.');
+        }
+
+        if ($user->isExpired()) {
+            throw new CustomUserMessageAccountStatusException('Votre compte a expiré. Contactez le support pour plus d\'informations.');
+        }
     }
 }

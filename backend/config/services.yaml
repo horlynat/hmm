@@ -115,6 +115,10 @@ services:
             - { name: doctrine.event_listener, event: postRemove }
             - { name: doctrine.event_listener, event: postFlush }
 
+    App\EventSubscriber\TotpSecretEncryptionListener:
+        tags:
+            - { name: doctrine.event_listener, event: postLoad }
+
     App\Service\DatabaseBackupService:
         arguments:
             $backupDir: '%app.backup_dir%'

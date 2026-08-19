@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Project;
 use App\Enum\ContactMessageStatusEnum;
+use App\Enum\ExpenseStatusEnum;
 use App\Enum\ProjectStatusEnum;
 use App\Enum\QuoteStatusEnum;
 use App\Repository\ArticleRepository;
@@ -11,14 +12,17 @@ use App\Repository\ContactMessageRepository;
 use App\Repository\CourseRepository;
 use App\Repository\ExperienceRepository;
 use App\Repository\FailedLoginAttemptRepository;
+use App\Repository\InvoiceRepository;
+use App\Repository\ProjectExpenseRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\QuoteRequestRepository;
 use App\Repository\SkillRepository;
+use App\Repository\SupportTicketRepository;
 use App\Repository\TestimonialRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\DashboardVoter;
+use App\Service\LiveSessionStateResolver;
 use App\Service\ProjectStatisticsService;
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -53,9 +57,12 @@ class AdminDashboardController extends AbstractController
         ExperienceRepository $experienceRepository,
         TestimonialRepository $testimonialRepository,
         FailedLoginAttemptRepository $failedLoginAttemptRepository,
+        InvoiceRepository $invoiceRepository,
+        ProjectExpenseRepository $projectExpenseRepository,
+        SupportTicketRepository $supportTicketRepository,
         ProjectStatisticsService $statisticsService,
         EntityManagerInterface $entityManager,
-        Connection $connection,
+        LiveSessionStateResolver $liveSessionStateResolver,
         #[Autowire('%kernel.project_dir%')]
         string $projectDir,
     ): Response {
@@ -81,7 +88,6 @@ class AdminDashboardController extends AbstractController
 
         // Listes de performances et alertes (Top 5)
         $topBudgetProjects = $projectRepository->findBy([], ['budget' => 'DESC'], 5);
-        $topSpentProjects = $projectRepository->findBy([], ['spent' => 'DESC'], 5);
 
         // Projets en dépassement de budget
         $overBudgetProjects = $projectRepository->createQueryBuilder('p')
@@ -157,11 +163,18 @@ class AdminDashboardController extends AbstractController
         $recentFailedLoginAttemptsCount = $failedLoginAttemptRepository->countSince(
             new \DateTimeImmutable('-24 hours'),
         );
-        // Même définition de "session active" que AdminSecuritySessionController::index()
-        $activeSessionsCount = (int) $connection->fetchOne(
-            'SELECT COUNT(*) FROM sessions WHERE sess_time + sess_lifetime >= :now',
-            ['now' => time()],
-        );
+        // Même source de vérité que AdminSecuritySessionController::index() —
+        // corrigé d'une requête brute qui traitait sess_lifetime comme une durée
+        // à ajouter à sess_time, alors que c'est un timestamp d'expiration
+        // absolu (cf. docblock de LiveSessionStateResolver) : ce compteur
+        // comptait donc quasiment toutes les sessions jamais créées comme
+        // "actives".
+        $activeSessionsCount = 0;
+        foreach ($liveSessionStateResolver->resolveAll() as $session) {
+            if ($session['active']) {
+                ++$activeSessionsCount;
+            }
+        }
 
         // ── Équipe & utilisateurs ───────────────────────────────────────────
         $adminsCount = count($userRepository->findAdmins());
@@ -177,12 +190,31 @@ class AdminDashboardController extends AbstractController
         // ── Modération ──────────────────────────────────────────────────────
         $pendingTestimonialsCount = count($testimonialRepository->findPending());
 
+        // ── Finance ─────────────────────────────────────────────────────────
+        // Mêmes requêtes que AdminFinanceController::index() (module Finance)
+        // — absentes du dashboard central jusqu'ici alors que ce sont les deux
+        // signaux qui appellent une action, contrairement au CA/pipeline déjà
+        // affichés en KPI plus haut.
+        $overdueInvoicesCount = count($invoiceRepository->findOverdueForReminder());
+        $pendingExpensesCount = $projectExpenseRepository->count(['status' => ExpenseStatusEnum::PENDING]);
+
+        // ── Support ─────────────────────────────────────────────────────────
+        $openTicketsCount = $supportTicketRepository->countOpenOrInProgress();
+
+        // ── Incidents critiques ─────────────────────────────────────────────
+        // La bannière d'alerte du template lit stats.criticalIncidentsCount
+        // depuis toujours, mais rien ne la renseignait : elle ne pouvait
+        // jamais s'afficher. Seuls les deux signaux ci-dessus appellent une
+        // action immédiate plutôt qu'un suivi de routine (une facture en
+        // retard ou un projet qui dépasse son budget ne se résout pas tout
+        // seul) — les autres compteurs du dashboard restent informatifs.
+        $stats['criticalIncidentsCount'] = $stats['overBudgetCount'] + $overdueInvoicesCount;
+
         return $this->render('admin/dashboard/index.html.twig', [
             'stats' => $stats,
             'revenue' => $revenue,
             'projectsByStatus' => $projectsByStatus,
             'topBudgetProjects' => $topBudgetProjects,
-            'topSpentProjects' => $topSpentProjects,
             'overBudgetProjects' => $overBudgetProjects,
             'lowBudgetProjects' => $lowBudgetProjects,
             'activeUsers' => $activeUsers,
@@ -205,6 +237,9 @@ class AdminDashboardController extends AbstractController
             'coursesCount' => $coursesCount,
             'experiencesCount' => $experiencesCount,
             'pendingTestimonialsCount' => $pendingTestimonialsCount,
+            'overdueInvoicesCount' => $overdueInvoicesCount,
+            'pendingExpensesCount' => $pendingExpensesCount,
+            'openTicketsCount' => $openTicketsCount,
         ]);
     }
 

@@ -9,11 +9,16 @@ use App\Entity\LoginHistory;
 use App\Entity\User;
 use App\Entity\UserSession;
 use App\Enum\NotificationPriorityEnum;
+use App\Message\CheckSessionAnomaliesMessage;
 use App\Message\EnrichLoginLocationMessage;
 use App\Message\LoginNotification;
 use App\Repository\FailedLoginAttemptRepository;
 use App\Repository\UserRepository;
+use App\Repository\UserSessionRepository;
 use App\Service\AdminAlertNotifier;
+use App\Service\LiveSessionStateResolver;
+use App\Service\SessionAnomalyDetector;
+use App\Service\UserSessionRevoker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -34,6 +39,18 @@ class LoginListener
     private const SUSPICIOUS_MIN_ATTEMPTS = 3;
 
     /**
+     * Verrouillage de compte automatique — distinct du rate-limiter (5/min,
+     * très court, anti-bruteforce immédiat) et de l'alerte IP ci-dessus
+     * (notification admin seule, pas de blocage) : ici, au-delà du seuil,
+     * le COMPTE lui-même (par email, indépendamment de l'IP) est verrouillé
+     * temporairement. Seuils par défaut, à ajuster si une politique plus
+     * précise est définie.
+     */
+    private const ACCOUNT_LOCK_WINDOW_MINUTES = 15;
+    private const ACCOUNT_LOCK_MIN_ATTEMPTS = 5;
+    private const ACCOUNT_LOCK_DURATION_MINUTES = 15;
+
+    /**
      * Firewalls sur lesquels un LoginSuccessEvent représente une vraie connexion
      * interactive. Le firewall `api` (JWT stateless, cf. security.yaml) est
      * volontairement exclu : sans session, Symfony ré-authentifie le Bearer
@@ -52,6 +69,10 @@ class LoginListener
         private FailedLoginAttemptRepository $failedLoginAttemptRepository,
         private AdminAlertNotifier $adminAlertNotifier,
         private UserRepository $userRepository,
+        private UserSessionRepository $userSessionRepository,
+        private LiveSessionStateResolver $liveSessionStateResolver,
+        private UserSessionRevoker $userSessionRevoker,
+        private SessionAnomalyDetector $anomalyDetector,
     ) {
     }
 
@@ -109,13 +130,46 @@ class LoginListener
             sessionId: $request->getSession()->getId(),
             ip: $request->getClientIp(),
             userAgent: $request->headers->get('User-Agent'),
+            loginHistory: $loginHistory,
         );
 
         $this->entityManager->persist($loginHistory);
         $this->entityManager->persist($userSession);
         $this->entityManager->flush();
 
+        $this->enforceConcurrentSessionLimit($user);
+
         $this->bus->dispatch(new EnrichLoginLocationMessage($loginHistory->getId()));
+        $this->bus->dispatch(new CheckSessionAnomaliesMessage($user->getId()));
+    }
+
+    /**
+     * Au-delà de SessionAnomalyDetector::DEFAULT_MAX_CONCURRENT_SESSIONS sessions
+     * actives pour ce compte, évince les plus anciennes — jamais la session qui
+     * vient de s'ouvrir. Éviction "douce" (UserSessionRevoker::killLiveSession,
+     * pas forceLogout) : un appareil évincé qui a un cookie remember-me valide
+     * pourra rouvrir une session normalement à sa prochaine requête, ce n'est
+     * qu'une limite de capacité, pas une sanction de sécurité.
+     */
+    private function enforceConcurrentSessionLimit(User $user): void
+    {
+        $liveSessions = $this->liveSessionStateResolver->resolveAll();
+
+        $activeSessions = array_values(array_filter(
+            $this->userSessionRepository->findByUserOrderedByCreatedAt($user),
+            static fn (UserSession $s) => $liveSessions[$s->getSessionId()]['active'] ?? false,
+        ));
+
+        $toEvict = $this->anomalyDetector->selectSessionsExceedingLimit($activeSessions);
+        if ([] === $toEvict) {
+            return;
+        }
+
+        foreach ($toEvict as $session) {
+            $this->userSessionRevoker->killLiveSession($session);
+        }
+
+        $this->entityManager->flush();
     }
 
     public function onLoginFailure(LoginFailureEvent $event): void
@@ -132,6 +186,8 @@ class LoginListener
             $exception instanceof AccountStatusException => match (true) {
                 str_contains($exception->getMessage(), 'vérifié') => 'unverified_account',
                 str_contains($exception->getMessage(), 'désactivé') => 'inactive_account',
+                str_contains($exception->getMessage(), 'verrouillé') => 'locked_account',
+                str_contains($exception->getMessage(), 'expiré') => 'expired_account',
                 default => 'account_status',
             },
             $exception instanceof CustomUserMessageAuthenticationException
@@ -155,6 +211,40 @@ class LoginListener
         $this->entityManager->flush();
 
         $this->alertIfSuspicious($attempt);
+
+        // Ne compte que les vrais mauvais mots de passe contre un compte existant
+        // et non déjà bloqué (cf. reason ci-dessus) — inutile de verrouiller un
+        // compte inconnu ou déjà rejeté pour une autre raison.
+        if ('bad_credentials' === $reason) {
+            $this->lockAccountIfThresholdReached($email);
+        }
+    }
+
+    /**
+     * Verrouille temporairement le compte après trop d'échecs récents sur le
+     * même email — indépendant de l'IP (cf. alertIfSuspicious, qui ne fait que
+     * notifier l'admin sans jamais bloquer). Le verrou expire de lui-même
+     * (User::isLocked()) ; aucune action de déverrouillage manuel requise.
+     */
+    private function lockAccountIfThresholdReached(string $email): void
+    {
+        $count = $this->failedLoginAttemptRepository->countRecentByEmail(
+            $email,
+            new \DateInterval(sprintf('PT%dM', self::ACCOUNT_LOCK_WINDOW_MINUTES)),
+        );
+
+        if ($count < self::ACCOUNT_LOCK_MIN_ATTEMPTS) {
+            return;
+        }
+
+        $user = $this->userRepository->findOneBy(['email' => $email]);
+        if (!$user instanceof User) {
+            return;
+        }
+
+        $user->setLockedUntil(new \DateTimeImmutable(sprintf('+%d minutes', self::ACCOUNT_LOCK_DURATION_MINUTES)));
+        $user->setLockedReason('too_many_failed_attempts');
+        $this->entityManager->flush();
     }
 
     /**

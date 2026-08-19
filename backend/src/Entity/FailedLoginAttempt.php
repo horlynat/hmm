@@ -76,6 +76,8 @@ class FailedLoginAttempt
             'bad_credentials' => 'Mot de passe incorrect',
             'unverified_account' => 'Compte non vérifié',
             'inactive_account' => 'Compte désactivé',
+            'locked_account' => 'Compte verrouillé (échecs répétés)',
+            'expired_account' => 'Compte expiré',
             'rate_limited' => 'Trop de tentatives (rate-limit)',
             'unknown_user' => 'Utilisateur introuvable',
             default => ucfirst($this->reason),
