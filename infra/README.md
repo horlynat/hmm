@@ -301,6 +301,8 @@ Ajouter au crontab root :
 0 3 * * * DEPLOY_PATH=/opt/hmm AGE_RECIPIENT=age1... /opt/hmm/infra/scripts/backup.sh
 # Purge RGPD des logs de conversation de l'assistant IA (> 90 jours, cf. §12)
 0 4 * * * docker compose -f /opt/hmm/infra/docker-compose.prod.yml exec -T -u www-data backend php bin/console app:ai-assistant:purge-logs
+# Purge du journal de connexions (connexions réussies > 365j, tentatives échouées > 90j, cf. SecurityLogRetentionPolicy)
+0 5 * * * docker compose -f /opt/hmm/infra/docker-compose.prod.yml exec -T -u www-data backend php bin/console app:security-log:purge
 ```
 
 Tester une restauration au moins une fois (`scripts/backup.sh --restore <fichier>`)
