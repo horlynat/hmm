@@ -13,7 +13,7 @@ use Doctrine\Migrations\AbstractMigration;
  * superflu sur user.is_system_account (absent du mapping ORM). Aucun
  * changement de comportement.
  */
-final class Version20260819123205 extends AbstractMigration
+final class Version20260819130100 extends AbstractMigration
 {
     public function getDescription(): string
     {
