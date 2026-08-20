@@ -1,0 +1,32 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block title %}Nouveau message concernant votre candidature{% endblock %}
+{% block preheader %}Un message nécessitant votre attention vous attend.{% endblock %}
+{% block badge_label %}Message{% endblock %}
+{% block badge_color %}#dbeafe{% endblock %}
+{% block badge_text_color %}#1e40af{% endblock %}
+
+{% block body %}
+	<h1 style="margin:0 0 16px; font-size:20px; color:#03045e;">Vous avez un nouveau message</h1>
+
+	<p style="margin:0 0 8px;">Bonjour <strong>{{ fullName }}</strong>,</p>
+	<p style="margin:0 0 20px;">
+		Notre équipe vous a envoyé un message au sujet de votre candidature, nécessitant votre attention.
+	</p>
+
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+		<tr>
+			<td style="padding:16px; background-color:#f6f8fa; border-left:3px solid #1e40af; border-radius:0 8px 8px 0; font-size:14px; line-height:1.6; white-space:pre-line;">{{ messageBody }}</td>
+		</tr>
+	</table>
+
+	<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 8px;">
+		<tr>
+			<td align="center" bgcolor="#0077b6" style="background-color:#0077b6; border-radius:6px;">
+				<a href="{{ messagesUrl }}" style="display:inline-block; padding:14px 28px; color:#ffffff; font-size:15px; font-weight:bold; text-decoration:none; font-family:Arial, Helvetica, sans-serif;">
+					Voir et répondre
+				</a>
+			</td>
+		</tr>
+	</table>
+{% endblock %}
