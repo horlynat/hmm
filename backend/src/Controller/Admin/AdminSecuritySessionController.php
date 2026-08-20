@@ -64,15 +64,17 @@ class AdminSecuritySessionController extends AbstractController
         $liveSessions = $this->liveSessionStateResolver->resolveAll();
         $currentSessionId = $request->getSession()->getId();
 
-        // ── Assemblage : état + appareil + localisation (résolue en direct via le
-        // cache de GeolocationService plutôt que via UserSession::loginHistory —
-        // ce dernier n'est peuplé qu'après le passage du worker asynchrone
-        // EnrichLoginLocationMessage, potentiellement pas encore fait pour une
-        // session toute fraîche ; l'appel direct utilise le même cache, donc pas
-        // de coût réseau supplémentaire une fois la première résolution faite,
-        // et donne aussi les coordonnées nécessaires à la détection ci-dessous).
-        // Uniquement pour les sessions ACTIVES : inutile de géolocaliser une
-        // session terminée que personne ne consultera dans le détail.
+        // ── Assemblage : état + appareil + localisation. Pour une session ACTIVE,
+        // résolue en direct via le cache de GeolocationService (pas de coût
+        // réseau supplémentaire une fois la première résolution faite) plutôt
+        // que via UserSession::loginHistory — celui-ci n'est peuplé qu'après le
+        // passage du worker asynchrone EnrichLoginLocationMessage (cf.
+        // messenger.yaml), potentiellement pas encore fait pour une session
+        // toute fraîche ; l'appel direct donne aussi les coordonnées nécessaires
+        // à la détection ci-dessous. Pour une session non active, inutile d'un
+        // appel réseau live (personne ne consultera le détail géographique
+        // d'une session terminée) : le worker a largement eu le temps de
+        // peupler LoginHistory::location entre-temps, on le lit tel quel.
         $allEntries = [];
         foreach ($userSessionRepository->findAllOrderedByCreatedAt() as $userSession) {
             $live = $liveSessions[$userSession->getSessionId()] ?? null;
@@ -87,6 +89,8 @@ class AdminSecuritySessionController extends AbstractController
             if ('active' === $state && null !== $userSession->getIp()) {
                 $coordinates = $geolocationService->getLocationFromIp($userSession->getIp());
                 $locationLabel = GeolocationService::formatLabel($coordinates);
+            } else {
+                $locationLabel = $userSession->getLoginHistory()?->getLocation();
             }
 
             $allEntries[] = [
@@ -235,6 +239,8 @@ class AdminSecuritySessionController extends AbstractController
                 $location = null;
                 if ('active' === $state && null !== $userSession->getIp()) {
                     $location = GeolocationService::formatLabel($geolocationService->getLocationFromIp($userSession->getIp()));
+                } else {
+                    $location = $userSession->getLoginHistory()?->getLocation();
                 }
 
                 yield $exporter->row([
