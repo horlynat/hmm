@@ -197,14 +197,19 @@ final class ReconnectingPdoSessionHandlerTest extends TestCase
 
         try {
             $handler->read('sess1');
-        } catch (\LogicException $e) {
-            $this->fail(\sprintf(
-                "open() n'a pas été rejoué sur le handler reconstruit avant le retry : %s",
-                $e->getMessage(),
-            ));
-        } catch (\Throwable) {
-            // Attendu : le retry échoue bien plus loin (driver/verrouillage),
-            // preuve qu'open() a été rejoué avec succès avant lui.
+        } catch (\Throwable $e) {
+            // \DomainException (ex. "SQLite does not support advisory locks",
+            // levée par PdoSessionHandler::doRead()) hérite de \LogicException :
+            // un catch(\LogicException) seul confondrait donc cet échec attendu,
+            // bien plus loin dans le retry, avec la régression à détecter.
+            // Seul le message précis "Session name cannot be empty" prouve que
+            // open() n'a pas été rejoué avant read().
+            if (str_contains($e->getMessage(), 'Session name cannot be empty')) {
+                $this->fail(\sprintf(
+                    "open() n'a pas été rejoué sur le handler reconstruit avant le retry : %s",
+                    $e->getMessage(),
+                ));
+            }
         }
 
         $this->addToAssertionCount(1);
