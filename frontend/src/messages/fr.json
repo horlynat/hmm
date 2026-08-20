@@ -963,6 +963,7 @@
         "myQuotes": "Mes demandes de devis",
         "projectManagement": "Gestion de projet",
         "invoices": "Mes factures",
+        "messages": "Messages",
         "changePassword": "Changer le mot de passe",
         "security": "Sécurité et 2FA",
         "settings": "Paramètres",
@@ -1057,6 +1058,18 @@
         "title": "Nouvelle demande de devis",
         "subtitle": "Décrivez votre besoin — nous revenons vers vous rapidement.",
         "successCta": "Voir mes demandes de devis"
+      },
+      "messagesPage": {
+        "title": "Messages",
+        "subtitle": "Vos échanges avec notre équipe au sujet de votre candidature.",
+        "empty": "Aucun message pour le moment.",
+        "teamLabel": "Notre équipe",
+        "youLabel": "Vous",
+        "replyLabel": "Votre message",
+        "replyPlaceholder": "Écrivez votre message...",
+        "replySubmit": "Envoyer",
+        "replySuccess": "Votre message a été envoyé.",
+        "replyError": "Une erreur est survenue, merci de réessayer."
       }
     },
     "profile": {

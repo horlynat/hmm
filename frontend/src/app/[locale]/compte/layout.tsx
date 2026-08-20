@@ -54,6 +54,7 @@ export default async function CompteLayout({
       (isCollaborator ? attributions.collaboratingProjects.length + attributions.ownedProjects.length : 0),
     managedProjects: attributions.collaboratingProjects.length + attributions.ownedProjects.length,
     unpaidInvoices: attributions.invoices.filter((inv) => inv.status === "pending").length,
+    unreadMessages: user.unreadMessagesCount,
   };
 
   return (

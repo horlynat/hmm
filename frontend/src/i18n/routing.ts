@@ -117,6 +117,10 @@ export const routing = defineRouting({
       fr: "/compte/factures",
       en: "/account/invoices",
     },
+    "/compte/messages": {
+      fr: "/compte/messages",
+      en: "/account/messages",
+    },
     "/compte/mot-de-passe": {
       fr: "/compte/mot-de-passe",
       en: "/account/password",

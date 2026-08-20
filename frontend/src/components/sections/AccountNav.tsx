@@ -17,6 +17,7 @@ import {
   Trash2,
   Plus,
   HelpCircle,
+  MessagesSquare,
   PanelLeftClose,
   PanelLeftOpen,
   type LucideIcon,
@@ -37,6 +38,7 @@ type AccountPath =
   | "/compte/devis"
   | "/compte/gestion-projet"
   | "/compte/factures"
+  | "/compte/messages"
   | "/compte/profil"
   | "/compte/mot-de-passe"
   | "/compte/securite"
@@ -112,6 +114,8 @@ export interface AccountNavCounts {
   managedProjects: number;
   /** Factures au statut "pending" (cf. InvoiceStatusEnum côté backend). */
   unpaidInvoices: number;
+  /** Messages admin non lus dans la conversation candidat (cf. SessionUser.unreadMessagesCount). */
+  unreadMessages: number;
 }
 
 interface AccountNavProps {
@@ -186,6 +190,13 @@ export function AccountNav({
           icon={Receipt}
           collapsed={collapsed}
           badge={counts.unpaidInvoices > 0 && <Badge variant="warning">{counts.unpaidInvoices}</Badge>}
+        />
+        <NavLink
+          href="/compte/messages"
+          label={t("messages")}
+          icon={MessagesSquare}
+          collapsed={collapsed}
+          badge={counts.unreadMessages > 0 && <Badge variant="accent">{counts.unreadMessages}</Badge>}
         />
       </NavGroup>
 
