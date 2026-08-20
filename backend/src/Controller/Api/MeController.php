@@ -2,6 +2,7 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\CandidateMessage;
 use App\Entity\Comment;
 use App\Entity\Invoice;
 use App\Entity\Media;
@@ -14,14 +15,17 @@ use App\Entity\TimeEntry;
 use App\Entity\User;
 use App\Enum\CurrencyEnum;
 use App\Enum\InvoiceStatusEnum;
+use App\Enum\NotificationPriorityEnum;
 use App\Enum\ProjectStatusEnum;
 use App\Enum\TaskStatusEnum;
 use App\Exception\TooManyRequestsException;
+use App\Repository\CandidateMessageRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\ProjectTaskRepository;
 use App\Repository\QuoteRequestRepository;
 use App\Security\Voter\ProjectVoter;
 use App\Service\AccountLinkResolver;
+use App\Service\AdminAlertNotifier;
 use App\Service\CurrencyConversionService;
 use App\Service\DeviceParser;
 use App\Service\EmailManager;
@@ -100,6 +104,7 @@ final class MeController extends AbstractController
         private readonly GeolocationService $geolocationService,
         private readonly DeviceParser $deviceParser,
         private readonly CurrencyConversionService $conversionService,
+        private readonly CandidateMessageRepository $candidateMessageRepository,
     ) {
     }
 
@@ -495,6 +500,68 @@ final class MeController extends AbstractController
             'history' => \array_slice($history, 0, self::ACTIVITY_LIMIT),
             'messages' => \array_slice($messages, 0, self::ACTIVITY_LIMIT),
         ]);
+    }
+
+    /**
+     * Fil de conversation candidat <-> admin (App\Entity\CandidateMessage) —
+     * consulter le fil vaut accusé de lecture des messages admin, comme
+     * AdminCollaboratorController::read() le fait dans l'autre sens.
+     */
+    #[Route('/messages', name: 'messages_read', methods: ['GET'])]
+    public function readMessages(): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $this->candidateMessageRepository->markReadFor($user, fromAdmin: true);
+
+        return $this->json([
+            'messages' => array_map(
+                $this->serializeCandidateMessage(...),
+                $this->candidateMessageRepository->findForCandidate($user),
+            ),
+        ]);
+    }
+
+    /**
+     * Répond dans le fil de conversation candidat <-> admin. Aucune
+     * restriction de profil complet ici (contrairement à createComment()) :
+     * un candidat non encore promu doit pouvoir répondre à l'équipe.
+     */
+    #[Route('/messages', name: 'messages_create', methods: ['POST'])]
+    public function createMessage(Request $request, AdminAlertNotifier $adminAlertNotifier): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        $body = \is_array($payload) ? $this->nullableString($payload['body'] ?? null) : null;
+        if (null === $body) {
+            return $this->json(['detail' => 'Le message ne peut pas être vide.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $message = new CandidateMessage();
+        $message->setCandidate($user)->setBody($body)->setFromAdmin(false);
+
+        $violations = $this->validator->validate($message);
+        if (\count($violations) > 0) {
+            return $this->json(['detail' => $violations[0]->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $this->entityManager->persist($message);
+        $this->entityManager->flush();
+
+        $adminAlertNotifier->alert(
+            NotificationPriorityEnum::MEDIUM,
+            'Nouvelle réponse candidat',
+            \sprintf('%s <%s> a répondu dans sa conversation candidat.', $user->getFullName() ?? $user->getEmail(), $user->getEmail()),
+        );
+
+        return $this->json($this->serializeCandidateMessage($message), Response::HTTP_CREATED);
     }
 
     /**
@@ -921,6 +988,22 @@ final class MeController extends AbstractController
     /**
      * @return array<string, mixed>
      */
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeCandidateMessage(CandidateMessage $message): array
+    {
+        return [
+            'id' => $message->getId(),
+            'body' => $message->getBody(),
+            'fromAdmin' => $message->isFromAdmin(),
+            'createdAt' => $message->getCreatedAt()->format(\DateTimeInterface::ATOM),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     private function serializeComment(Comment $comment, Project $project, User $viewer): array
     {
         $author = $comment->getAuthor();
@@ -1117,6 +1200,8 @@ final class MeController extends AbstractController
             'lastDeviceBrand' => $device['brand'],
             'lastDeviceLabel' => $device['label'],
             'editableFields' => self::EDITABLE_FIELDS,
+            // Messages admin non lus — badge de l'aside /compte (cf. AccountNav).
+            'unreadMessagesCount' => $this->candidateMessageRepository->countUnreadForCandidate($user),
             'attributions' => [
                 // Projets confiés au collaborateur/freelance (participation ou pilotage).
                 'collaboratingProjects' => array_map($this->serializeProject(...), $user->getCollaboratingProjects()->toArray()),

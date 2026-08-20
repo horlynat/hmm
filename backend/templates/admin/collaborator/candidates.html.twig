@@ -66,8 +66,11 @@
 						</td>
 						<td>
 							<div class="flex items-center justify-end gap-1">
-								<a href="{{ path('admin_collaborator_read', {'id': candidate.id}) }}" class="btn btn-ghost btn-icon" aria-label="Voir la candidature de {{ candidate.fullName ?? candidate.email }}">
+								<a href="{{ path('admin_collaborator_read', {'id': candidate.id}) }}" class="btn btn-ghost btn-icon relative" aria-label="Voir la candidature de {{ candidate.fullName ?? candidate.email }}{{ unreadCounts[candidate.id] is defined ? ' (nouvelle réponse)' : '' }}">
 									<span class="ti ti-eye text-lg" aria-hidden="true"></span>
+									{% if unreadCounts[candidate.id] is defined %}
+										<span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white" aria-hidden="true">{{ unreadCounts[candidate.id] }}</span>
+									{% endif %}
 								</a>
 								<a href="{{ path('admin_collaborator_update', {'id': candidate.id}) }}" class="btn btn-ghost btn-icon text-success" aria-label="Promouvoir {{ candidate.fullName ?? candidate.email }}" title="Promouvoir en collaborateur">
 									<span class="ti ti-user-check text-lg" aria-hidden="true"></span>

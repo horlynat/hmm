@@ -99,6 +99,25 @@ final class CollaboratorRegistrationProcessor implements ProcessorInterface
             ],
         );
 
+        // ✅ sendAsync() — accusé de réception non-critique, distinct de l'email
+        // de vérification ci-dessus (qui porte un token JWT à durée de vie
+        // courte et doit donc rester synchrone) : confirme au candidat que sa
+        // candidature est bien enregistrée et en cours d'examen.
+        $this->emailManager->sendAsync(
+            to: $user->getEmail(),
+            subject: 'Votre candidature a bien été reçue',
+            template: 'candidate_application_received',
+            context: [
+                'fullName' => $user->getFullName(),
+                'accountUrl' => $this->accountLinkResolver->resolve(
+                    $user,
+                    'admin_collaborator_read',
+                    ['id' => $user->getId()],
+                    '/compte',
+                ),
+            ],
+        );
+
         return $user;
     }
 }

@@ -2,12 +2,16 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\CandidateMessage;
 use App\Entity\User;
 use App\Form\UserType;
+use App\Repository\CandidateMessageRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\UserVoter;
+use App\Service\AccountLinkResolver;
 use App\Service\AccountWelcomeNotifier;
 use App\Service\AuditLogger;
+use App\Service\EmailManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
@@ -33,6 +37,7 @@ final class AdminCollaboratorController extends AbstractController
         private readonly UserRepository $userRepository,
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly AccountWelcomeNotifier $accountWelcomeNotifier,
+        private readonly CandidateMessageRepository $candidateMessageRepository,
     ) {
     }
 
@@ -59,6 +64,7 @@ final class AdminCollaboratorController extends AbstractController
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
         return $this->render('admin/collaborator/candidates.html.twig', [
+            'unreadCounts' => $this->candidateMessageRepository->countUnreadFromCandidatesGroupedByCandidate(),
             'candidates' => $this->userRepository->findFreelanceCandidates(),
         ]);
     }
@@ -100,9 +106,73 @@ final class AdminCollaboratorController extends AbstractController
     {
         $this->denyAccessUnlessGranted(UserVoter::VIEW, $user);
 
+        // Consulter le fil vaut accusé de lecture des réponses du candidat,
+        // même logique que AdminSupportTicketController::read() (implicite là
+        // via le statut) — ici explicite puisque CandidateMessage porte son
+        // propre indicateur $read par sens.
+        $this->candidateMessageRepository->markReadFor($user, fromAdmin: false);
+        $this->entityManager->flush();
+
         return $this->render('admin/collaborator/read.html.twig', [
             'user' => $user,
+            'messages' => $this->candidateMessageRepository->findForCandidate($user),
         ]);
+    }
+
+    // =========================================================================
+    // 📌 CONVERSATION AVEC LE CANDIDAT (fil de messages admin <-> candidat)
+    // =========================================================================
+
+    #[Route('/{id}/messages', name: 'message_send', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function sendMessage(
+        User $user,
+        Request $request,
+        AuditLogger $auditLogger,
+        EmailManager $emailManager,
+        AccountLinkResolver $accountLinkResolver,
+    ): Response {
+        $this->denyAccessUnlessGranted(UserVoter::VIEW, $user);
+
+        if (!$this->isCsrfTokenValid('candidate_message_'.$user->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+
+            return $this->redirectToRoute('admin_collaborator_read', ['id' => $user->getId()]);
+        }
+
+        $body = trim((string) $request->request->get('body', ''));
+        if (mb_strlen($body) < 10) {
+            $this->addFlash('error', 'Le message doit contenir au moins 10 caractères.');
+
+            return $this->redirectToRoute('admin_collaborator_read', ['id' => $user->getId()]);
+        }
+
+        $message = new CandidateMessage();
+        $message->setCandidate($user);
+        $message->setBody($body);
+        $message->setFromAdmin(true);
+        $this->entityManager->persist($message);
+        $auditLogger->log(User::class, $user->getId(), $user->getEmail(), 'message_sent');
+        $this->entityManager->flush();
+
+        $emailManager->sendAsync(
+            to: $user->getEmail(),
+            subject: 'Nouveau message concernant votre candidature',
+            template: 'candidate_message_received',
+            context: [
+                'fullName' => $user->getFullName(),
+                'messageBody' => $body,
+                'messagesUrl' => $accountLinkResolver->resolve(
+                    $user,
+                    'admin_collaborator_read',
+                    ['id' => $user->getId()],
+                    '/compte/messages',
+                ),
+            ],
+        );
+
+        $this->addFlash('success', 'Le message a été envoyé. Le candidat a été notifié par email.');
+
+        return $this->redirectToRoute('admin_collaborator_read', ['id' => $user->getId()]);
     }
 
     #[Route('/{id}/update', name: 'update', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
