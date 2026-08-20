@@ -180,3 +180,9 @@ export const supportTicketReplySchema = (t: Translator) =>
     message: z.string().trim().min(10, t("tooShort", { min: 10 })).max(5000, t("tooLong", { max: 5000 })),
   });
 export type SupportTicketReplyValues = z.infer<ReturnType<typeof supportTicketReplySchema>>;
+
+export const candidateMessageSchema = (t: Translator) =>
+  z.object({
+    body: z.string().trim().min(10, t("tooShort", { min: 10 })).max(5000, t("tooLong", { max: 5000 })),
+  });
+export type CandidateMessageValues = z.infer<ReturnType<typeof candidateMessageSchema>>;

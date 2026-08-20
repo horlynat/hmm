@@ -963,6 +963,7 @@
         "myQuotes": "My quote requests",
         "projectManagement": "Project management",
         "invoices": "My invoices",
+        "messages": "Messages",
         "changePassword": "Change password",
         "security": "Security & 2FA",
         "settings": "Settings",
@@ -1057,6 +1058,18 @@
         "title": "New quote request",
         "subtitle": "Describe your needs — we'll get back to you shortly.",
         "successCta": "View my quote requests"
+      },
+      "messagesPage": {
+        "title": "Messages",
+        "subtitle": "Your exchanges with our team about your application.",
+        "empty": "No messages yet.",
+        "teamLabel": "Our team",
+        "youLabel": "You",
+        "replyLabel": "Your message",
+        "replyPlaceholder": "Write your message...",
+        "replySubmit": "Send",
+        "replySuccess": "Your message has been sent.",
+        "replyError": "Something went wrong, please try again."
       }
     },
     "profile": {

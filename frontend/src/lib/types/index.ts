@@ -562,6 +562,14 @@ export interface SessionAttributions {
   invoices: SessionInvoice[];
 }
 
+/** Un message du fil de conversation candidat <-> admin (App\Entity\CandidateMessage), tel que renvoyé par GET/POST /api/me/messages. */
+export interface CandidateMessage {
+  id: number;
+  body: string;
+  fromAdmin: boolean;
+  createdAt: string;
+}
+
 /**
  * Utilisateur courant (self-service) — miroir du payload de
  * App\Controller\Api\MeController::serializeUser(). Jamais de champ sensible
@@ -605,6 +613,8 @@ export interface SessionUser {
   lastDeviceBrand: string | null;
   lastDeviceLabel: string;
   editableFields: string[];
+  /** Messages admin non lus dans la conversation candidat — voir CandidateMessage / AccountNav. */
+  unreadMessagesCount: number;
   attributions: SessionAttributions;
 }
 

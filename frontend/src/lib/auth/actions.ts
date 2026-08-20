@@ -17,6 +17,7 @@ import type {
   SessionTask,
   SessionTimeEntry,
   TaskStatus,
+  CandidateMessage,
 } from "@/lib/types";
 
 /**
@@ -843,6 +844,77 @@ export async function deleteAccount(): Promise<ApiPostResult> {
     return { ok: true };
   } catch (error) {
     console.error("[auth] deleteAccount failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+/**
+ * Fil de conversation candidat <-> admin : GET /api/me/messages. La
+ * consultation vaut accusé de lecture côté backend (CandidateMessageRepository::markReadFor),
+ * d'où `revalidate: "no-store"` implicite (jamais de cache HTTP entre deux
+ * appels, sinon un badge "non lu" resterait affiché après lecture).
+ */
+export async function getCandidateMessages(): Promise<CandidateMessage[] | null> {
+  const token = await getToken();
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_URL}/me/messages`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return null;
+
+    const body = (await res.json()) as { messages: CandidateMessage[] };
+    return body.messages;
+  } catch (error) {
+    console.error("[auth] getCandidateMessages failed", error);
+    return null;
+  }
+}
+
+export async function sendCandidateMessage(
+  body: string,
+): Promise<ApiPostResult & { message?: CandidateMessage }> {
+  const token = await getToken();
+  if (!token) {
+    return { ok: false, error: "unauthenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/me/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ body }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      const detail = await res
+        .json()
+        .then((responseBody: unknown) =>
+          typeof responseBody === "object" && responseBody && "detail" in responseBody
+            ? String((responseBody as { detail: unknown }).detail)
+            : null,
+        )
+        .catch(() => null);
+      return { ok: false, error: detail ?? `HTTP ${res.status}` };
+    }
+
+    const message = (await res.json()) as CandidateMessage;
+    return { ok: true, message };
+  } catch (error) {
+    console.error("[auth] sendCandidateMessage failed", error);
     return { ok: false, error: "network_error" };
   }
 }
