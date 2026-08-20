@@ -44,6 +44,20 @@ final class ReconnectingPdoSessionHandler implements \SessionHandlerInterface, \
 
     private PdoSessionHandler $inner;
 
+    /**
+     * Dernier (path, name) passé à open() — rejoué sur $this->inner après une
+     * reconstruction en cours de retry() (cf. son docblock) : le handler
+     * fraîchement reconstruit n'a jamais reçu son propre open(), donc
+     * AbstractSessionHandler refuse toute opération avec "Session name cannot
+     * be empty" tant qu'il ne l'a pas reçu. Constaté en prod : open() réussit
+     * (aucun accès DB), la connexion expire ensuite pendant l'inactivité entre
+     * open() et le premier vrai accès (read()), qui est donc le premier à
+     * détecter la perte et à reconstruire — sans avoir jamais appelé open()
+     * sur ce nouvel objet.
+     */
+    private ?string $openPath = null;
+    private ?string $openName = null;
+
     public function __construct(
         private readonly Connection $connection,
         #[Autowire(service: 'monolog.logger.app_errors')] private readonly LoggerInterface $logger,
@@ -53,6 +67,9 @@ final class ReconnectingPdoSessionHandler implements \SessionHandlerInterface, \
 
     public function open(string $path, string $name): bool
     {
+        $this->openPath = $path;
+        $this->openName = $name;
+
         return (bool) $this->retry(fn (): bool => $this->inner->open($path, $name));
     }
 
@@ -109,6 +126,17 @@ final class ReconnectingPdoSessionHandler implements \SessionHandlerInterface, \
             // PDO natif frais pour reconstruire le handler interne.
             $this->connection->close();
             $this->inner = $this->buildHandler();
+
+            // Rejoue open() sur le handler reconstruit (cf. docblock de
+            // $openPath/$openName) avant de rejouer l'opération qui a
+            // initialement échoué — sans quoi elle échoue à nouveau avec
+            // "Session name cannot be empty", cette fois sans PDOException à
+            // rattraper. Sans risque à rejouer : open() ne fait aucun accès
+            // DB (cf. AbstractSessionHandler), donc pas de double effet de
+            // bord même quand l'opération en cours d'origine EST déjà open().
+            if (null !== $this->openPath && null !== $this->openName) {
+                $this->inner->open($this->openPath, $this->openName);
+            }
 
             return $operation();
         }

@@ -145,6 +145,58 @@ final class ReconnectingPdoSessionHandlerTest extends TestCase
         $handler->write('sess1', 'payload');
     }
 
+    /**
+     * Fixe $openPath/$openName par réflexion — même technique que
+     * replaceInner() ci-dessus pour $inner — plutôt que d'appeler le vrai
+     * open() : celui-ci connecte immédiatement (PdoSessionHandler::open(),
+     * si $pdo n'est pas déjà initialisé), ce qui échouerait ici avec le faux
+     * DSN "sqlite::memory:" avant même d'atteindre le scénario à tester.
+     */
+    private function setOpenState(ReconnectingPdoSessionHandler $handler, string $path, string $name): void
+    {
+        foreach (['openPath' => $path, 'openName' => $name] as $property => $value) {
+            $reflection = new \ReflectionProperty(ReconnectingPdoSessionHandler::class, $property);
+            $reflection->setAccessible(true);
+            $reflection->setValue($handler, $value);
+        }
+    }
+
+    /**
+     * Régression du 20/08/2026 : le test ci-dessus ne couvre qu'une seule
+     * opération isolée. En vrai, Symfony appelle TOUJOURS open() en premier à
+     * chaque requête — et c'est justement ce open() initial qui n'était
+     * jamais rejoué sur le nouveau handler interne quand la reconstruction
+     * était déclenchée par une opération ULTÉRIEURE (read(), ici, comme
+     * constaté en prod sur /login) : le handler neuf refusait alors toute
+     * opération avec LogicException "Session name cannot be empty"
+     * (AbstractSessionHandler) au lieu de rejouer read().
+     *
+     * Preuve recherchée : le handler reconstruit tente un vrai open() — donc
+     * une vraie (re)connexion, ici avec le faux DSN "sqlite::memory:", qui
+     * échoue en PDOException "could not find driver" — avant que read() ne
+     * soit rejoué. Cette erreur, différente à la fois de la PDOException
+     * d'origine (2006) et de la LogicException du bug, ne peut venir que d'un
+     * open() effectivement rejoué sur le nouveau handler.
+     */
+    public function testReplaysOpenOnTheRebuiltHandlerBeforeRetryingALaterOperation(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->exactly(2))->method('getNativeConnection')->willReturn('sqlite::memory:');
+        $connection->expects($this->once())->method('close');
+
+        $handler = new ReconnectingPdoSessionHandler($connection, $this->createStub(LoggerInterface::class));
+        $this->setOpenState($handler, '/tmp/sessions', 'PHPSESSID');
+
+        $failingInner = $this->createMock(PdoSessionHandler::class);
+        $failingInner->expects($this->once())->method('read')->willThrowException($this->goneAwayException());
+        $this->replaceInner($handler, $failingInner);
+
+        $this->expectException(\PDOException::class);
+        $this->expectExceptionMessage('could not find driver');
+
+        $handler->read('sess1');
+    }
+
     public function testDoesNotRetryAndRethrowsWhenTheErrorIsNotAConnectionLoss(): void
     {
         $connection = $this->createMock(Connection::class);
