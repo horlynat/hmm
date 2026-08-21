@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import clsx from "clsx";
 import {
@@ -19,6 +19,7 @@ import {
   HelpCircle,
   MessagesSquare,
   Rocket,
+  ChevronDown,
   PanelLeftClose,
   PanelLeftOpen,
   type LucideIcon,
@@ -102,14 +103,63 @@ function NavLink({
   );
 }
 
-/** Groupe de liens, séparé du précédent par un filet fin plutôt qu'un simple espacement — rythme plus net entre les sections. */
-function NavGroup({ title, collapsed, children }: { title: string; collapsed: boolean; children: ReactNode }) {
+/**
+ * Groupe de liens en accordéon (replié par défaut, sauf le groupe qui
+ * contient la page active) — sans ça, les ~13 liens des deux groupes
+ * s'empilent tous en permanence et poussent l'aside bien au-delà de la
+ * hauteur de l'écran. `paths` sert à ouvrir automatiquement le groupe dès
+ * qu'on y navigue (lien externe à l'aside, retour navigateur...), même s'il
+ * avait été refermé manuellement — jamais l'inverse : quitter un groupe ne
+ * le referme pas tout seul, pour ne pas surprendre un repli qu'on n'a pas
+ * demandé. Repliée (rail 72px) : plus de place pour un intitulé cliquable,
+ * les icônes du groupe restent donc affichées à plat, sans accordéon.
+ */
+function NavGroup({
+  title,
+  paths,
+  collapsed,
+  children,
+}: {
+  title: string;
+  paths: string[];
+  collapsed: boolean;
+  children: ReactNode;
+}) {
+  const pathname = usePathname();
+  const containsActive = paths.includes(pathname);
+  const [open, setOpen] = useState(containsActive);
+  // Réouvre pendant le rendu plutôt que dans un effect (même pattern que
+  // AccountShell pour previousPathname) : évite un rendu en cascade superflu.
+  const [wasActive, setWasActive] = useState(containsActive);
+  if (containsActive !== wasActive) {
+    setWasActive(containsActive);
+    if (containsActive) setOpen(true);
+  }
+
+  if (collapsed) {
+    return (
+      <div className="mt-3 border-t border-(--border-neutral)/60 pt-3 first:mt-0 first:border-0 first:pt-0">
+        <div className="space-y-0.5">{children}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-3 border-t border-(--border-neutral)/60 pt-3 first:mt-0 first:border-0 first:pt-0">
-      {!collapsed && (
-        <p className="px-2 pb-1 text-xs font-bold uppercase tracking-wider text-(--color-muted)">{title}</p>
-      )}
-      <div className="space-y-0.5">{children}</div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1 text-xs font-bold uppercase tracking-wider text-(--color-muted) transition-colors hover:text-(--brand-dark)"
+      >
+        {title}
+        <ChevronDown
+          aria-hidden="true"
+          size={14}
+          className={clsx("shrink-0 transition-transform duration-200", open && "rotate-180")}
+        />
+      </button>
+      {open && <div className="mt-1 space-y-0.5">{children}</div>}
     </div>
   );
 }
@@ -120,7 +170,13 @@ interface NavUser {
   profileImage: string | null;
 }
 
-/** Carte d'identité en tête d'aside — ancre visuelle vers /compte/profil, absente jusqu'ici de la nav (seul l'avatar du header y renvoyait). Replié : avatar seul, centré. */
+/**
+ * Identité en tête d'aside — ancre visuelle vers /compte/profil, absente
+ * jusqu'ici de la nav (seul l'avatar du header y renvoyait). Rangée plate
+ * avec un simple filet en pied plutôt qu'une carte imbriquée dans la carte
+ * que forme déjà l'aside : deux boîtes l'une dans l'autre alourdissaient le
+ * bloc sans rien apporter. Replié : avatar seul, centré.
+ */
 function NavProfile({ user, collapsed }: { user: NavUser; collapsed: boolean }) {
   return (
     <Link
@@ -128,12 +184,16 @@ function NavProfile({ user, collapsed }: { user: NavUser; collapsed: boolean }) 
       title={collapsed ? user.fullName ?? user.email : undefined}
       aria-label={collapsed ? (user.fullName ?? user.email) : undefined}
       className={clsx(
-        "mb-3 flex items-center gap-2.5 rounded-xl border border-(--border-neutral) bg-(--color-surface-muted) p-2 transition-colors hover:border-brand-primary/40",
+        "flex items-center gap-2.5 rounded-lg p-1.5 transition-colors hover:bg-(--color-surface-muted)",
         collapsed && "justify-center",
       )}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- avatar externe (ui-avatars.com) ou média backend, hors domaines optimisables par next/image sans config supplémentaire */}
-      <img src={getAvatarUrl(user)} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+      <img
+        src={getAvatarUrl(user)}
+        alt=""
+        className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-(--border-neutral)"
+      />
       {!collapsed && (
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-bold text-(--brand-dark)">
@@ -169,6 +229,24 @@ interface AccountNavProps {
   onToggleCollapsed?: () => void;
 }
 
+/** Routes des deux groupes accordéon — sert à savoir lequel ouvrir automatiquement selon la page active, cf. NavGroup. */
+const ACTIVITY_PATHS: AccountPath[] = [
+  "/compte/projets",
+  "/compte/devis",
+  "/compte/gestion-projet",
+  "/compte/projets-disponibles",
+  "/compte/factures",
+  "/compte/messages",
+];
+const ACCOUNT_PATHS: AccountPath[] = [
+  "/compte/profil",
+  "/compte/mot-de-passe",
+  "/compte/securite",
+  "/compte/parametres",
+  "/compte/export",
+  "/aide",
+];
+
 export function AccountNav({
   user,
   isCollaborator,
@@ -179,31 +257,36 @@ export function AccountNav({
   const t = useTranslations("auth.account.nav");
 
   return (
-    <nav aria-label={t("title")} className="space-y-1">
-      <NavProfile user={user} collapsed={collapsed} />
+    <nav aria-label={t("title")} className="flex h-full flex-col">
+      {/* En-tête épinglé : identité + raccourci tableau de bord, jamais emporté par le défilement de la liste ci-dessous. */}
+      <div className="shrink-0 space-y-1">
+        <NavProfile user={user} collapsed={collapsed} />
 
-      {!collapsed && (
-        <p className="px-2 pb-2 text-xs font-bold uppercase tracking-wider text-(--color-muted)">{t("title")}</p>
-      )}
+        {!collapsed && (
+          <p className="px-2 pb-1 text-xs font-bold uppercase tracking-wider text-(--color-muted)">{t("title")}</p>
+        )}
 
-      {!isCollaborator && (
-        <div className={clsx("pb-2", collapsed && "flex justify-center")}>
-          <ButtonLink
-            href="/compte/devis/nouveau"
-            variant="secondary"
-            title={collapsed ? t("newQuoteCta") : undefined}
-            aria-label={collapsed ? t("newQuoteCta") : undefined}
-            className={clsx("text-xs", collapsed ? "!px-2.5 !py-2.5" : "w-full")}
-          >
-            <Plus aria-hidden="true" size={15} />
-            {!collapsed && t("newQuoteCta")}
-          </ButtonLink>
-        </div>
-      )}
+        {!isCollaborator && (
+          <div className={clsx("pb-1", collapsed && "flex justify-center")}>
+            <ButtonLink
+              href="/compte/devis/nouveau"
+              variant="secondary"
+              title={collapsed ? t("newQuoteCta") : undefined}
+              aria-label={collapsed ? t("newQuoteCta") : undefined}
+              className={clsx("text-xs", collapsed ? "!px-2.5 !py-2.5" : "w-full")}
+            >
+              <Plus aria-hidden="true" size={15} />
+              {!collapsed && t("newQuoteCta")}
+            </ButtonLink>
+          </div>
+        )}
 
-      <NavLink href="/compte" label={t("dashboard")} icon={LayoutDashboard} collapsed={collapsed} />
+        <NavLink href="/compte" label={t("dashboard")} icon={LayoutDashboard} collapsed={collapsed} />
+      </div>
 
-      <NavGroup title={t("groupActivity")} collapsed={collapsed}>
+      {/* Zone scrollable : seule cette partie déborde si les deux groupes sont ouverts en même temps sur un petit écran — l'en-tête et le pied restent toujours atteignables sans défiler. */}
+      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
+        <NavGroup title={t("groupActivity")} paths={ACTIVITY_PATHS} collapsed={collapsed}>
         <NavLink
           href="/compte/projets"
           label={t("myProjects")}
@@ -256,7 +339,7 @@ export function AccountNav({
         />
       </NavGroup>
 
-      <NavGroup title={t("groupAccount")} collapsed={collapsed}>
+      <NavGroup title={t("groupAccount")} paths={ACCOUNT_PATHS} collapsed={collapsed}>
         <NavLink href="/compte/profil" label={t("profile")} icon={User} collapsed={collapsed} />
         <NavLink href="/compte/mot-de-passe" label={t("changePassword")} icon={KeyRound} collapsed={collapsed} />
         <NavLink href="/compte/securite" label={t("security")} icon={ShieldCheck} collapsed={collapsed} />
@@ -265,39 +348,49 @@ export function AccountNav({
         <NavLink href="/aide" label={t("help")} icon={HelpCircle} collapsed={collapsed} />
       </NavGroup>
 
-      <NavGroup title={t("groupDanger")} collapsed={collapsed}>
+      {/* Un seul lien : un accordéon n'apporterait rien ici, juste un clic de plus pour une action déjà rare. */}
+      <div className="mt-3 border-t border-(--border-neutral)/60 pt-3">
+        {!collapsed && (
+          <p className="px-2 pb-1 text-xs font-bold uppercase tracking-wider text-(--color-muted)">
+            {t("groupDanger")}
+          </p>
+        )}
         <NavLink href="/compte/supprimer" label={t("deleteAccount")} icon={Trash2} collapsed={collapsed} danger />
-      </NavGroup>
+      </div>
+      </div>
 
-      {!collapsed && (
-        <div className="mt-3 border-t border-(--border-neutral)/60 pt-3">
-          <LogoutButton />
-        </div>
-      )}
+      {/* Pied épinglé : toujours atteignable sans avoir à défiler la liste. */}
+      <div className="shrink-0">
+        {!collapsed && (
+          <div className="mt-3 border-t border-(--border-neutral)/60 pt-3">
+            <LogoutButton />
+          </div>
+        )}
 
-      {onToggleCollapsed && (
-        <div className="mt-3 hidden border-t border-(--border-neutral)/60 pt-3 md:block">
-          <button
-            type="button"
-            onClick={onToggleCollapsed}
-            aria-label={collapsed ? t("expandMenu") : t("collapseMenu")}
-            title={collapsed ? t("expandMenu") : t("collapseMenu")}
-            className={clsx(
-              "flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold text-(--color-muted) transition-colors hover:bg-(--color-surface-muted) hover:text-(--brand-dark)",
-              collapsed && "justify-center px-2",
-            )}
-          >
-            {collapsed ? (
-              <PanelLeftOpen aria-hidden="true" size={17} />
-            ) : (
-              <>
-                <PanelLeftClose aria-hidden="true" size={17} />
-                {t("collapseMenu")}
-              </>
-            )}
-          </button>
-        </div>
-      )}
+        {onToggleCollapsed && (
+          <div className="mt-3 hidden border-t border-(--border-neutral)/60 pt-3 md:block">
+            <button
+              type="button"
+              onClick={onToggleCollapsed}
+              aria-label={collapsed ? t("expandMenu") : t("collapseMenu")}
+              title={collapsed ? t("expandMenu") : t("collapseMenu")}
+              className={clsx(
+                "flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold text-(--color-muted) transition-colors hover:bg-(--color-surface-muted) hover:text-(--brand-dark)",
+                collapsed && "justify-center px-2",
+              )}
+            >
+              {collapsed ? (
+                <PanelLeftOpen aria-hidden="true" size={17} />
+              ) : (
+                <>
+                  <PanelLeftClose aria-hidden="true" size={17} />
+                  {t("collapseMenu")}
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
     </nav>
   );
 }

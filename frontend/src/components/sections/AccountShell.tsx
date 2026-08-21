@@ -118,7 +118,7 @@ export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled,
               : "mx-auto grid max-w-[1120px] gap-8 md:grid-cols-[260px_1fr] md:items-start"
           }
         >
-          <aside className="sticky top-20 hidden rounded-[var(--radius-lg)] border border-(--border-neutral) bg-bg-card p-3 shadow-sm md:block">
+          <aside className="sticky top-20 hidden h-[calc(100vh-7rem)] rounded-[var(--radius-lg)] border border-(--border-neutral) bg-bg-card p-3 shadow-sm md:block">
             <AccountNav
               user={user}
               isCollaborator={isCollaborator}
@@ -158,9 +158,9 @@ export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled,
             role="dialog"
             aria-modal="true"
             aria-label={t("title")}
-            className="absolute inset-y-0 left-0 w-[85%] max-w-[320px] overflow-y-auto bg-bg-card p-4 shadow-xl"
+            className="absolute inset-y-0 left-0 flex w-[85%] max-w-[320px] flex-col bg-bg-card p-4 shadow-xl"
           >
-            <div className="mb-2 flex items-center justify-end">
+            <div className="mb-2 flex shrink-0 items-center justify-end">
               <button
                 ref={closeButtonRef}
                 type="button"
@@ -171,7 +171,9 @@ export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled,
                 <span aria-hidden="true">✕</span>
               </button>
             </div>
-            <AccountNav user={user} isCollaborator={isCollaborator} counts={counts} />
+            <div className="min-h-0 flex-1">
+              <AccountNav user={user} isCollaborator={isCollaborator} counts={counts} />
+            </div>
           </div>
         </div>
       )}
