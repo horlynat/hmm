@@ -72,6 +72,12 @@
 										<span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white" aria-hidden="true">{{ unreadCounts[candidate.id] }}</span>
 									{% endif %}
 								</a>
+								<a href="{{ path('admin_collaborator_read', {'id': candidate.id, 'conv': 1}) }}" class="btn btn-ghost btn-icon relative text-(--brand-primary)" aria-label="Ouvrir la conversation avec {{ candidate.fullName ?? candidate.email }}" title="Conversation">
+									<span class="ti ti-messages text-lg" aria-hidden="true"></span>
+									{% if unreadCounts[candidate.id] is defined %}
+										<span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white" aria-hidden="true">{{ unreadCounts[candidate.id] }}</span>
+									{% endif %}
+								</a>
 								<a href="{{ path('admin_collaborator_update', {'id': candidate.id}) }}" class="btn btn-ghost btn-icon text-success" aria-label="Promouvoir {{ candidate.fullName ?? candidate.email }}" title="Promouvoir en collaborateur">
 									<span class="ti ti-user-check text-lg" aria-hidden="true"></span>
 								</a>

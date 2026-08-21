@@ -133,17 +133,21 @@ final class AdminCollaboratorController extends AbstractController
     ): Response {
         $this->denyAccessUnlessGranted(UserVoter::VIEW, $user);
 
+        // conv=1 sur chaque redirect ci-dessous : rouvre automatiquement la
+        // modale de conversation (cf. read.html.twig) après l'action, plutôt
+        // que de renvoyer sur la fiche candidat fermée — l'admin reste dans
+        // le fil qu'il était en train de lire/écrire.
         if (!$this->isCsrfTokenValid('candidate_message_'.$user->getId(), $request->request->get('_token'))) {
             $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
 
-            return $this->redirectToRoute('admin_collaborator_read', ['id' => $user->getId()]);
+            return $this->redirectToRoute('admin_collaborator_read', ['id' => $user->getId(), 'conv' => 1]);
         }
 
         $body = trim((string) $request->request->get('body', ''));
         if (mb_strlen($body) < 10) {
             $this->addFlash('error', 'Le message doit contenir au moins 10 caractères.');
 
-            return $this->redirectToRoute('admin_collaborator_read', ['id' => $user->getId()]);
+            return $this->redirectToRoute('admin_collaborator_read', ['id' => $user->getId(), 'conv' => 1]);
         }
 
         $message = new CandidateMessage();
@@ -172,7 +176,7 @@ final class AdminCollaboratorController extends AbstractController
 
         $this->addFlash('success', 'Le message a été envoyé. Le candidat a été notifié par email.');
 
-        return $this->redirectToRoute('admin_collaborator_read', ['id' => $user->getId()]);
+        return $this->redirectToRoute('admin_collaborator_read', ['id' => $user->getId(), 'conv' => 1]);
     }
 
     #[Route('/{id}/update', name: 'update', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]

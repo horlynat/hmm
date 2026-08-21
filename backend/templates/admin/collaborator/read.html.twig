@@ -77,38 +77,39 @@
 					</div>
 				{% endif %}
 
-				<!-- 💬 CONVERSATION AVEC LE CANDIDAT -->
+				<!-- 💬 CONVERSATION AVEC LE CANDIDAT — carte résumé + modale complète (twig:ConversationModal) -->
+				{% set lastMessage = messages|length > 0 ? messages|last : null %}
 				<div class="card">
-					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 mb-4 flex items-center gap-2">
-						<span class="ti ti-messages text-sm" aria-hidden="true"></span>
-						Conversation
-					</h3>
-
-					{% if messages|length > 0 %}
-						<div class="space-y-4 mb-6 max-h-96 overflow-y-auto pr-1">
-							{% for message in messages %}
-								<div class="flex {{ message.fromAdmin ? 'justify-end' : 'justify-start' }}">
-									<div class="max-w-lg rounded-2xl px-4 py-3 {{ message.fromAdmin ? 'bg-(--brand-primary) text-white' : 'bg-gray-100 text-brand-dark' }}">
-										<p class="text-xs opacity-70 mb-1">{{ message.fromAdmin ? 'Vous' : (user.fullName ?? user.email) }} — {{ message.createdAt|date('d/m/Y H:i') }}</p>
-										<p class="whitespace-pre-line leading-relaxed">{{ message.body }}</p>
-									</div>
-								</div>
-							{% endfor %}
-						</div>
-					{% else %}
-						<p class="text-sm opacity-40 py-4 text-center mb-2">Aucun message échangé pour le moment.</p>
-					{% endif %}
-
-					<form method="post" action="{{ path('admin_collaborator_message_send', {'id': user.id}) }}" class="border-t border-gray-100 pt-4 space-y-3">
-						<input type="hidden" name="_token" value="{{ csrf_token('candidate_message_' ~ user.id) }}">
-						<label for="f-message-body" class="field-label">Envoyer un message à {{ user.fullName ?? user.email }}</label>
-						<textarea id="f-message-body" name="body" rows="4" minlength="10" required class="input w-full" placeholder="Votre message…"></textarea>
-						<button type="submit" class="btn btn-primary gap-2">
-							<span class="ti ti-send text-sm" aria-hidden="true"></span>
-							<span>Envoyer</span>
+					<div class="flex items-center justify-between gap-4 flex-wrap">
+						<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 flex items-center gap-2">
+							<span class="ti ti-messages text-sm" aria-hidden="true"></span>
+							Conversation
+						</h3>
+						<button type="button" data-open-conversation class="btn btn-primary btn-sm gap-2">
+							<span class="ti ti-messages text-sm" aria-hidden="true"></span>
+							<span>{{ messages|length > 0 ? 'Ouvrir la conversation' : 'Démarrer la conversation' }}</span>
 						</button>
-					</form>
+					</div>
+
+					{% if lastMessage %}
+						<button type="button" data-open-conversation class="mt-4 w-full flex items-start gap-3 rounded-xl p-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
+							<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold" style="background: {{ lastMessage.fromAdmin ? 'linear-gradient(135deg, var(--chat-gradient-from), var(--chat-gradient-to))' : 'color-mix(in srgb, var(--color-brand-primary) 14%, var(--color-bg-card))' }}; color: {{ lastMessage.fromAdmin ? '#fff' : 'var(--color-brand-primary)' }};" aria-hidden="true">
+								{{ lastMessage.fromAdmin ? 'V' : (user.fullName ?? user.email)|slice(0, 1)|upper }}
+							</span>
+							<span class="min-w-0 flex-1">
+								<span class="flex items-center justify-between gap-2">
+									<span class="text-sm font-bold text-(--brand-dark)">{{ lastMessage.fromAdmin ? 'Vous' : (user.fullName ?? 'Le candidat') }}</span>
+									<span class="text-xs opacity-50 shrink-0">{{ lastMessage.createdAt|date('d/m/Y H:i') }}</span>
+								</span>
+								<span class="block text-sm opacity-70 truncate">{{ lastMessage.body }}</span>
+							</span>
+						</button>
+					{% else %}
+						<p class="text-sm opacity-40 py-4 text-center">Aucun message échangé pour le moment.</p>
+					{% endif %}
 				</div>
+
+				<twig:ConversationModal :user="user" :messages="messages" />
 
 				<!-- 📁 PROJETS ASSOCIÉS -->
 				<div class="card">

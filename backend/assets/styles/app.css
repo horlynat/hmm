@@ -32,6 +32,16 @@
     --radius-sm: 6px;
     --radius-md: 12px;
     --radius-lg: 16px;
+
+    /* Dégradé "céleste" fixe pour les bulles admin du fil de conversation
+       (ConversationModal) — volontairement DÉCORRÉLÉ de --color-brand-primary
+       : ce token est personnalisable par tenant (Réglages > Couleur, cf.
+       base.html.twig) ET s'éclaircit en mode sombre (cf. .dark ci-dessous),
+       deux cas où du texte blanc dessus deviendrait illisible. Valeurs fixes
+       garantissant >7:1 de contraste avec du texte blanc, dans tous les cas.
+       Même principe que --cta-gradient-from/to côté frontend Next.js. */
+    --chat-gradient-from: #03045e;
+    --chat-gradient-to:   #0353a4;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
