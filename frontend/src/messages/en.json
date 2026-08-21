@@ -1097,6 +1097,11 @@
         "twoFactorEnabled": "Two-factor authentication enabled",
         "twoFactorDisabled": "Two-factor authentication not enabled",
         "twoFactorHint": "Mandatory on your account — activated automatically at your first login.",
+        "twoFactorHintOptional": "Recommended to protect your account and the projects you work on.",
+        "twoFactorReminder": {
+          "message": "Your account isn't protected by two-factor authentication.",
+          "cta": "Activate now"
+        },
         "resendButton": "Resend verification email",
         "resendPending": "Sending…",
         "resendSuccess": "A new verification link has been sent to you.",
@@ -1135,7 +1140,8 @@
           "copyAll": "Copy all codes",
           "copied": "Copied",
           "copySecret": "Copy key",
-          "appHint": "Google Authenticator, Authy, 1Password…"
+          "appHint": "Google Authenticator, Authy, 1Password…",
+          "activateButton": "Activate 2FA"
         }
       },
       "dataExport": {

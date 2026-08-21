@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { usePathname } from "@/i18n/navigation";
+import { ShieldAlert } from "lucide-react";
+import { Link, usePathname } from "@/i18n/navigation";
 import { AccountHeader } from "./AccountHeader";
 import { AccountNav, type AccountNavCounts } from "./AccountNav";
 
@@ -35,6 +36,13 @@ interface AccountShellProps {
   user: { fullName: string | null; email: string; profileImage: string | null };
   isCollaborator: boolean;
   counts: AccountNavCounts;
+  /**
+   * Rappel non bloquant affiché en haut du contenu quand absent. Uniquement
+   * pertinent pour les comptes exemptés de l'écran plein obligatoire
+   * (ROLE_EDITOR, cf. CompteLayout) : les autres ne peuvent de toute façon
+   * jamais atteindre AccountShell tant que ce n'est pas activé.
+   */
+  isTwoFactorEnabled: boolean;
   children: ReactNode;
 }
 
@@ -46,9 +54,10 @@ interface AccountShellProps {
  * sur un écran de téléphone, une vraie colonne de 260px pour 10 liens ne
  * laisse pas assez de place au contenu pour rester utilisable.
  */
-export function AccountShell({ user, isCollaborator, counts, children }: AccountShellProps) {
+export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled, children }: AccountShellProps) {
   const t = useTranslations("auth.account.nav");
   const tc = useTranslations("common");
+  const t2fa = useTranslations("auth.profile.security.twoFactorReminder");
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const collapsed = useSyncExternalStore(subscribeCollapsed, getCollapsedSnapshot, getCollapsedServerSnapshot);
@@ -118,7 +127,21 @@ export function AccountShell({ user, isCollaborator, counts, children }: Account
             />
           </aside>
 
-          <div className="min-w-0">{children}</div>
+          <div className="min-w-0">
+            {!isTwoFactorEnabled && (
+              <Link
+                href="/compte/securite"
+                className="mb-5 flex items-center gap-3 rounded-[var(--radius-md)] border border-(--color-badge-warning-text)/25 bg-warning/10 px-4 py-3 text-sm text-(--color-badge-warning-text) transition hover:bg-warning/15"
+              >
+                <ShieldAlert size={18} className="shrink-0" aria-hidden="true" />
+                <span className="min-w-0 flex-1">{t2fa("message")}</span>
+                <span className="shrink-0 font-semibold whitespace-nowrap underline decoration-dotted underline-offset-2">
+                  {t2fa("cta")}
+                </span>
+              </Link>
+            )}
+            {children}
+          </div>
         </div>
       </div>
 

@@ -60,7 +60,7 @@ export default async function CompteLayout({
 
   return (
     <main id="main-content" className="flex-1">
-      <AccountShell user={user} isCollaborator={isCollaborator} counts={counts}>
+      <AccountShell user={user} isCollaborator={isCollaborator} counts={counts} isTwoFactorEnabled={user.isTwoFactorEnabled}>
         {children}
       </AccountShell>
     </main>

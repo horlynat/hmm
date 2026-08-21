@@ -1097,6 +1097,11 @@
         "twoFactorEnabled": "Double authentification activée",
         "twoFactorDisabled": "Double authentification non activée",
         "twoFactorHint": "Obligatoire sur votre compte — activée automatiquement à votre première connexion.",
+        "twoFactorHintOptional": "Recommandée pour protéger votre compte et les projets sur lesquels vous intervenez.",
+        "twoFactorReminder": {
+          "message": "Votre compte n'est pas protégé par la double authentification.",
+          "cta": "Activer maintenant"
+        },
         "resendButton": "Renvoyer l'email de vérification",
         "resendPending": "Envoi en cours…",
         "resendSuccess": "Un nouveau lien de vérification vous a été envoyé.",
@@ -1135,7 +1140,8 @@
           "copyAll": "Copier tous les codes",
           "copied": "Copié",
           "copySecret": "Copier la clé",
-          "appHint": "Google Authenticator, Authy, 1Password…"
+          "appHint": "Google Authenticator, Authy, 1Password…",
+          "activateButton": "Activer la 2FA"
         }
       },
       "dataExport": {
