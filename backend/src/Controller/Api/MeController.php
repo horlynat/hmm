@@ -417,7 +417,13 @@ final class MeController extends AbstractController
     /**
      * Détail d'un projet auquel l'utilisateur courant est rattaché (client,
      * responsable ou collaborateur) — mêmes règles de périmètre que
-     * App\Security\Voter\ProjectVoter::VIEW côté back-office.
+     * App\Security\Voter\ProjectVoter::VIEW côté back-office, ÉLARGIES à deux
+     * cas de consultation sans affectation :
+     *  - COMPLETED : vitrine des réalisations, ouverte à tout compte connecté ;
+     *  - UPCOMING : un freelance (ROLE_EDITOR) doit pouvoir consulter le détail
+     *    AVANT de rejoindre (cf. /projects/available et /projects/{id}/join
+     *    ci-dessous) — sinon "parcourir les projets en attente" n'aurait accès
+     *    qu'aux champs déjà exposés par la liste.
      */
     #[Route('/projects/{id}', name: 'project_read', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function readProject(int $id, ProjectRepository $projectRepository): JsonResponse
@@ -428,9 +434,99 @@ final class MeController extends AbstractController
         }
 
         $project = $projectRepository->find($id);
-        if (!$project instanceof Project || (!$project->isTeamMember($user) && $project->getClient() !== $user)) {
+        $isVisible = $project instanceof Project && (
+            $project->isTeamMember($user)
+            || $project->getClient() === $user
+            || ProjectStatusEnum::COMPLETED === $project->getStatus()
+            || (ProjectStatusEnum::UPCOMING === $project->getStatus() && \in_array('ROLE_EDITOR', $user->getRoles(), true))
+        );
+        if (!$isVisible) {
             return $this->json(['detail' => 'Projet introuvable.'], Response::HTTP_NOT_FOUND);
         }
+
+        return $this->json($this->serializeProjectDetail($project));
+    }
+
+    /**
+     * Projets "à venir" (ProjectStatusEnum::UPCOMING) pas encore affectés à
+     * une équipe — l'espace où un freelance au profil complet à 100 % peut se
+     * proposer (cf. joinProject() ci-dessous). Les projets en cours/suspendus
+     * restent invisibles ici : seule l'équipe déjà affectée y accède (cf.
+     * readProject() ci-dessus, inchangé pour ces deux statuts) ; les projets
+     * terminés n'ont plus besoin d'être "rejoints".
+     */
+    #[Route('/projects/available', name: 'projects_available', methods: ['GET'])]
+    public function readAvailableProjects(ProjectRepository $projectRepository): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        if (!\in_array('ROLE_EDITOR', $user->getRoles(), true)) {
+            return $this->json(['detail' => 'Réservé aux comptes freelance/collaborateur.'], Response::HTTP_FORBIDDEN);
+        }
+        if ($gate = $this->denyIfFreelanceProfileIncomplete($user)) {
+            return $gate;
+        }
+
+        $projects = array_values(array_filter(
+            $projectRepository->findByStatus(ProjectStatusEnum::UPCOMING),
+            static fn (Project $project): bool => !$project->isTeamMember($user),
+        ));
+
+        return $this->json([
+            'projects' => array_map($this->serializeProjectDetail(...), $projects),
+        ]);
+    }
+
+    /**
+     * Auto-affectation d'un freelance à un projet "à venir" — même mécanique
+     * que AdminProjectController lorsqu'un admin ajoute un collaborateur
+     * (User::addCollaboratingProject(), qui promeut ROLE_EDITOR si besoin et
+     * synchronise les deux côtés de la relation), déclenchée ici par le
+     * freelance lui-même plutôt que par un admin. L'admin est notifié après
+     * coup (AdminAlertNotifier) plutôt que d'exiger une validation préalable :
+     * cohérent avec le reste de l'espace compte, où aucune action freelance
+     * n'est bloquée derrière une modération manuelle.
+     */
+    #[Route('/projects/{id}/join', name: 'project_join', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function joinProject(int $id, ProjectRepository $projectRepository, AdminAlertNotifier $adminAlertNotifier): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        if (!\in_array('ROLE_EDITOR', $user->getRoles(), true)) {
+            return $this->json(['detail' => 'Réservé aux comptes freelance/collaborateur.'], Response::HTTP_FORBIDDEN);
+        }
+        if ($gate = $this->denyIfFreelanceProfileIncomplete($user)) {
+            return $gate;
+        }
+
+        $project = $projectRepository->find($id);
+        if (!$project instanceof Project || ProjectStatusEnum::UPCOMING !== $project->getStatus()) {
+            return $this->json(['detail' => 'Ce projet n\'est plus disponible.'], Response::HTTP_NOT_FOUND);
+        }
+        if ($project->isTeamMember($user)) {
+            return $this->json(['detail' => 'Vous participez déjà à ce projet.'], Response::HTTP_CONFLICT);
+        }
+
+        $user->addCollaboratingProject($project);
+        $project->logCollaboratorAdded($user, $user);
+        $this->entityManager->flush();
+
+        $adminAlertNotifier->alert(
+            NotificationPriorityEnum::LOW,
+            'Freelance associé à un projet',
+            \sprintf(
+                '%s <%s> a rejoint le projet « %s ».',
+                $user->getFullName() ?? $user->getEmail(),
+                $user->getEmail(),
+                $project->getTitle(),
+            ),
+        );
 
         return $this->json($this->serializeProjectDetail($project));
     }
@@ -1202,6 +1298,11 @@ final class MeController extends AbstractController
             'editableFields' => self::EDITABLE_FIELDS,
             // Messages admin non lus — badge de l'aside /compte (cf. AccountNav).
             'unreadMessagesCount' => $this->candidateMessageRepository->countUnreadForCandidate($user),
+            // Projets "à venir" disponibles — badge /compte/projets-disponibles
+            // (cf. AccountNav). 0 pour un non-collaborateur, sans requête
+            // supplémentaire : countAvailableForUser() exclut déjà tout projet
+            // dont il est owner (jamais le cas pour un simple ROLE_USER).
+            'availableProjectsCount' => $this->projectRepository->countAvailableForUser($user),
             'attributions' => [
                 // Projets confiés au collaborateur/freelance (participation ou pilotage).
                 'collaboratingProjects' => array_map($this->serializeProject(...), $user->getCollaboratingProjects()->toArray()),
