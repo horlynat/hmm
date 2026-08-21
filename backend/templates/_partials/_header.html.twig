@@ -15,14 +15,14 @@
 		<nav class="flex items-center text-xs md:text-sm text-gray-500 overflow-x-auto whitespace-nowrap py-1" aria-label="Fil d'Ariane">
 			{# "Accueil" pointe vers le dashboard (ROLE_ADMIN) si accessible, sinon vers le
 			   profil : seule page garantie accessible à tout ROLE_USER — jamais un lien mort. #}
-			<a href="{{ is_granted(constant('App\\Security\\Voter\\DashboardVoter::VIEW')) ? path('admin_dashboard_index') : path('admin_profile_read', {'id': app.user.id}) }}" class="flex items-center text-(--brand-primary) font-bold hover:text-brand-accent transition">
+			<a href="{{ is_granted(constant('App\\Security\\Voter\\DashboardVoter::VIEW')) ? path('admin_dashboard_index') : path('admin_profile_read', {'id': app.user.id}) }}" class="flex items-center text-(--color-brand-primary) font-bold hover:text-brand-accent transition">
 				<span class="ti ti-home text-base mr-1" aria-hidden="true"></span>
 				Accueil
 			</a>
 			{% set segments = app.request.pathInfo|trim('/')|split('/') %}
 			{% for segment in segments %}
 				<span class="mx-1.5 text-gray-300 dark:text-gray-600" aria-hidden="true">/</span>
-				<span class="capitalize text-(--brand-dark) font-medium truncate max-w-[120px] md:max-w-none"
+				<span class="capitalize text-(--color-brand-dark) font-medium truncate max-w-[120px] md:max-w-none"
 					  {% if loop.last %}aria-current="page"{% endif %}>
 					{{ segment|replace({'_': ' '}) }}
 				</span>
@@ -62,7 +62,7 @@
 					class="flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-700 p-1 md:px-2 md:py-1.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
 				<span class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white shadow-inner" style="background: var(--color-brand-primary)" aria-hidden="true">{{ initials }}</span>
 				<span class="text-left pr-1 hidden md:block select-none">
-					<span class="block text-xs font-bold text-(--brand-dark) leading-tight">{{ firstName }}</span>
+					<span class="block text-xs font-bold text-(--color-brand-dark) leading-tight">{{ firstName }}</span>
 					<span class="block text-[9px] text-gray-400 uppercase tracking-wide font-medium">{{ userRole }}</span>
 				</span>
 				<span class="ti ti-chevron-down text-sm text-gray-400 hidden md:block" aria-hidden="true"></span>
@@ -76,7 +76,7 @@
 				 class="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 py-1.5 text-sm"
 				 role="menu" style="display: none;">
 				<div class="px-4 py-2.5 border-b border-gray-100 dark:border-gray-700">
-					<p class="text-sm font-bold text-(--brand-dark) dark:text-gray-100 truncate">{{ app.user.fullName ?? firstName }}</p>
+					<p class="text-sm font-bold text-(--color-brand-dark) dark:text-gray-100 truncate">{{ app.user.fullName ?? firstName }}</p>
 					<p class="text-xs text-gray-400 truncate">{{ app.user.email }}</p>
 				</div>
 

@@ -37,7 +37,7 @@
 						<p class="text-sm opacity-70">Ces zones ne se réduisent pas à un seuil de rôle — la donnée compte autant que le rôle. Pas de grille de cases ici, elle serait trompeuse.</p>
 						{% for group, rule in contextualRules %}
 							<div>
-								<h4 class="text-sm font-bold text-(--brand-dark) mb-1">{{ group }}</h4>
+								<h4 class="text-sm font-bold text-(--color-brand-dark) mb-1">{{ group }}</h4>
 								<p class="text-sm opacity-80">{{ rule }}</p>
 							</div>
 						{% endfor %}
@@ -133,7 +133,7 @@
 							<li class="py-3 first:pt-0 last:pb-0">
 								<a href="{{ path(entry.readRoute, {id: entry.user.id}) }}" class="flex items-center justify-between gap-2 group">
 									<span class="min-w-0">
-										<span class="block font-medium text-sm text-(--brand-dark) truncate group-hover:text-brand-primary transition">{{ entry.user.fullName ?? entry.user.email }}</span>
+										<span class="block font-medium text-sm text-(--color-brand-dark) truncate group-hover:text-brand-primary transition">{{ entry.user.fullName ?? entry.user.email }}</span>
 										<span class="block text-xs opacity-50 truncate">{{ entry.user.email }}</span>
 									</span>
 									<span class="badge {{ entry.role == 'ADMIN' ? 'badge-danger' : (entry.role == 'MANAGER' ? 'badge-warning' : 'badge-info') }} shrink-0">{{ entry.role }}</span>

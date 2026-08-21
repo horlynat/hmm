@@ -11,7 +11,7 @@
 		<div class="page-header">
 			<div class="min-w-0">
 				<h1 class="page-title flex items-center gap-2">
-					<span class="ti ti-users-group text-(--brand-primary)" aria-hidden="true"></span>
+					<span class="ti ti-users-group text-(--color-brand-primary)" aria-hidden="true"></span>
 					Espace freelance
 				</h1>
 				<p class="page-subtitle">Projets « à venir » actuellement ouverts à l'auto-association, et freelances éligibles pour les rejoindre.</p>
@@ -96,7 +96,7 @@
 										<div class="font-semibold text-brand-dark truncate">{{ joinRequest.user.fullName ?? joinRequest.user.email }}</div>
 										<div class="text-sm text-gray-500 truncate">
 											souhaite rejoindre
-											<a href="{{ path('admin_project_read', {id: joinRequest.project.id}) }}" class="font-medium text-(--brand-primary) hover:underline">{{ joinRequest.project.title }}</a>
+											<a href="{{ path('admin_project_read', {id: joinRequest.project.id}) }}" class="font-medium text-(--color-brand-primary) hover:underline">{{ joinRequest.project.title }}</a>
 										</div>
 										<div class="text-xs text-gray-400 mt-0.5">Demandé le {{ joinRequest.requestedAt|date('d/m/Y à H:i') }}</div>
 									</div>

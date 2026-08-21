@@ -4,7 +4,7 @@
 
 {% macro sortLink(label, column, sort, direction, tab, search, from, to) %}
 	{% set nextDirection = (sort == column and direction == 'asc') ? 'desc' : 'asc' %}
-	<a href="{{ path('admin_security_log_index', {tab: tab, sort: column, direction: nextDirection, search: search, from: from, to: to}) }}" class="inline-flex items-center gap-1 hover:text-(--brand-primary)">
+	<a href="{{ path('admin_security_log_index', {tab: tab, sort: column, direction: nextDirection, search: search, from: from, to: to}) }}" class="inline-flex items-center gap-1 hover:text-(--color-brand-primary)">
 		{{ label }}
 		{% if sort == column %}
 			<span class="ti {{ direction == 'asc' ? 'ti-chevron-up' : 'ti-chevron-down' }} text-xs" aria-hidden="true"></span>
@@ -117,7 +117,7 @@
 					{% for row in entries %}
 						{% set entry = row.entry %}
 						<tr>
-							<td class="font-medium text-(--brand-dark)">
+							<td class="font-medium text-(--color-brand-dark)">
 								{{ entry.user.fullName ?? entry.user.email }}
 								{% if row.isSuspicious %}<span class="ti ti-alert-triangle text-danger ml-1" aria-hidden="true" title="IP suspecte : plusieurs échecs récents"></span>{% endif %}
 							</td>
@@ -157,7 +157,7 @@
 					{% for row in entries %}
 						{% set entry = row.entry %}
 						<tr>
-							<td class="font-medium text-(--brand-dark)">{{ entry.email }}</td>
+							<td class="font-medium text-(--color-brand-dark)">{{ entry.email }}</td>
 							<td><twig:Badge variant="danger">{{ entry.reasonLabel }}</twig:Badge></td>
 							<td class="font-mono text-xs">
 								{{ entry.ip ?? '—' }}

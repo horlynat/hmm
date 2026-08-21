@@ -6,7 +6,7 @@
 	<div class="page-header">
 		<div class="min-w-0">
 			<h1 class="page-title flex items-center gap-2">
-				<span class="ti ti-database text-(--brand-primary)" aria-hidden="true"></span>
+				<span class="ti ti-database text-(--color-brand-primary)" aria-hidden="true"></span>
 				Sauvegardes &amp; restauration
 			</h1>
 			<p class="page-subtitle">Sauvegardes complètes de la base de données (mysqldump).</p>
@@ -63,10 +63,10 @@
 								<div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-danger/10 text-danger mb-4">
 									<span class="ti ti-alert-triangle text-2xl" aria-hidden="true"></span>
 								</div>
-								<h3 class="text-lg font-heading font-bold text-(--brand-dark)">Restaurer la base de données ?</h3>
+								<h3 class="text-lg font-heading font-bold text-(--color-brand-dark)">Restaurer la base de données ?</h3>
 								<p class="text-sm opacity-80 mt-2 px-2">
 									Cette action va <span class="font-bold text-danger">écraser toutes les données actuelles</span>
-									avec le contenu de <span class="font-bold text-(--brand-dark)">« {{ backup.filename }} »</span>. Irréversible.
+									avec le contenu de <span class="font-bold text-(--color-brand-dark)">« {{ backup.filename }} »</span>. Irréversible.
 								</p>
 								<form method="post" action="{{ path('admin_backup_restore', {'filename': backup.filename}) }}" class="mt-4 text-left">
 									<input type="hidden" name="_token" value="{{ csrf_token('admin_backup_restore_' ~ backup.filename) }}">

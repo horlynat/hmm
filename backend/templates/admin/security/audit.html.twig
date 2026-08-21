@@ -35,7 +35,7 @@
 			<tbody>
 				{% for entry in entries %}
 					<tr>
-						<td class="font-medium text-(--brand-dark)">{{ entry.label }}</td>
+						<td class="font-medium text-(--color-brand-dark)">{{ entry.label }}</td>
 						<td><twig:Badge :variant="entry.source == 'project' ? 'info' : 'neutral'">{{ entry.actionLabel }}</twig:Badge></td>
 						<td class="text-sm opacity-70">{{ entry.user ? (entry.user.fullName ?? entry.user.email) : 'Système' }}</td>
 						<td class="text-sm opacity-70 whitespace-nowrap">{{ entry.date|date('d/m/Y H:i') }}</td>

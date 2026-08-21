@@ -13,7 +13,7 @@
 		<div class="page-header">
 			<div class="min-w-0">
 				<h1 class="page-title flex items-center gap-2">
-					<span class="ti ti-layout-dashboard text-(--brand-primary)" aria-hidden="true"></span>
+					<span class="ti ti-layout-dashboard text-(--color-brand-primary)" aria-hidden="true"></span>
 					Centrale des projets
 				</h1>
 				<p class="page-subtitle">Pilotage du portefeuille : santé, budgets, échéances, charge et approbations.</p>
@@ -106,7 +106,7 @@
 				<div class="panel-header"><h3 class="panel-title">Répartition par statut</h3></div>
 				<div class="panel-body space-y-2">
 					{% for statusKey, data in projectsByStatus %}
-						<a href="{{ path('admin_project_index', {status: statusKey}) }}" class="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition {{ filters.status == statusKey ? 'ring-1 ring-(--brand-primary)' : '' }}">
+						<a href="{{ path('admin_project_index', {status: statusKey}) }}" class="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition {{ filters.status == statusKey ? 'ring-1 ring-(--color-brand-primary)' : '' }}">
 							<span class="badge {{ data.badgeClass|default('bg-gray-400 text-white') }} text-xs">{{ data.label }}</span>
 							<span class="font-bold text-brand-dark">{{ data.count }}</span>
 						</a>
@@ -128,7 +128,7 @@
 								<span class="font-semibold text-brand-dark">{{ cnt }}</span>
 							</div>
 							<div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5">
-								<div class="h-1.5 rounded-full bg-(--brand-primary)" style="width: {{ maxPrio > 0 ? (cnt / maxPrio * 100) : 0 }}%"></div>
+								<div class="h-1.5 rounded-full bg-(--color-brand-primary)" style="width: {{ maxPrio > 0 ? (cnt / maxPrio * 100) : 0 }}%"></div>
 							</div>
 						</a>
 					{% endfor %}
@@ -147,7 +147,7 @@
 						<span class="text-xs text-brand-dark/60">{{ portfolio.totalSpent|money('EUR') }} / {{ portfolio.totalBudget|money('EUR') }}</span>
 					</div>
 					<div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3 overflow-hidden mb-3">
-						<div class="h-3 rounded-full {{ pctSpentGlobal >= 100 ? 'bg-danger' : (pctSpentGlobal >= 80 ? 'bg-amber-500' : 'bg-(--brand-primary)') }}" style="width: {{ min(pctSpentGlobal, 100) }}%"></div>
+						<div class="h-3 rounded-full {{ pctSpentGlobal >= 100 ? 'bg-danger' : (pctSpentGlobal >= 80 ? 'bg-amber-500' : 'bg-(--color-brand-primary)') }}" style="width: {{ min(pctSpentGlobal, 100) }}%"></div>
 					</div>
 					<div class="grid grid-cols-2 gap-2 text-sm">
 						<div class="flex items-center gap-2"><span class="ti ti-alert-triangle text-rose-600" aria-hidden="true"></span><span class="text-brand-dark/70">{{ portfolio.overBudget }} en dépassement</span></div>
@@ -277,7 +277,7 @@
 									{% set health = project.spent > project.budget ? 'over' : (overdue ? 'late' : (pct >= 80 ? 'tight' : 'ok')) %}
 									<tr>
 										<td style="padding-left: 1.25rem;">
-											<a href="{{ path('admin_project_read', {id: project.id}) }}" class="font-bold text-brand-dark hover:text-(--brand-primary) transition">{{ project.title }}</a>
+											<a href="{{ path('admin_project_read', {id: project.id}) }}" class="font-bold text-brand-dark hover:text-(--color-brand-primary) transition">{{ project.title }}</a>
 											<div class="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
 												<span class="ti ti-user" aria-hidden="true"></span>{{ project.client ? (project.client.fullName ?? project.client.email) : 'Aucun client' }}
 											</div>
@@ -301,7 +301,7 @@
 										<td>
 											<div class="flex items-center gap-2" style="min-width: 110px;">
 												<div class="w-full rounded-full bg-gray-200 dark:bg-gray-700" style="height: 6px;">
-													<div class="rounded-full bg-(--brand-primary)" style="height: 6px; width: {{ project.progress }}%;" role="progressbar" aria-valuenow="{{ project.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+													<div class="rounded-full bg-(--color-brand-primary)" style="height: 6px; width: {{ project.progress }}%;" role="progressbar" aria-valuenow="{{ project.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
 												</div>
 												<span class="text-sm font-bold text-brand-dark">{{ project.progress }}%</span>
 											</div>
@@ -467,7 +467,7 @@
 							</div>
 						</div>
 
-						<button type="button" class="text-sm text-gray-500 w-full text-center hover:text-(--brand-primary) cursor-pointer bg-transparent border-0" @click="advancedOpen = !advancedOpen">
+						<button type="button" class="text-sm text-gray-500 w-full text-center hover:text-(--color-brand-primary) cursor-pointer bg-transparent border-0" @click="advancedOpen = !advancedOpen">
 							<span x-show="!advancedOpen">Plus de filtres…</span>
 							<span x-show="advancedOpen" x-cloak>Masquer les filtres avancés</span>
 						</button>

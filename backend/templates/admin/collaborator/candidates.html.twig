@@ -6,7 +6,7 @@
 	<div class="page-header">
 		<div class="min-w-0">
 			<h1 class="page-title flex items-center gap-2">
-				<span class="ti ti-user-check text-(--brand-primary)" aria-hidden="true"></span>
+				<span class="ti ti-user-check text-(--color-brand-primary)" aria-hidden="true"></span>
 				Candidatures freelance
 			</h1>
 			<p class="page-subtitle">Comptes créés via le formulaire public — en attente de revue avant promotion.</p>
@@ -40,7 +40,7 @@
 									{{ (candidate.fullName ?? candidate.email)|slice(0, 2)|upper }}
 								</span>
 								<div class="min-w-0">
-									<div class="font-bold text-(--brand-dark) truncate">{{ candidate.fullName ?? 'Non spécifié' }}</div>
+									<div class="font-bold text-(--color-brand-dark) truncate">{{ candidate.fullName ?? 'Non spécifié' }}</div>
 									<div class="text-xs opacity-60 truncate">{{ candidate.email }}{% if candidate.phone %} — {{ candidate.phone }}{% endif %}</div>
 								</div>
 							</div>
@@ -57,7 +57,7 @@
 						<td class="text-sm opacity-70">{{ candidate.availability ?? '—' }}</td>
 						<td>
 							{% if candidate.portfolioUrl %}
-								<a href="{{ candidate.portfolioUrl }}" target="_blank" rel="noopener noreferrer" class="text-(--brand-primary) text-sm hover:underline inline-flex items-center gap-1">
+								<a href="{{ candidate.portfolioUrl }}" target="_blank" rel="noopener noreferrer" class="text-(--color-brand-primary) text-sm hover:underline inline-flex items-center gap-1">
 									<span class="ti ti-external-link" aria-hidden="true"></span> Voir
 								</a>
 							{% else %}
@@ -72,7 +72,7 @@
 										<span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white" aria-hidden="true">{{ unreadCounts[candidate.id] }}</span>
 									{% endif %}
 								</a>
-								<a href="{{ path('admin_collaborator_read', {'id': candidate.id, 'conv': 1}) }}" class="btn btn-ghost btn-icon relative text-(--brand-primary)" aria-label="Ouvrir la conversation avec {{ candidate.fullName ?? candidate.email }}" title="Conversation">
+								<a href="{{ path('admin_collaborator_read', {'id': candidate.id, 'conv': 1}) }}" class="btn btn-ghost btn-icon relative text-(--color-brand-primary)" aria-label="Ouvrir la conversation avec {{ candidate.fullName ?? candidate.email }}" title="Conversation">
 									<span class="ti ti-messages text-lg" aria-hidden="true"></span>
 									{% if unreadCounts[candidate.id] is defined %}
 										<span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white" aria-hidden="true">{{ unreadCounts[candidate.id] }}</span>

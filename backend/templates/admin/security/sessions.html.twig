@@ -4,7 +4,7 @@
 
 {% macro sortLink(label, column, sort, direction, search, status) %}
 	{% set nextDirection = (sort == column and direction == 'asc') ? 'desc' : 'asc' %}
-	<a href="{{ path('admin_security_session_index', {sort: column, direction: nextDirection, search: search, status: status}) }}" class="inline-flex items-center gap-1 hover:text-(--brand-primary)">
+	<a href="{{ path('admin_security_session_index', {sort: column, direction: nextDirection, search: search, status: status}) }}" class="inline-flex items-center gap-1 hover:text-(--color-brand-primary)">
 		{{ label }}
 		{% if sort == column %}
 			<span class="ti {{ direction == 'asc' ? 'ti-chevron-up' : 'ti-chevron-down' }} text-xs" aria-hidden="true"></span>
@@ -112,7 +112,7 @@
 				{% for entry in sessions %}
 					{% set userSession = entry.session %}
 					<tr>
-						<td class="font-medium text-(--brand-dark)">
+						<td class="font-medium text-(--color-brand-dark)">
 							{{ userSession.user.fullName ?? userSession.user.email }}
 							{% if flaggedSessionIds[userSession.sessionId] is defined %}
 								<span class="ti ti-alert-triangle text-danger ml-1" aria-hidden="true" title="Voyage impossible détecté avec une autre session active de ce compte"></span>
@@ -175,7 +175,7 @@
 				<tbody>
 					{% for user in inactiveUsers %}
 						<tr>
-							<td class="font-medium text-(--brand-dark)">{{ user.fullName ?? user.email }}</td>
+							<td class="font-medium text-(--color-brand-dark)">{{ user.fullName ?? user.email }}</td>
 							<td class="text-sm opacity-70">{{ user.lastLoginAt ? user.lastLoginAt|date('d/m/Y H:i') : 'Jamais connecté' }}</td>
 						</tr>
 					{% else %}

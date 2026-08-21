@@ -15,9 +15,9 @@
 
 	<twig:PageHeader title="Permissions dynamiques" subtitle="Rôle minimum requis pour chaque action — modifiable ici sans déploiement de code." icon="ti-adjustments-alt" />
 
-	<div class="panel mb-6 border-l-4 border-(--brand-primary)">
+	<div class="panel mb-6 border-l-4 border-(--color-brand-primary)">
 		<div class="panel-body flex items-start gap-3">
-			<span class="ti ti-info-circle text-xl text-(--brand-primary) mt-0.5" aria-hidden="true"></span>
+			<span class="ti ti-info-circle text-xl text-(--color-brand-primary) mt-0.5" aria-hidden="true"></span>
 			<div class="text-sm opacity-80">
 				<p class="mb-2">Ce catalogue couvre uniquement les permissions "métier" (Articles, Contacts, Formations, Devis, Compétences, Support, Témoignages, Dashboard, Finance) — des seuils de rôle purs, sans autre règle mêlée.</p>
 				<p>Volontairement <strong>absentes</strong> : les permissions Sécurité/Paramètres (elles gouvernent le back-office lui-même) et celles de Project/Utilisateur (mêlées à des garde-fous critiques : auto-suppression, protection Super Admin, verrou d'état de projet). Ces permissions-là restent fixées dans le code, pour ne jamais pouvoir être affaiblies depuis cette interface.</p>
@@ -42,7 +42,7 @@
 						{% for definition in definitions %}
 							<tr>
 								<td>
-									<p class="font-medium text-(--brand-dark)">{{ definition.label }}</p>
+									<p class="font-medium text-(--color-brand-dark)">{{ definition.label }}</p>
 									<p class="font-mono text-xs opacity-50">{{ definition.code }}</p>
 								</td>
 								<td>

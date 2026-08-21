@@ -2,6 +2,22 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   Mode sombre piloté par la classe .dark, pas par l'OS — Tailwind v4 compile
+   `dark:` en `@media (prefers-color-scheme: dark)` par défaut, ce qui
+   ignore complètement la classe posée par base.html.twig/member/base.html.twig
+   (thème choisi en admin via Réglages > Configuration, ou bascule
+   utilisateur persistée en localStorage, cf. app.js) et le bloc `.dark { }`
+   ci-dessous qui surcharge les tokens @theme. Sans cette ligne, un appareil
+   dont l'OS préfère le sombre active TOUTES les classes utilitaires `dark:`
+   du gabarit (dark:bg-*, dark:text-*...) indépendamment de ce thème — alors
+   que le corps de page (body, .card, tokens @theme) reste en clair puisqu'il
+   suit, lui, la classe .dark. Résultat : mélange clair/sombre illisible
+   (ex. dark:text-gray-200 sur un fond de carte resté blanc). Aligner `dark:`
+   sur la même classe que le reste du système fait disparaître ce mélange.
+───────────────────────────────────────────────────────────────────────────── */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─────────────────────────────────────────────────────────────────────────────
    @theme — Tailwind v4 : Source unique de vérité pour tes tokens de design
    Génère automatiquement les utilitaires ET les variables globales (ex: var(--color-brand-primary))
 ───────────────────────────────────────────────────────────────────────────── */

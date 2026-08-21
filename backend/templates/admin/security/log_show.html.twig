@@ -31,7 +31,7 @@
 			<div class="lg:col-span-2 space-y-6">
 
 				<div class="card">
-					<h1 class="text-xl font-heading font-bold text-(--brand-dark)">
+					<h1 class="text-xl font-heading font-bold text-(--color-brand-dark)">
 						{{ tab == 'success' ? (entry.user.fullName ?? entry.user.email) : entry.email }}
 					</h1>
 					<p class="text-sm opacity-60 mb-4">
@@ -41,29 +41,29 @@
 					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-100 pt-4">
 						<div>
 							<p class="text-xs opacity-60 uppercase font-bold">Email</p>
-							<p class="text-(--brand-dark) font-bold break-all">{{ email }}</p>
+							<p class="text-(--color-brand-dark) font-bold break-all">{{ email }}</p>
 						</div>
 						<div>
 							<p class="text-xs opacity-60 uppercase font-bold">Adresse IP</p>
 							<div class="flex items-center gap-2">
-								<p class="text-(--brand-dark) font-bold font-mono">{{ ip ?? 'Non enregistrée' }}</p>
+								<p class="text-(--color-brand-dark) font-bold font-mono">{{ ip ?? 'Non enregistrée' }}</p>
 								{% if isBlocked %}<twig:Badge variant="neutral">Bloquée</twig:Badge>{% endif %}
 							</div>
 						</div>
 						{% if tab == 'failed' %}
 							<div>
 								<p class="text-xs opacity-60 uppercase font-bold">Motif de l'échec</p>
-								<p class="text-(--brand-dark) font-bold">{{ entry.reasonLabel }}</p>
+								<p class="text-(--color-brand-dark) font-bold">{{ entry.reasonLabel }}</p>
 							</div>
 						{% else %}
 							<div>
 								<p class="text-xs opacity-60 uppercase font-bold">Compte</p>
-								<p class="text-(--brand-dark) font-bold">#{{ entry.user.id }} — {{ entry.user.email }}</p>
+								<p class="text-(--color-brand-dark) font-bold">#{{ entry.user.id }} — {{ entry.user.email }}</p>
 							</div>
 						{% endif %}
 						<div>
 							<p class="text-xs opacity-60 uppercase font-bold">Localisation</p>
-							<p class="text-(--brand-dark) font-bold">{{ location ?? 'Inconnue' }}</p>
+							<p class="text-(--color-brand-dark) font-bold">{{ location ?? 'Inconnue' }}</p>
 						</div>
 					</div>
 
@@ -79,26 +79,26 @@
 						Appareil
 					</h3>
 					{% if device.isBot %}
-						<p class="text-(--brand-dark) font-bold flex items-center gap-2">
+						<p class="text-(--color-brand-dark) font-bold flex items-center gap-2">
 							<span class="ti ti-robot text-lg" aria-hidden="true"></span> {{ device.label }}
 						</p>
 					{% else %}
 						<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
 							<div>
 								<p class="text-xs opacity-60 uppercase font-bold">Type</p>
-								<p class="text-(--brand-dark) font-bold">{{ device.type }}</p>
+								<p class="text-(--color-brand-dark) font-bold">{{ device.type }}</p>
 							</div>
 							<div>
 								<p class="text-xs opacity-60 uppercase font-bold">Appareil</p>
-								<p class="text-(--brand-dark) font-bold">{{ device.brand ?? device.model ?? '—' }}</p>
+								<p class="text-(--color-brand-dark) font-bold">{{ device.brand ?? device.model ?? '—' }}</p>
 							</div>
 							<div>
 								<p class="text-xs opacity-60 uppercase font-bold">Système</p>
-								<p class="text-(--brand-dark) font-bold">{{ device.os ?? '—' }}</p>
+								<p class="text-(--color-brand-dark) font-bold">{{ device.os ?? '—' }}</p>
 							</div>
 							<div>
 								<p class="text-xs opacity-60 uppercase font-bold">Navigateur</p>
-								<p class="text-(--brand-dark) font-bold">{{ device.browser ?? '—' }}</p>
+								<p class="text-(--color-brand-dark) font-bold">{{ device.browser ?? '—' }}</p>
 							</div>
 						</div>
 					{% endif %}
@@ -144,7 +144,7 @@
 						<ul class="space-y-2">
 							{% for login in relatedLogins %}
 								<li class="text-sm flex items-center justify-between gap-2">
-									<a href="{{ path('admin_security_log_show_success', {id: login.id}) }}" class="hover:text-(--brand-primary)">
+									<a href="{{ path('admin_security_log_show_success', {id: login.id}) }}" class="hover:text-(--color-brand-primary)">
 										{{ login.loginAt|date('d/m/Y H:i') }}
 									</a>
 									<span class="font-mono text-xs opacity-60">{{ login.ip ?? '—' }}</span>
@@ -166,7 +166,7 @@
 						<ul class="space-y-2">
 							{% for attempt in relatedFailedByIp %}
 								<li class="text-sm flex items-center justify-between gap-2">
-									<a href="{{ path('admin_security_log_show_failed', {id: attempt.id}) }}" class="hover:text-(--brand-primary)">
+									<a href="{{ path('admin_security_log_show_failed', {id: attempt.id}) }}" class="hover:text-(--color-brand-primary)">
 										{{ attempt.createdAt|date('d/m/Y H:i') }}
 									</a>
 									<span class="text-xs opacity-60 truncate max-w-28" title="{{ attempt.email }}">{{ attempt.email }}</span>
@@ -186,7 +186,7 @@
 						<ul class="space-y-2">
 							{% for attempt in relatedFailedByEmail %}
 								<li class="text-sm flex items-center justify-between gap-2">
-									<a href="{{ path('admin_security_log_show_failed', {id: attempt.id}) }}" class="hover:text-(--brand-primary)">
+									<a href="{{ path('admin_security_log_show_failed', {id: attempt.id}) }}" class="hover:text-(--color-brand-primary)">
 										{{ attempt.createdAt|date('d/m/Y H:i') }}
 									</a>
 									<span class="font-mono text-xs opacity-60">{{ attempt.ip ?? '—' }}</span>

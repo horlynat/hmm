@@ -10,15 +10,15 @@
 	<div class="panel-body grid grid-cols-1 sm:grid-cols-2 gap-4">
 		<div>
 			<p class="text-xs text-gray-400 mb-1">Nom complet</p>
-			<p class="text-sm font-medium text-(--brand-dark)">{{ user.fullName ?? 'Non spécifié' }}</p>
+			<p class="text-sm font-medium text-(--color-brand-dark)">{{ user.fullName ?? 'Non spécifié' }}</p>
 		</div>
 		<div>
 			<p class="text-xs text-gray-400 mb-1">Adresse email</p>
-			<p class="text-sm font-medium text-(--brand-dark) break-all">{{ user.email }}</p>
+			<p class="text-sm font-medium text-(--color-brand-dark) break-all">{{ user.email }}</p>
 		</div>
 		<div>
 			<p class="text-xs text-gray-400 mb-1">Téléphone</p>
-			<p class="text-sm font-medium text-(--brand-dark)">{{ user.phone ?? 'Non renseigné' }}</p>
+			<p class="text-sm font-medium text-(--color-brand-dark)">{{ user.phone ?? 'Non renseigné' }}</p>
 		</div>
 		<div>
 			<p class="text-xs text-gray-400 mb-1">Mot de passe</p>
@@ -26,7 +26,7 @@
 		</div>
 		<div>
 			<p class="text-xs text-gray-400 mb-1">Membre depuis</p>
-			<p class="text-sm font-medium text-(--brand-dark)">{{ user.createdAt ? user.createdAt|date('d/m/Y') : 'Inconnu' }}</p>
+			<p class="text-sm font-medium text-(--color-brand-dark)">{{ user.createdAt ? user.createdAt|date('d/m/Y') : 'Inconnu' }}</p>
 		</div>
 	</div>
 </div>
