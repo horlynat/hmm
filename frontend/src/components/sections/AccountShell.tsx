@@ -118,8 +118,9 @@ export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled,
               : "mx-auto grid max-w-[1120px] gap-8 md:grid-cols-[260px_1fr] md:items-start"
           }
         >
-          <aside className="sticky top-20 hidden border-r border-(--border-neutral) pr-4 md:block">
+          <aside className="sticky top-20 hidden rounded-[var(--radius-lg)] border border-(--border-neutral) bg-bg-card p-3 shadow-sm md:block">
             <AccountNav
+              user={user}
               isCollaborator={isCollaborator}
               counts={counts}
               collapsed={collapsed}
@@ -157,7 +158,7 @@ export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled,
             role="dialog"
             aria-modal="true"
             aria-label={t("title")}
-            className="absolute inset-y-0 left-0 w-[85%] max-w-[320px] overflow-y-auto bg-bg-default p-4 shadow-xl"
+            className="absolute inset-y-0 left-0 w-[85%] max-w-[320px] overflow-y-auto bg-bg-card p-4 shadow-xl"
           >
             <div className="mb-2 flex items-center justify-end">
               <button
@@ -165,12 +166,12 @@ export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled,
                 type="button"
                 aria-label={tc("closeMenu")}
                 onClick={() => setOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-(--border-neutral) bg-bg-card"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-(--border-neutral) bg-(--color-surface-muted)"
               >
                 <span aria-hidden="true">✕</span>
               </button>
             </div>
-            <AccountNav isCollaborator={isCollaborator} counts={counts} />
+            <AccountNav user={user} isCollaborator={isCollaborator} counts={counts} />
           </div>
         </div>
       )}

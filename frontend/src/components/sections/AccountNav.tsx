@@ -26,6 +26,7 @@ import {
 import { Link, usePathname } from "@/i18n/navigation";
 import { Badge, ButtonLink } from "@/components/ui";
 import { LogoutButton } from "@/components/sections/LogoutButton";
+import { getAvatarUrl } from "@/lib/media";
 
 /**
  * Routes statiques (sans paramètre) de l'aside compte — cf. src/i18n/routing.ts.
@@ -55,7 +56,12 @@ interface NavItem {
   icon: LucideIcon;
 }
 
-/** Lien de navigation de l'aside compte, avec indication visuelle + ARIA de la page active. */
+/**
+ * Lien de navigation de l'aside compte, avec indication visuelle + ARIA de la
+ * page active. Pastille pleine arrondie (pas de barre latérale) : l'icône
+ * change de couleur avec le libellé plutôt que de porter elle-même un fond,
+ * pour rester lisible aussi bien seule (replié) qu'à côté d'un badge.
+ */
 function NavLink({
   href,
   label,
@@ -74,15 +80,15 @@ function NavLink({
       aria-label={collapsed ? label : undefined}
       title={collapsed ? label : undefined}
       className={clsx(
-        "flex items-center gap-2.5 rounded-lg border-l-2 px-3 py-2 text-sm font-semibold transition-colors",
+        "flex items-center gap-2.5 rounded-full px-3 py-2 text-sm font-semibold transition-colors",
         collapsed && "justify-center px-2",
         active
           ? danger
-            ? "border-danger bg-danger/10 text-danger"
-            : "border-brand-primary bg-(--color-surface-muted) text-brand-primary"
+            ? "bg-danger/10 text-danger"
+            : "bg-brand-primary/10 text-brand-primary"
           : danger
-            ? "border-transparent text-danger/80 hover:bg-danger/10 hover:text-danger"
-            : "border-transparent opacity-80 hover:bg-(--color-surface-muted) hover:opacity-100",
+            ? "text-danger/70 hover:bg-danger/10 hover:text-danger"
+            : "text-(--color-muted) hover:bg-(--color-surface-muted) hover:text-(--brand-dark)",
       )}
     >
       <Icon aria-hidden="true" size={17} className="shrink-0" />
@@ -96,14 +102,47 @@ function NavLink({
   );
 }
 
+/** Groupe de liens, séparé du précédent par un filet fin plutôt qu'un simple espacement — rythme plus net entre les sections. */
 function NavGroup({ title, collapsed, children }: { title: string; collapsed: boolean; children: ReactNode }) {
   return (
-    <div className="pt-3 first:pt-0">
+    <div className="mt-3 border-t border-(--border-neutral)/60 pt-3 first:mt-0 first:border-0 first:pt-0">
       {!collapsed && (
-        <p className="px-2 pb-1 text-xs font-bold uppercase tracking-wider opacity-40">{title}</p>
+        <p className="px-2 pb-1 text-xs font-bold uppercase tracking-wider text-(--color-muted)">{title}</p>
       )}
       <div className="space-y-0.5">{children}</div>
     </div>
+  );
+}
+
+interface NavUser {
+  fullName: string | null;
+  email: string;
+  profileImage: string | null;
+}
+
+/** Carte d'identité en tête d'aside — ancre visuelle vers /compte/profil, absente jusqu'ici de la nav (seul l'avatar du header y renvoyait). Replié : avatar seul, centré. */
+function NavProfile({ user, collapsed }: { user: NavUser; collapsed: boolean }) {
+  return (
+    <Link
+      href="/compte/profil"
+      title={collapsed ? user.fullName ?? user.email : undefined}
+      aria-label={collapsed ? (user.fullName ?? user.email) : undefined}
+      className={clsx(
+        "mb-3 flex items-center gap-2.5 rounded-xl border border-(--border-neutral) bg-(--color-surface-muted) p-2 transition-colors hover:border-brand-primary/40",
+        collapsed && "justify-center",
+      )}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- avatar externe (ui-avatars.com) ou média backend, hors domaines optimisables par next/image sans config supplémentaire */}
+      <img src={getAvatarUrl(user)} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+      {!collapsed && (
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-bold text-(--brand-dark)">
+            {user.fullName ?? user.email}
+          </span>
+          <span className="block truncate text-xs text-(--color-muted)">{user.email}</span>
+        </span>
+      )}
+    </Link>
   );
 }
 
@@ -123,6 +162,7 @@ export interface AccountNavCounts {
 }
 
 interface AccountNavProps {
+  user: NavUser;
   isCollaborator: boolean;
   counts: AccountNavCounts;
   collapsed?: boolean;
@@ -130,6 +170,7 @@ interface AccountNavProps {
 }
 
 export function AccountNav({
+  user,
   isCollaborator,
   counts,
   collapsed = false,
@@ -139,8 +180,10 @@ export function AccountNav({
 
   return (
     <nav aria-label={t("title")} className="space-y-1">
+      <NavProfile user={user} collapsed={collapsed} />
+
       {!collapsed && (
-        <p className="px-2 pb-2 text-xs font-bold uppercase tracking-wider opacity-40">{t("title")}</p>
+        <p className="px-2 pb-2 text-xs font-bold uppercase tracking-wider text-(--color-muted)">{t("title")}</p>
       )}
 
       {!isCollaborator && (
@@ -227,20 +270,20 @@ export function AccountNav({
       </NavGroup>
 
       {!collapsed && (
-        <div className="pt-3">
+        <div className="mt-3 border-t border-(--border-neutral)/60 pt-3">
           <LogoutButton />
         </div>
       )}
 
       {onToggleCollapsed && (
-        <div className="hidden border-t border-(--border-neutral) pt-2 md:block">
+        <div className="mt-3 hidden border-t border-(--border-neutral)/60 pt-3 md:block">
           <button
             type="button"
             onClick={onToggleCollapsed}
             aria-label={collapsed ? t("expandMenu") : t("collapseMenu")}
             title={collapsed ? t("expandMenu") : t("collapseMenu")}
             className={clsx(
-              "flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold opacity-60 transition-opacity hover:opacity-100",
+              "flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold text-(--color-muted) transition-colors hover:bg-(--color-surface-muted) hover:text-(--brand-dark)",
               collapsed && "justify-center px-2",
             )}
           >
