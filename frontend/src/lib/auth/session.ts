@@ -10,6 +10,7 @@ import { CURRENCY_COOKIE, DEFAULT_CURRENCY, isCurrency } from "@/lib/currency/co
 import type {
   SessionUser,
   SessionProjectDetail,
+  AvailableProject,
   SessionProjectTeam,
   SessionQuoteDetail,
   SessionActivity,
@@ -140,7 +141,7 @@ export async function getMyProject(id: number): Promise<SessionProjectDetail | n
  * refuse (pas ROLE_EDITOR, profil incomplet) plutôt que de faire
  * planter la page — l'appelant décide de l'affichage dans ce cas.
  */
-export async function getAvailableProjects(): Promise<SessionProjectDetail[] | null> {
+export async function getAvailableProjects(): Promise<AvailableProject[] | null> {
   const token = await getToken();
   if (!token) return null;
 
@@ -156,7 +157,7 @@ export async function getAvailableProjects(): Promise<SessionProjectDetail[] | n
 
     if (!res.ok) return null;
 
-    const body = (await res.json()) as { projects: SessionProjectDetail[] };
+    const body = (await res.json()) as { projects: AvailableProject[] };
     return body.projects;
   } catch (error) {
     console.error("[auth] GET /me/projects/available failed", error);

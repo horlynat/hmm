@@ -1204,13 +1204,14 @@
     },
     "availableProjects": {
       "title": "Projets disponibles",
-      "subtitle": "Projets à venir pas encore affectés à une équipe — proposez-vous pour rejoindre celui qui vous correspond.",
+      "subtitle": "Projets à venir pas encore affectés à une équipe — déposez une demande pour celui qui vous correspond, elle sera examinée avant validation.",
       "empty": "Aucun projet disponible pour le moment. Revenez bientôt !",
       "deadline": "Échéance : {date}",
-      "joinCta": "Rejoindre ce projet",
+      "joinCta": "Demander à rejoindre",
       "joining": "Envoi en cours…",
       "joined": "Vous avez rejoint ce projet !",
-      "joinError": "Impossible de rejoindre ce projet. Réessayez.",
+      "pending": "Demande envoyée — en attente de validation",
+      "joinError": "Impossible d'envoyer la demande. Réessayez.",
       "profileBanner": {
         "title": "Complétez votre profil",
         "body": "Votre profil est complété à {percent} %. Cet espace est réservé aux profils complets à 100 % — c'est ce qui garantit aux clients qu'un projet peut vous être confié en toute confiance. Il vous manque :",
