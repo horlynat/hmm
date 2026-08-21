@@ -119,6 +119,10 @@ class Project
     #[ORM\OneToMany(mappedBy: 'project', targetEntity: ProjectHistory::class, cascade: ['persist'], orphanRemoval: true)]
     private Collection $histories;
 
+    /** @var Collection<int, ProjectJoinRequest> */
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: ProjectJoinRequest::class, cascade: ['persist'], orphanRemoval: true)]
+    private Collection $joinRequests;
+
     /** @var Collection<int, ProjectExpense> */
     #[ORM\OneToMany(mappedBy: 'project', targetEntity: ProjectExpense::class, cascade: ['persist'], orphanRemoval: true)]
     #[Groups(['api_admin'])]
@@ -189,6 +193,7 @@ class Project
         $this->media = new ArrayCollection();
         $this->collaborators = new ArrayCollection();
         $this->histories = new ArrayCollection();
+        $this->joinRequests = new ArrayCollection();
         $this->expenses = new ArrayCollection();
         $this->invoices = new ArrayCollection();
         $this->tags = new ArrayCollection();
@@ -466,6 +471,14 @@ class Project
             $collaborator->removeCollaboratingProject($this);
         }
         return $this;
+    }
+
+    /**
+     * @return Collection<int, ProjectJoinRequest>
+     */
+    public function getJoinRequests(): Collection
+    {
+        return $this->joinRequests;
     }
 
     /**
@@ -902,16 +915,37 @@ class Project
     }
 
     /**
-     * Auto-association depuis l'espace « Projets disponibles » (MeController::joinProject) —
-     * entrée dédiée pour que l'admin distingue, dans l'historique, une association
-     * spontanée d'un freelance d'un ajout qu'il a lui-même effectué (logCollaboratorAdded).
+     * Demande d'auto-association depuis l'espace « Projets disponibles »
+     * (MeController::joinProject) — ne donne accès à rien : c'est
+     * logCollaboratorJoinApproved() ci-dessous, déclenché par un admin, qui
+     * effectue l'ajout réel à $collaborators.
      */
-    public function logCollaboratorSelfJoined(User $collaborator): static
+    public function logCollaboratorJoinRequested(User $requester): static
     {
         return $this->addToHistory(
-            'collaborator_self_joined',
-            $collaborator,
-            sprintf('%s s\'est auto-associé à ce projet depuis l\'espace freelance', $collaborator->getEmail())
+            'collaborator_join_requested',
+            $requester,
+            sprintf('%s a demandé à s\'associer à ce projet depuis l\'espace freelance', $requester->getEmail())
+        );
+    }
+
+    /** Validation d'une demande d'auto-association par un admin — c'est ici que l'accès réel est accordé. */
+    public function logCollaboratorJoinApproved(User $admin, User $collaborator): static
+    {
+        return $this->addToHistory(
+            'collaborator_join_approved',
+            $admin,
+            sprintf('Demande d\'auto-association de %s validée par %s', $collaborator->getEmail(), $admin->getFullName() ?? $admin->getEmail())
+        );
+    }
+
+    /** Refus d'une demande d'auto-association par un admin — le freelance reste hors du projet. */
+    public function logCollaboratorJoinRejected(User $admin, User $requester): static
+    {
+        return $this->addToHistory(
+            'collaborator_join_rejected',
+            $admin,
+            sprintf('Demande d\'auto-association de %s refusée par %s', $requester->getEmail(), $admin->getFullName() ?? $admin->getEmail())
         );
     }
 

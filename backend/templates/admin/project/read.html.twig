@@ -733,7 +733,7 @@
 				{% if project.status.value == 'a_venir' %}
 					<div class="mx-4 mt-4 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
 						<span class="ti ti-users-group mt-0.5 shrink-0" aria-hidden="true"></span>
-						<span>Ce projet est <strong>visible dans l'espace « Projets disponibles »</strong> : tout freelance au profil complété à 100&nbsp;% peut s'y associer lui-même, sans validation préalable. Vous êtes notifié à chaque auto-association.</span>
+						<span>Ce projet est <strong>visible dans l'espace « Projets disponibles »</strong> : tout freelance au profil complété à 100&nbsp;% peut y déposer une demande d'association. Elle n'accorde l'accès qu'après votre validation — <a href="{{ path('admin_project_freelance_space') }}" class="underline font-medium">gérer les demandes en attente →</a></span>
 					</div>
 				{% endif %}
 				<div class="panel-body">

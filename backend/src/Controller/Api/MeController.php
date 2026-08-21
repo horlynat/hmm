@@ -9,6 +9,7 @@ use App\Entity\Media;
 use App\Entity\Project;
 use App\Entity\ProjectHistory;
 use App\Entity\ProjectInfo;
+use App\Entity\ProjectJoinRequest;
 use App\Entity\ProjectTask;
 use App\Entity\QuoteRequest;
 use App\Entity\TimeEntry;
@@ -20,6 +21,7 @@ use App\Enum\ProjectStatusEnum;
 use App\Enum\TaskStatusEnum;
 use App\Exception\TooManyRequestsException;
 use App\Repository\CandidateMessageRepository;
+use App\Repository\ProjectJoinRequestRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\ProjectTaskRepository;
 use App\Repository\QuoteRequestRepository;
@@ -456,7 +458,7 @@ final class MeController extends AbstractController
      * terminés n'ont plus besoin d'être "rejoints".
      */
     #[Route('/projects/available', name: 'projects_available', methods: ['GET'])]
-    public function readAvailableProjects(ProjectRepository $projectRepository): JsonResponse
+    public function readAvailableProjects(ProjectRepository $projectRepository, ProjectJoinRequestRepository $joinRequestRepository): JsonResponse
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -475,24 +477,38 @@ final class MeController extends AbstractController
             static fn (Project $project): bool => !$project->isTeamMember($user),
         ));
 
+        // Une demande en attente reste visible (pas d'accès tant que non
+        // validée) mais affichée comme telle plutôt que de disparaître de la
+        // liste — le freelance doit voir qu'elle a bien été prise en compte.
+        $pendingProjectIds = $joinRequestRepository->findPendingProjectIdsFor($user);
+
         return $this->json([
-            'projects' => array_map($this->serializeProjectDetail(...), $projects),
+            'projects' => array_map(
+                fn (Project $project): array => [
+                    ...$this->serializeProjectDetail($project),
+                    'joinPending' => \in_array($project->getId(), $pendingProjectIds, true),
+                ],
+                $projects,
+            ),
         ]);
     }
 
     /**
-     * Auto-affectation d'un freelance à un projet "à venir" — même mécanique
-     * que AdminProjectController lorsqu'un admin ajoute un collaborateur
-     * (User::addCollaboratingProject(), qui promeut ROLE_EDITOR si besoin et
-     * synchronise les deux côtés de la relation), déclenchée ici par le
-     * freelance lui-même plutôt que par un admin. L'admin est notifié après
-     * coup (AdminAlertNotifier) plutôt que d'exiger une validation préalable :
-     * cohérent avec le reste de l'espace compte, où aucune action freelance
-     * n'est bloquée derrière une modération manuelle.
+     * Demande d'auto-affectation d'un freelance à un projet "à venir" — ne
+     * donne AUCUN accès au projet : elle crée seulement une ProjectJoinRequest
+     * "en attente", que seul un admin peut valider (AdminProjectController::
+     * approveJoinRequest, qui effectue alors l'ajout réel via
+     * User::addCollaboratingProject() et notifie le client du démarrage du
+     * développement). L'admin est alerté immédiatement pour pouvoir statuer
+     * (AdminAlertNotifier) mais rien n'est accordé avant sa décision.
      */
     #[Route('/projects/{id}/join', name: 'project_join', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function joinProject(int $id, ProjectRepository $projectRepository, AdminAlertNotifier $adminAlertNotifier): JsonResponse
-    {
+    public function joinProject(
+        int $id,
+        ProjectRepository $projectRepository,
+        ProjectJoinRequestRepository $joinRequestRepository,
+        AdminAlertNotifier $adminAlertNotifier,
+    ): JsonResponse {
         $user = $this->getUser();
         if (!$user instanceof User) {
             return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
@@ -512,23 +528,33 @@ final class MeController extends AbstractController
         if ($project->isTeamMember($user)) {
             return $this->json(['detail' => 'Vous participez déjà à ce projet.'], Response::HTTP_CONFLICT);
         }
+        if (null !== $joinRequestRepository->findPendingFor($project, $user)) {
+            return $this->json(['detail' => 'Votre demande pour ce projet est déjà en attente de validation.'], Response::HTTP_CONFLICT);
+        }
 
-        $user->addCollaboratingProject($project);
-        $project->logCollaboratorSelfJoined($user);
+        $request = new ProjectJoinRequest();
+        $request->setProject($project);
+        $request->setUser($user);
+        $this->entityManager->persist($request);
+
+        $project->logCollaboratorJoinRequested($user);
         $this->entityManager->flush();
 
         $adminAlertNotifier->alert(
-            NotificationPriorityEnum::LOW,
-            'Freelance associé à un projet',
+            NotificationPriorityEnum::MEDIUM,
+            'Demande d\'association freelance à valider',
             \sprintf(
-                '%s <%s> a rejoint le projet « %s ».',
+                '%s <%s> souhaite rejoindre le projet « %s ». Validez ou refusez la demande depuis l\'espace freelance du back-office.',
                 $user->getFullName() ?? $user->getEmail(),
                 $user->getEmail(),
                 $project->getTitle(),
             ),
         );
 
-        return $this->json($this->serializeProjectDetail($project));
+        return $this->json([
+            ...$this->serializeProjectDetail($project),
+            'joinPending' => true,
+        ]);
     }
 
     /**
