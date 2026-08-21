@@ -362,6 +362,44 @@ final class AdminProjectController extends AbstractController
     }
 
     // =========================================================================
+    // 📌 ESPACE FREELANCE — vue d'ensemble du pool en libre-service
+    // =========================================================================
+
+    /**
+     * Pendant admin de l'espace « Projets disponibles » du frontend freelance
+     * (MeController::readAvailableProjects/joinProject) : contrairement au
+     * badge/bannière posés sur chaque fiche projet, cette page est LE point
+     * d'entrée dédié — un projet "à venir" reste malgré tout visible ici même
+     * quand aucun freelance n'a encore rien rejoint, et la page reste
+     * consultable même quand le pool est totalement vide (l'admin doit
+     * pouvoir constater "il n'y a rien à voir", pas seulement deviner
+     * l'existence de la fonctionnalité en tombant sur un projet qui l'a).
+     */
+    #[Route('/espace-freelance', name: 'freelance_space', methods: ['GET'])]
+    public function freelanceSpace(ProjectRepository $projectRepository, UserRepository $userRepository): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        $projects = $projectRepository->findByStatus(ProjectStatusEnum::UPCOMING);
+
+        $eligibleFreelances = array_values(array_filter(
+            $userRepository->findCollaborators(),
+            static fn (User $user): bool => $user->isFreelanceProfileComplete(),
+        ));
+
+        $totalAssociations = array_sum(array_map(
+            static fn (Project $project): int => $project->getCollaborators()->count(),
+            $projects,
+        ));
+
+        return $this->render('admin/project/freelance_space.html.twig', [
+            'projects' => $projects,
+            'eligibleFreelances' => $eligibleFreelances,
+            'totalAssociations' => $totalAssociations,
+        ]);
+    }
+
+    // =========================================================================
     // 📌 CRÉATION D'UN PROJET
     // =========================================================================
 

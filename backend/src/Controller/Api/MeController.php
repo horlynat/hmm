@@ -514,7 +514,7 @@ final class MeController extends AbstractController
         }
 
         $user->addCollaboratingProject($project);
-        $project->logCollaboratorAdded($user, $user);
+        $project->logCollaboratorSelfJoined($user);
         $this->entityManager->flush();
 
         $adminAlertNotifier->alert(

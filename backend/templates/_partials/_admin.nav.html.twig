@@ -193,9 +193,13 @@
 
 				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
 					{% if canViewProjects %}
-						<a href="{{ path('admin_project_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_project' and currentRoute != 'admin_project_statistics' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+						<a href="{{ path('admin_project_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_project' and currentRoute != 'admin_project_statistics' and currentRoute != 'admin_project_freelance_space' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
 							<i class="ti ti-briefcase text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
 							Projets
+						</a>
+						<a href="{{ path('admin_project_freelance_space') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute == 'admin_project_freelance_space' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-users-group text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+							Espace freelance
 						</a>
 					{% endif %}
 					{% if canViewSkills %}

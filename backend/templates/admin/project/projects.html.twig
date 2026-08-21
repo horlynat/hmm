@@ -284,6 +284,9 @@
 										</td>
 										<td>
 											<span class="badge {{ project.status.badgeClass|default('bg-gray-400 text-white') }} text-xs">{{ project.status.label }}</span>
+											{% if project.status.value == 'a_venir' %}
+												<div class="mt-1"><span class="badge bg-amber-100 text-amber-800 text-xs gap-1" title="Visible dans l'espace « Projets disponibles » des freelances"><span class="ti ti-users-group" aria-hidden="true"></span> Espace freelance</span></div>
+											{% endif %}
 											{% if project.priority %}<div class="mt-1"><span class="badge {{ project.priority.badgeClass }} text-xs">{{ project.priority.label }}</span></div>{% endif %}
 										</td>
 										<td>

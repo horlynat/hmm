@@ -901,6 +901,20 @@ class Project
         );
     }
 
+    /**
+     * Auto-association depuis l'espace « Projets disponibles » (MeController::joinProject) —
+     * entrée dédiée pour que l'admin distingue, dans l'historique, une association
+     * spontanée d'un freelance d'un ajout qu'il a lui-même effectué (logCollaboratorAdded).
+     */
+    public function logCollaboratorSelfJoined(User $collaborator): static
+    {
+        return $this->addToHistory(
+            'collaborator_self_joined',
+            $collaborator,
+            sprintf('%s s\'est auto-associé à ce projet depuis l\'espace freelance', $collaborator->getEmail())
+        );
+    }
+
     public function logCollaboratorRemoved(User $user, User $collaborator): static
     {
         return $this->addToHistory(
