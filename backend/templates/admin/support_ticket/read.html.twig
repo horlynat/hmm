@@ -30,7 +30,7 @@
 				<div class="space-y-4 border-t border-gray-100 pt-6">
 					{% for message in ticket.messages %}
 						<div class="flex {{ message.fromAdmin ? 'justify-end' : 'justify-start' }}">
-							<div class="max-w-lg rounded-2xl px-4 py-3 {{ message.fromAdmin ? 'bg-(--brand-primary) text-white' : 'bg-gray-100 text-brand-dark' }}">
+							<div class="max-w-lg rounded-2xl px-4 py-3 {{ message.fromAdmin ? 'bg-(--color-brand-primary) text-white' : 'bg-gray-100 text-brand-dark' }}">
 								<p class="text-xs opacity-70 mb-1">{{ message.fromAdmin ? 'Support' : ticket.name }} — {{ message.createdAt|date('d/m/Y H:i') }}</p>
 								<p class="whitespace-pre-line leading-relaxed">{{ message.body }}</p>
 							</div>

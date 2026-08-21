@@ -88,6 +88,59 @@ final class ProjectNotifier
     }
 
     /**
+     * Demande d'auto-association (espace freelance) validée par un admin —
+     * notifie le freelance (accès désormais accordé) ET le client (démarrage
+     * du développement de son projet). Distinct de collaboratorAdded() (ajout
+     * direct par un admin) : ce cas mérite d'informer le client, qui jusque-là
+     * n'avait aucune visibilité sur la constitution de l'équipe de son projet.
+     */
+    public function joinRequestApproved(Project $project, User $collaborator): void
+    {
+        $this->dispatch(
+            [$collaborator],
+            NotificationPriorityEnum::MEDIUM,
+            'Votre demande d\'association a été validée',
+            [
+                sprintf('Votre demande pour rejoindre le projet « %s » a été validée. Vous faites désormais partie de l\'équipe.', $project->getTitle()),
+            ],
+            $project,
+        );
+
+        $client = $project->getClient();
+        if (null === $client) {
+            return;
+        }
+
+        $this->dispatch(
+            [$client],
+            NotificationPriorityEnum::MEDIUM,
+            'Le développement de votre projet démarre',
+            [
+                sprintf(
+                    '%s rejoint l\'équipe de votre projet « %s » — le développement démarre.',
+                    $collaborator->getFullName() ?? $collaborator->getEmail(),
+                    $project->getTitle(),
+                ),
+            ],
+            $project,
+        );
+    }
+
+    /** Demande d'auto-association refusée par un admin — le freelance en est informé, le client n'est pas sollicité. */
+    public function joinRequestRejected(Project $project, User $requester): void
+    {
+        $this->dispatch(
+            [$requester],
+            NotificationPriorityEnum::LOW,
+            'Votre demande d\'association n\'a pas été retenue',
+            [
+                sprintf('Votre demande pour rejoindre le projet « %s » n\'a pas été retenue cette fois-ci.', $project->getTitle()),
+            ],
+            $project,
+        );
+    }
+
+    /**
      * Notifie le client que sa demande a été validée et transformée en projet
      * suivi — avec, le cas échéant, la facture initiale qui vient d'être émise.
      */

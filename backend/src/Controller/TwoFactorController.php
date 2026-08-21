@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\EventSubscriber\SpaceTrackerSubscriber;
 use App\Security\TwoFactor\BackupCodeManager;
 use App\Security\TwoFactor\PendingTotpUser;
 use App\Service\AccountLinkResolver;
@@ -14,6 +15,7 @@ use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInte
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
@@ -40,6 +42,7 @@ class TwoFactorController extends AbstractController
 
     public function __construct(
         private readonly AccountLinkResolver $accountLinkResolver,
+        private readonly RequestStack $requestStack,
     ) {
     }
 
@@ -270,12 +273,28 @@ class TwoFactorController extends AbstractController
      * rôle), mais le gabarit doit suivre le même partage que les profils
      * (AdminProfileController / MemberProfileController) : jamais l'aside
      * admin pour un compte de l'espace membre.
+     *
+     * Priorité au dernier espace effectivement parcouru dans cette session
+     * (SpaceTrackerSubscriber) : un compte back-office qui vient de l'espace
+     * membre (ex. /projects, pour tester le parcours collaborateur) doit y
+     * rester en cliquant "Sécurité & 2FA" depuis ce menu-là, plutôt que de se
+     * faire renvoyer l'aside admin au milieu de sa navigation. Sans espace
+     * encore mémorisé (premier accès de la session, lien direct...), on
+     * retombe sur le rôle du compte — comportement d'origine, et seul
+     * comportement possible pour un vrai compte membre (jamais côté
+     * back-office).
      */
     private function layout(): string
     {
-        return $this->accountLinkResolver->isBackOfficeUser($this->getCurrentUser())
-            ? 'base.html.twig'
-            : 'member/base.html.twig';
+        $space = $this->requestStack->getSession()->get(SpaceTrackerSubscriber::SESSION_KEY);
+
+        $isBackOffice = match ($space) {
+            SpaceTrackerSubscriber::SPACE_ADMIN => true,
+            SpaceTrackerSubscriber::SPACE_MEMBER => false,
+            default => $this->accountLinkResolver->isBackOfficeUser($this->getCurrentUser()),
+        };
+
+        return $isBackOffice ? 'base.html.twig' : 'member/base.html.twig';
     }
 
     private function getCurrentUser(): User

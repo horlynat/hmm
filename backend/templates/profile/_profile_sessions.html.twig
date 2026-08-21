@@ -25,7 +25,7 @@
 						<div class="flex items-center gap-3 min-w-0">
 							<span class="ti {{ entry.device.type == 'Smartphone' or entry.device.type == 'Tablette' ? 'ti-device-mobile' : 'ti-device-desktop' }} text-lg opacity-60 shrink-0" aria-hidden="true"></span>
 							<div class="min-w-0">
-								<p class="text-sm font-medium text-(--brand-dark) truncate">{{ entry.device.label }}</p>
+								<p class="text-sm font-medium text-(--color-brand-dark) truncate">{{ entry.device.label }}</p>
 								<p class="text-xs opacity-50">
 									{{ userSession.ip ?? '—' }} · Ouverte le {{ userSession.createdAt|date('d/m/Y H:i') }}
 								</p>

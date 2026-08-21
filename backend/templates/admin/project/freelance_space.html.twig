@@ -1,0 +1,216 @@
+{# templates/admin/project/freelance_space.html.twig — Espace freelance (pool en libre-service) #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Espace freelance — Administration{% endblock %}
+
+{% block body %}
+	<div class="space-y-6">
+		{# ================================================================= #}
+		{# EN-TÊTE                                                           #}
+		{# ================================================================= #}
+		<div class="page-header">
+			<div class="min-w-0">
+				<h1 class="page-title flex items-center gap-2">
+					<span class="ti ti-users-group text-(--color-brand-primary)" aria-hidden="true"></span>
+					Espace freelance
+				</h1>
+				<p class="page-subtitle">Projets « à venir » actuellement ouverts à l'auto-association, et freelances éligibles pour les rejoindre.</p>
+			</div>
+			<a href="{{ path('admin_project_index') }}" class="btn btn-secondary gap-2 shrink-0">
+				<span class="ti ti-briefcase" aria-hidden="true"></span> Tous les projets
+			</a>
+		</div>
+
+		{# ================================================================= #}
+		{# EXPLICATION DU MÉCANISME                                          #}
+		{# ================================================================= #}
+		<div class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+			<span class="ti ti-info-circle text-lg mt-0.5 shrink-0" aria-hidden="true"></span>
+			<div>
+				<p class="font-semibold mb-1">Comment fonctionne cet espace ?</p>
+				<p class="mb-0 leading-relaxed">
+					Tout projet passé au statut <strong>« À venir »</strong> devient automatiquement visible dans l'espace « Projets disponibles » du portail freelance —
+					accessible à tout compte collaborateur dont le profil est complété à 100&nbsp;%. Un freelance peut y déposer une <strong>demande</strong> d'association, mais
+					n'obtient accès au projet qu'après votre validation ci-dessous : le client est alors notifié du démarrage du développement. Vous pouvez retirer un
+					collaborateur à tout moment depuis sa fiche.
+				</p>
+			</div>
+		</div>
+
+		{# ================================================================= #}
+		{# KPIs                                                              #}
+		{# ================================================================= #}
+		<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+			<div class="stat-tile {{ pendingRequests|length > 0 ? 'ring-2 ring-amber-400' : '' }}">
+				<div class="stat-tile__icon"><span class="ti ti-clock-hour-4" aria-hidden="true"></span></div>
+				<div>
+					<div class="stat-tile__value">{{ pendingRequests|length }}</div>
+					<div class="stat-tile__label">Demande(s) en attente</div>
+				</div>
+			</div>
+			<div class="stat-tile">
+				<div class="stat-tile__icon"><span class="ti ti-briefcase" aria-hidden="true"></span></div>
+				<div>
+					<div class="stat-tile__value">{{ projects|length }}</div>
+					<div class="stat-tile__label">Projet(s) actuellement ouvert(s)</div>
+				</div>
+			</div>
+			<div class="stat-tile">
+				<div class="stat-tile__icon"><span class="ti ti-user-check" aria-hidden="true"></span></div>
+				<div>
+					<div class="stat-tile__value">{{ eligibleFreelances|length }}</div>
+					<div class="stat-tile__label">Freelance(s) éligible(s) (profil 100&nbsp;%)</div>
+				</div>
+			</div>
+			<div class="stat-tile">
+				<div class="stat-tile__icon"><span class="ti ti-users" aria-hidden="true"></span></div>
+				<div>
+					<div class="stat-tile__value">{{ totalAssociations }}</div>
+					<div class="stat-tile__label">Association(s) déjà en place</div>
+				</div>
+			</div>
+		</div>
+
+		{# ================================================================= #}
+		{# DEMANDES EN ATTENTE DE VALIDATION                                 #}
+		{# ================================================================= #}
+		<div class="panel">
+			<div class="panel-header">
+				<h3 class="panel-title flex items-center gap-2">
+					<span class="ti ti-clock-hour-4 text-amber-500" aria-hidden="true"></span>
+					Demandes en attente de validation ({{ pendingRequests|length }})
+				</h3>
+			</div>
+			<div class="panel-body">
+				{% if pendingRequests is empty %}
+					<p class="text-gray-500 text-sm mb-0">Aucune demande en attente pour l'instant.</p>
+				{% else %}
+					<div class="space-y-3">
+						{% for joinRequest in pendingRequests %}
+							<div class="flex flex-wrap items-center justify-between gap-3 soft-card p-4">
+								<div class="flex items-center gap-3 min-w-0">
+									<div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-brand-dark shrink-0">
+										{{ (joinRequest.user.fullName ?? joinRequest.user.email)|first|upper }}
+									</div>
+									<div class="min-w-0">
+										<div class="font-semibold text-brand-dark truncate">{{ joinRequest.user.fullName ?? joinRequest.user.email }}</div>
+										<div class="text-sm text-gray-500 truncate">
+											souhaite rejoindre
+											<a href="{{ path('admin_project_read', {id: joinRequest.project.id}) }}" class="font-medium text-(--color-brand-primary) hover:underline">{{ joinRequest.project.title }}</a>
+										</div>
+										<div class="text-xs text-gray-400 mt-0.5">Demandé le {{ joinRequest.requestedAt|date('d/m/Y à H:i') }}</div>
+									</div>
+								</div>
+								<div class="flex items-center gap-2 shrink-0">
+									<form method="POST" action="{{ path('admin_project_reject_join_request', {id: joinRequest.project.id, requestId: joinRequest.id}) }}" onsubmit="return confirm('Refuser cette demande ?');">
+										<input type="hidden" name="_token" value="{{ csrf_token('join_request_' ~ joinRequest.id) }}">
+										<button type="submit" class="btn btn-secondary btn-sm gap-1.5">
+											<span class="ti ti-x" aria-hidden="true"></span> Refuser
+										</button>
+									</form>
+									<form method="POST" action="{{ path('admin_project_approve_join_request', {id: joinRequest.project.id, requestId: joinRequest.id}) }}">
+										<input type="hidden" name="_token" value="{{ csrf_token('join_request_' ~ joinRequest.id) }}">
+										<button type="submit" class="btn btn-primary btn-sm gap-1.5">
+											<span class="ti ti-check" aria-hidden="true"></span> Valider
+										</button>
+									</form>
+								</div>
+							</div>
+						{% endfor %}
+					</div>
+				{% endif %}
+			</div>
+		</div>
+
+		<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+			{# ================================================================= #}
+			{# PROJETS OUVERTS                                                   #}
+			{# ================================================================= #}
+			<div class="lg:col-span-8 space-y-4">
+				<div class="panel">
+					<div class="panel-header">
+						<h3 class="panel-title">Projets ouverts à l'auto-association ({{ projects|length }})</h3>
+					</div>
+					<div class="panel-body">
+						{% if projects is empty %}
+							<div class="text-center py-12 border-2 border-dashed border-gray-150 rounded-xl">
+								<span class="ti ti-mood-empty text-3xl block mb-2 opacity-50" aria-hidden="true"></span>
+								<p class="font-medium mb-1">Aucun projet ouvert pour le moment.</p>
+								<p class="text-sm text-gray-500 mb-4">L'espace freelance reste vide tant qu'aucun projet n'est au statut « À venir ». Passez un projet existant à ce statut, ou créez-en un nouveau, pour l'exposer ici.</p>
+								<a href="{{ path('admin_project_index', {status: 'a_venir'}) }}" class="btn btn-secondary btn-sm gap-2">
+									<span class="ti ti-filter" aria-hidden="true"></span> Voir les projets « À venir »
+								</a>
+							</div>
+						{% else %}
+							<div class="space-y-3">
+								{% for project in projects %}
+									<a href="{{ path('admin_project_read', {id: project.id}) }}" class="block soft-card p-4 hover:shadow-md transition">
+										<div class="flex items-start justify-between gap-3">
+											<div class="min-w-0">
+												<div class="font-bold text-brand-dark truncate">{{ project.title }}</div>
+												<div class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+													<span class="ti ti-user" aria-hidden="true"></span>
+													{{ project.client ? (project.client.fullName ?? project.client.email) : 'Aucun client' }}
+												</div>
+											</div>
+											<span class="badge bg-amber-100 text-amber-800 text-xs shrink-0 gap-1">
+												<span class="ti ti-users-group" aria-hidden="true"></span> Espace freelance
+											</span>
+										</div>
+
+										<div class="mt-3 flex items-center justify-between gap-3">
+											<div class="flex items-center -space-x-2">
+												{% for collaborator in project.collaborators|slice(0, 5) %}
+													<div class="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-white dark:border-gray-900 flex items-center justify-center text-[11px] font-bold text-brand-dark" title="{{ collaborator.fullName ?? collaborator.email }}">
+														{{ (collaborator.fullName ?? collaborator.email)|first|upper }}
+													</div>
+												{% endfor %}
+											</div>
+											<span class="text-xs text-gray-500">
+												{% if project.collaborators is empty %}
+													Aucune association pour l'instant
+												{% else %}
+													{{ project.collaborators|length }} freelance(s) associé(s)
+												{% endif %}
+											</span>
+										</div>
+									</a>
+								{% endfor %}
+							</div>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+
+			{# ================================================================= #}
+			{# FREELANCES ÉLIGIBLES                                              #}
+			{# ================================================================= #}
+			<aside class="lg:col-span-4">
+				<div class="panel sticky top-4">
+					<div class="panel-header">
+						<h3 class="panel-title">Freelances éligibles ({{ eligibleFreelances|length }})</h3>
+					</div>
+					<div class="panel-body">
+						{% if eligibleFreelances is empty %}
+							<p class="text-gray-500 text-sm mb-0">Aucun collaborateur n'a encore un profil complété à 100&nbsp;% — personne ne voit l'espace freelance pour l'instant.</p>
+						{% else %}
+							<div class="space-y-2">
+								{% for freelance in eligibleFreelances %}
+									<a href="{{ path('admin_collaborator_read', {id: freelance.id}) }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+										<div class="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-brand-dark shrink-0 text-sm">
+											{{ (freelance.fullName ?? freelance.email)|first|upper }}
+										</div>
+										<div class="min-w-0">
+											<div class="text-sm font-semibold text-brand-dark truncate">{{ freelance.fullName ?? freelance.email }}</div>
+											<div class="text-xs text-gray-500 truncate">{{ freelance.email }}</div>
+										</div>
+									</a>
+								{% endfor %}
+							</div>
+						{% endif %}
+					</div>
+				</div>
+			</aside>
+		</div>
+	</div>
+{% endblock %}

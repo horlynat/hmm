@@ -73,7 +73,7 @@
 {% set canViewSupportSection = canViewSupportDocs or canViewSupportFaq or canViewSupportTickets %}
 
 {% if is_granted('ROLE_EDITOR') %}
-<aside class="fixed inset-y-0 left-0 z-50 w-64 h-full bg-(--bg-default) border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out
+<aside class="fixed inset-y-0 left-0 z-50 w-64 h-full bg-(--color-bg-default) border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out
 			       md:translate-x-0 md:static md:h-screen shadow-xl md:shadow-none" :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'" aria-label="Navigation principale">
 	<!-- 🏢 LOGO & ENTÊTE (configurable : Paramètres > Configuration) -->
 	<div class="p-6 border-b border-gray-200 flex items-center gap-3 justify-between shrink-0">
@@ -86,11 +86,11 @@
 				<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-9 w-9 object-contain shrink-0">
 			{% endif %}
 			<div class="min-w-0">
-				<h1 class="text-lg font-heading font-bold text-(--brand-dark) truncate">{{ settings.siteName }}</h1>
-				<p class="text-sm text-(--brand-dark) truncate">Admin | Portail Digital </p>
+				<h1 class="text-lg font-heading font-bold text-(--color-brand-dark) truncate">{{ settings.siteName }}</h1>
+				<p class="text-sm text-(--color-brand-dark) truncate">Admin | Portail Digital </p>
 			</div>
 		</div>
-		<button type="button" @click="mobileSidebarOpen = false" class="md:hidden p-1 rounded-lg text-(--brand-dark) hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Fermer le menu">
+		<button type="button" @click="mobileSidebarOpen = false" class="md:hidden p-1 rounded-lg text-(--color-brand-dark) hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Fermer le menu">
 			<span class="ti ti-x text-xl" aria-hidden="true"></span>
 		</button>
 	</div>
@@ -102,16 +102,16 @@
 				     📌 PRINCIPAL
 				     ========================================== -->
 		<div>
-			<p class="text-[10px] uppercase text-(--brand-dark) font-bold mb-1.5 ml-3 tracking-wider">Principal</p>
+			<p class="text-[10px] uppercase text-(--color-brand-dark) font-bold mb-1.5 ml-3 tracking-wider">Principal</p>
 			{# Accueil : sans garde propre, le nav entier est déjà gardé ROLE_EDITOR
 			   ci-dessus (bloc englobant) — la page elle-même n'exige que ROLE_USER
 			   (cf. HomeController), donc toujours accessible à qui voit ce menu. #}
-			<a href="{{ path('home_index') }}" class="flex items-center px-3 py-2 rounded-xl transition gap-3 font-medium text-(--brand-dark) hover:bg-brand-light/20 hover:text-(--brand-primary) {% if currentRoute == 'home_index' %}bg-brand-light/30 text-(--brand-primary) font-semibold{% endif %}">
+			<a href="{{ path('home_index') }}" class="flex items-center px-3 py-2 rounded-xl transition gap-3 font-medium text-(--color-brand-dark) hover:bg-brand-light/20 hover:text-(--color-brand-primary) {% if currentRoute == 'home_index' %}bg-brand-light/30 text-(--color-brand-primary) font-semibold{% endif %}">
 				<i class="ti ti-home text-lg"></i>
 				<span>Accueil</span>
 			</a>
 			{% if canViewDashboard %}
-				<a href="{{ path('admin_dashboard_index') }}" class="flex items-center px-3 py-2 rounded-xl transition gap-3 font-medium text-(--brand-dark) hover:bg-brand-light/20 hover:text-(--brand-primary) {% if currentRoute == 'admin_dashboard_index' %}bg-brand-light/30 text-(--brand-primary) font-semibold{% endif %}">
+				<a href="{{ path('admin_dashboard_index') }}" class="flex items-center px-3 py-2 rounded-xl transition gap-3 font-medium text-(--color-brand-dark) hover:bg-brand-light/20 hover:text-(--color-brand-primary) {% if currentRoute == 'admin_dashboard_index' %}bg-brand-light/30 text-(--color-brand-primary) font-semibold{% endif %}">
 					<i class="ti ti-layout-dashboard text-lg"></i>
 					<span>Dashboard</span>
 				</a>
@@ -123,9 +123,9 @@
 				     ========================================== -->
 		{% if canViewFinanceSection %}
 			<div x-data="{ open: {{ isFinanceActive ? 'true' : 'false' }} }">
-				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
+				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--color-brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
 					<div class="flex items-center gap-3">
-						<i class="ti ti-report-money text-lg text-(--brand-dark)"></i>
+						<i class="ti ti-report-money text-lg text-(--color-brand-dark)"></i>
 						<span>Finance</span>
 					</div>
 					<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
@@ -133,44 +133,44 @@
 
 				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
 					{% if canViewFinanceOverview %}
-						<a href="{{ path('admin_finance_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute == 'admin_finance_index' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-chart-pie text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_finance_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute == 'admin_finance_index' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-chart-pie text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Vue d'ensemble
 						</a>
 					{% endif %}
 					{% if canViewFinanceInvoices %}
-						<a href="{{ path('admin_finance_invoices') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_invoices' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-file-invoice text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_finance_invoices') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_invoices' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-file-invoice text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Factures
 						</a>
 					{% endif %}
 					{% if canViewFinanceExpenses %}
-						<a href="{{ path('admin_finance_expenses') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_expenses' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-receipt text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_finance_expenses') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_expenses' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-receipt text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Dépenses
 						</a>
 					{% endif %}
 					{% if canViewFinanceProjects %}
-						<a href="{{ path('admin_project_statistics') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute == 'admin_project_statistics' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-briefcase text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_project_statistics') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute == 'admin_project_statistics' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-briefcase text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Projets
 						</a>
 					{% endif %}
 					{% if canViewFinancePipeline %}
-						<a href="{{ path('admin_request_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_request' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-git-pull-request text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_request_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_request' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-git-pull-request text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Pipeline
 						</a>
 					{% endif %}
 					{% if canViewFinanceReports %}
-						<a href="{{ path('admin_finance_reports') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_reports' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-chart-infographic text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_finance_reports') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_reports' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-chart-infographic text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Rapports
 						</a>
 					{% endif %}
 					{% if canViewFinanceJournal %}
-						<a href="{{ path('admin_finance_journal') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_journal' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-history text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_finance_journal') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_finance_journal' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-history text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Journal
 						</a>
 					{% endif %}
@@ -183,9 +183,9 @@
 				     ========================================== -->
 		{% if canViewContenuSection %}
 			<div x-data="{ open: {{ isContenuActive ? 'true' : 'false' }} }">
-				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
+				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--color-brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
 					<div class="flex items-center gap-3">
-						<i class="ti ti-folders text-lg text-(--brand-dark)"></i>
+						<i class="ti ti-folders text-lg text-(--color-brand-dark)"></i>
 						<span>Contenu</span>
 					</div>
 					<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
@@ -193,64 +193,68 @@
 
 				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
 					{% if canViewProjects %}
-						<a href="{{ path('admin_project_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_project' and currentRoute != 'admin_project_statistics' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-briefcase text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_project_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_project' and currentRoute != 'admin_project_statistics' and currentRoute != 'admin_project_freelance_space' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-briefcase text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Projets
+						</a>
+						<a href="{{ path('admin_project_freelance_space') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute == 'admin_project_freelance_space' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-users-group text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
+							Espace freelance
 						</a>
 					{% endif %}
 					{% if canViewSkills %}
-						<a href="{{ path('admin_skill_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_skill_' and not (currentRoute starts with 'admin_skill_category') %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-code text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_skill_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_skill_' and not (currentRoute starts with 'admin_skill_category') %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-code text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Compétences
 						</a>
 					{% endif %}
 					{% if canViewSkillCategories %}
-						<a href="{{ path('admin_skill_category_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_skill_category' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-category text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_skill_category_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_skill_category' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-category text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Catégories de compétences
 						</a>
 					{% endif %}
 					{% if canViewArticles %}
-						<a href="{{ path('admin_article_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_article' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-news text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_article_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_article' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-news text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Articles
 						</a>
 					{% endif %}
 
 					{% if canViewTags %}
-						<a href="{{ path('admin_tag_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_tag' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-tag text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_tag_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_tag' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-tag text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Tags
 						</a>
 					{% endif %}
 
 					{% if canViewCourses %}
-						<a href="{{ path('admin_course_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_course' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-school text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_course_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_course' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-school text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Formations
 						</a>
 					{% endif %}
 					{% if canViewExperiences %}
-						<a href="{{ path('admin_experience_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_experience' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-history text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_experience_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_experience' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-history text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Expériences
 						</a>
 					{% endif %}
 					{% if canViewHomeContent %}
-						<a href="{{ path('admin_home_content_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_home_content' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-home text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_home_content_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_home_content' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-home text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Page d'accueil
 						</a>
 					{% endif %}
 					{% if canViewAboutContent %}
-						<a href="{{ path('admin_about_content_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_about_content' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-user text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_about_content_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_about_content' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-user text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Page "À propos"
 						</a>
 					{% endif %}
 					{% if canViewAiAssistant %}
-						<a href="{{ path('admin_ai_assistant_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_ai_assistant' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-message-chatbot text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_ai_assistant_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_ai_assistant' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-message-chatbot text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Assistant IA
 						</a>
 					{% endif %}
@@ -263,9 +267,9 @@
 				     ========================================== -->
 		{% if canViewUtilisateursSection %}
 			<div x-data="{ open: {{ isUtilisateursActive ? 'true' : 'false' }} }">
-				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
+				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--color-brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
 					<div class="flex items-center gap-3">
-						<i class="ti ti-users text-lg text-(--brand-dark)"></i>
+						<i class="ti ti-users text-lg text-(--color-brand-dark)"></i>
 						<span>Utilisateurs</span>
 					</div>
 					<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
@@ -273,38 +277,38 @@
 
 				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
 					{% if canViewAdmins %}
-						<a href="{{ path('admin_admins_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_admins' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-user-shield text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_admins_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_admins' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-user-shield text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Admins
 						</a>
 					{% endif %}
 					{% if canViewCollaborators %}
-						<a href="{{ path('admin_collaborator_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_collaborator' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-users-group text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_collaborator_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_collaborator' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-users-group text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Collaborateurs
 						</a>
 					{% endif %}
 					{% if canViewClients %}
-						<a href="{{ path('admin_users_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_users' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-user-dollar text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_users_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_users' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-user-dollar text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Clients
 						</a>
 					{% endif %}
 					{% if canViewContacts %}
-						<a href="{{ path('admin_contact_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_contact' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-mail text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_contact_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_contact' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-mail text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Contacts
 						</a>
 					{% endif %}
 					{% if canViewQuoteRequests %}
-						<a href="{{ path('admin_request_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_request' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-git-pull-request text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_request_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_request' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-git-pull-request text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Requests
 						</a>
 					{% endif %}
 					{% if canViewTestimonials %}
-						<a href="{{ path('admin_testimonial_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_testimonial' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-message-star text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_testimonial_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_testimonial' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-message-star text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Témoignages
 						</a>
 					{% endif %}
@@ -317,9 +321,9 @@
 				     ========================================== -->
 		{% if canViewSecuriteSection %}
 			<div x-data="{ open: {{ isSecuriteActive ? 'true' : 'false' }} }">
-				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
+				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--color-brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
 					<div class="flex items-center gap-3">
-						<i class="ti ti-shield-lock text-lg text-(--brand-dark)"></i>
+						<i class="ti ti-shield-lock text-lg text-(--color-brand-dark)"></i>
 						<span>Sécurité</span>
 					</div>
 					<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
@@ -327,44 +331,44 @@
 
 				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
 					{% if canViewSecurityLogs %}
-						<a href="{{ path('admin_security_log_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_log' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-file-text text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_security_log_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_log' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-file-text text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Logs système
 						</a>
 					{% endif %}
 					{% if canViewSecuritySessions %}
-						<a href="{{ path('admin_security_session_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_session' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-device-desktop-analytics text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_security_session_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_session' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-device-desktop-analytics text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Sessions actives
 						</a>
 					{% endif %}
 					{% if canViewSecurityRoles %}
-						<a href="{{ path('admin_security_role_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_role' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-key text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_security_role_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_role' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-key text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Rôles & Perms
 						</a>
 					{% endif %}
 					{% if canManagePermissions %}
-						<a href="{{ path('admin_security_permission_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_permission' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-adjustments-alt text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_security_permission_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_permission' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-adjustments-alt text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Permissions dynamiques
 						</a>
 					{% endif %}
 					{% if canViewSecurityAudit %}
-						<a href="{{ path('admin_security_audit_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_audit' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-eye text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_security_audit_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_audit' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-eye text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Audit & Monitor
 						</a>
 					{% endif %}
 					{% if canViewSecurity2fa %}
-						<a href="{{ path('admin_security_two_factor_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_two_factor' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-shield-check text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_security_two_factor_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_two_factor' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-shield-check text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Double Facteur (2FA)
 						</a>
 					{% endif %}
 					{% if canViewSecurityPolicies %}
-						<a href="{{ path('admin_security_policy_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_policy' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-lock-square-rounded text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_security_policy_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_policy' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-lock-square-rounded text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Politiques sécu
 						</a>
 					{% endif %}
@@ -377,9 +381,9 @@
 				     ========================================== -->
 		{% if canViewParametresSection %}
 			<div x-data="{ open: {{ isParametresActive ? 'true' : 'false' }} }">
-				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
+				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--color-brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
 					<div class="flex items-center gap-3">
-						<i class="ti ti-settings text-lg text-(--brand-dark)"></i>
+						<i class="ti ti-settings text-lg text-(--color-brand-dark)"></i>
 						<span>Paramètres</span>
 					</div>
 					<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
@@ -387,26 +391,26 @@
 
 				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
 					{% if canViewConfig %}
-						<a href="{{ path('admin_config_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_config' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-adjustments text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_config_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_config' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-adjustments text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Configuration
 						</a>
 					{% endif %}
 					{% if canViewNotifications %}
-						<a href="{{ path('admin_notification_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_notification' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-bell text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_notification_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_notification' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-bell text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Notifications
 						</a>
 					{% endif %}
 					{% if canViewIntegrations %}
-						<a href="{{ path('admin_integration_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_integration' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-plug text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_integration_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_integration' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-plug text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Intégrations API
 						</a>
 					{% endif %}
 					{% if canViewBackups %}
-						<a href="{{ path('admin_backup_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_backup' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-database-export text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_backup_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_backup' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-database-export text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Sauvegardes
 						</a>
 					{% endif %}
@@ -414,8 +418,8 @@
 						{# Panneau externe (PostfixAdmin, conteneur séparé sur son propre
 						   sous-domaine) — pas une route Symfony, d'où le lien direct et le
 						   nouvel onglet plutôt que path(). #}
-						<a href="https://mailadmin.horlynat.com" target="_blank" rel="noopener" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition">
-							<i class="ti ti-mail-cog text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="https://mailadmin.horlynat.com" target="_blank" rel="noopener" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition">
+							<i class="ti ti-mail-cog text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Gestion mail
 							<i class="ti ti-external-link text-xs ml-auto opacity-50"></i>
 						</a>
@@ -429,9 +433,9 @@
 				     ========================================== -->
 		{% if canViewSupportSection %}
 			<div x-data="{ open: {{ isSupportActive ? 'true' : 'false' }} }">
-				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
+				<button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-(--color-brand-dark) hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium">
 					<div class="flex items-center gap-3">
-						<i class="ti ti-help-circle text-lg text-(--brand-dark)"></i>
+						<i class="ti ti-help-circle text-lg text-(--color-brand-dark)"></i>
 						<span>Support</span>
 					</div>
 					<i class="ti text-xs transition-transform duration-200" :class="open ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
@@ -439,20 +443,20 @@
 
 				<div x-show="open" x-collapse class="pl-4 mt-1 space-y-0.5 border-l border-gray-200 ml-5">
 					{% if canViewSupportDocs %}
-						<a href="{{ path('admin_support_docs_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_support_docs' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-book text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_support_docs_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_support_docs' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-book text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Documentation
 						</a>
 					{% endif %}
 					{% if canViewSupportFaq %}
-						<a href="{{ path('admin_support_faq_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_support_faq' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-message-question text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_support_faq_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_support_faq' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-message-question text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							FAQ
 						</a>
 					{% endif %}
 					{% if canViewSupportTickets %}
-						<a href="{{ path('admin_support_ticket_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--brand-dark) hover:text-(--brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_support_ticket' %}text-(--brand-primary) bg-brand-light/10 font-medium{% endif %}">
-							<i class="ti ti-lifebuoy text-base text-(--brand-dark) group-hover:text-(--brand-primary)"></i>
+						<a href="{{ path('admin_support_ticket_index') }}" class="group flex items-center gap-2.5 py-2 px-2.5 rounded-lg text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_support_ticket' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-lifebuoy text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Support Client
 						</a>
 					{% endif %}
@@ -464,7 +468,7 @@
 
 	<!-- 🛟 PIED DE PAGE -->
 	<div class="p-4 border-t border-gray-200 bg-gray-50/50 shrink-0 text-center">
-<p class="text-[11px] text-(--brand-dark) tracking-wide font-medium">Horlynat | Soft UI v1.2</p>
+<p class="text-[11px] text-(--color-brand-dark) tracking-wide font-medium">Horlynat | Soft UI v1.2</p>
 
 	</div>
 </aside>

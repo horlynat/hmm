@@ -44,7 +44,7 @@
 	<div class="page-header">
 		<div class="min-w-0">
 			<nav class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider opacity-50 mb-2" aria-label="Fil d'Ariane">
-				<a href="{{ path('admin_project_index') }}" class="hover:text-(--brand-primary) transition-colors">Projets</a>
+				<a href="{{ path('admin_project_index') }}" class="hover:text-(--color-brand-primary) transition-colors">Projets</a>
 				<span class="ti ti-chevron-right text-xs" aria-hidden="true"></span>
 				<span aria-current="page" class="truncate max-w-[40ch]">{{ project.title }}</span>
 			</nav>
@@ -68,7 +68,7 @@
 				{% if canEdit %}
 					<div class="relative" x-data="{ open: false }">
 						<button type="button" @click="open = !open" :aria-expanded="open" aria-haspopup="menu"
-								class="inline-flex items-center gap-1 text-sm text-(--brand-primary) font-medium bg-transparent border-0 cursor-pointer hover:underline">
+								class="inline-flex items-center gap-1 text-sm text-(--color-brand-primary) font-medium bg-transparent border-0 cursor-pointer hover:underline">
 							<span class="ti ti-arrows-exchange text-sm" aria-hidden="true"></span> Changer le statut
 						</button>
 						<div x-show="open" x-cloak @click.away="open = false" @keydown.escape.window="open = false"
@@ -206,7 +206,7 @@
 	<div data-project-tabs class="mt-2">
 		<div class="border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
 			<div class="flex gap-1" role="tablist" aria-label="Sections du projet">
-				{% set tabBtn = 'group inline-flex items-center gap-2 px-4 py-2.5 -mb-px border-b-2 border-transparent text-sm font-semibold text-brand-dark/60 hover:text-brand-dark whitespace-nowrap cursor-pointer transition-colors aria-selected:border-(--brand-primary) aria-selected:text-(--brand-primary)' %}
+				{% set tabBtn = 'group inline-flex items-center gap-2 px-4 py-2.5 -mb-px border-b-2 border-transparent text-sm font-semibold text-brand-dark/60 hover:text-brand-dark whitespace-nowrap cursor-pointer transition-colors aria-selected:border-(--color-brand-primary) aria-selected:text-(--color-brand-primary)' %}
 				<button type="button" role="tab" data-tab="overview" aria-selected="true" class="{{ tabBtn }}"><span class="ti ti-layout-dashboard" aria-hidden="true"></span> Vue d'ensemble</button>
 				<button type="button" role="tab" data-tab="budget" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-cash" aria-hidden="true"></span> Budget &amp; Dépenses</button>
 				<button type="button" role="tab" data-tab="invoices" aria-selected="false" class="{{ tabBtn }}"><span class="ti ti-file-invoice" aria-hidden="true"></span> Factures ({{ project.invoices|length }})</button>
@@ -236,7 +236,7 @@
 						<div class="panel-header"><h3 class="panel-title">Technologies &amp; compétences</h3></div>
 						<div class="panel-body">
 							{% if project.skills is empty %}
-								<p class="text-sm text-gray-500 mb-0">Aucune technologie renseignée. <a href="{{ path('admin_project_update', {id: project.id}) }}" class="text-(--brand-primary) underline">Ajouter</a>.</p>
+								<p class="text-sm text-gray-500 mb-0">Aucune technologie renseignée. <a href="{{ path('admin_project_update', {id: project.id}) }}" class="text-(--color-brand-primary) underline">Ajouter</a>.</p>
 							{% else %}
 								<div class="flex flex-wrap gap-2">
 									{% for skill in project.skills %}
@@ -252,7 +252,7 @@
 						<div class="panel-header flex items-center justify-between">
 							<h3 class="panel-title mb-0">Étiquettes</h3>
 							{% if canEdit and not isLocked %}
-								<button type="button" @click="editing = !editing" class="text-xs text-(--brand-primary) font-semibold hover:underline bg-transparent border-0 cursor-pointer">
+								<button type="button" @click="editing = !editing" class="text-xs text-(--color-brand-primary) font-semibold hover:underline bg-transparent border-0 cursor-pointer">
 									<span x-show="!editing"><span class="ti ti-pencil" aria-hidden="true"></span> Éditer</span>
 									<span x-show="editing" x-cloak>Fermer</span>
 								</button>
@@ -290,10 +290,10 @@
 						<div class="panel-body">
 							<div class="flex items-center justify-between mb-1 text-sm">
 								<span class="font-semibold text-brand-dark">{{ project.doneTasksCount }}/{{ project.tasksCount }} tâche(s) terminée(s)</span>
-								<span class="font-bold text-(--brand-dark)">{{ project.progress }}%</span>
+								<span class="font-bold text-(--color-brand-dark)">{{ project.progress }}%</span>
 							</div>
 							<div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden">
-								<div class="h-2.5 rounded-full bg-(--brand-primary) transition-all" style="width: {{ project.progress }}%"></div>
+								<div class="h-2.5 rounded-full bg-(--color-brand-primary) transition-all" style="width: {{ project.progress }}%"></div>
 							</div>
 						</div>
 					</div>
@@ -305,7 +305,7 @@
 						<div class="panel-header flex items-center justify-between">
 							<h3 class="panel-title mb-0">Paramètres &amp; planning</h3>
 							{% if canEdit and not isLocked %}
-								<button type="button" @click="editing = !editing" class="text-xs text-(--brand-primary) font-semibold hover:underline bg-transparent border-0 cursor-pointer">
+								<button type="button" @click="editing = !editing" class="text-xs text-(--color-brand-primary) font-semibold hover:underline bg-transparent border-0 cursor-pointer">
 									<span x-show="!editing"><span class="ti ti-pencil" aria-hidden="true"></span> Éditer</span>
 									<span x-show="editing" x-cloak>Fermer</span>
 								</button>
@@ -375,11 +375,11 @@
 					<div class="panel">
 						<div class="panel-header flex items-center justify-between">
 							<h3 class="panel-title">Parties prenantes</h3>
-							<button type="button" data-tab-goto="team" class="text-xs text-(--brand-primary) font-semibold hover:underline bg-transparent border-0 cursor-pointer">Gérer →</button>
+							<button type="button" data-tab-goto="team" class="text-xs text-(--color-brand-primary) font-semibold hover:underline bg-transparent border-0 cursor-pointer">Gérer →</button>
 						</div>
 						<div class="panel-body space-y-3">
 							<div class="flex items-center gap-3">
-								<div class="w-9 h-9 rounded-full bg-(--brand-primary)/15 text-(--brand-primary) flex items-center justify-center font-bold shrink-0">{{ (project.owner.fullName ?? project.owner.email)|first|upper }}</div>
+								<div class="w-9 h-9 rounded-full bg-(--color-brand-primary)/15 text-(--color-brand-primary) flex items-center justify-center font-bold shrink-0">{{ (project.owner.fullName ?? project.owner.email)|first|upper }}</div>
 								<div class="min-w-0">
 									<div class="font-semibold text-brand-dark truncate">{{ project.owner.fullName ?? project.owner.email }}</div>
 									<div class="text-xs text-brand-dark/50">Pilote / Responsable</div>
@@ -433,7 +433,7 @@
 												<span class="font-semibold text-brand-dark">{{ total|money('EUR') }}</span>
 											</div>
 											<div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
-												<div class="h-2 rounded-full bg-(--brand-primary)" style="width: {{ maxCat > 0 ? (total / maxCat * 100) : 0 }}%"></div>
+												<div class="h-2 rounded-full bg-(--color-brand-primary)" style="width: {{ maxCat > 0 ? (total / maxCat * 100) : 0 }}%"></div>
 											</div>
 										</div>
 									{% endfor %}
@@ -537,7 +537,7 @@
 									</td>
 									{% if canManageInvoice %}
 										<td class="p-4 text-center whitespace-nowrap">
-											<a href="{{ path('admin_invoice_edit', {id: project.id, invoiceId: invoice.id}) }}" class="text-(--brand-primary) hover:underline font-semibold text-xs">Modifier</a>
+											<a href="{{ path('admin_invoice_edit', {id: project.id, invoiceId: invoice.id}) }}" class="text-(--color-brand-primary) hover:underline font-semibold text-xs">Modifier</a>
 											{% if invoice.status.value == 'pending' %}
 												<form method="POST" action="{{ path('admin_invoice_mark_paid', {id: project.id, invoiceId: invoice.id}) }}" class="inline">
 													<input type="hidden" name="_token" value="{{ csrf_token('invoice_' ~ invoice.id) }}">
@@ -574,10 +574,10 @@
 				<div class="panel-header">
 					<div class="flex items-center justify-between mb-1">
 						<h3 class="panel-title mb-0">Avancement — {{ project.doneTasksCount }}/{{ project.tasksCount }} tâche(s)</h3>
-						<span class="text-sm font-bold text-(--brand-dark)">{{ project.progress }}%</span>
+						<span class="text-sm font-bold text-(--color-brand-dark)">{{ project.progress }}%</span>
 					</div>
 					<div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 mt-2">
-						<div class="h-2 rounded-full bg-(--brand-primary) transition-all" style="width: {{ project.progress }}%"></div>
+						<div class="h-2 rounded-full bg-(--color-brand-primary) transition-all" style="width: {{ project.progress }}%"></div>
 					</div>
 				</div>
 				<div class="panel-body space-y-6">
@@ -680,7 +680,7 @@
 				<div class="panel-header"><h3 class="panel-title">Pilote / Responsable</h3></div>
 				<div class="panel-body">
 					<div class="flex items-center gap-3">
-						<div class="w-11 h-11 rounded-full bg-(--brand-primary)/15 text-(--brand-primary) flex items-center justify-center font-bold shrink-0">{{ (project.owner.fullName ?? project.owner.email)|first|upper }}</div>
+						<div class="w-11 h-11 rounded-full bg-(--color-brand-primary)/15 text-(--color-brand-primary) flex items-center justify-center font-bold shrink-0">{{ (project.owner.fullName ?? project.owner.email)|first|upper }}</div>
 						<div class="min-w-0">
 							<div class="font-semibold text-brand-dark">{{ project.owner.fullName ?? project.owner.email }}</div>
 							<div class="text-sm text-gray-500">{{ project.owner.email }}</div>
@@ -730,6 +730,12 @@
 						</a>
 					{% endif %}
 				</div>
+				{% if project.status.value == 'a_venir' %}
+					<div class="mx-4 mt-4 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+						<span class="ti ti-users-group mt-0.5 shrink-0" aria-hidden="true"></span>
+						<span>Ce projet est <strong>visible dans l'espace « Projets disponibles »</strong> : tout freelance au profil complété à 100&nbsp;% peut y déposer une demande d'association. Elle n'accorde l'accès qu'après votre validation — <a href="{{ path('admin_project_freelance_space') }}" class="underline font-medium">gérer les demandes en attente →</a></span>
+					</div>
+				{% endif %}
 				<div class="panel-body">
 					{% if project.collaborators is empty %}
 						<p class="text-gray-500 text-sm mb-0">Aucun collaborateur sur ce projet pour le moment.</p>
@@ -929,7 +935,7 @@
 				<div class="panel">
 					<div class="panel-header flex items-center justify-between">
 						<h3 class="panel-title">Journal d'activité</h3>
-						<a href="{{ path('admin_project_history_index', {id: project.id}) }}" class="text-xs text-(--brand-primary) font-semibold hover:underline">Historique complet →</a>
+						<a href="{{ path('admin_project_history_index', {id: project.id}) }}" class="text-xs text-(--color-brand-primary) font-semibold hover:underline">Historique complet →</a>
 					</div>
 					<div class="panel-body">
 						<twig:project:history_timeline :project="project"/>

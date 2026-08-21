@@ -29,7 +29,7 @@
 				<tbody>
 					{% for user in staleUsers %}
 						<tr>
-							<td class="font-medium text-(--brand-dark)">{{ user.fullName ?? user.email }}</td>
+							<td class="font-medium text-(--color-brand-dark)">{{ user.fullName ?? user.email }}</td>
 							<td class="text-sm opacity-70">{{ (user.passwordChangedAt ?? user.createdAt)|date('d/m/Y') }}</td>
 						</tr>
 					{% else %}

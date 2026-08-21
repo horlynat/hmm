@@ -35,7 +35,7 @@
 							<td class="text-sm">
 								{{ expense.description ?: '—' }}
 								{% if expense.receiptPath %}
-									<a href="{{ expense.receiptPath }}" target="_blank" rel="noopener noreferrer" class="ml-1 text-(--brand-primary) hover:underline inline-flex items-center gap-0.5 text-xs" title="Justificatif">
+									<a href="{{ expense.receiptPath }}" target="_blank" rel="noopener noreferrer" class="ml-1 text-(--color-brand-primary) hover:underline inline-flex items-center gap-0.5 text-xs" title="Justificatif">
 										<span class="ti ti-paperclip" aria-hidden="true"></span>
 									</a>
 								{% endif %}
@@ -46,7 +46,7 @@
 								</span>
 							</td>
 							<td><twig:Badge :variant="expense.status.variant" icon="{{ expense.status.icon }}">{{ expense.status.label }}</twig:Badge></td>
-							<td class="text-right font-extrabold text-(--brand-dark) whitespace-nowrap">{{ expense.amount|money('EUR') }}</td>
+							<td class="text-right font-extrabold text-(--color-brand-dark) whitespace-nowrap">{{ expense.amount|money('EUR') }}</td>
 							{% if this.canApprove %}
 								<td class="text-right">
 									<div class="flex items-center justify-end gap-1">

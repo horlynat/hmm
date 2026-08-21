@@ -16,7 +16,7 @@
 	</div>
 
 	{% if oidcConfigured is defined and oidcConfigured %}
-		<a href="{{ path('login_oidc') }}" class="mt-6 flex items-center justify-center gap-2 rounded-full border border-(--brand-primary) bg-brand-light/10 p-3 text-sm font-semibold text-(--brand-primary) hover:bg-brand-light/20 transition">
+		<a href="{{ path('login_oidc') }}" class="mt-6 flex items-center justify-center gap-2 rounded-full border border-(--color-brand-primary) bg-brand-light/10 p-3 text-sm font-semibold text-(--color-brand-primary) hover:bg-brand-light/20 transition">
 			<span class="ti ti-shield-lock text-lg" aria-hidden="true"></span>
 			Connexion via SSO (fournisseur d'identité de l'organisation)
 		</a>

@@ -25,7 +25,7 @@
 			<tbody>
 				{% for integration in integrations %}
 					<tr>
-						<td class="font-medium text-(--brand-dark)">{{ integration.name }}</td>
+						<td class="font-medium text-(--color-brand-dark)">{{ integration.name }}</td>
 						<td><twig:Badge variant="info" :icon="integration.type.icon">{{ integration.type.label }}</twig:Badge></td>
 						<td class="text-center">
 							{% if integration.active %}

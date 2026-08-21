@@ -14,27 +14,27 @@
 		<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 			<div>
 				<p class="text-xs text-gray-400 mb-1">Spécialités</p>
-				<p class="text-sm font-medium text-(--brand-dark)">
+				<p class="text-sm font-medium text-(--color-brand-dark)">
 					{{ user.specialties ? user.specialties|join(', ') : 'Non renseigné' }}
 				</p>
 			</div>
 			<div>
 				<p class="text-xs text-gray-400 mb-1">Disponibilité</p>
-				<p class="text-sm font-medium text-(--brand-dark)">{{ user.availability ?? 'Non renseigné' }}</p>
+				<p class="text-sm font-medium text-(--color-brand-dark)">{{ user.availability ?? 'Non renseigné' }}</p>
 			</div>
 			<div class="sm:col-span-2">
 				<p class="text-xs text-gray-400 mb-1">Portfolio</p>
 				{% if user.portfolioUrl %}
-					<a href="{{ user.portfolioUrl }}" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-(--brand-primary) hover:underline break-all">
+					<a href="{{ user.portfolioUrl }}" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-(--color-brand-primary) hover:underline break-all">
 						{{ user.portfolioUrl }}
 					</a>
 				{% else %}
-					<p class="text-sm font-medium text-(--brand-dark)">Non renseigné</p>
+					<p class="text-sm font-medium text-(--color-brand-dark)">Non renseigné</p>
 				{% endif %}
 			</div>
 			<div class="sm:col-span-2">
 				<p class="text-xs text-gray-400 mb-1">Présentation</p>
-				<p class="text-sm text-(--brand-dark) whitespace-pre-line">{{ user.bio ?? 'Non renseigné' }}</p>
+				<p class="text-sm text-(--color-brand-dark) whitespace-pre-line">{{ user.bio ?? 'Non renseigné' }}</p>
 			</div>
 		</div>
 
@@ -44,9 +44,9 @@
 				<ul class="space-y-3">
 					{% for xp in user.experience %}
 						<li class="flex items-start gap-3">
-							<span class="ti ti-briefcase text-lg text-(--brand-primary) mt-0.5" aria-hidden="true"></span>
+							<span class="ti ti-briefcase text-lg text-(--color-brand-primary) mt-0.5" aria-hidden="true"></span>
 							<div class="min-w-0">
-								<p class="text-sm font-semibold text-(--brand-dark)">{{ xp.role }} — {{ xp.company }}</p>
+								<p class="text-sm font-semibold text-(--color-brand-dark)">{{ xp.role }} — {{ xp.company }}</p>
 								<p class="text-xs text-gray-400">
 									{{ xp.startDate|date('m/Y') }} – {{ xp.endDate ? xp.endDate|date('m/Y') : 'Présent' }}
 								</p>
@@ -65,9 +65,9 @@
 				<ul class="space-y-3">
 					{% for formation in user.course %}
 						<li class="flex items-start gap-3">
-							<span class="ti ti-school text-lg text-(--brand-primary) mt-0.5" aria-hidden="true"></span>
+							<span class="ti ti-school text-lg text-(--color-brand-primary) mt-0.5" aria-hidden="true"></span>
 							<div class="min-w-0">
-								<p class="text-sm font-semibold text-(--brand-dark)">{{ formation.title }} — {{ formation.institution }}</p>
+								<p class="text-sm font-semibold text-(--color-brand-dark)">{{ formation.title }} — {{ formation.institution }}</p>
 								<p class="text-xs text-gray-400">
 									{{ formation.startDate|date('m/Y') }} – {{ formation.endDate|date('m/Y') }}
 								</p>

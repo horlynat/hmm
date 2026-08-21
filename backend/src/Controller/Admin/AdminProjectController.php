@@ -362,6 +362,50 @@ final class AdminProjectController extends AbstractController
     }
 
     // =========================================================================
+    // 📌 ESPACE FREELANCE — vue d'ensemble du pool en libre-service
+    // =========================================================================
+
+    /**
+     * Pendant admin de l'espace « Projets disponibles » du frontend freelance
+     * (MeController::readAvailableProjects/joinProject) : contrairement au
+     * badge/bannière posés sur chaque fiche projet, cette page est LE point
+     * d'entrée dédié — un projet "à venir" reste malgré tout visible ici même
+     * quand aucun freelance n'a encore rien rejoint, et la page reste
+     * consultable même quand le pool est totalement vide (l'admin doit
+     * pouvoir constater "il n'y a rien à voir", pas seulement deviner
+     * l'existence de la fonctionnalité en tombant sur un projet qui l'a).
+     */
+    #[Route('/espace-freelance', name: 'freelance_space', methods: ['GET'])]
+    public function freelanceSpace(
+        ProjectRepository $projectRepository,
+        UserRepository $userRepository,
+        \App\Repository\ProjectJoinRequestRepository $joinRequestRepository,
+    ): Response {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        $projects = $projectRepository->findByStatus(ProjectStatusEnum::UPCOMING);
+
+        $eligibleFreelances = array_values(array_filter(
+            $userRepository->findCollaborators(),
+            static fn (User $user): bool => $user->isFreelanceProfileComplete(),
+        ));
+
+        $totalAssociations = array_sum(array_map(
+            static fn (Project $project): int => $project->getCollaborators()->count(),
+            $projects,
+        ));
+
+        $pendingRequests = $joinRequestRepository->findAllPending();
+
+        return $this->render('admin/project/freelance_space.html.twig', [
+            'projects' => $projects,
+            'eligibleFreelances' => $eligibleFreelances,
+            'totalAssociations' => $totalAssociations,
+            'pendingRequests' => $pendingRequests,
+        ]);
+    }
+
+    // =========================================================================
     // 📌 CRÉATION D'UN PROJET
     // =========================================================================
 
@@ -1408,6 +1452,85 @@ final class AdminProjectController extends AbstractController
         }
 
         return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+    }
+
+    // =========================================================================
+    // 📌 DEMANDES D'AUTO-ASSOCIATION (ESPACE FREELANCE)
+    // =========================================================================
+
+    /**
+     * Valide une demande d'auto-association (App\Entity\ProjectJoinRequest) :
+     * c'est le SEUL moment où le freelance obtient réellement accès au
+     * projet (User::addCollaboratingProject()) — la demande elle-même
+     * (MeController::joinProject) ne donnait aucun accès. Notifie le
+     * freelance ET le client (ProjectNotifier::joinRequestApproved).
+     */
+    #[Route('/{id}/join-requests/{requestId}/approve', name: 'approve_join_request', methods: ['POST'], requirements: ['id' => '\d+', 'requestId' => '\d+'])]
+    public function approveJoinRequest(
+        Project $project,
+        #[MapEntity(id: 'requestId')] \App\Entity\ProjectJoinRequest $joinRequest,
+        EntityManagerInterface $entityManager,
+        Request $request,
+        \App\Service\ProjectNotifier $projectNotifier,
+    ): Response {
+        $this->denyAccessUnlessGranted(ProjectVoter::ADD_COLLABORATOR, $project);
+
+        if ($joinRequest->getProject() !== $project || \App\Enum\ProjectJoinRequestStatusEnum::PENDING !== $joinRequest->getStatus()) {
+            throw $this->createNotFoundException('Demande introuvable ou déjà traitée.');
+        }
+
+        if (!$this->isCsrfTokenValid('join_request_'.$joinRequest->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+
+            return $this->redirectToRoute('admin_project_freelance_space');
+        }
+
+        $collaborator = $joinRequest->getUser();
+        $admin = $this->getAuthenticatedUser();
+
+        $joinRequest->approve($admin);
+        $project->addCollaborator($collaborator);
+        $project->logCollaboratorJoinApproved($admin, $collaborator);
+        $entityManager->flush();
+
+        $projectNotifier->joinRequestApproved($project, $collaborator);
+        $this->addFlash('success', \sprintf('%s a été ajouté au projet « %s » et le client a été notifié.', $collaborator->getFullName() ?? $collaborator->getEmail(), $project->getTitle()));
+
+        return $this->redirectToRoute('admin_project_freelance_space');
+    }
+
+    /** Refuse une demande d'auto-association — le freelance reste hors du projet, il en est informé. */
+    #[Route('/{id}/join-requests/{requestId}/reject', name: 'reject_join_request', methods: ['POST'], requirements: ['id' => '\d+', 'requestId' => '\d+'])]
+    public function rejectJoinRequest(
+        Project $project,
+        #[MapEntity(id: 'requestId')] \App\Entity\ProjectJoinRequest $joinRequest,
+        EntityManagerInterface $entityManager,
+        Request $request,
+        \App\Service\ProjectNotifier $projectNotifier,
+    ): Response {
+        $this->denyAccessUnlessGranted(ProjectVoter::ADD_COLLABORATOR, $project);
+
+        if ($joinRequest->getProject() !== $project || \App\Enum\ProjectJoinRequestStatusEnum::PENDING !== $joinRequest->getStatus()) {
+            throw $this->createNotFoundException('Demande introuvable ou déjà traitée.');
+        }
+
+        if (!$this->isCsrfTokenValid('join_request_'.$joinRequest->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+
+            return $this->redirectToRoute('admin_project_freelance_space');
+        }
+
+        $requester = $joinRequest->getUser();
+        $admin = $this->getAuthenticatedUser();
+
+        $joinRequest->reject($admin);
+        $project->logCollaboratorJoinRejected($admin, $requester);
+        $entityManager->flush();
+
+        $projectNotifier->joinRequestRejected($project, $requester);
+        $this->addFlash('info', \sprintf('Demande de %s refusée.', $requester->getFullName() ?? $requester->getEmail()));
+
+        return $this->redirectToRoute('admin_project_freelance_space');
     }
 
     // =========================================================================

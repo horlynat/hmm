@@ -11,7 +11,7 @@
 	}[quoteRequest.status.value] ?? 'neutral' %}
 
 	<nav class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider opacity-50 mb-3" aria-label="Fil d'Ariane">
-		<a href="{{ path('member_quote_index') }}" class="hover:text-(--brand-primary) transition-colors">Mes devis</a>
+		<a href="{{ path('member_quote_index') }}" class="hover:text-(--color-brand-primary) transition-colors">Mes devis</a>
 		<span class="ti ti-chevron-right text-xs" aria-hidden="true"></span>
 		<span aria-current="page" class="truncate max-w-[30ch]">{{ quoteRequest.category }}</span>
 	</nav>
