@@ -962,6 +962,7 @@
         "myProjects": "Mes projets",
         "myQuotes": "Mes demandes de devis",
         "projectManagement": "Gestion de projet",
+        "availableProjects": "Projets disponibles",
         "invoices": "Mes factures",
         "messages": "Messages",
         "changePassword": "Changer le mot de passe",
@@ -1192,6 +1193,21 @@
       "profileBanner": {
         "title": "Complétez votre profil",
         "body": "Votre profil est complété à {percent} %. Tant qu'il n'est pas à 100 %, vous ne pouvez pas participer activement aux projets (lecture seule) — aucun projet ne peut vous être confié en toute confiance sans un profil complet. Il vous manque :",
+        "cta": "Compléter mon profil"
+      }
+    },
+    "availableProjects": {
+      "title": "Projets disponibles",
+      "subtitle": "Projets à venir pas encore affectés à une équipe — proposez-vous pour rejoindre celui qui vous correspond.",
+      "empty": "Aucun projet disponible pour le moment. Revenez bientôt !",
+      "deadline": "Échéance : {date}",
+      "joinCta": "Rejoindre ce projet",
+      "joining": "Envoi en cours…",
+      "joined": "Vous avez rejoint ce projet !",
+      "joinError": "Impossible de rejoindre ce projet. Réessayez.",
+      "profileBanner": {
+        "title": "Complétez votre profil",
+        "body": "Votre profil est complété à {percent} %. Cet espace est réservé aux profils complets à 100 % — c'est ce qui garantit aux clients qu'un projet peut vous être confié en toute confiance. Il vous manque :",
         "cta": "Compléter mon profil"
       }
     },

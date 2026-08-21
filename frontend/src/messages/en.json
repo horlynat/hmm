@@ -962,6 +962,7 @@
         "myProjects": "My projects",
         "myQuotes": "My quote requests",
         "projectManagement": "Project management",
+        "availableProjects": "Available projects",
         "invoices": "My invoices",
         "messages": "Messages",
         "changePassword": "Change password",
@@ -1192,6 +1193,21 @@
       "profileBanner": {
         "title": "Complete your profile",
         "body": "Your profile is {percent}% complete. Until it reaches 100%, you can't actively participate in projects (read-only) — no project can be confidently assigned to you without a complete profile. Still missing:",
+        "cta": "Complete my profile"
+      }
+    },
+    "availableProjects": {
+      "title": "Available projects",
+      "subtitle": "Upcoming projects not yet assigned to a team — offer to join the one that fits you.",
+      "empty": "No projects available right now. Check back soon!",
+      "deadline": "Deadline: {date}",
+      "joinCta": "Join this project",
+      "joining": "Sending…",
+      "joined": "You've joined this project!",
+      "joinError": "Couldn't join this project. Please try again.",
+      "profileBanner": {
+        "title": "Complete your profile",
+        "body": "Your profile is {percent}% complete. This space is reserved for 100%-complete profiles — that's what reassures clients a project can be confidently assigned to you. Still missing:",
         "cta": "Complete my profile"
       }
     },

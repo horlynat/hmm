@@ -615,6 +615,8 @@ export interface SessionUser {
   editableFields: string[];
   /** Messages admin non lus dans la conversation candidat — voir CandidateMessage / AccountNav. */
   unreadMessagesCount: number;
+  /** Projets "à venir" pas encore affectés à une équipe — voir /compte/projets-disponibles / AccountNav. */
+  availableProjectsCount: number;
   attributions: SessionAttributions;
 }
 

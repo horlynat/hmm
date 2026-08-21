@@ -18,6 +18,7 @@ import type {
   SessionTimeEntry,
   TaskStatus,
   CandidateMessage,
+  SessionProjectDetail,
 } from "@/lib/types";
 
 /**
@@ -915,6 +916,54 @@ export async function sendCandidateMessage(
     return { ok: true, message };
   } catch (error) {
     console.error("[auth] sendCandidateMessage failed", error);
+    return { ok: false, error: "network_error" };
+  }
+}
+
+/**
+ * Auto-affectation à un projet "à venir" (espace /compte/projets-disponibles) :
+ * POST /api/me/projects/{id}/join. Le backend renvoie 403 avec
+ * error: "freelance_profile_incomplete" si le profil freelance n'est pas
+ * complet à 100 % (ne devrait pas arriver ici : la page ne rend le bouton
+ * "Rejoindre" que si SessionUser.profileCompletion === 100, mais le backend
+ * reste la source de vérité en cas de course avec une modification de
+ * profil dans un autre onglet).
+ */
+export async function joinProject(
+  projectId: number,
+): Promise<ApiPostResult & { project?: SessionProjectDetail }> {
+  const token = await getToken();
+  if (!token) {
+    return { ok: false, error: "unauthenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/me/projects/${projectId}/join`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      const detail = await res
+        .json()
+        .then((body: unknown) =>
+          typeof body === "object" && body && "detail" in body
+            ? String((body as { detail: unknown }).detail)
+            : null,
+        )
+        .catch(() => null);
+      return { ok: false, error: detail ?? `HTTP ${res.status}` };
+    }
+
+    const project = (await res.json()) as SessionProjectDetail;
+    return { ok: true, project };
+  } catch (error) {
+    console.error("[auth] joinProject failed", error);
     return { ok: false, error: "network_error" };
   }
 }
