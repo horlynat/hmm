@@ -18,6 +18,7 @@ import {
   Plus,
   HelpCircle,
   MessagesSquare,
+  Rocket,
   PanelLeftClose,
   PanelLeftOpen,
   type LucideIcon,
@@ -37,6 +38,7 @@ type AccountPath =
   | "/compte/projets"
   | "/compte/devis"
   | "/compte/gestion-projet"
+  | "/compte/projets-disponibles"
   | "/compte/factures"
   | "/compte/messages"
   | "/compte/profil"
@@ -112,6 +114,8 @@ export interface AccountNavCounts {
   myProjects: number;
   /** Total des projets affichés sur /compte/gestion-projet (collaborateurs uniquement). */
   managedProjects: number;
+  /** Projets "à venir" pas encore affectés à une équipe, sur /compte/projets-disponibles. */
+  availableProjects: number;
   /** Factures au statut "pending" (cf. InvoiceStatusEnum côté backend). */
   unpaidInvoices: number;
   /** Messages admin non lus dans la conversation candidat (cf. SessionUser.unreadMessagesCount). */
@@ -182,6 +186,15 @@ export function AccountNav({
             icon={Briefcase}
             collapsed={collapsed}
             badge={counts.managedProjects > 0 && <Badge variant="neutral">{counts.managedProjects}</Badge>}
+          />
+        )}
+        {isCollaborator && (
+          <NavLink
+            href="/compte/projets-disponibles"
+            label={t("availableProjects")}
+            icon={Rocket}
+            collapsed={collapsed}
+            badge={counts.availableProjects > 0 && <Badge variant="accent">{counts.availableProjects}</Badge>}
           />
         )}
         <NavLink

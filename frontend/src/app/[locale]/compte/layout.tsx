@@ -55,11 +55,12 @@ export default async function CompteLayout({
     managedProjects: attributions.collaboratingProjects.length + attributions.ownedProjects.length,
     unpaidInvoices: attributions.invoices.filter((inv) => inv.status === "pending").length,
     unreadMessages: user.unreadMessagesCount,
+    availableProjects: user.availableProjectsCount,
   };
 
   return (
     <main id="main-content" className="flex-1">
-      <AccountShell user={user} isCollaborator={isCollaborator} counts={counts}>
+      <AccountShell user={user} isCollaborator={isCollaborator} counts={counts} isTwoFactorEnabled={user.isTwoFactorEnabled}>
         {children}
       </AccountShell>
     </main>

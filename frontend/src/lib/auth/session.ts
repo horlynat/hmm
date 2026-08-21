@@ -10,6 +10,7 @@ import { CURRENCY_COOKIE, DEFAULT_CURRENCY, isCurrency } from "@/lib/currency/co
 import type {
   SessionUser,
   SessionProjectDetail,
+  AvailableProject,
   SessionProjectTeam,
   SessionQuoteDetail,
   SessionActivity,
@@ -129,6 +130,37 @@ export async function getMyProject(id: number): Promise<SessionProjectDetail | n
     return (await res.json()) as SessionProjectDetail;
   } catch (error) {
     console.error("[auth] GET /me/projects/:id failed", error);
+    return null;
+  }
+}
+
+/**
+ * Projets "à venir" pas encore affectés à une équipe — l'espace où un
+ * freelance au profil complet à 100 % peut se proposer (cf. joinProject()
+ * dans actions.ts). Renvoie null si non authentifié, ou si le backend
+ * refuse (pas ROLE_EDITOR, profil incomplet) plutôt que de faire
+ * planter la page — l'appelant décide de l'affichage dans ce cas.
+ */
+export async function getAvailableProjects(): Promise<AvailableProject[] | null> {
+  const token = await getToken();
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_URL}/me/projects/available`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return null;
+
+    const body = (await res.json()) as { projects: AvailableProject[] };
+    return body.projects;
+  } catch (error) {
+    console.error("[auth] GET /me/projects/available failed", error);
     return null;
   }
 }

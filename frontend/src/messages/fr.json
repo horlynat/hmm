@@ -962,6 +962,7 @@
         "myProjects": "Mes projets",
         "myQuotes": "Mes demandes de devis",
         "projectManagement": "Gestion de projet",
+        "availableProjects": "Projets disponibles",
         "invoices": "Mes factures",
         "messages": "Messages",
         "changePassword": "Changer le mot de passe",
@@ -1096,6 +1097,11 @@
         "twoFactorEnabled": "Double authentification activée",
         "twoFactorDisabled": "Double authentification non activée",
         "twoFactorHint": "Obligatoire sur votre compte — activée automatiquement à votre première connexion.",
+        "twoFactorHintOptional": "Recommandée pour protéger votre compte et les projets sur lesquels vous intervenez.",
+        "twoFactorReminder": {
+          "message": "Votre compte n'est pas protégé par la double authentification.",
+          "cta": "Activer maintenant"
+        },
         "resendButton": "Renvoyer l'email de vérification",
         "resendPending": "Envoi en cours…",
         "resendSuccess": "Un nouveau lien de vérification vous a été envoyé.",
@@ -1134,7 +1140,8 @@
           "copyAll": "Copier tous les codes",
           "copied": "Copié",
           "copySecret": "Copier la clé",
-          "appHint": "Google Authenticator, Authy, 1Password…"
+          "appHint": "Google Authenticator, Authy, 1Password…",
+          "activateButton": "Activer la 2FA"
         }
       },
       "dataExport": {
@@ -1192,6 +1199,22 @@
       "profileBanner": {
         "title": "Complétez votre profil",
         "body": "Votre profil est complété à {percent} %. Tant qu'il n'est pas à 100 %, vous ne pouvez pas participer activement aux projets (lecture seule) — aucun projet ne peut vous être confié en toute confiance sans un profil complet. Il vous manque :",
+        "cta": "Compléter mon profil"
+      }
+    },
+    "availableProjects": {
+      "title": "Projets disponibles",
+      "subtitle": "Projets à venir pas encore affectés à une équipe — déposez une demande pour celui qui vous correspond, elle sera examinée avant validation.",
+      "empty": "Aucun projet disponible pour le moment. Revenez bientôt !",
+      "deadline": "Échéance : {date}",
+      "joinCta": "Demander à rejoindre",
+      "joining": "Envoi en cours…",
+      "joined": "Vous avez rejoint ce projet !",
+      "pending": "Demande envoyée — en attente de validation",
+      "joinError": "Impossible d'envoyer la demande. Réessayez.",
+      "profileBanner": {
+        "title": "Complétez votre profil",
+        "body": "Votre profil est complété à {percent} %. Cet espace est réservé aux profils complets à 100 % — c'est ce qui garantit aux clients qu'un projet peut vous être confié en toute confiance. Il vous manque :",
         "cta": "Compléter mon profil"
       }
     },

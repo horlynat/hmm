@@ -478,6 +478,16 @@ export interface SessionProjectDetail {
   info: ProjectInfo | null;
 }
 
+/**
+ * Projet de l'espace « Projets disponibles » — miroir de GET /api/me/projects/available
+ * et de la réponse de POST /api/me/projects/{id}/join. `joinPending` distingue une
+ * demande d'association déjà déposée (en attente de validation admin, aucun accès
+ * accordé) d'un projet encore librement demandable.
+ */
+export interface AvailableProject extends SessionProjectDetail {
+  joinPending: boolean;
+}
+
 /** Membre de l'équipe d'un projet — miroir de GET /api/me/projects/{id}/team. */
 export interface SessionTeamMember {
   id: number;
@@ -615,6 +625,8 @@ export interface SessionUser {
   editableFields: string[];
   /** Messages admin non lus dans la conversation candidat — voir CandidateMessage / AccountNav. */
   unreadMessagesCount: number;
+  /** Projets "à venir" pas encore affectés à une équipe — voir /compte/projets-disponibles / AccountNav. */
+  availableProjectsCount: number;
   attributions: SessionAttributions;
 }
 

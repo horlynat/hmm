@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Mail, ShieldCheck, Clock } from "lucide-react";
 import { Badge, PageHeader, SettingsSection, SettingsSectionGroup } from "@/components/ui";
 import { ResendVerificationButton } from "@/components/sections/ResendVerificationButton";
+import { TwoFactorActivationInline } from "@/components/sections/TwoFactorActivationInline";
 import { getCurrentUser } from "@/lib/auth/session";
 
 export default async function SecuritePage({
@@ -16,6 +17,10 @@ export default async function SecuritePage({
   const t = await getTranslations({ locale, namespace: "auth.profile.security" });
 
   const hasLoginInfo = user.lastLoginAt || user.lastIp || user.lastLocation || user.lastDevice;
+  // ROLE_EDITOR (collaborateur vetté) est exempté de l'écran plein obligatoire
+  // (cf. CompteLayout) mais doit quand même pouvoir activer la 2FA
+  // volontairement — c'est le seul endroit qui le permet pour ce cas.
+  const isMandatory = !user.roles.includes("ROLE_EDITOR");
 
   return (
     <div className="max-w-160 space-y-6">
@@ -31,10 +36,17 @@ export default async function SecuritePage({
           {!user.isVerified && <ResendVerificationButton />}
         </SettingsSection>
 
-        <SettingsSection icon={ShieldCheck} title={t("twoFactorGroupTitle")} description={t("twoFactorHint")}>
-          <Badge variant="neutral">
-            {user.isTwoFactorEnabled ? t("twoFactorEnabled") : t("twoFactorDisabled")}
-          </Badge>
+        <SettingsSection
+          icon={ShieldCheck}
+          title={t("twoFactorGroupTitle")}
+          description={isMandatory ? t("twoFactorHint") : t("twoFactorHintOptional")}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={user.isTwoFactorEnabled ? "success" : "warning"}>
+              {user.isTwoFactorEnabled ? t("twoFactorEnabled") : t("twoFactorDisabled")}
+            </Badge>
+          </div>
+          {!user.isTwoFactorEnabled && <TwoFactorActivationInline />}
         </SettingsSection>
 
         {hasLoginInfo && (
