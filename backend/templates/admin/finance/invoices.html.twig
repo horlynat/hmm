@@ -3,145 +3,161 @@
 {% block title %}Finance — Factures{% endblock %}
 
 {% block body %}
-	<div>
+	{% set sub = totalCount ~ ' facture' ~ (totalCount > 1 ? 's' : '') ~ ' — tous clients confondus. La création et le paiement restent dans l\'écran du projet concerné.' %}
+	<twig:PageHeader title="Facturation" :subtitle="sub" icon="ti-file-invoice">
+		<a href="{{ path('admin_finance_invoices_export', filters) }}" class="btn btn-secondary gap-2">
+			<span class="ti ti-download" aria-hidden="true"></span>
+			<span>Export CSV</span>
+		</a>
+	</twig:PageHeader>
 
-		<!-- 📑 EN-TÊTE -->
-		<div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-			<div>
-				<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
-					<span class="ti ti-file-invoice text-brand-primary" aria-hidden="true"></span>
-					<span>Factures</span>
-				</h1>
-				<p class="text-sm opacity-60 mt-1">Tous projets confondus — la création et le paiement restent dans l'écran du projet concerné.</p>
-			</div>
-			<a href="{{ path('admin_finance_invoices_export', filters) }}" class="btn btn-secondary text-sm gap-2">
-				<span class="ti ti-download" aria-hidden="true"></span> Export CSV
-			</a>
-		</div>
-
-		<!-- 🔍 FILTRES -->
-		<form method="get" class="soft-card p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-			<input type="text" name="search" value="{{ filters.search }}" placeholder="Numéro, projet, client…" class="input text-sm lg:col-span-2">
-
-			<label class="flex items-center gap-2 text-sm px-1">
-				<input type="checkbox" name="overdue" value="1" {{ filters.overdue ? 'checked' }} class="input-checkbox">
-				En retard uniquement
-			</label>
-
-			<select name="status" class="input input-select text-sm">
-				<option value="">Tous les statuts</option>
-				{% for status in statuses %}
-					<option value="{{ status.value }}" {{ filters.status == status.value ? 'selected' }}>{{ status.label }}</option>
-				{% endfor %}
-			</select>
-
-			<select name="project" class="input input-select text-sm">
-				<option value="">Tous les projets</option>
-				{% for p in projects %}
-					<option value="{{ p.id }}" {{ filters.project == p.id ? 'selected' }}>{{ p.title }}</option>
-				{% endfor %}
-			</select>
-
-			<select name="client" class="input input-select text-sm">
-				<option value="">Tous les clients</option>
-				{% for c in clients %}
-					<option value="{{ c.id }}" {{ filters.client == c.id ? 'selected' }}>{{ c.fullName ?? c.email }}</option>
-				{% endfor %}
-			</select>
-
-			<select name="currency" class="input input-select text-sm">
-				<option value="">Toutes les devises</option>
-				{% for currency in currencies %}
-					<option value="{{ currency }}" {{ filters.currency == currency ? 'selected' }}>{{ currency }}</option>
-				{% endfor %}
-			</select>
-
-			<input type="number" step="0.01" name="min" value="{{ filters.min }}" placeholder="Montant min." class="input text-sm">
-			<input type="number" step="0.01" name="max" value="{{ filters.max }}" placeholder="Montant max." class="input text-sm">
-			<input type="date" name="start" value="{{ filters.start }}" class="input text-sm" aria-label="Émise à partir du">
-			<input type="date" name="end" value="{{ filters.end }}" class="input text-sm" aria-label="Émise jusqu'au">
-
-			<select name="sort" class="input input-select text-sm">
-				<option value="issuedAt" {{ filters.sort == 'issuedAt' ? 'selected' }}>Trier : date d'émission</option>
-				<option value="dueDate" {{ filters.sort == 'dueDate' ? 'selected' }}>Trier : échéance</option>
-				<option value="amount" {{ filters.sort == 'amount' ? 'selected' }}>Trier : montant</option>
-				<option value="status" {{ filters.sort == 'status' ? 'selected' }}>Trier : statut</option>
-				<option value="number" {{ filters.sort == 'number' ? 'selected' }}>Trier : numéro</option>
-				<option value="project" {{ filters.sort == 'project' ? 'selected' }}>Trier : projet</option>
-				<option value="client" {{ filters.sort == 'client' ? 'selected' }}>Trier : client</option>
-			</select>
-
-			<div class="flex gap-2">
-				<button type="submit" class="btn btn-primary text-sm flex-1">Filtrer</button>
-				<a href="{{ path('admin_finance_invoices') }}" class="btn btn-secondary text-sm" title="Réinitialiser">
-					<span class="ti ti-x text-base" aria-hidden="true"></span>
-				</a>
-			</div>
+	<!-- 🔎 BARRE D'OUTILS : recherche + puces de statut + filtres avancés -->
+	<div class="mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
+		<form method="get" class="flex flex-1 min-w-0 items-center gap-2 bg-gray-50/60 border border-gray-100 rounded-xl px-3.5 py-2 focus-within:border-brand-primary/40">
+			<span class="ti ti-search text-brand-dark/40 shrink-0" aria-hidden="true"></span>
+			<input type="text" name="search" value="{{ filters.search }}" placeholder="Rechercher une facture, un client…" class="w-full min-w-0 border-0 bg-transparent text-sm outline-none placeholder:text-brand-dark/40">
+			{# préserve les autres filtres actifs pendant la recherche #}
+			{% for key, value in filters %}
+				{% if key not in ['search', 'status', 'overdue', 'page'] and value is not empty %}
+					<input type="hidden" name="{{ key }}" value="{{ value }}">
+				{% endif %}
+			{% endfor %}
+			{% if filters.status %}<input type="hidden" name="status" value="{{ filters.status }}">{% endif %}
+			{% if filters.overdue %}<input type="hidden" name="overdue" value="{{ filters.overdue }}">{% endif %}
 		</form>
 
-		<!-- 📊 TABLEAU -->
-		<div class="soft-card overflow-hidden">
-			<table class="table">
-				<thead>
+		<div class="flex flex-wrap items-center gap-1.5">
+			<a href="{{ path('admin_finance_invoices', filters|merge({status: null, overdue: null, page: null})) }}"
+			   class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors {{ (not filters.status and not filters.overdue) ? 'bg-brand-primary text-white' : 'bg-gray-50 text-brand-dark/70 border border-gray-100 hover:bg-gray-100' }}">
+				Toutes <span class="opacity-70">{{ statusCounts.all }}</span>
+			</a>
+			<a href="{{ path('admin_finance_invoices', filters|merge({status: 'pending', overdue: null, page: null})) }}"
+			   class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors {{ filters.status == 'pending' ? 'bg-brand-primary text-white' : 'bg-gray-50 text-brand-dark/70 border border-gray-100 hover:bg-gray-100' }}">
+				En attente <span class="opacity-70">{{ statusCounts.pending }}</span>
+			</a>
+			<a href="{{ path('admin_finance_invoices', filters|merge({status: 'paid', overdue: null, page: null})) }}"
+			   class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors {{ filters.status == 'paid' ? 'bg-brand-primary text-white' : 'bg-gray-50 text-brand-dark/70 border border-gray-100 hover:bg-gray-100' }}">
+				Payées <span class="opacity-70">{{ statusCounts.paid }}</span>
+			</a>
+			<a href="{{ path('admin_finance_invoices', filters|merge({status: null, overdue: 1, page: null})) }}"
+			   class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors {{ filters.overdue ? 'bg-brand-primary text-white' : 'bg-gray-50 text-brand-dark/70 border border-gray-100 hover:bg-gray-100' }}">
+				En retard <span class="opacity-70">{{ statusCounts.overdue }}</span>
+			</a>
+
+			<details class="group relative">
+				<summary class="flex items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors text-brand-dark cursor-pointer list-none" title="Filtres avancés">
+					<span class="ti ti-filter" aria-hidden="true"></span>
+				</summary>
+				<form method="get" class="absolute right-0 z-10 mt-2 w-[min(92vw,640px)] soft-card p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 shadow-lg">
+					<input type="hidden" name="search" value="{{ filters.search }}">
+
+					<select name="project" class="input input-select text-sm">
+						<option value="">Tous les projets</option>
+						{% for p in projects %}
+							<option value="{{ p.id }}" {{ filters.project == p.id ? 'selected' }}>{{ p.title }}</option>
+						{% endfor %}
+					</select>
+
+					<select name="client" class="input input-select text-sm">
+						<option value="">Tous les clients</option>
+						{% for c in clients %}
+							<option value="{{ c.id }}" {{ filters.client == c.id ? 'selected' }}>{{ c.fullName ?? c.email }}</option>
+						{% endfor %}
+					</select>
+
+					<select name="currency" class="input input-select text-sm">
+						<option value="">Toutes les devises</option>
+						{% for currency in currencies %}
+							<option value="{{ currency }}" {{ filters.currency == currency ? 'selected' }}>{{ currency }}</option>
+						{% endfor %}
+					</select>
+
+					<select name="sort" class="input input-select text-sm">
+						<option value="issuedAt" {{ filters.sort == 'issuedAt' ? 'selected' }}>Trier : date d'émission</option>
+						<option value="dueDate" {{ filters.sort == 'dueDate' ? 'selected' }}>Trier : échéance</option>
+						<option value="amount" {{ filters.sort == 'amount' ? 'selected' }}>Trier : montant</option>
+						<option value="status" {{ filters.sort == 'status' ? 'selected' }}>Trier : statut</option>
+						<option value="number" {{ filters.sort == 'number' ? 'selected' }}>Trier : numéro</option>
+						<option value="project" {{ filters.sort == 'project' ? 'selected' }}>Trier : projet</option>
+						<option value="client" {{ filters.sort == 'client' ? 'selected' }}>Trier : client</option>
+					</select>
+
+					<input type="number" step="0.01" name="min" value="{{ filters.min }}" placeholder="Montant min." class="input text-sm">
+					<input type="number" step="0.01" name="max" value="{{ filters.max }}" placeholder="Montant max." class="input text-sm">
+					<input type="date" name="start" value="{{ filters.start }}" class="input text-sm" aria-label="Émise à partir du">
+					<input type="date" name="end" value="{{ filters.end }}" class="input text-sm" aria-label="Émise jusqu'au">
+
+					{% if filters.status %}<input type="hidden" name="status" value="{{ filters.status }}">{% endif %}
+					{% if filters.overdue %}<input type="hidden" name="overdue" value="{{ filters.overdue }}">{% endif %}
+
+					<div class="flex gap-2 sm:col-span-2">
+						<button type="submit" class="btn btn-primary text-sm flex-1">Appliquer</button>
+						<a href="{{ path('admin_finance_invoices', {search: filters.search, status: filters.status, overdue: filters.overdue}) }}" class="btn btn-secondary text-sm" title="Réinitialiser les filtres avancés">
+							<span class="ti ti-x text-base" aria-hidden="true"></span>
+						</a>
+					</div>
+				</form>
+			</details>
+		</div>
+	</div>
+
+	<!-- 📊 TABLEAU -->
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Liste des factures</caption>
+			<thead>
+				<tr>
+					<th scope="col">Facture</th>
+					<th scope="col">Client</th>
+					<th scope="col">Projet</th>
+					<th scope="col">Émise le</th>
+					<th scope="col">Échéance</th>
+					<th scope="col" class="text-right">Montant</th>
+					<th scope="col">Statut</th>
+					<th scope="col" class="w-12"></th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for invoice in invoices %}
 					<tr>
-						<th>Numéro</th>
-						<th>Projet</th>
-						<th>Client</th>
-						<th>Montant</th>
-						<th>Statut</th>
-						<th>Émise le</th>
-						<th>Échéance</th>
-						<th class="w-16 text-right">Actions</th>
-					</tr>
-				</thead>
-				<tbody>
-					{% for invoice in invoices %}
-						<tr>
-							<td class="font-semibold text-brand-dark">{{ invoice.number }}</td>
-							<td class="text-sm">{{ invoice.project.title }}</td>
-							<td class="text-sm opacity-70">{{ invoice.project.client ? (invoice.project.client.fullName ?? invoice.project.client.email) : '—' }}</td>
-							<td class="text-sm font-semibold text-brand-dark">{{ invoice.amount|money(invoice.currency) }}</td>
-							<td class="flex flex-wrap items-center gap-1.5">
+						<td class="font-mono text-sm font-semibold text-brand-dark">{{ invoice.number }}</td>
+						<td class="text-sm opacity-70">{{ invoice.project.client ? (invoice.project.client.fullName ?? invoice.project.client.email) : '—' }}</td>
+						<td class="text-sm">{{ invoice.project.title }}</td>
+						<td class="font-mono text-xs opacity-70 whitespace-nowrap">{{ invoice.issuedAt ? invoice.issuedAt|date('d/m/Y') : '—' }}</td>
+						<td class="text-xs opacity-70 whitespace-nowrap">{{ invoice.dueDate ? invoice.dueDate|date('d/m/Y') : '—' }}</td>
+						<td class="font-mono text-sm font-semibold text-brand-dark text-right whitespace-nowrap">{{ invoice.amount|money(invoice.currency) }}</td>
+						<td>
+							<div class="flex flex-wrap items-center gap-1.5">
 								<twig:Badge :variant="invoice.status.variant" icon="{{ invoice.status.icon }}">{{ invoice.status.label }}</twig:Badge>
 								{% if invoice.overdue %}
 									<twig:Badge variant="danger" icon="ti-alert-triangle">En retard</twig:Badge>
 								{% endif %}
-							</td>
-							<td class="text-sm opacity-70">{{ invoice.issuedAt ? invoice.issuedAt|date('d/m/Y') : '—' }}</td>
-							<td class="text-sm opacity-70">{{ invoice.dueDate ? invoice.dueDate|date('d/m/Y') : '—' }}</td>
-							<td class="text-right">
-								<a href="{{ path('admin_project_read', {id: invoice.project.id}) }}" class="p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir dans le projet">
-									<span class="ti ti-eye text-lg block" aria-hidden="true"></span>
-								</a>
-							</td>
-						</tr>
-					{% else %}
-						<tr>
-							<td colspan="8" class="text-center py-12 opacity-40">Aucune facture ne correspond aux critères.</td>
-						</tr>
-					{% endfor %}
-				</tbody>
-			</table>
-		</div>
+							</div>
+						</td>
+						<td class="text-right">
+							<a href="{{ path('admin_project_read', {id: invoice.project.id}) }}" class="inline-flex items-center justify-center p-2 hover:bg-brand-light rounded-sm transition-colors text-brand-dark" title="Voir dans le projet">
+								<span class="ti ti-eye text-lg" aria-hidden="true"></span>
+							</a>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="8" class="text-center py-12 opacity-40">Aucune facture ne correspond aux critères.</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
 
-		<!-- 📄 PAGINATION -->
-		{% if totalPages > 1 %}
-			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
-				<span class="text-sm text-gray-500">Page <strong>{{ page }}</strong> sur <strong>{{ totalPages }}</strong></span>
-				<nav aria-label="Navigation des factures">
-					<ul class="flex items-center gap-1">
-						<li>
-							<a class="btn btn-secondary text-sm py-1.5 px-3 {{ page == 1 ? 'pointer-events-none opacity-40' }}" href="{{ path('admin_finance_invoices', filters|merge({page: page - 1})) }}">Précédent</a>
-						</li>
-						{% for p in 1..totalPages %}
-							<li>
-								<a class="btn text-sm py-1.5 px-3 {{ p == page ? 'btn-primary' : 'btn-secondary' }}" href="{{ path('admin_finance_invoices', filters|merge({page: p})) }}">{{ p }}</a>
-							</li>
-						{% endfor %}
-						<li>
-							<a class="btn btn-secondary text-sm py-1.5 px-3 {{ page == totalPages ? 'pointer-events-none opacity-40' }}" href="{{ path('admin_finance_invoices', filters|merge({page: page + 1})) }}">Suivant</a>
-						</li>
-					</ul>
+		{% if totalCount > 0 %}
+			<div class="flex items-center justify-between gap-3 px-4 py-3 border-t border-(--color-border,#eee)">
+				<span class="text-sm opacity-50">{{ (page - 1) * limit + 1 }}–{{ min(page * limit, totalCount) }} sur {{ totalCount }}</span>
+				<nav aria-label="Navigation des factures" class="flex items-center gap-1">
+					<a class="inline-flex items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors {{ page <= 1 ? 'pointer-events-none opacity-30' }}" href="{{ path('admin_finance_invoices', filters|merge({page: page - 1})) }}" aria-label="Page précédente">
+						<span class="ti ti-chevron-left" aria-hidden="true"></span>
+					</a>
+					<a class="inline-flex items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors {{ page >= totalPages ? 'pointer-events-none opacity-30' }}" href="{{ path('admin_finance_invoices', filters|merge({page: page + 1})) }}" aria-label="Page suivante">
+						<span class="ti ti-chevron-right" aria-hidden="true"></span>
+					</a>
 				</nav>
 			</div>
 		{% endif %}

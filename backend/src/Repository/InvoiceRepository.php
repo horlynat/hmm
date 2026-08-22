@@ -106,6 +106,23 @@ class InvoiceRepository extends ServiceEntityRepository
     }
 
     /**
+     * Compte de factures pour un jeu de filtres donné — sert les puces de
+     * statut rapides de la vue Finance (Toutes / En attente / Payées / En
+     * retard), calculées sur les MÊMES filtres que la liste (recherche,
+     * projet, client…) sans le statut lui-même, pour rester justes quand
+     * on combine une puce avec une recherche.
+     *
+     * @param array<string, mixed> $filters cf. createFilteredQueryBuilder()
+     */
+    public function countByFilters(array $filters = []): int
+    {
+        return (int) $this->createFilteredQueryBuilder($filters)
+            ->select('COUNT(i.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
      * Devises réellement utilisées par au moins une facture, pour peupler le
      * filtre de la vue Finance sans dépendre de CurrencyEnum (dont le
      * périmètre — USD/EUR/XAF — est plus restreint que ce qu'InvoiceType
