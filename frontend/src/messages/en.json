@@ -1215,6 +1215,41 @@
       "statTotal": "Total projects",
       "statActive": "In progress",
       "statUpcoming": "Upcoming",
+      "tabs": {
+        "mine": "My projects",
+        "open": "Available projects",
+        "requests": "My requests"
+      },
+      "roles": {
+        "client": "Client",
+        "owner": "Project lead",
+        "collaborator": "Collaborator"
+      },
+      "mineColumns": {
+        "project": "Project",
+        "role": "Role",
+        "progress": "Progress",
+        "deadline": "Deadline",
+        "status": "Status"
+      },
+      "openColumns": {
+        "project": "Project",
+        "skills": "Skills",
+        "priority": "Priority",
+        "deadline": "Deadline",
+        "status": "Status"
+      },
+      "searchPlaceholder": "Search a project, a skill…",
+      "noResults": "No results for this search.",
+      "requests": {
+        "empty": "No requests sent yet.",
+        "requestedOn": "Sent on {date}",
+        "status": {
+          "pending": "Pending",
+          "approved": "Accepted",
+          "rejected": "Rejected"
+        }
+      },
       "profileBanner": {
         "title": "Complete your profile",
         "body": "Your profile is {percent}% complete. Until it reaches 100%, you can't actively participate in projects (read-only) — no project can be confidently assigned to you without a complete profile. Still missing:",

@@ -1220,6 +1220,27 @@
         "open": "Projets disponibles",
         "requests": "Mes demandes"
       },
+      "roles": {
+        "client": "Client",
+        "owner": "Chef de projet",
+        "collaborator": "Collaborateur"
+      },
+      "mineColumns": {
+        "project": "Projet",
+        "role": "Rôle",
+        "progress": "Avancement",
+        "deadline": "Échéance",
+        "status": "Statut"
+      },
+      "openColumns": {
+        "project": "Projet",
+        "skills": "Compétences",
+        "priority": "Priorité",
+        "deadline": "Échéance",
+        "status": "Statut"
+      },
+      "searchPlaceholder": "Rechercher un projet, une compétence…",
+      "noResults": "Aucun résultat pour cette recherche.",
       "requests": {
         "empty": "Aucune demande envoyée pour le moment.",
         "requestedOn": "Envoyée le {date}",

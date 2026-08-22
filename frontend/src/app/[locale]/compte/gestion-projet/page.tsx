@@ -1,8 +1,8 @@
 import { getTranslations } from "next-intl/server";
-import { Briefcase, Rocket, UserRoundCheck } from "lucide-react";
-import { Alert, Badge, ButtonLink, EmptyState, PageHeader } from "@/components/ui";
-import { AvailableProjectList } from "@/components/sections/AvailableProjectList";
-import { MyProjectsPanel } from "@/components/sections/MyProjectsPanel";
+import { Briefcase, UserRoundCheck } from "lucide-react";
+import { Alert, Badge, ButtonLink, PageHeader } from "@/components/ui";
+import { AvailableProjectsTable } from "@/components/sections/AvailableProjectsTable";
+import { MyProjectsTable } from "@/components/sections/MyProjectsTable";
 import { JoinRequestList } from "@/components/sections/JoinRequestList";
 import { ProjectHubTabs } from "@/components/sections/ProjectHubTabs";
 import { redirect } from "@/i18n/navigation";
@@ -80,16 +80,11 @@ export default async function GestionProjetPage({
       <ProjectHubTabs
         initialTab={tab === "open" || tab === "requests" ? tab : "mine"}
         counts={{ mine: mineCount, open: openProjects.length, requests: requests.length }}
-        mine={<MyProjectsPanel user={user} locale={locale} collaboratingHrefPattern="/compte/gestion-projet/[id]" />}
+        mine={<MyProjectsTable user={user} locale={locale} />}
         open={
-          <div className="space-y-6">
+          <div className="space-y-4">
             {profileBanner}
-            {profileComplete &&
-              (openProjects.length > 0 ? (
-                <AvailableProjectList projects={openProjects} />
-              ) : (
-                <EmptyState icon={Rocket} message={ta("empty")} />
-              ))}
+            {profileComplete && <AvailableProjectsTable projects={openProjects} />}
           </div>
         }
         requests={<JoinRequestList requests={requests} locale={locale} />}
