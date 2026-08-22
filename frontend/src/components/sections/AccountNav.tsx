@@ -210,8 +210,8 @@ export function AccountNav({
   const t = useTranslations("auth.account.nav");
 
   return (
-    <nav aria-label={t("title")} className="flex h-full flex-col">
-      {/* En-tête épinglé : identité + raccourci tableau de bord, jamais emporté par le défilement de la liste ci-dessous. */}
+    <nav aria-label={t("title")} className="flex flex-col">
+      {/* En-tête : identité + raccourci tableau de bord. */}
       <div className="shrink-0 space-y-1">
         <NavProfile user={user} collapsed={collapsed} />
 
@@ -237,8 +237,12 @@ export function AccountNav({
         <NavLink href="/compte" label={t("dashboard")} icon={LayoutDashboard} collapsed={collapsed} />
       </div>
 
-      {/* Zone scrollable : seule cette partie déborde si les deux groupes sont ouverts en même temps sur un petit écran — l'en-tête et le pied restent toujours atteignables sans défiler. */}
-      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
+      {/* Plus de hauteur ni de défilement forcés ici : c'est l'aside (AccountShell)
+          qui plafonne à la hauteur de l'écran et défile si besoin — comme la
+          maquette, la nav épouse la hauteur de son contenu au lieu de toujours
+          s'étirer sur 100% de l'écran (ce qui laissait un grand vide avant le
+          pied de page une fois l'accordéon supprimé et les liens allégés). */}
+      <div className="space-y-1">
         <NavGroup title={t("groupActivity")} collapsed={collapsed}>
         {!isCollaborator && (
           <NavLink
@@ -305,8 +309,10 @@ export function AccountNav({
       </div>
       </div>
 
-      {/* Pied épinglé : toujours atteignable sans avoir à défiler la liste. */}
-      <div className="shrink-0">
+      {/* Pied : ancré en bas seulement s'il reste de la place (mt-auto) — plus de
+          hauteur forcée pour "tirer" ce pied au fond de l'écran quel que soit le
+          contenu au-dessus. */}
+      <div className="mt-auto shrink-0">
         {!collapsed && (
           <div className="mt-3 border-t border-(--border-neutral)/60 pt-3">
             <LogoutButton />

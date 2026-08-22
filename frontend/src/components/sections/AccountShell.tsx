@@ -118,7 +118,7 @@ export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled,
               : "mx-auto grid max-w-[1120px] gap-5 md:grid-cols-[220px_1fr] md:items-start"
           }
         >
-          <aside className="sticky top-20 hidden h-[calc(100vh-7rem)] rounded-[var(--radius-md)] border border-(--border-neutral) bg-(--color-surface-muted) p-3 md:block">
+          <aside className="sticky top-20 hidden max-h-[calc(100vh-7rem)] overflow-y-auto rounded-[var(--radius-md)] border border-(--border-neutral) bg-(--color-surface-muted) p-3 md:block">
             <AccountNav
               user={user}
               isCollaborator={isCollaborator}
@@ -171,7 +171,7 @@ export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled,
                 <span aria-hidden="true">✕</span>
               </button>
             </div>
-            <div className="min-h-0 flex-1">
+            <div className="min-h-0 flex-1 overflow-y-auto">
               <AccountNav user={user} isCollaborator={isCollaborator} counts={counts} />
             </div>
           </div>
