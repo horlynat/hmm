@@ -27,14 +27,14 @@ export function QuoteWizardIaQualif({
   return (
     <div>
       <div className="mb-1 font-mono text-xs uppercase tracking-wide text-brand-primary">{t("iaLabel")}</div>
-      <div className="mb-6 text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+      <div className="mb-4 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
         {t("iaQuestion")}
       </div>
       <div
         role="log"
         aria-live="polite"
         aria-atomic="false"
-        className="mb-5 flex max-h-[280px] flex-col gap-2.5 overflow-y-auto"
+        className="mb-4 flex max-h-[280px] flex-col gap-2.5 overflow-y-auto"
       >
         {iaThread.map((m, i) => (
           <div key={i} className={clsx("flex items-end gap-2", m.who === "user" && "flex-row-reverse")}>
@@ -62,7 +62,7 @@ export function QuoteWizardIaQualif({
       {!iaFinished && (
         <>
           <textarea
-            className="input mb-4 min-h-[70px]"
+            className="input mb-3 min-h-[70px]"
             placeholder={t("iaAnswerPlaceholder")}
             value={iaAnswer}
             onChange={(e) => setIaAnswer(e.target.value)}

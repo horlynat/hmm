@@ -18,8 +18,8 @@ export function QuoteWizardSuccess({ t, successHref, successLabel }: QuoteWizard
       <h3 className="mb-2 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
         {t("successTitle")}
       </h3>
-      <p className="mb-6 text-sm opacity-70">{t("successText")}</p>
-      <div className="mx-auto max-w-[420px] rounded-[var(--radius-md)] bg-bg-default p-5 text-left">
+      <p className="mb-5 text-sm opacity-70">{t("successText")}</p>
+      <div className="mx-auto max-w-[420px] rounded-[var(--radius-md)] bg-bg-default p-4 text-left">
         <div
           className="mb-3 text-xs font-semibold uppercase tracking-wide text-brand-primary"
           style={{ fontFamily: "var(--font-mono)" }}
