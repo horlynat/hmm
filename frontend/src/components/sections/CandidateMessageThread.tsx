@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations, useLocale } from "next-intl";
 import clsx from "clsx";
+import { MessageSquare } from "lucide-react";
 import { Card, EmptyState } from "@/components/ui";
 import { TextArea, SubmitButton, FormMessage } from "@/components/ui/form";
 import { candidateMessageSchema, type CandidateMessageValues } from "@/lib/validation/schemas";
@@ -63,7 +64,7 @@ export function CandidateMessageThread({ messages: initialMessages }: { messages
             ))}
           </div>
         ) : (
-          <EmptyState icon="💬" message={t("empty")} />
+          <EmptyState icon={MessageSquare} message={t("empty")} />
         )}
       </Card>
 

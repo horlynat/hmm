@@ -11,10 +11,21 @@ interface PageHeaderProps {
   className?: string;
 }
 
-/** En-tête standard des pages de l'espace compte : icône + titre + sous-titre, actions optionnelles à droite. */
+/**
+ * En-tête standard des pages de l'espace compte : icône + titre + sous-titre,
+ * actions optionnelles à droite. Bandeau légèrement teinté (plutôt qu'un
+ * simple flex sans fond) pour donner à chaque page une même ouverture posée,
+ * cohérente avec le bandeau du tableau de bord (cf. compte/page.tsx).
+ */
 export function PageHeader({ icon: Icon, title, subtitle, tone = "default", actions, className }: PageHeaderProps) {
   return (
-    <div className={clsx("flex flex-wrap items-start justify-between gap-4", className)}>
+    <div
+      className={clsx(
+        "flex flex-wrap items-start justify-between gap-4 rounded-[var(--radius-lg)] border border-(--border-neutral) p-5 sm:p-6",
+        tone === "danger" ? "bg-danger/[0.04]" : "bg-gradient-to-br from-brand-primary/[0.06] via-transparent to-transparent",
+        className,
+      )}
+    >
       <div className="flex items-start gap-3.5">
         {Icon && (
           <div

@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
-import { FolderKanban, FileText, Receipt, Briefcase, History, MessageSquare, LayoutDashboard } from "lucide-react";
-import { Badge, ButtonLink, Card, EmptyState, PageHeader, SectionHeading, StatCard } from "@/components/ui";
+import { FolderKanban, FileText, Receipt, Briefcase, Handshake, History, MessageSquare } from "lucide-react";
+import { Badge, ButtonLink, Card, EmptyState, SectionHeading, StatCard } from "@/components/ui";
 import { ProjectList, QuoteList } from "@/components/sections/AccountLists";
 import { WelcomeBanner } from "@/components/sections/WelcomeBanner";
 import { getCurrentUser, getMyActivity } from "@/lib/auth/session";
@@ -27,9 +27,53 @@ function upcomingDeadlines(projects: SessionProject[], limit: number): SessionPr
     .slice(0, limit);
 }
 
-function countActive(projects: SessionProject[]): number {
+function activeProjectsOf(projects: SessionProject[]): SessionProject[] {
   const seen = new Set<number>();
-  return projects.filter((p) => p.status === "en_cours" && !seen.has(p.id) && seen.add(p.id)).length;
+  return projects.filter((p) => p.status === "en_cours" && !seen.has(p.id) && seen.add(p.id));
+}
+
+/**
+ * Anneau de progression — moyenne d'avancement des projets actifs. Seule
+ * visualisation du dashboard jusqu'ici réduit à des compteurs statiques ;
+ * l'info existe déjà par projet (SessionProject.progress) mais n'était
+ * agrégée nulle part au niveau du portefeuille.
+ */
+function ProgressRing({ value, label, caption }: { value: number; label: string; caption: string }) {
+  const size = 116;
+  const stroke = 10;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - value / 100);
+
+  return (
+    <div className="flex shrink-0 flex-col items-center gap-2 text-center">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+          <circle cx={size / 2} cy={size / 2} r={radius} strokeWidth={stroke} fill="none" className="stroke-(--border-neutral)" />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            strokeWidth={stroke}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            className="stroke-brand-primary"
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-2xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
+            {value}%
+          </span>
+        </div>
+      </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-(--color-muted)">{label}</p>
+        <p className="text-xs text-(--color-muted)">{caption}</p>
+      </div>
+    </div>
+  );
 }
 
 function timeAgoLabel(iso: string, locale: string): string {
@@ -51,29 +95,36 @@ function ActivityFeed({
   emptyMessage: string;
 }) {
   if (entries.length === 0) {
-    return <EmptyState icon="📜" message={emptyMessage} />;
+    return <EmptyState icon={History} message={emptyMessage} />;
   }
 
   return (
-    <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
-      {entries.map((entry) => (
-        <Link
-          key={entry.id}
-          href={{ pathname: "/compte/projets/[id]", params: { id: String(entry.projectId) } }}
-          className="flex items-start gap-3 p-4 transition-colors hover:bg-(--color-surface-muted)"
-        >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
-            <History size={14} aria-hidden="true" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm">
-              <span className="font-semibold">{entry.actionLabel}</span>{" "}
-              <span className="text-(--color-muted)">— {entry.projectTitle}</span>
-            </p>
-            <p className="mt-0.5 text-xs text-(--color-muted)">{timeAgoLabel(entry.createdAt, locale)}</p>
-          </div>
-        </Link>
-      ))}
+    <Card variant="soft" className="p-4">
+      <ol className="space-y-4">
+        {entries.map((entry, i) => (
+          <li key={entry.id} className="relative flex gap-3">
+            {i < entries.length - 1 && (
+              <span
+                aria-hidden="true"
+                className="absolute top-8 left-4 h-[calc(100%-1rem)] w-px -translate-x-1/2 bg-(--border-neutral)"
+              />
+            )}
+            <span className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
+              <History size={14} aria-hidden="true" />
+            </span>
+            <Link
+              href={{ pathname: "/compte/projets/[id]", params: { id: String(entry.projectId) } }}
+              className="min-w-0 flex-1 rounded-lg px-2 py-1 -my-1 transition-colors hover:bg-(--color-surface-muted)"
+            >
+              <p className="text-sm">
+                <span className="font-semibold">{entry.actionLabel}</span>{" "}
+                <span className="text-(--color-muted)">— {entry.projectTitle}</span>
+              </p>
+              <p className="mt-0.5 text-xs text-(--color-muted)">{timeAgoLabel(entry.createdAt, locale)}</p>
+            </Link>
+          </li>
+        ))}
+      </ol>
     </Card>
   );
 }
@@ -90,30 +141,37 @@ function MessagesFeed({
   youLabel: string;
 }) {
   if (messages.length === 0) {
-    return <EmptyState icon="💬" message={emptyMessage} />;
+    return <EmptyState icon={MessageSquare} message={emptyMessage} />;
   }
 
   return (
-    <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
-      {messages.map((message) => (
-        <Link
-          key={message.id}
-          href={{ pathname: "/compte/projets/[id]", params: { id: String(message.projectId) } }}
-          className="flex items-start gap-3 p-4 transition-colors hover:bg-(--color-surface-muted)"
-        >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
-            <MessageSquare size={14} aria-hidden="true" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm">
-              <span className="font-semibold">{message.isMine ? youLabel : (message.author.fullName ?? message.author.email)}</span>{" "}
-              <span className="text-(--color-muted)">— {message.projectTitle}</span>
-            </p>
-            <p className="mt-0.5 truncate text-sm text-(--color-muted)">{message.content}</p>
-            <p className="mt-0.5 text-xs text-(--color-muted)">{timeAgoLabel(message.createdAt, locale)}</p>
-          </div>
-        </Link>
-      ))}
+    <Card variant="soft" className="p-4">
+      <ol className="space-y-4">
+        {messages.map((message, i) => (
+          <li key={message.id} className="relative flex gap-3">
+            {i < messages.length - 1 && (
+              <span
+                aria-hidden="true"
+                className="absolute top-8 left-4 h-[calc(100%-1rem)] w-px -translate-x-1/2 bg-(--border-neutral)"
+              />
+            )}
+            <span className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
+              <MessageSquare size={14} aria-hidden="true" />
+            </span>
+            <Link
+              href={{ pathname: "/compte/projets/[id]", params: { id: String(message.projectId) } }}
+              className="min-w-0 flex-1 rounded-lg px-2 py-1 -my-1 transition-colors hover:bg-(--color-surface-muted)"
+            >
+              <p className="text-sm">
+                <span className="font-semibold">{message.isMine ? youLabel : (message.author.fullName ?? message.author.email)}</span>{" "}
+                <span className="text-(--color-muted)">— {message.projectTitle}</span>
+              </p>
+              <p className="mt-0.5 truncate text-sm text-(--color-muted)">{message.content}</p>
+              <p className="mt-0.5 text-xs text-(--color-muted)">{timeAgoLabel(message.createdAt, locale)}</p>
+            </Link>
+          </li>
+        ))}
+      </ol>
     </Card>
   );
 }
@@ -161,6 +219,12 @@ export default async function ComptePage({
   const deadlines = upcomingDeadlines(allProjects, UPCOMING_COUNT);
   const activity = await getMyActivity();
 
+  const activeProjects = activeProjectsOf(allProjects);
+  const avgProgress =
+    activeProjects.length > 0
+      ? Math.round(activeProjects.reduce((sum, p) => sum + p.progress, 0) / activeProjects.length)
+      : null;
+
   const pendingQuotesCount = attributions.quoteRequests.filter((q) => q.status === "pending").length;
   const unpaidInvoicesCount = attributions.invoices.filter((inv) => inv.status === "pending").length;
   const recentInvoices = [...attributions.invoices]
@@ -173,16 +237,32 @@ export default async function ComptePage({
         <WelcomeBanner message={t("welcome", { name: user.fullName ?? user.email })} />
       )}
 
-      <PageHeader
-        icon={LayoutDashboard}
-        title={t("dashboardTitle")}
-        actions={
-          <>
-            <Badge variant="neutral">{roleLabel}</Badge>
-            <Badge variant="neutral">{user.isVerified ? t("verifiedBadge") : t("unverifiedBadge")}</Badge>
-          </>
-        }
-      />
+      {/* ---- Bandeau d'ouverture : identité + vue d'ensemble, seul élément dominant de la page — le reste (stats, sections) reste volontairement en second plan. */}
+      <div className="relative overflow-hidden rounded-[var(--radius-lg)] border border-(--border-neutral) bg-gradient-to-br from-brand-primary/[0.07] via-transparent to-transparent p-6 sm:p-8">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="neutral">{roleLabel}</Badge>
+              <Badge variant="neutral">{user.isVerified ? t("verifiedBadge") : t("unverifiedBadge")}</Badge>
+            </div>
+            <h1
+              className="mt-3 text-[clamp(1.6rem,3vw,2.15rem)] font-bold"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {t("dashboardTitle")}
+            </h1>
+            <p className="mt-2 max-w-md text-sm text-(--color-muted)">{t("heroSubtitle")}</p>
+          </div>
+
+          {avgProgress !== null && (
+            <ProgressRing
+              value={avgProgress}
+              label={t("hero.progressLabel")}
+              caption={t("hero.progressCaption", { count: activeProjects.length })}
+            />
+          )}
+        </div>
+      </div>
 
       {!user.isVerified && (
         <Card className="border-l-4 border-warning p-4 text-sm">
@@ -192,7 +272,7 @@ export default async function ComptePage({
 
       {/* ---- Résumé ---- */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard icon={FolderKanban} label={t("stats.activeProjects")} value={countActive(allProjects)} />
+        <StatCard icon={FolderKanban} label={t("stats.activeProjects")} value={activeProjects.length} />
         <StatCard
           icon={FileText}
           label={t("stats.pendingQuotes")}
@@ -280,7 +360,7 @@ export default async function ComptePage({
           {hasCollaborating ? (
             <ProjectList projects={collaboratingProjects.slice(0, PREVIEW_COUNT)} labels={projectLabels} />
           ) : (
-            <EmptyState icon="🤝" message={t("sections.emptyProjects")} />
+            <EmptyState icon={Handshake} message={t("sections.emptyProjects")} />
           )}
         </section>
       )}
@@ -295,7 +375,7 @@ export default async function ComptePage({
         {hasClientProjects ? (
           <ProjectList projects={attributions.clientProjects.slice(0, PREVIEW_COUNT)} labels={projectLabels} />
         ) : (
-          <EmptyState icon="📁" message={t("sections.emptyProjects")} />
+          <EmptyState icon={FolderKanban} message={t("sections.emptyProjects")} />
         )}
       </section>
 
@@ -315,7 +395,7 @@ export default async function ComptePage({
           />
         ) : (
           <EmptyState
-            icon="📝"
+            icon={FileText}
             message={t("sections.emptyQuotes")}
             action={
               !isCollaborator && (

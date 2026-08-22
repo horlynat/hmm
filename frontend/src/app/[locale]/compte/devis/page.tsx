@@ -67,7 +67,7 @@ export default async function CompteDevisPage({
         />
       ) : (
         <EmptyState
-          icon="📝"
+          icon={FileText}
           message={t("sections.emptyQuotes")}
           action={
             !user.isCollaborator && (

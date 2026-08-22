@@ -64,7 +64,7 @@ export default async function ProjetsDisponiblesPage({
           {projects.length > 0 ? (
             <AvailableProjectList projects={projects} />
           ) : (
-            <EmptyState icon="🚀" message={t("empty")} />
+            <EmptyState icon={Rocket} message={t("empty")} />
           )}
         </section>
       )}

@@ -944,12 +944,17 @@
     "account": {
       "welcome": "Bonjour {name}, bon retour parmi nous !",
       "dashboardTitle": "Tableau de bord",
+      "heroSubtitle": "Vue d'ensemble de vos projets, devis et factures.",
       "roleClient": "Compte client",
       "roleFreelance": "Compte collaborateur",
       "verifyWarning": "Votre adresse email n'est pas encore vérifiée. Consultez votre boîte de réception pour activer votre compte.",
       "verifiedBadge": "Email vérifié",
       "unverifiedBadge": "Email non vérifié",
       "backLink": "← Retour à mon espace",
+      "hero": {
+        "progressLabel": "Avancement moyen",
+        "progressCaption": "{count, plural, one {# projet actif} other {# projets actifs}}"
+      },
       "header": {
         "backToSite": "Retour au site",
         "userMenu": "Menu du compte"

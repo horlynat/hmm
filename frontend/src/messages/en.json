@@ -944,12 +944,17 @@
     "account": {
       "welcome": "Welcome back, {name}!",
       "dashboardTitle": "Dashboard",
+      "heroSubtitle": "An overview of your projects, quotes and invoices.",
       "roleClient": "Client account",
       "roleFreelance": "Collaborator account",
       "verifyWarning": "Your email address is not verified yet. Check your inbox to activate your account.",
       "verifiedBadge": "Email verified",
       "unverifiedBadge": "Email not verified",
       "backLink": "← Back to my account",
+      "hero": {
+        "progressLabel": "Average progress",
+        "progressCaption": "{count, plural, one {# active project} other {# active projects}}"
+      },
       "header": {
         "backToSite": "Back to site",
         "userMenu": "Account menu"

@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { Briefcase, FolderKanban, Activity, CalendarClock, UserRoundCheck } from "lucide-react";
+import { Briefcase, FolderKanban, Handshake, Activity, CalendarClock, UserRoundCheck } from "lucide-react";
 import { Alert, Badge, ButtonLink, EmptyState, PageHeader, StatCard } from "@/components/ui";
 import { ProjectList } from "@/components/sections/AccountLists";
 import { redirect } from "@/i18n/navigation";
@@ -72,7 +72,7 @@ export default async function GestionProjetPage({
         {projects.length > 0 ? (
           <ProjectList projects={projects} labels={projectLabels} hrefPattern="/compte/gestion-projet/[id]" />
         ) : (
-          <EmptyState icon="🤝" message={t("sections.emptyProjects")} />
+          <EmptyState icon={Handshake} message={t("sections.emptyProjects")} />
         )}
       </section>
     </div>

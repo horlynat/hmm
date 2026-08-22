@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { FolderKanban, Activity, CalendarClock, CheckCircle2 } from "lucide-react";
+import { FolderKanban, Handshake, Activity, CalendarClock, CheckCircle2 } from "lucide-react";
 import { EmptyState, PageHeader, SectionHeading, StatCard } from "@/components/ui";
 import { ProjectList } from "@/components/sections/AccountLists";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -59,7 +59,7 @@ export default async function ComptProjetsPage({
         {attributions.clientProjects.length > 0 ? (
           <ProjectList projects={attributions.clientProjects} labels={projectLabels} />
         ) : (
-          <EmptyState icon="📁" message={t("sections.emptyProjects")} />
+          <EmptyState icon={FolderKanban} message={t("sections.emptyProjects")} />
         )}
       </section>
 
@@ -69,7 +69,7 @@ export default async function ComptProjetsPage({
           {collaboratingProjects.length > 0 ? (
             <ProjectList projects={collaboratingProjects} labels={projectLabels} />
           ) : (
-            <EmptyState icon="🤝" message={t("sections.emptyProjects")} />
+            <EmptyState icon={Handshake} message={t("sections.emptyProjects")} />
           )}
         </section>
       )}
