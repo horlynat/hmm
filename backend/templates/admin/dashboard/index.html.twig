@@ -189,8 +189,91 @@
 		</div>
 
 		<!-- ==========================================
-				     📁 RÉPARTITION PAR STATUTS DES PROJETS
+				     🤝 CRM — RELATION CLIENT
+				     (acquisition : devis, contacts, portefeuille client — tout ce
+				     qui précède un projet signé. Même découpage que l'aside admin
+				     et la maquette de refonte validée.)
 				     ========================================== -->
+		<div class="flex items-center gap-3 mb-4 mt-2">
+			<div class="p-2.5 bg-brand-primary/10 text-brand-primary rounded-xl shrink-0">
+				<i class="ti ti-users-group text-xl"></i>
+			</div>
+			<div>
+				<h2 class="text-xl font-heading font-bold">CRM — Relation client</h2>
+				<p class="text-xs text-brand-dark/50">Acquisition, devis et demandes entrantes</p>
+			</div>
+		</div>
+
+		<!-- 📬 FLUX CONTACTS & DEMANDES RECENTES -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+			<div class="soft-card p-6">
+				<div class="flex justify-between items-center mb-4">
+					<h2 class="text-lg font-heading font-bold">Demandes Commerciales & Devis</h2>
+					<a href="{{ path('admin_request_index') }}" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
+				</div>
+				<div class="divide-y divide-gray-100 max-h-[360px] overflow-y-auto scrollbar-none">
+					{% for quoteRequest in recentQuoteRequests %}
+						<a href="{{ path('admin_request_read', {id: quoteRequest.id}) }}" class="flex justify-between items-center py-3.5 first:pt-0 last:pb-0 hover:opacity-70 transition">
+							<div class="min-w-0">
+								<h4 class="font-medium text-sm truncate">{{ quoteRequest.name }}</h4>
+								<p class="text-xs text-brand-dark/50 mt-0.5 flex items-center gap-1.5 truncate">
+									<span class="inline-block w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0"></span>
+									{{ quoteRequest.message|slice(0, 60) }}{{ quoteRequest.message|length > 60 ? '…' }}
+								</p>
+							</div>
+							<div class="text-right shrink-0 pl-3">
+								<span class="text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg">En attente</span>
+							</div>
+						</a>
+					{% else %}
+						<div class="text-center py-8 text-sm text-brand-dark/40">
+							<i class="ti ti-mailbox text-2xl block mb-2 text-gray-300"></i>
+							Aucune proposition commerciale en attente.
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+
+			<div class="soft-card p-6">
+				<div class="flex justify-between items-center mb-4">
+					<h2 class="text-lg font-heading font-bold">Derniers Contacts Reçus</h2>
+					<a href="{{ path('admin_contact_index') }}" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
+				</div>
+				<div class="divide-y divide-gray-100 max-h-[360px] overflow-y-auto scrollbar-none">
+					{% for contact in recentContacts %}
+						<a href="{{ path('admin_contact_read', {id: contact.id}) }}" class="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0 hover:opacity-70 transition">
+							<img class="h-9 w-9 rounded-xl border border-gray-100 shadow-sm" src="https://ui-avatars.com/api/?background=eaeaea&color=333&name={{ contact.name|url_encode }}" alt="{{ contact.name }}">
+							<div class="flex-1 min-w-0">
+								<h4 class="font-medium text-sm truncate">{{ contact.name }}</h4>
+								<p class="text-xs text-brand-dark/50 truncate mt-0.5">{{ contact.subject }}</p>
+							</div>
+							<span class="text-[11px] text-gray-400 shrink-0 font-medium">{{ contact.createdAt|date('d/m H:i') }}</span>
+						</a>
+					{% else %}
+						<div class="text-center py-8 text-sm text-brand-dark/40">
+							<i class="ti ti-message-off text-2xl block mb-2 text-gray-300"></i>
+							Aucun message de contact récent.
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+
+		<!-- ==========================================
+				     🏗️ ERP — PRODUCTION & FACTURATION
+				     (une fois le devis signé : projets, budgets, facturation.)
+				     ========================================== -->
+		<div class="flex items-center gap-3 mb-4 mt-2">
+			<div class="p-2.5 bg-blue-50 text-info rounded-xl shrink-0">
+				<i class="ti ti-briefcase text-xl"></i>
+			</div>
+			<div>
+				<h2 class="text-xl font-heading font-bold">ERP — Production & facturation</h2>
+				<p class="text-xs text-brand-dark/50">Suivi des projets en cours et de la facturation</p>
+			</div>
+		</div>
+
+		<!-- 📁 RÉPARTITION PAR STATUTS DES PROJETS -->
 		<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
 			{% for status, data in projectsByStatus %}
 				<div class="bg-gray-50/60 border border-gray-100 rounded-xl p-4 text-center transition hover:bg-white hover:border-gray-200">
@@ -205,10 +288,8 @@
 			{% endfor %}
 		</div>
 
-		<!-- ==========================================
-				     🚨 ALERTES BUDGET PROJETS
-				     (déjà calculées par le contrôleur, jamais affichées jusqu'ici)
-				     ========================================== -->
+		<!-- 🚨 ALERTES BUDGET PROJETS
+		     (déjà calculées par le contrôleur, jamais affichées jusqu'ici) -->
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
 			<div class="soft-card p-6">
 				<div class="flex justify-between items-center mb-4">
@@ -263,9 +344,7 @@
 			</div>
 		</div>
 
-		<!-- ==========================================
-				     📅 2 & 3. CHRONOLOGIE DES ÉCHÉANCES & SANTÉ TECHNIQUE
-				     ========================================== -->
+		<!-- 📅 CHRONOLOGIE DES ÉCHÉANCES & SANTÉ TECHNIQUE -->
 		<div
 			class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
 			<!-- Prochaines Deadlines (2/3) -->
@@ -342,9 +421,7 @@
 			</div>
 		</div>
 
-		<!-- ==========================================
-				     📈 ZONE GRAPHIQUES & TENDANCES
-				     ========================================= -->
+		<!-- 📈 ZONE GRAPHIQUES & TENDANCES -->
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
 			<div class="soft-card p-6 lg:col-span-2">
 				<div class="flex items-center justify-between mb-6">
@@ -367,66 +444,7 @@
 			</div>
 		</div>
 
-		<!-- ==========================================
-				     📬 FLUX CONTACTS & DEMANDES RECENTES
-				     ========================================== -->
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-			<div class="soft-card p-6">
-				<div class="flex justify-between items-center mb-4">
-					<h2 class="text-lg font-heading font-bold">Demandes Commerciales & Devis</h2>
-					<a href="{{ path('admin_request_index') }}" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
-				</div>
-				<div class="divide-y divide-gray-100 max-h-[360px] overflow-y-auto scrollbar-none">
-					{% for quoteRequest in recentQuoteRequests %}
-						<a href="{{ path('admin_request_read', {id: quoteRequest.id}) }}" class="flex justify-between items-center py-3.5 first:pt-0 last:pb-0 hover:opacity-70 transition">
-							<div class="min-w-0">
-								<h4 class="font-medium text-sm truncate">{{ quoteRequest.name }}</h4>
-								<p class="text-xs text-brand-dark/50 mt-0.5 flex items-center gap-1.5 truncate">
-									<span class="inline-block w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0"></span>
-									{{ quoteRequest.message|slice(0, 60) }}{{ quoteRequest.message|length > 60 ? '…' }}
-								</p>
-							</div>
-							<div class="text-right shrink-0 pl-3">
-								<span class="text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg">En attente</span>
-							</div>
-						</a>
-					{% else %}
-						<div class="text-center py-8 text-sm text-brand-dark/40">
-							<i class="ti ti-mailbox text-2xl block mb-2 text-gray-300"></i>
-							Aucune proposition commerciale en attente.
-						</div>
-					{% endfor %}
-				</div>
-			</div>
-
-			<div class="soft-card p-6">
-				<div class="flex justify-between items-center mb-4">
-					<h2 class="text-lg font-heading font-bold">Derniers Contacts Reçus</h2>
-					<a href="{{ path('admin_contact_index') }}" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
-				</div>
-				<div class="divide-y divide-gray-100 max-h-[360px] overflow-y-auto scrollbar-none">
-					{% for contact in recentContacts %}
-						<a href="{{ path('admin_contact_read', {id: contact.id}) }}" class="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0 hover:opacity-70 transition">
-							<img class="h-9 w-9 rounded-xl border border-gray-100 shadow-sm" src="https://ui-avatars.com/api/?background=eaeaea&color=333&name={{ contact.name|url_encode }}" alt="{{ contact.name }}">
-							<div class="flex-1 min-w-0">
-								<h4 class="font-medium text-sm truncate">{{ contact.name }}</h4>
-								<p class="text-xs text-brand-dark/50 truncate mt-0.5">{{ contact.subject }}</p>
-							</div>
-							<span class="text-[11px] text-gray-400 shrink-0 font-medium">{{ contact.createdAt|date('d/m H:i') }}</span>
-						</a>
-					{% else %}
-						<div class="text-center py-8 text-sm text-brand-dark/40">
-							<i class="ti ti-message-off text-2xl block mb-2 text-gray-300"></i>
-							Aucun message de contact récent.
-						</div>
-					{% endfor %}
-				</div>
-			</div>
-		</div>
-
-		<!-- ==========================================
-				     💎 TOP PROJETS + 👥 CLIENTS LES PLUS ACTIFS
-				     ========================================== -->
+		<!-- 💎 TOP PROJETS + 👥 CLIENTS LES PLUS ACTIFS -->
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 			<div class="soft-card p-6 lg:col-span-2">
 				<div class="flex justify-between items-center mb-4">
