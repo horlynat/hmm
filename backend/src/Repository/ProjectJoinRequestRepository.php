@@ -68,6 +68,28 @@ class ProjectJoinRequestRepository extends ServiceEntityRepository
     }
 
     /**
+     * Historique complet (tous statuts) des demandes d'un freelance, du plus
+     * récent au plus ancien — pour l'onglet « Mes demandes » du hub
+     * "Gestion de projet" (App\Controller\Api\MeController::readMyJoinRequests).
+     * Contrairement à findPendingProjectIdsFor(), inclut aussi les demandes
+     * déjà tranchées (approuvées/refusées) : le freelance doit voir le
+     * dénouement de ce qu'il a envoyé, pas seulement ce qui reste en attente.
+     *
+     * @return ProjectJoinRequest[]
+     */
+    public function findAllForUser(User $user): array
+    {
+        return $this->createQueryBuilder('r')
+            ->andWhere('r.user = :user')
+            ->setParameter('user', $user)
+            ->leftJoin('r.project', 'p')
+            ->addSelect('p')
+            ->orderBy('r.requestedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Toutes les demandes en attente, tous projets confondus — pour l'espace
      * admin dédié (AdminProjectController::freelanceSpace).
      *

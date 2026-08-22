@@ -154,20 +154,37 @@ final class AdminFinanceController extends AbstractController
             default => 'i.'.$sort,
         };
 
-        $queryBuilder = $invoiceRepository->createFilteredQueryBuilder($this->parseInvoiceFilters($request))
+        $invoiceFilters = $this->parseInvoiceFilters($request);
+
+        $queryBuilder = $invoiceRepository->createFilteredQueryBuilder($invoiceFilters)
             ->orderBy($sortColumn, $direction);
 
         $paginator = new Paginator($queryBuilder);
-        $totalPages = (int) ceil($paginator->count() / self::LIMIT);
+        $totalCount = $paginator->count();
+        $totalPages = (int) ceil($totalCount / self::LIMIT);
         $invoices = $paginator->getQuery()
             ->setFirstResult(($page - 1) * self::LIMIT)
             ->setMaxResults(self::LIMIT)
             ->getResult();
 
+        // Puces de statut rapides (Toutes / En attente / Payées / En retard) : mêmes
+        // filtres que la liste, moins status/overdue eux-mêmes, pour rester cohérentes
+        // avec une recherche ou un filtre projet/client déjà actif.
+        $chipBaseFilters = $invoiceFilters;
+        unset($chipBaseFilters['status'], $chipBaseFilters['overdue']);
+
         return $this->render('admin/finance/invoices.html.twig', [
             'invoices' => $invoices,
             'page' => $page,
             'totalPages' => $totalPages,
+            'totalCount' => $totalCount,
+            'limit' => self::LIMIT,
+            'statusCounts' => [
+                'all' => $invoiceRepository->countByFilters($chipBaseFilters),
+                'pending' => $invoiceRepository->countByFilters([...$chipBaseFilters, 'status' => InvoiceStatusEnum::PENDING]),
+                'paid' => $invoiceRepository->countByFilters([...$chipBaseFilters, 'status' => InvoiceStatusEnum::PAID]),
+                'overdue' => $invoiceRepository->countByFilters([...$chipBaseFilters, 'overdue' => true]),
+            ],
             'projects' => $projectRepository->findAll(),
             'clients' => $userRepository->findClients(),
             'currencies' => $invoiceRepository->findDistinctCurrencies(),

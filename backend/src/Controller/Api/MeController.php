@@ -558,6 +558,46 @@ final class MeController extends AbstractController
     }
 
     /**
+     * Historique complet des demandes d'auto-association du freelance
+     * courant (onglet « Mes demandes » du hub "Gestion de projet" côté
+     * frontend) — contrairement à /projects/available, inclut aussi les
+     * demandes déjà tranchées (approuvées/refusées), pas seulement celles en
+     * attente : le freelance doit voir ce qu'il est advenu de ce qu'il a
+     * envoyé.
+     */
+    #[Route('/projects/join-requests', name: 'projects_join_requests', methods: ['GET'])]
+    public function readMyJoinRequests(ProjectJoinRequestRepository $joinRequestRepository): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        if (!\in_array('ROLE_EDITOR', $user->getRoles(), true)) {
+            return $this->json(['detail' => 'Réservé aux comptes freelance/collaborateur.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $requests = $joinRequestRepository->findAllForUser($user);
+
+        return $this->json([
+            'requests' => array_map(
+                static fn (ProjectJoinRequest $r): array => [
+                    'id' => $r->getId(),
+                    'status' => $r->getStatus()->value,
+                    'requestedAt' => $r->getRequestedAt()->format(\DATE_ATOM),
+                    'decidedAt' => $r->getDecidedAt()?->format(\DATE_ATOM),
+                    'project' => [
+                        'id' => $r->getProject()->getId(),
+                        'slug' => $r->getProject()->getSlug(),
+                        'title' => $r->getProject()->getTitle(),
+                    ],
+                ],
+                $requests,
+            ),
+        ]);
+    }
+
+    /**
      * Détail d'une demande de devis appartenant à l'utilisateur courant.
      * Même règle de propriété que App\Controller\MemberQuoteController::read().
      */
