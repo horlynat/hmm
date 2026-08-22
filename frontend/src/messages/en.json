@@ -1002,8 +1002,19 @@
         "messages": "Recent messages",
         "emptyMessages": "No messages yet.",
         "recentInvoices": "Recent invoices",
+        "emptyInvoices": "No invoices yet.",
         "revenueChart": "Invoiced (last 6 months)",
-        "projectsByStatus": "Projects by status"
+        "projectsByStatus": "Projects by status",
+        "inProgressProjects": "In-progress projects",
+        "overview": "Overview",
+        "activityGroup": "Activity",
+        "projectsAndBilling": "Projects & billing"
+      },
+      "invoiceTableColumns": {
+        "invoice": "Invoice",
+        "project": "Project",
+        "amount": "Amount",
+        "status": "Status"
       },
       "stats": {
         "activeProjects": "Active projects",

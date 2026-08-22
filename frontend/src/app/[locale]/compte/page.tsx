@@ -1,17 +1,17 @@
+import type { ComponentProps } from "react";
 import { getTranslations } from "next-intl/server";
 import clsx from "clsx";
-import { FolderKanban, FileText, Receipt, Briefcase, Handshake, History, MessageSquare } from "lucide-react";
-import { Badge, ButtonLink, Card, EmptyState, SectionHeading, StatCard } from "@/components/ui";
-import { ProjectList, QuoteList } from "@/components/sections/AccountLists";
+import { FolderKanban, FileText, Receipt, Briefcase, History, MessageSquare } from "lucide-react";
+import { Badge, Card, EmptyState, StatCard } from "@/components/ui";
 import { WelcomeBanner } from "@/components/sections/WelcomeBanner";
 import { getCurrentUser, getMyActivity } from "@/lib/auth/session";
 import { Link } from "@/i18n/navigation";
-import { projectStatusVariant, invoiceStatusVariant } from "@/lib/status";
+import { invoiceStatusVariant } from "@/lib/status";
 import type { SessionProject, SessionActivityEntry, SessionComment, SessionInvoice } from "@/lib/types";
 
 const PREVIEW_COUNT = 4;
-const UPCOMING_COUNT = 5;
-const FEED_COUNT = 5;
+const UPCOMING_COUNT = 3;
+const FEED_COUNT = 3;
 
 /**
  * Ni `SessionProject` ni `SessionQuote` ne portent de date de création/mise à
@@ -247,46 +247,76 @@ function timeAgoLabel(iso: string, locale: string): string {
   });
 }
 
+/**
+ * Titre de widget + lien "Tout voir" optionnel, à l'intérieur de la carte
+ * (mockup validé : `.card-title`, pas un `<SectionHeading>` externe à la
+ * carte) — partagé par tous les widgets de la ligne "Activité" et
+ * "Projets & facturation" pour un traitement uniforme.
+ */
+function CardHeader({
+  label,
+  viewAllHref,
+  viewAllLabel,
+}: {
+  label: string;
+  viewAllHref?: ComponentProps<typeof Link>["href"];
+  viewAllLabel?: string;
+}) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <p className="text-xs font-bold uppercase tracking-wider text-(--color-muted)">{label}</p>
+      {viewAllHref && (
+        <Link href={viewAllHref} className="shrink-0 text-xs font-semibold text-brand-primary hover:underline">
+          {viewAllLabel}
+        </Link>
+      )}
+    </div>
+  );
+}
+
 function ActivityFeed({
   entries,
   locale,
+  label,
   emptyMessage,
 }: {
   entries: SessionActivityEntry[];
   locale: string;
+  label: string;
   emptyMessage: string;
 }) {
-  if (entries.length === 0) {
-    return <EmptyState icon={History} message={emptyMessage} />;
-  }
-
   return (
     <Card variant="soft" className="p-4">
-      <ol className="space-y-4">
-        {entries.map((entry, i) => (
-          <li key={entry.id} className="relative flex gap-3">
-            {i < entries.length - 1 && (
-              <span
-                aria-hidden="true"
-                className="absolute top-8 left-4 h-[calc(100%-1rem)] w-px -translate-x-1/2 bg-(--border-neutral)"
-              />
-            )}
-            <span className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
-              <History size={14} aria-hidden="true" />
-            </span>
-            <Link
-              href={{ pathname: "/compte/projets/[id]", params: { id: String(entry.projectId) } }}
-              className="min-w-0 flex-1 rounded-lg px-2 py-1 -my-1 transition-colors hover:bg-(--color-surface-muted)"
-            >
-              <p className="text-sm">
-                <span className="font-semibold">{entry.actionLabel}</span>{" "}
-                <span className="text-(--color-muted)">— {entry.projectTitle}</span>
-              </p>
-              <p className="mt-0.5 text-xs text-(--color-muted)">{timeAgoLabel(entry.createdAt, locale)}</p>
-            </Link>
-          </li>
-        ))}
-      </ol>
+      <CardHeader label={label} />
+      {entries.length === 0 ? (
+        <EmptyState icon={History} message={emptyMessage} />
+      ) : (
+        <ol className="space-y-4">
+          {entries.map((entry, i) => (
+            <li key={entry.id} className="relative flex gap-3">
+              {i < entries.length - 1 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-8 left-4 h-[calc(100%-1rem)] w-px -translate-x-1/2 bg-(--border-neutral)"
+                />
+              )}
+              <span className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
+                <History size={14} aria-hidden="true" />
+              </span>
+              <Link
+                href={{ pathname: "/compte/projets/[id]", params: { id: String(entry.projectId) } }}
+                className="min-w-0 flex-1 rounded-lg px-2 py-1 -my-1 transition-colors hover:bg-(--color-surface-muted)"
+              >
+                <p className="text-sm">
+                  <span className="font-semibold">{entry.actionLabel}</span>{" "}
+                  <span className="text-(--color-muted)">— {entry.projectTitle}</span>
+                </p>
+                <p className="mt-0.5 text-xs text-(--color-muted)">{timeAgoLabel(entry.createdAt, locale)}</p>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      )}
     </Card>
   );
 }
@@ -294,46 +324,197 @@ function ActivityFeed({
 function MessagesFeed({
   messages,
   locale,
+  label,
   emptyMessage,
   youLabel,
 }: {
   messages: SessionComment[];
   locale: string;
+  label: string;
   emptyMessage: string;
   youLabel: string;
 }) {
-  if (messages.length === 0) {
-    return <EmptyState icon={MessageSquare} message={emptyMessage} />;
-  }
-
   return (
     <Card variant="soft" className="p-4">
-      <ol className="space-y-4">
-        {messages.map((message, i) => (
-          <li key={message.id} className="relative flex gap-3">
-            {i < messages.length - 1 && (
-              <span
-                aria-hidden="true"
-                className="absolute top-8 left-4 h-[calc(100%-1rem)] w-px -translate-x-1/2 bg-(--border-neutral)"
-              />
-            )}
-            <span className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
-              <MessageSquare size={14} aria-hidden="true" />
-            </span>
+      <CardHeader label={label} />
+      {messages.length === 0 ? (
+        <EmptyState icon={MessageSquare} message={emptyMessage} />
+      ) : (
+        <ol className="space-y-4">
+          {messages.map((message, i) => (
+            <li key={message.id} className="relative flex gap-3">
+              {i < messages.length - 1 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-8 left-4 h-[calc(100%-1rem)] w-px -translate-x-1/2 bg-(--border-neutral)"
+                />
+              )}
+              <span className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
+                <MessageSquare size={14} aria-hidden="true" />
+              </span>
+              <Link
+                href={{ pathname: "/compte/projets/[id]", params: { id: String(message.projectId) } }}
+                className="min-w-0 flex-1 rounded-lg px-2 py-1 -my-1 transition-colors hover:bg-(--color-surface-muted)"
+              >
+                <p className="text-sm">
+                  <span className="font-semibold">{message.isMine ? youLabel : (message.author.fullName ?? message.author.email)}</span>{" "}
+                  <span className="text-(--color-muted)">— {message.projectTitle}</span>
+                </p>
+                <p className="mt-0.5 truncate text-sm text-(--color-muted)">{message.content}</p>
+                <p className="mt-0.5 text-xs text-(--color-muted)">{timeAgoLabel(message.createdAt, locale)}</p>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      )}
+    </Card>
+  );
+}
+
+/** Échéances à venir — troisième carte de la ligne "Aperçu" (mockup validé), plus une section pleine largeur à part. */
+function UpcomingDeadlinesCard({
+  projects,
+  locale,
+  label,
+  emptyMessage,
+  overdueLabel,
+}: {
+  projects: SessionProject[];
+  locale: string;
+  label: string;
+  emptyMessage: string;
+  overdueLabel: string;
+}) {
+  return (
+    <Card variant="soft" className="p-4">
+      <CardHeader label={label} />
+      {projects.length === 0 ? (
+        <EmptyState icon={FolderKanban} message={emptyMessage} />
+      ) : (
+        <ol className="space-y-3">
+          {projects.map((project) => {
+            const overdue = new Date(project.deadline!) < new Date();
+            return (
+              <li key={project.id}>
+                <Link
+                  href={{ pathname: "/compte/projets/[id]", params: { id: String(project.id) } }}
+                  className="flex items-center gap-3 rounded-lg px-1 py-0.5 -mx-1 transition-colors hover:bg-(--color-surface-muted)"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
+                    <FolderKanban size={14} aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">{project.title}</span>
+                    <span className="block text-xs text-(--color-muted)">{project.statusLabel}</span>
+                  </span>
+                  <span className={clsx("shrink-0 text-xs font-semibold", overdue ? "text-danger" : "text-(--color-muted)")}>
+                    {overdue ? overdueLabel : new Date(project.deadline!).toLocaleDateString(locale, { day: "numeric", month: "short" })}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </Card>
+  );
+}
+
+/** Barres d'avancement des projets en cours — troisième ligne du dashboard (mockup validé), absent jusqu'ici : l'avancement n'existait qu'en donut agrégé ou sur la fiche de chaque projet. */
+function InProgressProjects({
+  projects,
+  label,
+  emptyMessage,
+  progressLabel,
+  viewAllHref,
+  viewAllLabel,
+}: {
+  projects: SessionProject[];
+  label: string;
+  emptyMessage: string;
+  progressLabel: string;
+  viewAllHref?: ComponentProps<typeof Link>["href"];
+  viewAllLabel?: string;
+}) {
+  return (
+    <Card variant="soft" className="p-4">
+      <CardHeader label={label} viewAllHref={viewAllHref} viewAllLabel={viewAllLabel} />
+      {projects.length === 0 ? (
+        <EmptyState icon={Briefcase} message={emptyMessage} />
+      ) : (
+        <div className="space-y-4">
+          {projects.map((project) => (
             <Link
-              href={{ pathname: "/compte/projets/[id]", params: { id: String(message.projectId) } }}
-              className="min-w-0 flex-1 rounded-lg px-2 py-1 -my-1 transition-colors hover:bg-(--color-surface-muted)"
+              key={project.id}
+              href={{ pathname: "/compte/projets/[id]", params: { id: String(project.id) } }}
+              className="block"
             >
-              <p className="text-sm">
-                <span className="font-semibold">{message.isMine ? youLabel : (message.author.fullName ?? message.author.email)}</span>{" "}
-                <span className="text-(--color-muted)">— {message.projectTitle}</span>
-              </p>
-              <p className="mt-0.5 truncate text-sm text-(--color-muted)">{message.content}</p>
-              <p className="mt-0.5 text-xs text-(--color-muted)">{timeAgoLabel(message.createdAt, locale)}</p>
+              <div className="mb-1.5 flex items-center justify-between gap-2 text-sm">
+                <span className="min-w-0 truncate font-semibold" title={project.title}>
+                  {project.title}
+                </span>
+                <span className="shrink-0 text-xs font-semibold text-(--color-muted)">
+                  {progressLabel} {project.progress}%
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-(--color-surface-muted)">
+                <div className="h-full rounded-full bg-brand-primary" style={{ width: `${project.progress}%` }} />
+              </div>
             </Link>
-          </li>
-        ))}
-      </ol>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/** Table dense des dernières factures — quatrième carte du dashboard (mockup validé), à la place de la liste de blocs pleine largeur précédente. */
+function RecentInvoicesTable({
+  invoices,
+  label,
+  emptyMessage,
+  columns,
+  viewAllHref,
+  viewAllLabel,
+}: {
+  invoices: SessionInvoice[];
+  label: string;
+  emptyMessage: string;
+  columns: { invoice: string; project: string; amount: string; status: string };
+  viewAllHref?: ComponentProps<typeof Link>["href"];
+  viewAllLabel?: string;
+}) {
+  return (
+    <Card variant="soft" className="p-4">
+      <CardHeader label={label} viewAllHref={viewAllHref} viewAllLabel={viewAllLabel} />
+      {invoices.length === 0 ? (
+        <EmptyState icon={Receipt} message={emptyMessage} />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="text-[10.5px] font-bold uppercase tracking-wide text-(--color-muted)">
+                <th className="pb-2 font-bold">{columns.invoice}</th>
+                <th className="pb-2 font-bold">{columns.project}</th>
+                <th className="pb-2 text-right font-bold">{columns.amount}</th>
+                <th className="pb-2 pl-3 font-bold">{columns.status}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoices.map((invoice) => (
+                <tr key={invoice.id} className="border-t border-(--border-neutral)">
+                  <td className="py-2 font-mono text-xs">{invoice.label}</td>
+                  <td className="max-w-[9rem] truncate py-2">{invoice.projectTitle}</td>
+                  <td className="py-2 text-right font-mono text-xs font-semibold">{invoice.formattedConvertedAmount}</td>
+                  <td className="py-2 pl-3">
+                    <Badge variant={invoiceStatusVariant(invoice.status)}>{invoice.statusLabel}</Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </Card>
   );
 }
@@ -356,26 +537,10 @@ export default async function ComptePage({
   const { attributions, isCollaborator } = user;
   const roleLabel = isCollaborator ? t("roleFreelance") : t("roleClient");
 
-  const projectLabels = {
-    progress: t("project.progress"),
-    deadline: t("project.deadline"),
-    noDeadline: t("project.noDeadline"),
-  };
-
-  const quoteStatusLabels = {
-    pending: t("quoteStatus.pending"),
-    accepted: t("quoteStatus.accepted"),
-    suspended: t("quoteStatus.suspended"),
-    rejected: t("quoteStatus.rejected"),
-  };
-
   const collaboratingProjects = [
     ...attributions.collaboratingProjects,
     ...attributions.ownedProjects,
   ];
-  const hasCollaborating = collaboratingProjects.length > 0;
-  const hasClientProjects = attributions.clientProjects.length > 0;
-  const hasQuotes = attributions.quoteRequests.length > 0;
 
   const allProjects = [...collaboratingProjects, ...attributions.clientProjects];
   const deadlines = upcomingDeadlines(allProjects, UPCOMING_COUNT);
@@ -394,9 +559,7 @@ export default async function ComptePage({
     .slice(0, PREVIEW_COUNT);
 
   const revenuePoints = monthlyInvoiceTotals(attributions.invoices, 6, locale);
-  const hasRevenueChart = revenuePoints.some((p) => p.total > 0);
   const statusSlices = projectsByStatus(allProjects);
-  const hasStatusChart = statusSlices.length > 0;
 
   return (
     <div className="space-y-8">
@@ -459,166 +622,67 @@ export default async function ComptePage({
         )}
       </div>
 
-      {(hasRevenueChart || hasStatusChart) && (
-        <div className={clsx("grid grid-cols-1 gap-4", hasRevenueChart && hasStatusChart && "lg:grid-cols-2")}>
-          {hasRevenueChart && (
-            <Card variant="soft" className="p-4">
-              <RevenueChart points={revenuePoints} label={t("sections.revenueChart")} />
-            </Card>
-          )}
-          {hasStatusChart && (
-            <Card variant="soft" className="p-4">
-              <StatusDonut slices={statusSlices} label={t("sections.projectsByStatus")} />
-            </Card>
-          )}
-        </div>
-      )}
-
-      {deadlines.length > 0 && (
-        <section aria-labelledby="section-deadlines">
-          <SectionHeading id="section-deadlines" title={t("sections.upcomingDeadlines")} />
-          <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
-            {deadlines.map((project) => {
-              const overdue = new Date(project.deadline!) < new Date();
-              return (
-                <Link
-                  key={project.id}
-                  href={{ pathname: "/compte/projets/[id]", params: { id: String(project.id) } }}
-                  className="flex flex-col gap-2 p-4 transition-colors hover:bg-(--color-surface-muted) sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <Badge variant={projectStatusVariant(project.status)}>{project.statusLabel}</Badge>
-                    <span className="min-w-0 font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-                      {project.title}
-                    </span>
-                  </div>
-                  <span className={overdue ? "shrink-0 text-sm font-semibold text-danger" : "shrink-0 text-sm opacity-70"}>
-                    {overdue && `${t("sections.overdue")} — `}
-                    {new Date(project.deadline!).toLocaleDateString(locale)}
-                  </span>
-                </Link>
-              );
-            })}
-          </Card>
-        </section>
-      )}
-
-      {/* ---- Activité & messages ---- */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section aria-labelledby="section-activity">
-          <SectionHeading id="section-activity" title={t("sections.activity")} />
-          <ActivityFeed
-            entries={activity.history.slice(0, FEED_COUNT)}
-            locale={locale}
-            emptyMessage={t("sections.emptyActivity")}
-          />
-        </section>
-
-        <section aria-labelledby="section-messages">
-          <SectionHeading id="section-messages" title={t("sections.messages")} />
-          <MessagesFeed
-            messages={activity.messages.slice(0, FEED_COUNT)}
-            locale={locale}
-            emptyMessage={t("sections.emptyMessages")}
-            youLabel={t("projectDetail.you")}
-          />
-        </section>
+      {/* ---- Aperçu : facturé, statuts, échéances — trois cartes côte à côte, comme la maquette validée (plus de section pleine largeur par carte). ---- */}
+      <p className="text-[11.5px] font-bold uppercase tracking-wide text-(--color-muted)">{t("sections.overview")}</p>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card variant="soft" className="p-4">
+          <RevenueChart points={revenuePoints} label={t("sections.revenueChart")} />
+        </Card>
+        <Card variant="soft" className="p-4">
+          <StatusDonut slices={statusSlices} label={t("sections.projectsByStatus")} />
+        </Card>
+        <UpcomingDeadlinesCard
+          projects={deadlines}
+          locale={locale}
+          label={t("sections.upcomingDeadlines")}
+          emptyMessage={t("sections.emptyDeadlines")}
+          overdueLabel={t("sections.overdue")}
+        />
       </div>
 
-      {isCollaborator && (
-        <section aria-labelledby="section-collaborating">
-          <SectionHeading
-            id="section-collaborating"
-            title={t("sections.collaboratingProjects")}
-            viewAllHref={collaboratingProjects.length > PREVIEW_COUNT ? "/compte/gestion-projet" : undefined}
-            viewAllLabel={t("sections.viewAll")}
-          />
-          {hasCollaborating ? (
-            <ProjectList projects={collaboratingProjects.slice(0, PREVIEW_COUNT)} labels={projectLabels} />
-          ) : (
-            <EmptyState icon={Handshake} message={t("sections.emptyProjects")} />
-          )}
-        </section>
-      )}
+      {/* ---- Activité : historique + messages, deux cartes côte à côte. ---- */}
+      <p className="text-[11.5px] font-bold uppercase tracking-wide text-(--color-muted)">{t("sections.activityGroup")}</p>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ActivityFeed
+          entries={activity.history.slice(0, FEED_COUNT)}
+          locale={locale}
+          label={t("sections.activity")}
+          emptyMessage={t("sections.emptyActivity")}
+        />
+        <MessagesFeed
+          messages={activity.messages.slice(0, FEED_COUNT)}
+          locale={locale}
+          label={t("sections.messages")}
+          emptyMessage={t("sections.emptyMessages")}
+          youLabel={t("projectDetail.you")}
+        />
+      </div>
 
-      <section aria-labelledby="section-client-projects">
-        <SectionHeading
-          id="section-client-projects"
-          title={t("sections.clientProjects")}
-          viewAllHref={attributions.clientProjects.length > PREVIEW_COUNT ? "/compte/projets" : undefined}
+      {/* ---- Projets & facturation : avancement des projets en cours + dernières factures en table dense. ---- */}
+      <p className="text-[11.5px] font-bold uppercase tracking-wide text-(--color-muted)">{t("sections.projectsAndBilling")}</p>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <InProgressProjects
+          projects={activeProjects.slice(0, PREVIEW_COUNT)}
+          label={t("sections.inProgressProjects")}
+          emptyMessage={t("sections.emptyProjects")}
+          progressLabel={t("project.progress")}
+          viewAllHref={activeProjects.length > PREVIEW_COUNT ? (isCollaborator ? "/compte/gestion-projet" : "/compte/projets") : undefined}
           viewAllLabel={t("sections.viewAll")}
         />
-        {hasClientProjects ? (
-          <ProjectList projects={attributions.clientProjects.slice(0, PREVIEW_COUNT)} labels={projectLabels} />
-        ) : (
-          <EmptyState icon={FolderKanban} message={t("sections.emptyProjects")} />
-        )}
-      </section>
-
-      <section aria-labelledby="section-quotes">
-        <SectionHeading
-          id="section-quotes"
-          title={t("sections.quotes")}
-          viewAllHref={attributions.quoteRequests.length > PREVIEW_COUNT ? "/compte/devis" : undefined}
+        <RecentInvoicesTable
+          invoices={recentInvoices}
+          label={t("sections.recentInvoices")}
+          emptyMessage={t("sections.emptyInvoices")}
+          columns={{
+            invoice: t("invoiceTableColumns.invoice"),
+            project: t("invoiceTableColumns.project"),
+            amount: t("invoiceTableColumns.amount"),
+            status: t("invoiceTableColumns.status"),
+          }}
+          viewAllHref={attributions.invoices.length > PREVIEW_COUNT ? "/compte/factures" : undefined}
           viewAllLabel={t("sections.viewAll")}
         />
-        {hasQuotes ? (
-          <QuoteList
-            quotes={attributions.quoteRequests.slice(0, PREVIEW_COUNT)}
-            statusLabel={t("sections.quoteBudget")}
-            statusLabels={quoteStatusLabels}
-            convertedLabel={t("sections.quoteConverted")}
-          />
-        ) : (
-          <EmptyState
-            icon={FileText}
-            message={t("sections.emptyQuotes")}
-            action={
-              !isCollaborator && (
-                <ButtonLink href="/compte/devis/nouveau" variant="secondary" className="text-xs">
-                  {t("nav.newQuoteCta")}
-                </ButtonLink>
-              )
-            }
-          />
-        )}
-      </section>
-
-      {recentInvoices.length > 0 && (
-        <section aria-labelledby="section-invoices">
-          <SectionHeading
-            id="section-invoices"
-            title={t("sections.recentInvoices")}
-            viewAllHref={attributions.invoices.length > PREVIEW_COUNT ? "/compte/factures" : undefined}
-            viewAllLabel={t("sections.viewAll")}
-          />
-          <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
-            {recentInvoices.map((invoice) => (
-              <Link
-                key={invoice.id}
-                href="/compte/factures"
-                className="flex flex-col gap-3 p-4 transition-colors hover:bg-(--color-surface-muted) sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--color-surface-muted) text-brand-primary">
-                    <Receipt size={14} aria-hidden="true" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-                      {invoice.label}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs text-(--color-muted)">{invoice.projectTitle}</p>
-                  </div>
-                </div>
-                <div className="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end">
-                  <span className="text-sm font-semibold">{invoice.formattedConvertedAmount}</span>
-                  <Badge variant={invoiceStatusVariant(invoice.status)}>{invoice.statusLabel}</Badge>
-                </div>
-              </Link>
-            ))}
-          </Card>
-        </section>
-      )}
+      </div>
     </div>
   );
 }
