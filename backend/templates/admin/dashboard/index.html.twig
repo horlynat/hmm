@@ -15,7 +15,7 @@
 		<!-- 👑 EN-TÊTE DU DASHBOARD -->
 		<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
 			<div>
-				<h1 class="text-3xl font-heading font-bold tracking-tight">Vue Globale</h1>
+				<h1 class="text-[21px] font-heading font-bold tracking-tight">Vue Globale</h1>
 				<p class="text-sm text-brand-dark/60">Pilotez votre activité, vos projets et la santé du système.</p>
 			</div>
 			<div class="flex items-center gap-3 bg-white border border-gray-100 p-1.5 rounded-xl text-xs font-medium shadow-sm">
@@ -86,42 +86,42 @@
 				     📊 INDICATEURS CLÉS (KPIs)
 				     ========================================== -->
 		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-			<div class="soft-card p-6">
+			<div class="soft-card p-3.5">
 				<div class="flex items-center justify-between mb-4">
 					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">CA Encaissé</span>
 					<div class="p-2 bg-emerald-50 text-success rounded-xl">
 						<i class="ti ti-coin text-xl"></i>
 					</div>
 				</div>
-				<div class="text-2xl font-bold tracking-tight">{{ revenue.realizedRevenue|default(0)|money(revenue.ledgerCurrency|default('EUR')) }}</div>
+				<div class="text-xl font-bold tracking-tight">{{ revenue.realizedRevenue|default(0)|money(revenue.ledgerCurrency|default('EUR')) }}</div>
 				<p class="text-xs text-success font-medium mt-2 flex items-center gap-1">
 					<i class="ti ti-arrow-up-right"></i>
 					{{ revenue.realizedRevenueCount|default(0) }} facture{{ revenue.realizedRevenueCount > 1 ? 's' : '' }} payée{{ revenue.realizedRevenueCount > 1 ? 's' : '' }}
 				</p>
 			</div>
 
-			<div class="soft-card p-6">
+			<div class="soft-card p-3.5">
 				<div class="flex items-center justify-between mb-4">
 					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">Facturé, en attente</span>
 					<div class="p-2 bg-blue-50 text-info rounded-xl">
 						<i class="ti ti-file-invoice text-xl"></i>
 					</div>
 				</div>
-				<div class="text-2xl font-bold tracking-tight">{{ revenue.invoicedPending|default(0)|money(revenue.ledgerCurrency|default('EUR')) }}</div>
+				<div class="text-xl font-bold tracking-tight">{{ revenue.invoicedPending|default(0)|money(revenue.ledgerCurrency|default('EUR')) }}</div>
 				<p class="text-xs text-info font-medium mt-2 flex items-center gap-1">
 					<i class="ti ti-clock-hour-4"></i>
 					{{ revenue.invoicedPendingCount|default(0) }} facture{{ revenue.invoicedPendingCount > 1 ? 's' : '' }} pas encore payée{{ revenue.invoicedPendingCount > 1 ? 's' : '' }} — pas du CA
 				</p>
 			</div>
 
-			<div class="soft-card p-6">
+			<div class="soft-card p-3.5">
 				<div class="flex items-center justify-between mb-4">
 					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">Demandes Actives</span>
 					<div class="p-2 bg-amber-50 text-warning rounded-xl">
 						<i class="ti ti-git-pull-request text-xl"></i>
 					</div>
 				</div>
-				<div class="text-2xl font-bold tracking-tight">{{ pendingQuoteRequestsCount|default(0) }}</div>
+				<div class="text-xl font-bold tracking-tight">{{ pendingQuoteRequestsCount|default(0) }}</div>
 				<p class="text-xs text-brand-dark/60 mt-2">
 					Devis en attente
 				</p>
@@ -133,14 +133,14 @@
 				{% endif %}
 			</div>
 
-			<div class="soft-card p-6">
+			<div class="soft-card p-3.5">
 				<div class="flex items-center justify-between mb-4">
 					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">Messages reçus</span>
 					<div class="p-2 bg-purple-50 text-purple-600 rounded-xl">
 						<i class="ti ti-message-code text-xl"></i>
 					</div>
 				</div>
-				<div class="text-2xl font-bold tracking-tight">{{ unreadContactsCount|default(0) }}</div>
+				<div class="text-xl font-bold tracking-tight">{{ unreadContactsCount|default(0) }}</div>
 				<p class="text-xs text-brand-dark/60 mt-2">
 					Non lus, formulaire de contact
 				</p>
@@ -150,8 +150,8 @@
 		<!-- ==========================================
 				     🎛️ VUE D'ENSEMBLE DE LA PLATEFORME
 				     ========================================== -->
-		<div class="soft-card p-6 mb-8">
-			<h2 class="text-lg font-heading font-bold mb-4">Vue d'ensemble de la plateforme</h2>
+		<div class="soft-card p-3.5 mb-8">
+			<h2 class="text-xs font-heading font-bold uppercase tracking-wide text-brand-dark/60 mb-4">Vue d'ensemble de la plateforme</h2>
 
 			<p class="text-xs uppercase text-brand-dark/40 font-bold tracking-wider mb-2">Sécurité</p>
 			<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
@@ -206,9 +206,9 @@
 
 		<!-- 📬 FLUX CONTACTS & DEMANDES RECENTES -->
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-			<div class="soft-card p-6">
+			<div class="soft-card p-3.5">
 				<div class="flex justify-between items-center mb-4">
-					<h2 class="text-lg font-heading font-bold">Demandes Commerciales & Devis</h2>
+					<h2 class="text-xs font-heading font-bold uppercase tracking-wide text-brand-dark/60">Demandes Commerciales & Devis</h2>
 					<a href="{{ path('admin_request_index') }}" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
 				</div>
 				<div class="divide-y divide-gray-100 max-h-[360px] overflow-y-auto scrollbar-none">
@@ -234,9 +234,9 @@
 				</div>
 			</div>
 
-			<div class="soft-card p-6">
+			<div class="soft-card p-3.5">
 				<div class="flex justify-between items-center mb-4">
-					<h2 class="text-lg font-heading font-bold">Derniers Contacts Reçus</h2>
+					<h2 class="text-xs font-heading font-bold uppercase tracking-wide text-brand-dark/60">Derniers Contacts Reçus</h2>
 					<a href="{{ path('admin_contact_index') }}" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
 				</div>
 				<div class="divide-y divide-gray-100 max-h-[360px] overflow-y-auto scrollbar-none">
@@ -291,9 +291,9 @@
 		<!-- 🚨 ALERTES BUDGET PROJETS
 		     (déjà calculées par le contrôleur, jamais affichées jusqu'ici) -->
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-			<div class="soft-card p-6">
+			<div class="soft-card p-3.5">
 				<div class="flex justify-between items-center mb-4">
-					<h2 class="text-lg font-heading font-bold flex items-center gap-2">
+					<h2 class="text-xs font-heading font-bold uppercase tracking-wide text-brand-dark/60 flex items-center gap-2">
 						<i class="ti ti-alert-triangle text-danger"></i>
 						En dépassement de budget
 					</h2>
@@ -317,9 +317,9 @@
 				</div>
 			</div>
 
-			<div class="soft-card p-6">
+			<div class="soft-card p-3.5">
 				<div class="flex justify-between items-center mb-4">
-					<h2 class="text-lg font-heading font-bold flex items-center gap-2">
+					<h2 class="text-xs font-heading font-bold uppercase tracking-wide text-brand-dark/60 flex items-center gap-2">
 						<i class="ti ti-gauge text-warning"></i>
 						Budget presque épuisé
 					</h2>
@@ -348,9 +348,9 @@
 		<div
 			class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
 			<!-- Prochaines Deadlines (2/3) -->
-			<div class="soft-card p-6 lg:col-span-2">
+			<div class="soft-card p-3.5 lg:col-span-2">
 				<div class="flex justify-between items-center mb-4">
-					<h2 class="text-lg font-heading font-bold">Jalons & Deadlines Imminentes</h2>
+					<h2 class="text-xs font-heading font-bold uppercase tracking-wide text-brand-dark/60">Jalons & Deadlines Imminentes</h2>
 					<span class="text-xs text-brand-dark/40">15 prochains jours</span>
 				</div>
 				<div class="divide-y divide-gray-100">
@@ -381,9 +381,9 @@
 			</div>
 
 			<!-- Santé Serveur & Taux Support (1/3) -->
-			<div class="soft-card p-6 flex flex-col justify-between">
+			<div class="soft-card p-3.5 flex flex-col justify-between">
 				<div>
-					<h2 class="text-lg font-heading font-bold mb-4">Santé Technique & Performance</h2>
+					<h2 class="text-xs font-heading font-bold uppercase tracking-wide text-brand-dark/60 mb-4">Santé Technique & Performance</h2>
 					<div class="space-y-4">
 						<div>
 							<div class="flex items-center justify-between text-sm mb-1">
@@ -423,9 +423,9 @@
 
 		<!-- 📈 ZONE GRAPHIQUES & TENDANCES -->
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-			<div class="soft-card p-6 lg:col-span-2">
+			<div class="soft-card p-3.5 lg:col-span-2">
 				<div class="flex items-center justify-between mb-6">
-					<h2 class="text-lg font-heading font-bold">Évolution Financière Mensuelle</h2>
+					<h2 class="text-xs font-heading font-bold uppercase tracking-wide text-brand-dark/60">Évolution Financière Mensuelle</h2>
 					<span class="text-xs text-brand-dark/40">CA vs Dépenses</span>
 				</div>
 				<div class="chart-container">
@@ -433,9 +433,9 @@
 				</div>
 			</div>
 
-			<div class="soft-card p-6">
+			<div class="soft-card p-3.5">
 				<div class="flex items-center justify-between mb-6">
-					<h2 class="text-lg font-heading font-bold">Volume Projets</h2>
+					<h2 class="text-xs font-heading font-bold uppercase tracking-wide text-brand-dark/60">Volume Projets</h2>
 					<i class="ti ti-chart-pie text-gray-400 text-lg"></i>
 				</div>
 				<div class="chart-container">
@@ -446,9 +446,9 @@
 
 		<!-- 💎 TOP PROJETS + 👥 CLIENTS LES PLUS ACTIFS -->
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-			<div class="soft-card p-6 lg:col-span-2">
+			<div class="soft-card p-3.5 lg:col-span-2">
 				<div class="flex justify-between items-center mb-4">
-					<h2 class="text-lg font-heading font-bold">Top Projets Stratégiques (Finances & Délais)</h2>
+					<h2 class="text-xs font-heading font-bold uppercase tracking-wide text-brand-dark/60">Top Projets Stratégiques (Finances & Délais)</h2>
 					<a href="{{ path('admin_dashboard_projects') }}" class="text-xs font-semibold text-brand-primary hover:underline">Voir tout</a>
 				</div>
 				<div class="overflow-x-auto">
@@ -484,8 +484,8 @@
 
 			<!-- Clients les plus actifs : déjà calculé par le contrôleur (propriétaires
 			     de projets, triés par nombre de projets), jamais affiché jusqu'ici. -->
-			<div class="soft-card p-6">
-				<h2 class="text-lg font-heading font-bold mb-4">Clients les Plus Actifs</h2>
+			<div class="soft-card p-3.5">
+				<h2 class="text-xs font-heading font-bold uppercase tracking-wide text-brand-dark/60 mb-4">Clients les Plus Actifs</h2>
 				<div class="divide-y divide-gray-100">
 					{% for user in activeUsers %}
 						<a href="{{ path('admin_users_read', {id: user.id}) }}" class="flex items-center gap-3 py-3 first:pt-0 hover:opacity-70 transition">
