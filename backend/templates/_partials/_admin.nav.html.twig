@@ -79,8 +79,18 @@
 {% set canViewSupportSection = canViewSupportDocs or canViewSupportFaq or canViewSupportTickets %}
 
 {% if is_granted('ROLE_EDITOR') %}
-<aside class="fixed inset-y-0 left-0 z-50 w-56 h-full bg-(--color-bg-default) border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out
-			       md:translate-x-0 md:static md:h-screen shadow-xl md:shadow-none" :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'" aria-label="Navigation principale">
+{#
+	⚠️ Le repli mobile utilisait `-translate-x-full`/`md:translate-x-0` (propriété CSS `translate`
+	standalone, composée via `--tw-translate-x`/`--tw-translate-y` enregistrées en `@property
+	syntax:"*"`) : le `translate` calculé restait bloqué à l'identité quel que soit l'état, aside
+	toujours visible en dessous de md — confirmé en isolant chaque déclaration (aucune règle
+	concurrente, aucun !important, la règle matche bien l'élément, et pourtant `getComputedStyle`
+	ignore la valeur). Un `transform: translateX(...)` en propriété arbitraire n'a pas non plus
+	suffi. Bascule sur `hidden`/`flex` (affichage, pas transform) : mécanisme différent, aucune
+	ambiguïté possible, vérifié en direct. Perd l'animation de glissement, gagne la fiabilité.
+#}
+<aside class="fixed inset-y-0 left-0 z-50 w-56 h-full bg-(--color-bg-default) border-r border-gray-200 dark:border-gray-800 flex-col
+			       md:static md:h-screen md:flex shadow-xl md:shadow-none" :class="mobileSidebarOpen ? 'flex' : 'hidden'" aria-label="Navigation principale">
 	<!-- 🏢 LOGO & ENTÊTE (configurable : Paramètres > Configuration) -->
 	<div class="p-4 border-b border-gray-200 flex items-center gap-3 justify-between shrink-0">
 		<div class="flex items-center gap-2.5 min-w-0">
