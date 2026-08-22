@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import clsx from "clsx";
 import {
@@ -18,7 +18,6 @@ import {
   Plus,
   HelpCircle,
   MessagesSquare,
-  ChevronDown,
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
@@ -80,18 +79,18 @@ function NavLink({
       aria-label={collapsed ? label : undefined}
       title={collapsed ? label : undefined}
       className={clsx(
-        "flex items-center gap-2.5 rounded-full px-3 py-2 text-sm font-semibold transition-all",
+        "flex items-center gap-2.5 rounded-[var(--radius-sm)] px-2.5 py-[7px] text-[12.8px] font-bold transition-colors",
         collapsed && "justify-center px-2",
         active
           ? danger
-            ? "bg-danger/10 text-danger shadow-sm ring-1 ring-danger/10"
-            : "bg-brand-primary/10 text-brand-primary shadow-sm ring-1 ring-brand-primary/15"
+            ? "bg-danger/10 text-danger"
+            : "bg-brand-primary/10 text-brand-primary"
           : danger
             ? "text-danger/70 hover:bg-danger/10 hover:text-danger"
             : "text-(--color-muted) hover:bg-(--color-surface-muted) hover:text-(--brand-dark)",
       )}
     >
-      <Icon aria-hidden="true" size={17} className="shrink-0" />
+      <Icon aria-hidden="true" size={16} className="shrink-0" />
       {!collapsed && (
         <>
           <span className="flex-1 truncate">{label}</span>
@@ -103,41 +102,16 @@ function NavLink({
 }
 
 /**
- * Groupe de liens en accordéon (replié par défaut, sauf le groupe qui
- * contient la page active) — sans ça, les ~13 liens des deux groupes
- * s'empilent tous en permanence et poussent l'aside bien au-delà de la
- * hauteur de l'écran. `paths` sert à ouvrir automatiquement le groupe dès
- * qu'on y navigue (lien externe à l'aside, retour navigateur...), même s'il
- * avait été refermé manuellement — jamais l'inverse : quitter un groupe ne
- * le referme pas tout seul, pour ne pas surprendre un repli qu'on n'a pas
- * demandé. Repliée (rail 72px) : plus de place pour un intitulé cliquable,
- * les icônes du groupe restent donc affichées à plat, sans accordéon.
+ * Groupe de liens plat — plus d'accordéon repliable (cf. la maquette de
+ * refonte validée : "Mon activité"/"Mon compte" y sont de simples labels
+ * au-dessus de liens toujours visibles, sans bouton ni chevron). L'accordéon
+ * avait été ajouté avant la maquette pour éviter que les ~16 liens d'alors
+ * ne dépassent la hauteur de l'écran ; la consolidation de "Gestion de
+ * projet" (cf. AccountNav ci-dessous) et la densité resserrée des lignes
+ * ont ramené le total à ~11 liens, qui tiennent sans repli — l'accordéon
+ * n'a donc plus de raison d'être et s'écartait du modèle validé.
  */
-function NavGroup({
-  title,
-  count,
-  paths,
-  collapsed,
-  children,
-}: {
-  title: string;
-  /** Nombre de liens dans le groupe, affiché en pastille discrète à côté du chevron — utile pour deviner ce que contient un groupe replié sans avoir à l'ouvrir. */
-  count: number;
-  paths: string[];
-  collapsed: boolean;
-  children: ReactNode;
-}) {
-  const pathname = usePathname();
-  const containsActive = paths.includes(pathname);
-  const [open, setOpen] = useState(containsActive);
-  // Réouvre pendant le rendu plutôt que dans un effect (même pattern que
-  // AccountShell pour previousPathname) : évite un rendu en cascade superflu.
-  const [wasActive, setWasActive] = useState(containsActive);
-  if (containsActive !== wasActive) {
-    setWasActive(containsActive);
-    if (containsActive) setOpen(true);
-  }
-
+function NavGroup({ title, collapsed, children }: { title: string; collapsed: boolean; children: ReactNode }) {
   if (collapsed) {
     return (
       <div className="mt-3 border-t border-(--border-neutral)/60 pt-3 first:mt-0 first:border-0 first:pt-0">
@@ -148,25 +122,8 @@ function NavGroup({
 
   return (
     <div className="mt-3 border-t border-(--border-neutral)/60 pt-3 first:mt-0 first:border-0 first:pt-0">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1 text-xs font-bold uppercase tracking-wider text-(--color-muted) transition-colors hover:text-(--brand-dark)"
-      >
-        <span className="flex items-center gap-1.5">
-          {title}
-          <span className="rounded-full bg-(--color-surface-muted) px-1.5 py-0.5 text-[10px] leading-none font-bold text-(--color-muted)">
-            {count}
-          </span>
-        </span>
-        <ChevronDown
-          aria-hidden="true"
-          size={14}
-          className={clsx("shrink-0 transition-transform duration-200", open && "rotate-180")}
-        />
-      </button>
-      {open && <div className="mt-1 space-y-0.5">{children}</div>}
+      <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-(--color-muted)">{title}</p>
+      <div className="space-y-0.5">{children}</div>
     </div>
   );
 }
@@ -191,7 +148,7 @@ function NavProfile({ user, collapsed }: { user: NavUser; collapsed: boolean }) 
       title={collapsed ? user.fullName ?? user.email : undefined}
       aria-label={collapsed ? (user.fullName ?? user.email) : undefined}
       className={clsx(
-        "group flex items-center gap-2.5 rounded-lg p-1.5 transition-colors hover:bg-(--color-surface-muted)",
+        "group flex items-center gap-2.5 rounded-[var(--radius-sm)] p-[7px] transition-colors hover:bg-(--color-surface-muted)",
         collapsed && "justify-center",
       )}
     >
@@ -199,19 +156,19 @@ function NavProfile({ user, collapsed }: { user: NavUser; collapsed: boolean }) 
       <img
         src={getAvatarUrl(user)}
         alt=""
-        className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-brand-primary/20 transition-colors group-hover:ring-brand-primary/40"
+        className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-brand-primary/20 transition-colors group-hover:ring-brand-primary/40"
       />
       {!collapsed && (
         <>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-bold text-(--brand-dark)">
+            <span className="block truncate text-[12.5px] font-bold text-(--brand-dark)">
               {user.fullName ?? user.email}
             </span>
-            <span className="block truncate text-xs text-(--color-muted)">{user.email}</span>
+            <span className="block truncate text-[10.5px] text-(--color-muted)">{user.email}</span>
           </span>
           <ChevronRight
             aria-hidden="true"
-            size={15}
+            size={14}
             className="shrink-0 text-(--color-muted) opacity-0 transition-opacity group-hover:opacity-100"
           />
         </>
@@ -243,23 +200,6 @@ interface AccountNavProps {
   onToggleCollapsed?: () => void;
 }
 
-/** Routes des deux groupes accordéon — sert à savoir lequel ouvrir automatiquement selon la page active, cf. NavGroup. */
-const ACTIVITY_PATHS: AccountPath[] = [
-  "/compte/projets",
-  "/compte/devis",
-  "/compte/gestion-projet",
-  "/compte/factures",
-  "/compte/messages",
-];
-const ACCOUNT_PATHS: AccountPath[] = [
-  "/compte/profil",
-  "/compte/mot-de-passe",
-  "/compte/securite",
-  "/compte/parametres",
-  "/compte/export",
-  "/aide",
-];
-
 export function AccountNav({
   user,
   isCollaborator,
@@ -268,12 +208,6 @@ export function AccountNav({
   onToggleCollapsed,
 }: AccountNavProps) {
   const t = useTranslations("auth.account.nav");
-  // Toujours 4 liens dans ce groupe désormais : {Mes projets | Gestion de
-  // projet} (l'un ou l'autre selon isCollaborator, jamais les deux) + devis +
-  // factures + messages — la consolidation de "Gestion de projet" (qui
-  // absorbe "Mes projets" et "Projets disponibles" pour un collaborateur) a
-  // égalisé les deux cas, plus besoin de distinguer.
-  const activityCount = 4;
 
   return (
     <nav aria-label={t("title")} className="flex h-full flex-col">
@@ -282,7 +216,7 @@ export function AccountNav({
         <NavProfile user={user} collapsed={collapsed} />
 
         {!collapsed && (
-          <p className="px-2 pb-1 text-xs font-bold uppercase tracking-wider text-(--color-muted)">{t("title")}</p>
+          <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-(--color-muted)">{t("title")}</p>
         )}
 
         {!isCollaborator && (
@@ -305,7 +239,7 @@ export function AccountNav({
 
       {/* Zone scrollable : seule cette partie déborde si les deux groupes sont ouverts en même temps sur un petit écran — l'en-tête et le pied restent toujours atteignables sans défiler. */}
       <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
-        <NavGroup title={t("groupActivity")} count={activityCount} paths={ACTIVITY_PATHS} collapsed={collapsed}>
+        <NavGroup title={t("groupActivity")} collapsed={collapsed}>
         {!isCollaborator && (
           <NavLink
             href="/compte/projets"
@@ -351,7 +285,7 @@ export function AccountNav({
         />
       </NavGroup>
 
-      <NavGroup title={t("groupAccount")} count={6} paths={ACCOUNT_PATHS} collapsed={collapsed}>
+      <NavGroup title={t("groupAccount")} collapsed={collapsed}>
         <NavLink href="/compte/profil" label={t("profile")} icon={User} collapsed={collapsed} />
         <NavLink href="/compte/mot-de-passe" label={t("changePassword")} icon={KeyRound} collapsed={collapsed} />
         <NavLink href="/compte/securite" label={t("security")} icon={ShieldCheck} collapsed={collapsed} />
@@ -363,7 +297,7 @@ export function AccountNav({
       {/* Un seul lien : un accordéon n'apporterait rien ici, juste un clic de plus pour une action déjà rare. */}
       <div className="mt-3 border-t border-(--border-neutral)/60 pt-3">
         {!collapsed && (
-          <p className="px-2 pb-1 text-xs font-bold uppercase tracking-wider text-(--color-muted)">
+          <p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-(--color-muted)">
             {t("groupDanger")}
           </p>
         )}

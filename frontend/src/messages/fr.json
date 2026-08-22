@@ -953,7 +953,8 @@
       "backLink": "← Retour à mon espace",
       "hero": {
         "progressLabel": "Avancement moyen",
-        "progressCaption": "{count, plural, one {# projet actif} other {# projets actifs}}"
+        "progressCaption": "{count, plural, one {# projet actif} other {# projets actifs}}",
+        "progressAvgCaption": "{percent} % avancement moyen"
       },
       "header": {
         "backToSite": "Retour au site",

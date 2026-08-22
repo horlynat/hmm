@@ -39,17 +39,25 @@ function activeProjectsOf(projects: SessionProject[]): SessionProject[] {
  * l'info existe déjà par projet (SessionProject.progress) mais n'était
  * agrégée nulle part au niveau du portefeuille.
  */
-function ProgressRing({ value, label, caption }: { value: number; label: string; caption: string }) {
-  const size = 116;
-  const stroke = 10;
+/**
+ * Anneau miniature embarqué dans une tuile de stat (mockup validé : `.kpi-ring`,
+ * 40px, sans texte superposé — la valeur brute et le libellé de progression
+ * vivent à côté, pas dans l'anneau). Remplace l'ancien grand anneau de 116px
+ * qui trônait dans un bandeau héro à part : ici c'est une tuile de plus,
+ * pas l'élément dominant de la page.
+ */
+function ActiveProjectsTile({ count, avgProgress, label, caption }: { count: number; avgProgress: number; label: string; caption: string }) {
+  const size = 34;
+  const stroke = 5;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - value / 100);
+  const offset = circumference * (1 - avgProgress / 100);
 
   return (
-    <div className="flex shrink-0 flex-col items-center gap-2 text-center">
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+    <Card variant="soft" className="p-3">
+      <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-(--color-muted)">{label}</div>
+      <div className="flex items-center gap-2.5">
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90 shrink-0">
           <circle cx={size / 2} cy={size / 2} r={radius} strokeWidth={stroke} fill="none" className="stroke-(--border-neutral)" />
           <circle
             cx={size / 2}
@@ -63,17 +71,14 @@ function ProgressRing({ value, label, caption }: { value: number; label: string;
             className="stroke-brand-primary"
           />
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-            {value}%
-          </span>
+        <div className="min-w-0">
+          <div className="text-xl font-extrabold leading-none" style={{ fontFamily: "var(--font-heading)" }}>
+            {count}
+          </div>
+          <div className="mt-1 truncate text-[10.5px] font-semibold text-(--color-muted)">{caption}</div>
         </div>
       </div>
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-(--color-muted)">{label}</p>
-        <p className="text-xs text-(--color-muted)">{caption}</p>
-      </div>
-    </div>
+    </Card>
   );
 }
 
@@ -399,30 +404,17 @@ export default async function ComptePage({
         <WelcomeBanner message={t("welcome", { name: user.fullName ?? user.email })} />
       )}
 
-      {/* ---- Bandeau d'ouverture : identité + vue d'ensemble, seul élément dominant de la page — le reste (stats, sections) reste volontairement en second plan. */}
-      <div className="relative overflow-hidden rounded-[var(--radius-lg)] border border-(--border-neutral) bg-gradient-to-br from-brand-primary/[0.07] via-transparent to-transparent p-6 sm:p-8">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="neutral">{roleLabel}</Badge>
-              <Badge variant="neutral">{user.isVerified ? t("verifiedBadge") : t("unverifiedBadge")}</Badge>
-            </div>
-            <h1
-              className="mt-3 text-[clamp(1.6rem,3vw,2.15rem)] font-bold"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              {t("dashboardTitle")}
-            </h1>
-            <p className="mt-2 max-w-md text-sm text-(--color-muted)">{t("heroSubtitle")}</p>
+      {/* ---- En-tête plat : titre + sous-titre nus, comme sur toutes les pages de l'espace compte (cf. PageHeader). Les badges de statut (rôle, vérification) restent, en discret, à côté du titre. */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge variant="neutral">{roleLabel}</Badge>
+            <Badge variant="neutral">{user.isVerified ? t("verifiedBadge") : t("unverifiedBadge")}</Badge>
           </div>
-
-          {avgProgress !== null && (
-            <ProgressRing
-              value={avgProgress}
-              label={t("hero.progressLabel")}
-              caption={t("hero.progressCaption", { count: activeProjects.length })}
-            />
-          )}
+          <h1 className="mt-2 text-[21px] font-extrabold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
+            {t("dashboardTitle")}
+          </h1>
+          <p className="mt-0.5 text-[12.5px] font-semibold text-(--color-muted)">{t("heroSubtitle")}</p>
         </div>
       </div>
 
@@ -433,8 +425,15 @@ export default async function ComptePage({
       )}
 
       {/* ---- Résumé ---- */}
-      {/* "Projets actifs" ne fait plus doublon ici : déjà porté par la légende de l'anneau du bandeau ci-dessus (X projet(s) actif(s)). */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {avgProgress !== null && (
+          <ActiveProjectsTile
+            count={activeProjects.length}
+            avgProgress={avgProgress}
+            label={t("stats.activeProjects")}
+            caption={t("hero.progressAvgCaption", { percent: avgProgress })}
+          />
+        )}
         <StatCard
           icon={FileText}
           label={t("stats.pendingQuotes")}

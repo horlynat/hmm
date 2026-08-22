@@ -953,7 +953,8 @@
       "backLink": "← Back to my account",
       "hero": {
         "progressLabel": "Average progress",
-        "progressCaption": "{count, plural, one {# active project} other {# active projects}}"
+        "progressCaption": "{count, plural, one {# active project} other {# active projects}}",
+        "progressAvgCaption": "{percent}% average progress"
       },
       "header": {
         "backToSite": "Back to site",
