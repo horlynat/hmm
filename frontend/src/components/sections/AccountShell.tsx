@@ -118,7 +118,7 @@ export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled,
               : "mx-auto grid max-w-[1120px] gap-8 md:grid-cols-[260px_1fr] md:items-start"
           }
         >
-          <aside className="sticky top-20 hidden h-[calc(100vh-7rem)] rounded-[var(--radius-lg)] border border-(--border-neutral) bg-bg-card p-3 shadow-sm md:block">
+          <aside className="sticky top-20 hidden h-[calc(100vh-7rem)] rounded-[var(--radius-lg)] border border-(--border-neutral) bg-gradient-to-b from-brand-primary/[0.04] via-bg-card to-bg-card p-3 shadow-sm md:block">
             <AccountNav
               user={user}
               isCollaborator={isCollaborator}
@@ -158,7 +158,7 @@ export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled,
             role="dialog"
             aria-modal="true"
             aria-label={t("title")}
-            className="absolute inset-y-0 left-0 flex w-[85%] max-w-[320px] flex-col bg-bg-card p-4 shadow-xl"
+            className="absolute inset-y-0 left-0 flex w-[85%] max-w-[320px] flex-col bg-gradient-to-b from-brand-primary/[0.04] via-bg-card to-bg-card p-4 shadow-xl"
           >
             <div className="mb-2 flex shrink-0 items-center justify-end">
               <button

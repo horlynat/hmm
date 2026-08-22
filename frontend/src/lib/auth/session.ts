@@ -11,6 +11,7 @@ import type {
   SessionUser,
   SessionProjectDetail,
   AvailableProject,
+  SessionJoinRequest,
   SessionProjectTeam,
   SessionQuoteDetail,
   SessionActivity,
@@ -161,6 +162,36 @@ export async function getAvailableProjects(): Promise<AvailableProject[] | null>
     return body.projects;
   } catch (error) {
     console.error("[auth] GET /me/projects/available failed", error);
+    return null;
+  }
+}
+
+/**
+ * Historique complet (tous statuts) des demandes d'auto-association du
+ * freelance courant — alimente l'onglet "Mes demandes" du hub
+ * "Gestion de projet". `null` si non authentifié/non collaborateur/timeout ;
+ * l'appelant décide de l'affichage dans ce cas plutôt que de faire planter la page.
+ */
+export async function getMyJoinRequests(): Promise<SessionJoinRequest[] | null> {
+  const token = await getToken();
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_URL}/me/projects/join-requests`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return null;
+
+    const body = (await res.json()) as { requests: SessionJoinRequest[] };
+    return body.requests;
+  } catch (error) {
+    console.error("[auth] GET /me/projects/join-requests failed", error);
     return null;
   }
 }

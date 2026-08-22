@@ -1000,7 +1000,9 @@
         "emptyActivity": "Aucune activité pour le moment.",
         "messages": "Messages récents",
         "emptyMessages": "Aucun message pour le moment.",
-        "recentInvoices": "Factures récentes"
+        "recentInvoices": "Factures récentes",
+        "revenueChart": "Facturé (6 derniers mois)",
+        "projectsByStatus": "Projets par statut"
       },
       "stats": {
         "activeProjects": "Projets actifs",
@@ -1197,10 +1199,24 @@
     },
     "projectManagement": {
       "title": "Gestion de projet",
-      "subtitle": "Vue d'ensemble des projets qui vous sont confiés, réservée aux membres de l'équipe.",
+      "subtitle": "Vos engagements en cours, les projets ouverts aux candidatures et le suivi de vos demandes.",
       "statTotal": "Projets au total",
       "statActive": "En cours",
       "statUpcoming": "À venir",
+      "tabs": {
+        "mine": "Mes projets",
+        "open": "Projets disponibles",
+        "requests": "Mes demandes"
+      },
+      "requests": {
+        "empty": "Aucune demande envoyée pour le moment.",
+        "requestedOn": "Envoyée le {date}",
+        "status": {
+          "pending": "En attente",
+          "approved": "Acceptée",
+          "rejected": "Refusée"
+        }
+      },
       "profileBanner": {
         "title": "Complétez votre profil",
         "body": "Votre profil est complété à {percent} %. Tant qu'il n'est pas à 100 %, vous ne pouvez pas participer activement aux projets (lecture seule) — aucun projet ne peut vous être confié en toute confiance sans un profil complet. Il vous manque :",

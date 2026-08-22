@@ -1000,7 +1000,9 @@
         "emptyActivity": "No activity yet.",
         "messages": "Recent messages",
         "emptyMessages": "No messages yet.",
-        "recentInvoices": "Recent invoices"
+        "recentInvoices": "Recent invoices",
+        "revenueChart": "Invoiced (last 6 months)",
+        "projectsByStatus": "Projects by status"
       },
       "stats": {
         "activeProjects": "Active projects",

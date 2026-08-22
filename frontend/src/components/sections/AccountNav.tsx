@@ -18,8 +18,8 @@ import {
   Plus,
   HelpCircle,
   MessagesSquare,
-  Rocket,
   ChevronDown,
+  ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
   type LucideIcon,
@@ -40,7 +40,6 @@ type AccountPath =
   | "/compte/projets"
   | "/compte/devis"
   | "/compte/gestion-projet"
-  | "/compte/projets-disponibles"
   | "/compte/factures"
   | "/compte/messages"
   | "/compte/profil"
@@ -81,12 +80,12 @@ function NavLink({
       aria-label={collapsed ? label : undefined}
       title={collapsed ? label : undefined}
       className={clsx(
-        "flex items-center gap-2.5 rounded-full px-3 py-2 text-sm font-semibold transition-colors",
+        "flex items-center gap-2.5 rounded-full px-3 py-2 text-sm font-semibold transition-all",
         collapsed && "justify-center px-2",
         active
           ? danger
-            ? "bg-danger/10 text-danger"
-            : "bg-brand-primary/10 text-brand-primary"
+            ? "bg-danger/10 text-danger shadow-sm ring-1 ring-danger/10"
+            : "bg-brand-primary/10 text-brand-primary shadow-sm ring-1 ring-brand-primary/15"
           : danger
             ? "text-danger/70 hover:bg-danger/10 hover:text-danger"
             : "text-(--color-muted) hover:bg-(--color-surface-muted) hover:text-(--brand-dark)",
@@ -116,11 +115,14 @@ function NavLink({
  */
 function NavGroup({
   title,
+  count,
   paths,
   collapsed,
   children,
 }: {
   title: string;
+  /** Nombre de liens dans le groupe, affiché en pastille discrète à côté du chevron — utile pour deviner ce que contient un groupe replié sans avoir à l'ouvrir. */
+  count: number;
   paths: string[];
   collapsed: boolean;
   children: ReactNode;
@@ -152,7 +154,12 @@ function NavGroup({
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1 text-xs font-bold uppercase tracking-wider text-(--color-muted) transition-colors hover:text-(--brand-dark)"
       >
-        {title}
+        <span className="flex items-center gap-1.5">
+          {title}
+          <span className="rounded-full bg-(--color-surface-muted) px-1.5 py-0.5 text-[10px] leading-none font-bold text-(--color-muted)">
+            {count}
+          </span>
+        </span>
         <ChevronDown
           aria-hidden="true"
           size={14}
@@ -184,7 +191,7 @@ function NavProfile({ user, collapsed }: { user: NavUser; collapsed: boolean }) 
       title={collapsed ? user.fullName ?? user.email : undefined}
       aria-label={collapsed ? (user.fullName ?? user.email) : undefined}
       className={clsx(
-        "flex items-center gap-2.5 rounded-lg p-1.5 transition-colors hover:bg-(--color-surface-muted)",
+        "group flex items-center gap-2.5 rounded-lg p-1.5 transition-colors hover:bg-(--color-surface-muted)",
         collapsed && "justify-center",
       )}
     >
@@ -192,15 +199,22 @@ function NavProfile({ user, collapsed }: { user: NavUser; collapsed: boolean }) 
       <img
         src={getAvatarUrl(user)}
         alt=""
-        className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-(--border-neutral)"
+        className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-brand-primary/20 transition-colors group-hover:ring-brand-primary/40"
       />
       {!collapsed && (
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-bold text-(--brand-dark)">
-            {user.fullName ?? user.email}
+        <>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-bold text-(--brand-dark)">
+              {user.fullName ?? user.email}
+            </span>
+            <span className="block truncate text-xs text-(--color-muted)">{user.email}</span>
           </span>
-          <span className="block truncate text-xs text-(--color-muted)">{user.email}</span>
-        </span>
+          <ChevronRight
+            aria-hidden="true"
+            size={15}
+            className="shrink-0 text-(--color-muted) opacity-0 transition-opacity group-hover:opacity-100"
+          />
+        </>
       )}
     </Link>
   );
@@ -209,11 +223,11 @@ function NavProfile({ user, collapsed }: { user: NavUser; collapsed: boolean }) 
 export interface AccountNavCounts {
   /** Demandes de devis au statut "pending" (cf. QuoteStatusEnum côté backend). */
   pendingQuotes: number;
-  /** Total des projets affichés sur /compte/projets (client + éventuellement équipe). */
+  /** Total des projets affichés sur /compte/projets — non-collaborateurs uniquement, cf. NavLink ci-dessous. */
   myProjects: number;
-  /** Total des projets affichés sur /compte/gestion-projet (collaborateurs uniquement). */
+  /** Total des projets confiés (collaborateurs uniquement) — affiché dans l'onglet "Mes projets" du hub, pas en badge. */
   managedProjects: number;
-  /** Projets "à venir" pas encore affectés à une équipe, sur /compte/projets-disponibles. */
+  /** Projets "à venir" pas encore affectés à une équipe — sert de badge au lien "Gestion de projet" (onglet "Projets disponibles" du hub). */
   availableProjects: number;
   /** Factures au statut "pending" (cf. InvoiceStatusEnum côté backend). */
   unpaidInvoices: number;
@@ -234,7 +248,6 @@ const ACTIVITY_PATHS: AccountPath[] = [
   "/compte/projets",
   "/compte/devis",
   "/compte/gestion-projet",
-  "/compte/projets-disponibles",
   "/compte/factures",
   "/compte/messages",
 ];
@@ -255,6 +268,12 @@ export function AccountNav({
   onToggleCollapsed,
 }: AccountNavProps) {
   const t = useTranslations("auth.account.nav");
+  // Toujours 4 liens dans ce groupe désormais : {Mes projets | Gestion de
+  // projet} (l'un ou l'autre selon isCollaborator, jamais les deux) + devis +
+  // factures + messages — la consolidation de "Gestion de projet" (qui
+  // absorbe "Mes projets" et "Projets disponibles" pour un collaborateur) a
+  // égalisé les deux cas, plus besoin de distinguer.
+  const activityCount = 4;
 
   return (
     <nav aria-label={t("title")} className="flex h-full flex-col">
@@ -286,14 +305,16 @@ export function AccountNav({
 
       {/* Zone scrollable : seule cette partie déborde si les deux groupes sont ouverts en même temps sur un petit écran — l'en-tête et le pied restent toujours atteignables sans défiler. */}
       <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
-        <NavGroup title={t("groupActivity")} paths={ACTIVITY_PATHS} collapsed={collapsed}>
-        <NavLink
-          href="/compte/projets"
-          label={t("myProjects")}
-          icon={FolderKanban}
-          collapsed={collapsed}
-          badge={counts.myProjects > 0 && <Badge variant="neutral">{counts.myProjects}</Badge>}
-        />
+        <NavGroup title={t("groupActivity")} count={activityCount} paths={ACTIVITY_PATHS} collapsed={collapsed}>
+        {!isCollaborator && (
+          <NavLink
+            href="/compte/projets"
+            label={t("myProjects")}
+            icon={FolderKanban}
+            collapsed={collapsed}
+            badge={counts.myProjects > 0 && <Badge variant="neutral">{counts.myProjects}</Badge>}
+          />
+        )}
         <NavLink
           href="/compte/devis"
           label={t("myQuotes")}
@@ -310,15 +331,6 @@ export function AccountNav({
             href="/compte/gestion-projet"
             label={t("projectManagement")}
             icon={Briefcase}
-            collapsed={collapsed}
-            badge={counts.managedProjects > 0 && <Badge variant="neutral">{counts.managedProjects}</Badge>}
-          />
-        )}
-        {isCollaborator && (
-          <NavLink
-            href="/compte/projets-disponibles"
-            label={t("availableProjects")}
-            icon={Rocket}
             collapsed={collapsed}
             badge={counts.availableProjects > 0 && <Badge variant="accent">{counts.availableProjects}</Badge>}
           />
@@ -339,7 +351,7 @@ export function AccountNav({
         />
       </NavGroup>
 
-      <NavGroup title={t("groupAccount")} paths={ACCOUNT_PATHS} collapsed={collapsed}>
+      <NavGroup title={t("groupAccount")} count={6} paths={ACCOUNT_PATHS} collapsed={collapsed}>
         <NavLink href="/compte/profil" label={t("profile")} icon={User} collapsed={collapsed} />
         <NavLink href="/compte/mot-de-passe" label={t("changePassword")} icon={KeyRound} collapsed={collapsed} />
         <NavLink href="/compte/securite" label={t("security")} icon={ShieldCheck} collapsed={collapsed} />

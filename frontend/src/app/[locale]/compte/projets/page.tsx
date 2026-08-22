@@ -1,9 +1,17 @@
 import { getTranslations } from "next-intl/server";
-import { FolderKanban, Handshake, Activity, CalendarClock, CheckCircle2 } from "lucide-react";
-import { EmptyState, PageHeader, SectionHeading, StatCard } from "@/components/ui";
-import { ProjectList } from "@/components/sections/AccountLists";
+import { FolderKanban } from "lucide-react";
+import { PageHeader } from "@/components/ui";
+import { MyProjectsPanel } from "@/components/sections/MyProjectsPanel";
 import { getCurrentUser } from "@/lib/auth/session";
 
+/**
+ * Réservée aux non-collaborateurs dans la navigation (cf. AccountNav.tsx) :
+ * un collaborateur voit l'équivalent — et plus, avec "Projets disponibles" et
+ * "Mes demandes" — dans l'onglet "Mes projets" du hub /compte/gestion-projet.
+ * La route reste accessible directement (lien historique, favori) et
+ * fonctionne pour tout le monde : le corps est le même composant partagé
+ * (MyProjectsPanel) que celui de l'onglet.
+ */
 export default async function ComptProjetsPage({
   params,
 }: {
@@ -15,64 +23,10 @@ export default async function ComptProjetsPage({
 
   if (!user) return null;
 
-  const { attributions, isCollaborator } = user;
-  const collaboratingProjects = [
-    ...attributions.collaboratingProjects,
-    ...attributions.ownedProjects,
-  ];
-  const allProjects = [...attributions.clientProjects, ...collaboratingProjects];
-
-  const projectLabels = {
-    progress: t("project.progress"),
-    deadline: t("project.deadline"),
-    noDeadline: t("project.noDeadline"),
-  };
-
   return (
     <div className="space-y-8">
       <PageHeader icon={FolderKanban} title={t("nav.myProjects")} subtitle={t("myProjectsPage.subtitle")} />
-
-      {allProjects.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard icon={FolderKanban} label={t("myProjectsPage.statTotal")} value={allProjects.length} />
-          <StatCard
-            icon={Activity}
-            label={t("myProjectsPage.statActive")}
-            value={allProjects.filter((p) => p.status === "en_cours").length}
-            tone="success"
-          />
-          <StatCard
-            icon={CalendarClock}
-            label={t("myProjectsPage.statUpcoming")}
-            value={allProjects.filter((p) => p.status === "a_venir").length}
-          />
-          <StatCard
-            icon={CheckCircle2}
-            label={t("myProjectsPage.statCompleted")}
-            value={allProjects.filter((p) => p.status === "termine").length}
-          />
-        </div>
-      )}
-
-      <section aria-labelledby="section-client-projects">
-        <SectionHeading id="section-client-projects" title={t("sections.clientProjects")} />
-        {attributions.clientProjects.length > 0 ? (
-          <ProjectList projects={attributions.clientProjects} labels={projectLabels} />
-        ) : (
-          <EmptyState icon={FolderKanban} message={t("sections.emptyProjects")} />
-        )}
-      </section>
-
-      {isCollaborator && (
-        <section aria-labelledby="section-collaborating">
-          <SectionHeading id="section-collaborating" title={t("sections.collaboratingProjects")} />
-          {collaboratingProjects.length > 0 ? (
-            <ProjectList projects={collaboratingProjects} labels={projectLabels} />
-          ) : (
-            <EmptyState icon={Handshake} message={t("sections.emptyProjects")} />
-          )}
-        </section>
-      )}
+      <MyProjectsPanel user={user} locale={locale} />
     </div>
   );
 }

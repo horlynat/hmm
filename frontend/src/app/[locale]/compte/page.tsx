@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import clsx from "clsx";
 import { FolderKanban, FileText, Receipt, Briefcase, Handshake, History, MessageSquare } from "lucide-react";
 import { Badge, ButtonLink, Card, EmptyState, SectionHeading, StatCard } from "@/components/ui";
 import { ProjectList, QuoteList } from "@/components/sections/AccountLists";
@@ -6,7 +7,7 @@ import { WelcomeBanner } from "@/components/sections/WelcomeBanner";
 import { getCurrentUser, getMyActivity } from "@/lib/auth/session";
 import { Link } from "@/i18n/navigation";
 import { projectStatusVariant, invoiceStatusVariant } from "@/lib/status";
-import type { SessionProject, SessionActivityEntry, SessionComment } from "@/lib/types";
+import type { SessionProject, SessionActivityEntry, SessionComment, SessionInvoice } from "@/lib/types";
 
 const PREVIEW_COUNT = 4;
 const UPCOMING_COUNT = 5;
@@ -71,6 +72,162 @@ function ProgressRing({ value, label, caption }: { value: number; label: string;
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-(--color-muted)">{label}</p>
         <p className="text-xs text-(--color-muted)">{caption}</p>
+      </div>
+    </div>
+  );
+}
+
+interface MonthPoint {
+  label: string;
+  total: number;
+}
+
+/**
+ * Total facturé (converti dans la devise d'affichage) par mois calendaire,
+ * sur les `months` derniers mois glissants — uniquement les factures dont la
+ * conversion a réussi (`convertedAmount` non nul) : mélanger un montant
+ * resté dans sa devise d'origine avec des montants convertis fausserait la
+ * somme, même précaution que `totalsByCurrency` dans compte/factures/page.tsx.
+ */
+function monthlyInvoiceTotals(invoices: SessionInvoice[], months: number, locale: string): MonthPoint[] {
+  const now = new Date();
+  const points: MonthPoint[] = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    points.push({ label: d.toLocaleDateString(locale, { month: "short" }), total: 0 });
+  }
+  for (const invoice of invoices) {
+    if (invoice.convertedAmount === null) continue;
+    const issued = new Date(invoice.issuedAt);
+    const monthsAgo = (now.getFullYear() - issued.getFullYear()) * 12 + (now.getMonth() - issued.getMonth());
+    if (monthsAgo < 0 || monthsAgo >= months) continue;
+    points[months - 1 - monthsAgo].total += Number(invoice.convertedAmount);
+  }
+  return points;
+}
+
+/** Courbe (aire) du facturé mensuel — le dashboard n'affichait jusqu'ici les factures qu'en liste plate, sans aucune mise en perspective dans le temps. */
+function RevenueChart({ points, label }: { points: MonthPoint[]; label: string }) {
+  const width = 280;
+  const height = 96;
+  const max = Math.max(...points.map((p) => p.total), 1);
+  const stepX = width / (points.length - 1 || 1);
+  const coords = points.map((p, i) => ({ x: i * stepX, y: height - (p.total / max) * (height - 12) - 4 }));
+  const linePath = coords.map((c, i) => `${i === 0 ? "M" : "L"}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ");
+  const areaPath = `${linePath} L${width},${height} L0,${height} Z`;
+
+  return (
+    <div>
+      <p className="mb-3 text-xs font-bold uppercase tracking-wider text-(--color-muted)">{label}</p>
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" role="img" aria-label={label}>
+        <defs>
+          <linearGradient id="revenue-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-brand-primary)" stopOpacity={0.22} />
+            <stop offset="100%" stopColor="var(--color-brand-primary)" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill="url(#revenue-fill)" stroke="none" />
+        <path
+          d={linePath}
+          fill="none"
+          className="stroke-brand-primary"
+          strokeWidth={2}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+      </svg>
+      <div className="mt-1 flex justify-between text-[10px] text-(--color-muted)">
+        {points.map((p) => (
+          <span key={p.label}>{p.label}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+interface StatusSlice {
+  status: string;
+  label: string;
+  count: number;
+  colorClass: string;
+}
+
+const STATUS_COLOR_CLASS: Record<string, string> = {
+  a_venir: "stroke-info",
+  en_cours: "stroke-success",
+  collaboration: "stroke-brand-accent",
+  suspendu: "stroke-warning",
+  termine: "stroke-(--color-muted)",
+};
+
+/** Répartition des projets par statut, dédoublonnée par id (un projet où l'on est à la fois propriétaire et collaborateur ne doit compter qu'une fois). */
+function projectsByStatus(projects: SessionProject[]): StatusSlice[] {
+  const seen = new Set<number>();
+  const counts = new Map<string, { label: string; count: number }>();
+  for (const p of projects) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    const entry = counts.get(p.status) ?? { label: p.statusLabel, count: 0 };
+    entry.count += 1;
+    counts.set(p.status, entry);
+  }
+  return [...counts.entries()]
+    .map(([status, { label, count }]) => ({
+      status,
+      label,
+      count,
+      colorClass: STATUS_COLOR_CLASS[status] ?? "stroke-(--color-muted)",
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/** Anneau segmenté (donut) — un coup d'œil sur la répartition du portefeuille par statut, absent jusqu'ici : seuls les projets actifs individuels étaient listés, jamais l'ensemble résumé. */
+function StatusDonut({ slices, label }: { slices: StatusSlice[]; label: string }) {
+  const total = slices.reduce((sum, s) => sum + s.count, 0);
+  const size = 96;
+  const stroke = 14;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  // Offsets cumulés calculés à part (pas dans le .map() qui produit le JSX,
+  // pour ne pas muter une variable capturée pendant le rendu — react-hooks/immutability).
+  const segments: { slice: StatusSlice; dash: number; offset: number }[] = [];
+  let cumulative = 0;
+  for (const s of slices) {
+    const fraction = total > 0 ? s.count / total : 0;
+    segments.push({ slice: s, dash: fraction * circumference, offset: -cumulative * circumference });
+    cumulative += fraction;
+  }
+
+  return (
+    <div>
+      <p className="mb-3 text-xs font-bold uppercase tracking-wider text-(--color-muted)">{label}</p>
+      <div className="flex items-center gap-4">
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90 shrink-0">
+          <circle cx={size / 2} cy={size / 2} r={radius} strokeWidth={stroke} fill="none" className="stroke-(--border-neutral)" />
+          {segments.map(({ slice: s, dash, offset }) => (
+            <circle
+              key={s.status}
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              strokeWidth={stroke}
+              fill="none"
+              strokeDasharray={`${dash} ${circumference - dash}`}
+              strokeDashoffset={offset}
+              className={s.colorClass}
+            />
+          ))}
+        </svg>
+        <ul className="min-w-0 flex-1 space-y-1.5 text-xs">
+          {slices.map((s) => (
+            <li key={s.status} className="flex items-center gap-2">
+              <span className={clsx("h-2 w-2 shrink-0 rounded-full", s.colorClass.replace("stroke-", "bg-"))} />
+              <span className="min-w-0 flex-1 truncate text-(--color-muted)">{s.label}</span>
+              <span className="font-semibold text-(--brand-dark)">{s.count}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
@@ -231,6 +388,11 @@ export default async function ComptePage({
     .sort((a, b) => new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime())
     .slice(0, PREVIEW_COUNT);
 
+  const revenuePoints = monthlyInvoiceTotals(attributions.invoices, 6, locale);
+  const hasRevenueChart = revenuePoints.some((p) => p.total > 0);
+  const statusSlices = projectsByStatus(allProjects);
+  const hasStatusChart = statusSlices.length > 0;
+
   return (
     <div className="space-y-8">
       {welcome === "1" && (
@@ -271,8 +433,8 @@ export default async function ComptePage({
       )}
 
       {/* ---- Résumé ---- */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard icon={FolderKanban} label={t("stats.activeProjects")} value={activeProjects.length} />
+      {/* "Projets actifs" ne fait plus doublon ici : déjà porté par la légende de l'anneau du bandeau ci-dessus (X projet(s) actif(s)). */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <StatCard
           icon={FileText}
           label={t("stats.pendingQuotes")}
@@ -297,6 +459,21 @@ export default async function ComptePage({
           />
         )}
       </div>
+
+      {(hasRevenueChart || hasStatusChart) && (
+        <div className={clsx("grid grid-cols-1 gap-4", hasRevenueChart && hasStatusChart && "lg:grid-cols-2")}>
+          {hasRevenueChart && (
+            <Card variant="soft" className="p-4">
+              <RevenueChart points={revenuePoints} label={t("sections.revenueChart")} />
+            </Card>
+          )}
+          {hasStatusChart && (
+            <Card variant="soft" className="p-4">
+              <StatusDonut slices={statusSlices} label={t("sections.projectsByStatus")} />
+            </Card>
+          )}
+        </div>
+      )}
 
       {deadlines.length > 0 && (
         <section aria-labelledby="section-deadlines">
