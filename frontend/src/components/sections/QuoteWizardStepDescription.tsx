@@ -10,11 +10,11 @@ interface QuoteWizardStepDescriptionProps {
 export function QuoteWizardStepDescription({ answers, update, t }: QuoteWizardStepDescriptionProps) {
   return (
     <div>
-      <div className="mb-6 text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+      <div className="mb-4 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
         {t("step4Question")}
       </div>
       <textarea
-        className="input mb-4 min-h-[120px]"
+        className="input mb-3 min-h-[120px]"
         placeholder={t("descPlaceholder")}
         value={answers.description}
         onChange={(e) => update("description", e.target.value)}

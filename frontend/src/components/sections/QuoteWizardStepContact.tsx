@@ -21,7 +21,7 @@ export function QuoteWizardStepContact({
 }: QuoteWizardStepContactProps) {
   return (
     <div>
-      <div className="mb-6 text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+      <div className="mb-4 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
         {t("step7Question")}
       </div>
       <label className="field-label" htmlFor="quote-name">
@@ -32,7 +32,7 @@ export function QuoteWizardStepContact({
         type="text"
         autoComplete="name"
         aria-invalid={showError && answers.name.trim() === "" ? true : undefined}
-        className="input mb-4"
+        className="input mb-3"
         placeholder={t("namePlaceholder")}
         value={answers.name}
         onChange={(e) => update("name", e.target.value)}
@@ -46,7 +46,7 @@ export function QuoteWizardStepContact({
         autoComplete="email"
         inputMode="email"
         aria-invalid={showError && !isValidEmail(answers.email) ? true : undefined}
-        className="input mb-4"
+        className="input mb-3"
         placeholder={t("emailPlaceholder")}
         value={answers.email}
         onChange={(e) => update("email", e.target.value)}
@@ -54,7 +54,7 @@ export function QuoteWizardStepContact({
       <span className="field-label" id="quote-canal-label">
         {t("canalLabel")}
       </span>
-      <div role="radiogroup" aria-labelledby="quote-canal-label" className="mb-4 grid grid-cols-3 gap-3">
+      <div role="radiogroup" aria-labelledby="quote-canal-label" className="mb-3 grid grid-cols-3 gap-2.5">
         {CANAL_KEYS.map((key) => (
           <OptionCard key={key} selected={answers.canal === t(key)} onClick={() => update("canal", t(key))}>
             {t(key)}

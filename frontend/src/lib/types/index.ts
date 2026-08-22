@@ -488,6 +488,26 @@ export interface AvailableProject extends SessionProjectDetail {
   joinPending: boolean;
 }
 
+export type JoinRequestStatus = "pending" | "approved" | "rejected";
+
+/**
+ * Demande d'auto-association du freelance courant à un projet "à venir" —
+ * miroir de GET /api/me/projects/join-requests. Historique complet (tous
+ * statuts), pas seulement les demandes en attente : alimente l'onglet
+ * "Mes demandes" du hub "Gestion de projet".
+ */
+export interface SessionJoinRequest {
+  id: number;
+  status: JoinRequestStatus;
+  requestedAt: string;
+  decidedAt: string | null;
+  project: {
+    id: number;
+    slug: string;
+    title: string;
+  };
+}
+
 /** Membre de l'équipe d'un projet — miroir de GET /api/me/projects/{id}/team. */
 export interface SessionTeamMember {
   id: number;

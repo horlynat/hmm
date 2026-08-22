@@ -20,7 +20,7 @@ export function QuoteWizardStepCategory({
 }: QuoteWizardStepCategoryProps) {
   return (
     <div>
-      <div className="mb-6 text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+      <div className="mb-4 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
         {categoryOptionKeys
           ? t(CATEGORY_QUESTION_KEYS[categoryKey as TypeKey] as "step2QuestionWeb")
           : t("step2QuestionOther")}
@@ -29,7 +29,7 @@ export function QuoteWizardStepCategory({
         <div
           role="radiogroup"
           aria-label={t(CATEGORY_QUESTION_KEYS[categoryKey as TypeKey] as "step2QuestionWeb")}
-          className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2"
+          className="mb-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2"
         >
           {categoryOptionKeys.map((key) => (
             <OptionCard
@@ -43,7 +43,7 @@ export function QuoteWizardStepCategory({
         </div>
       ) : (
         <textarea
-          className="input mb-4 min-h-[90px]"
+          className="input mb-3 min-h-[90px]"
           placeholder={t("step2PlaceholderOther")}
           value={answers.categoryDetail}
           onChange={(e) => update("categoryDetail", e.target.value)}

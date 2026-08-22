@@ -64,7 +64,7 @@ export function QuoteWizard({ initialName, initialEmail, successHref, successLab
   } = useQuoteWizard({ initialName, initialEmail, t, locale, submitQuoteRequest, qualifyQuoteRequest });
 
   return (
-    <Card variant="soft" className="mx-auto max-w-[640px] p-8">
+    <Card variant="soft" className="mx-auto max-w-[640px] p-6">
       {typeof current === "number" && (
         <>
           <QuoteWizardProgress current={current} phases={phases} t={t} />
@@ -140,7 +140,7 @@ export function QuoteWizard({ initialName, initialEmail, successHref, successLab
             </p>
           )}
 
-          <div className="mt-8 flex items-center justify-between">
+          <div className="mt-6 flex items-center justify-between">
             <button
               type="button"
               onClick={goBack}

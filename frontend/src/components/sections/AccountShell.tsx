@@ -114,12 +114,13 @@ export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled,
         <div
           className={
             collapsed
-              ? "mx-auto grid max-w-[1120px] gap-8 md:grid-cols-[72px_1fr] md:items-start"
-              : "mx-auto grid max-w-[1120px] gap-8 md:grid-cols-[260px_1fr] md:items-start"
+              ? "mx-auto grid max-w-[1120px] gap-5 md:grid-cols-[72px_1fr] md:items-start"
+              : "mx-auto grid max-w-[1120px] gap-5 md:grid-cols-[220px_1fr] md:items-start"
           }
         >
-          <aside className="sticky top-20 hidden border-r border-(--border-neutral) pr-4 md:block">
+          <aside className="sticky top-20 hidden max-h-[calc(100vh-7rem)] overflow-y-auto rounded-[var(--radius-md)] border border-(--border-neutral) bg-(--color-surface-muted) p-3 md:block">
             <AccountNav
+              user={user}
               isCollaborator={isCollaborator}
               counts={counts}
               collapsed={collapsed}
@@ -157,20 +158,22 @@ export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled,
             role="dialog"
             aria-modal="true"
             aria-label={t("title")}
-            className="absolute inset-y-0 left-0 w-[85%] max-w-[320px] overflow-y-auto bg-bg-default p-4 shadow-xl"
+            className="absolute inset-y-0 left-0 flex w-[85%] max-w-[320px] flex-col bg-bg-card p-4 shadow-xl"
           >
-            <div className="mb-2 flex items-center justify-end">
+            <div className="mb-2 flex shrink-0 items-center justify-end">
               <button
                 ref={closeButtonRef}
                 type="button"
                 aria-label={tc("closeMenu")}
                 onClick={() => setOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-(--border-neutral) bg-bg-card"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-(--border-neutral) bg-(--color-surface-muted)"
               >
                 <span aria-hidden="true">✕</span>
               </button>
             </div>
-            <AccountNav isCollaborator={isCollaborator} counts={counts} />
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <AccountNav user={user} isCollaborator={isCollaborator} counts={counts} />
+            </div>
           </div>
         </div>
       )}

@@ -944,12 +944,18 @@
     "account": {
       "welcome": "Bonjour {name}, bon retour parmi nous !",
       "dashboardTitle": "Tableau de bord",
+      "heroSubtitle": "Vue d'ensemble de vos projets, devis et factures.",
       "roleClient": "Compte client",
       "roleFreelance": "Compte collaborateur",
       "verifyWarning": "Votre adresse email n'est pas encore vérifiée. Consultez votre boîte de réception pour activer votre compte.",
       "verifiedBadge": "Email vérifié",
       "unverifiedBadge": "Email non vérifié",
       "backLink": "← Retour à mon espace",
+      "hero": {
+        "progressLabel": "Avancement moyen",
+        "progressCaption": "{count, plural, one {# projet actif} other {# projets actifs}}",
+        "progressAvgCaption": "{percent} % avancement moyen"
+      },
       "header": {
         "backToSite": "Retour au site",
         "userMenu": "Menu du compte"
@@ -995,7 +1001,20 @@
         "emptyActivity": "Aucune activité pour le moment.",
         "messages": "Messages récents",
         "emptyMessages": "Aucun message pour le moment.",
-        "recentInvoices": "Factures récentes"
+        "recentInvoices": "Factures récentes",
+        "emptyInvoices": "Aucune facture pour le moment.",
+        "revenueChart": "Facturé (6 derniers mois)",
+        "projectsByStatus": "Projets par statut",
+        "inProgressProjects": "Projets en cours",
+        "overview": "Aperçu",
+        "activityGroup": "Activité",
+        "projectsAndBilling": "Projets & facturation"
+      },
+      "invoiceTableColumns": {
+        "invoice": "Facture",
+        "project": "Projet",
+        "amount": "Montant",
+        "status": "Statut"
       },
       "stats": {
         "activeProjects": "Projets actifs",
@@ -1192,10 +1211,45 @@
     },
     "projectManagement": {
       "title": "Gestion de projet",
-      "subtitle": "Vue d'ensemble des projets qui vous sont confiés, réservée aux membres de l'équipe.",
+      "subtitle": "Vos engagements en cours, les projets ouverts aux candidatures et le suivi de vos demandes.",
       "statTotal": "Projets au total",
       "statActive": "En cours",
       "statUpcoming": "À venir",
+      "tabs": {
+        "mine": "Mes projets",
+        "open": "Projets disponibles",
+        "requests": "Mes demandes"
+      },
+      "roles": {
+        "client": "Client",
+        "owner": "Chef de projet",
+        "collaborator": "Collaborateur"
+      },
+      "mineColumns": {
+        "project": "Projet",
+        "role": "Rôle",
+        "progress": "Avancement",
+        "deadline": "Échéance",
+        "status": "Statut"
+      },
+      "openColumns": {
+        "project": "Projet",
+        "skills": "Compétences",
+        "priority": "Priorité",
+        "deadline": "Échéance",
+        "status": "Statut"
+      },
+      "searchPlaceholder": "Rechercher un projet, une compétence…",
+      "noResults": "Aucun résultat pour cette recherche.",
+      "requests": {
+        "empty": "Aucune demande envoyée pour le moment.",
+        "requestedOn": "Envoyée le {date}",
+        "status": {
+          "pending": "En attente",
+          "approved": "Acceptée",
+          "rejected": "Refusée"
+        }
+      },
       "profileBanner": {
         "title": "Complétez votre profil",
         "body": "Votre profil est complété à {percent} %. Tant qu'il n'est pas à 100 %, vous ne pouvez pas participer activement aux projets (lecture seule) — aucun projet ne peut vous être confié en toute confiance sans un profil complet. Il vous manque :",

@@ -20,10 +20,10 @@ export function QuoteWizardStepType({
 }: QuoteWizardStepTypeProps) {
   return (
     <fieldset>
-      <legend className="mb-6 text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+      <legend className="mb-4 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
         {t("step1Question")}
       </legend>
-      <div role="radiogroup" aria-label={t("step1Question")} className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div role="radiogroup" aria-label={t("step1Question")} className="mb-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {TYPE_KEYS.map((key) => (
           <OptionCard
             key={key}

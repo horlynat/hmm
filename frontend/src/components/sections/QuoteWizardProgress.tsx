@@ -34,7 +34,7 @@ export function QuoteWizardProgress({ current, phases, t }: QuoteWizardProgressP
           />
         ))}
       </div>
-      <div aria-live="polite" className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+      <div aria-live="polite" className="mb-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[0.68rem] uppercase tracking-wide">
           {phases.map((phase, i) => {
             const activeIndex = phaseIndexForStep(current);

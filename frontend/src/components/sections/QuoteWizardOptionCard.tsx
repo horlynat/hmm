@@ -21,7 +21,7 @@ export function OptionCard({
       aria-checked={selected}
       onClick={onClick}
       className={clsx(
-        "flex items-start gap-3 rounded-[var(--radius-md)] border px-4 py-3.5 text-left text-sm font-semibold transition-all",
+        "flex items-start gap-2.5 rounded-[var(--radius-md)] border px-3.5 py-3 text-left text-sm font-semibold transition-all",
         selected
           ? "border-brand-primary bg-brand-primary/10 text-brand-primary shadow-sm"
           : "border-[var(--border-soft)] bg-bg-card hover:-translate-y-0.5 hover:border-brand-accent hover:shadow-sm",

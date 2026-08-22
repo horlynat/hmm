@@ -12,34 +12,23 @@ interface StatCardProps {
   tone?: "default" | "warning" | "success" | "danger";
 }
 
-const TONE_CLASS: Record<NonNullable<StatCardProps["tone"]>, string> = {
-  default: "bg-brand-primary/10 text-brand-primary",
-  warning: "bg-warning/15 text-(--color-badge-warning-text)",
-  success: "bg-success/15 text-success",
-  danger: "bg-danger/10 text-danger",
+const TONE_ICON_CLASS: Record<NonNullable<StatCardProps["tone"]>, string> = {
+  default: "text-brand-primary",
+  warning: "text-(--color-badge-warning-text)",
+  success: "text-success",
+  danger: "text-danger",
 };
 
-/** Tuile de statistique premium (icône + valeur + libellé), avec lien optionnel. Réutilisée entre le dashboard et la gestion de projet. */
+/** Tuile de statistique compacte (libellé + valeur, icône discrète), avec lien optionnel. Réutilisée entre le dashboard et la gestion de projet. */
 export function StatCard({ icon: Icon, label, value, href, tone = "default" }: StatCardProps) {
   const content = (
-    <Card
-      variant="soft"
-      className="group flex items-center gap-3.5 p-4 transition-all duration-200 hover:border-brand-accent/30 hover:shadow-md"
-    >
-      <div
-        className={clsx(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-transform duration-200",
-          href && "group-hover:scale-105",
-          TONE_CLASS[tone],
-        )}
-      >
-        <Icon size={19} aria-hidden="true" />
+    <Card variant="soft" className="p-3 transition-colors duration-200 hover:border-brand-accent/30">
+      <div className="flex items-center gap-1.5">
+        <Icon size={13} aria-hidden="true" className={clsx("shrink-0", TONE_ICON_CLASS[tone])} />
+        <span className="truncate text-[11px] font-bold uppercase tracking-wide text-(--color-muted)">{label}</span>
       </div>
-      <div className="min-w-0">
-        <div className="text-2xl font-bold leading-none" style={{ fontFamily: "var(--font-heading)" }}>
-          {value}
-        </div>
-        <div className="mt-1.5 line-clamp-2 text-xs font-medium text-(--color-muted)">{label}</div>
+      <div className="mt-1 text-xl font-extrabold leading-none" style={{ fontFamily: "var(--font-heading)" }}>
+        {value}
       </div>
     </Card>
   );
@@ -47,7 +36,7 @@ export function StatCard({ icon: Icon, label, value, href, tone = "default" }: S
   return href ? (
     <Link
       href={href}
-      className="block rounded-[var(--radius-lg)] transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
+      className="block rounded-[var(--radius-md)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
     >
       {content}
     </Link>

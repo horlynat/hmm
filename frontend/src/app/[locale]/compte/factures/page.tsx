@@ -328,9 +328,9 @@ export default async function FacturesPage({
       )}
 
       {invoices.length === 0 ? (
-        <EmptyState icon="🧾" message={tf("empty")} />
+        <EmptyState icon={Receipt} message={tf("empty")} />
       ) : filteredInvoices.length === 0 ? (
-        <EmptyState icon="🧾" message={tf("emptyFiltered")} />
+        <EmptyState icon={Receipt} message={tf("emptyFiltered")} />
       ) : (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           {filteredInvoices.map((invoice) => (

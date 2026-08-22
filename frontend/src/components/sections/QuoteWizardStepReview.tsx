@@ -13,10 +13,10 @@ interface QuoteWizardStepReviewProps {
 export function QuoteWizardStepReview({ answers, t, consent, setConsent, setCurrent }: QuoteWizardStepReviewProps) {
   return (
     <div>
-      <div className="mb-6 text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+      <div className="mb-4 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
         {t("step8Question")}
       </div>
-      <div className="mb-6 space-y-4">
+      <div className="mb-5 space-y-3">
         {[
           {
             titleKey: "recapSectionProject" as const,
@@ -50,7 +50,7 @@ export function QuoteWizardStepReview({ answers, t, consent, setConsent, setCurr
         ].map((section) => (
           <div
             key={section.titleKey}
-            className="rounded-[var(--radius-md)] border border-[var(--border-softer)] p-4"
+            className="rounded-[var(--radius-md)] border border-[var(--border-softer)] p-3.5"
           >
             <div className="mb-2 flex items-center justify-between gap-3">
               <span

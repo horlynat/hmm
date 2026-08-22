@@ -49,3 +49,14 @@ const INVOICE_STATUS_VARIANT: Record<string, BadgeVariant> = {
 export function invoiceStatusVariant(status: string): BadgeVariant {
   return INVOICE_STATUS_VARIANT[status] ?? "neutral";
 }
+
+/** Couleur de badge par statut de demande d'auto-association — miroir de ProjectJoinRequestStatusEnum côté backend. */
+const JOIN_REQUEST_STATUS_VARIANT: Record<string, BadgeVariant> = {
+  pending: "warning",
+  approved: "success",
+  rejected: "danger",
+};
+
+export function joinRequestStatusVariant(status: string): BadgeVariant {
+  return JOIN_REQUEST_STATUS_VARIANT[status] ?? "neutral";
+}

@@ -13,10 +13,10 @@ interface QuoteWizardStepBudgetProps {
 export function QuoteWizardStepBudget({ answers, update, t, budgetOptions }: QuoteWizardStepBudgetProps) {
   return (
     <fieldset>
-      <legend className="mb-6 text-xl font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+      <legend className="mb-4 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
         {answers.type === t("typeOther") ? t("step5QuestionOther") : t("step5Question")}
       </legend>
-      <div className="mb-4 max-w-[220px]">
+      <div className="mb-3 max-w-[220px]">
         <label className="field-label" htmlFor="quote-currency">
           {t("currencyLabel")}
         </label>
@@ -36,7 +36,7 @@ export function QuoteWizardStepBudget({ answers, update, t, budgetOptions }: Quo
           ))}
         </select>
       </div>
-      <div role="radiogroup" aria-label={t("step5Question")} className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div role="radiogroup" aria-label={t("step5Question")} className="mb-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {budgetOptions.map((label) => (
           <OptionCard key={label} selected={answers.budget === label} onClick={() => update("budget", label)}>
             {label}
