@@ -7,6 +7,7 @@ import { ProjectDiscussion } from "@/components/sections/ProjectDiscussion";
 import { getCurrentUser, getMyProject, getProjectComments } from "@/lib/auth/session";
 import { getMediaUrl } from "@/lib/media";
 import { projectStatusVariant, invoiceStatusVariant } from "@/lib/status";
+import { sanitizeArticleHtml } from "@/lib/sanitize";
 
 /** Nombre de jours entre aujourd'hui et la deadline (négatif si dépassée) — comparaison sur la seule date, pas l'heure. */
 function daysUntil(deadline: string): number {
@@ -130,7 +131,13 @@ export default async function CompteProjectDetailPage({
 
       <div>
         <SectionHeading title={t("projectDetail.descriptionLabel")} />
-        <p className="whitespace-pre-line text-sm opacity-80">{project.description}</p>
+        {/* Contenu HTML rédigé côté admin (éditeur riche), sanitisé côté
+            serveur avant injection — même traitement que la page publique
+            du projet, cf. (marketing)/realisations/[slug]/page.tsx. */}
+        <div
+          className="article-body text-sm opacity-80"
+          dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(project.description) }}
+        />
       </div>
 
       {(project.skills.length > 0 || project.tags.length > 0) && (
