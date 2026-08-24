@@ -429,15 +429,9 @@ final class AdminProjectController extends AbstractController
         ]);
         $form->handleRequest($request);
 
-        // Fixé AVANT isValid() (qui déclenche la validation, dont
-        // #[UniqueEntity(fields: ['slug'])]) — sinon la contrainte verrait
-        // encore le slug vide/précédent et ne pourrait jamais détecter de
-        // collision, laissant l'INSERT planter en 500 à la place.
-        if ($form->isSubmitted()) {
-            $project->setSlug($slugger->slug($project->getTitle())->lower());
-        }
-
         if ($form->isSubmitted() && $form->isValid()) {
+            $project->setSlug($this->uniqueProjectSlug($slugger, $entityManager, $project->getTitle()));
+
             // Upload des médias
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
 
@@ -585,12 +579,9 @@ final class AdminProjectController extends AbstractController
         $form = $this->createForm(ProjectType::class, $project);
         $form->handleRequest($request);
 
-        // Fixé AVANT isValid() — cf. create() pour le pourquoi.
-        if ($form->isSubmitted()) {
-            $project->setSlug($slugger->slug($project->getTitle())->lower());
-        }
-
         if ($form->isSubmitted() && $form->isValid()) {
+            $project->setSlug($this->uniqueProjectSlug($slugger, $entityManager, $project->getTitle(), $project->getId()));
+
             // Upload des nouveaux médias
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
 
@@ -1649,5 +1640,35 @@ final class AdminProjectController extends AbstractController
         if (!empty($changes)) {
             $project->logUpdate($this->getAuthenticatedUser(), $changes);
         }
+    }
+
+    /**
+     * Génère un slug garanti unique pour un titre donné — ajoute un suffixe
+     * numérique ("-2", "-3", ...) si le slug de base est déjà pris par un
+     * autre projet.
+     *
+     * Fait explicitement ici plutôt que de compter sur
+     * #[UniqueEntity(fields: ['slug'])] (déclaré sur Project) : Symfony
+     * valide l'entité PENDANT handleRequest() (l'écouteur POST_SUBMIT de
+     * l'extension Validator), avant que ce contrôleur n'ait la main pour
+     * fixer le slug — la contrainte ne voit donc jamais la bonne valeur et
+     * ne peut jamais détecter de collision, laissant l'INSERT/UPDATE planter
+     * en 500 (UniqueConstraintViolationException) à la place.
+     *
+     * $excludeId : id du projet en cours d'édition (update()) — pour ne pas
+     * le confondre avec un "autre projet" alors qu'il s'agit de lui-même
+     * resauvegardé avec le même titre.
+     */
+    private function uniqueProjectSlug(SluggerInterface $slugger, EntityManagerInterface $entityManager, string $title, ?int $excludeId = null): string
+    {
+        $base = (string) $slugger->slug($title)->lower();
+        $repository = $entityManager->getRepository(Project::class);
+
+        $slug = $base;
+        for ($suffix = 2; null !== ($existing = $repository->findOneBy(['slug' => $slug])) && $existing->getId() !== $excludeId; ++$suffix) {
+            $slug = $base.'-'.$suffix;
+        }
+
+        return $slug;
     }
 }

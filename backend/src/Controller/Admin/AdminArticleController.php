@@ -73,15 +73,9 @@ final class AdminArticleController extends AbstractController
         $form = $this->createForm(ArticleType::class, $article);
         $form->handleRequest($request);
 
-        // Fixé AVANT isValid() (qui déclenche la validation, dont
-        // #[UniqueEntity(fields: ['slug'])]) — sinon la contrainte verrait
-        // encore le slug vide/précédent et ne pourrait jamais détecter de
-        // collision, laissant l'INSERT planter en 500 à la place.
-        if ($form->isSubmitted()) {
-            $article->setSlug($slugger->slug($article->getTitle())->lower());
-        }
-
         if ($form->isSubmitted() && $form->isValid()) {
+            $article->setSlug($this->uniqueArticleSlug($slugger, $entityManager, $article->getTitle()));
+
             // Extraction et traitement de l'image via la méthode optimisée
             $this->handleImageUpload($form, $article, $uploader, $entityManager);
 
@@ -148,12 +142,9 @@ final class AdminArticleController extends AbstractController
         $form = $this->createForm(ArticleType::class, $article);
         $form->handleRequest($request);
 
-        // Fixé AVANT isValid() — cf. create() pour le pourquoi.
-        if ($form->isSubmitted()) {
-            $article->setSlug($slugger->slug($article->getTitle())->lower());
-        }
-
         if ($form->isSubmitted() && $form->isValid()) {
+            $article->setSlug($this->uniqueArticleSlug($slugger, $entityManager, $article->getTitle(), $article->getId()));
+
             // Traitement de l'image (réutilisable sans duplication !)
             $this->handleImageUpload($form, $article, $uploader, $entityManager);
 
@@ -229,5 +220,34 @@ final class AdminArticleController extends AbstractController
             $entityManager->persist($media);
             $article->addMedia($media);
         }
+    }
+
+    /**
+     * Génère un slug garanti unique pour un titre donné — ajoute un suffixe
+     * numérique ("-2", "-3", ...) si le slug de base est déjà pris par un
+     * autre article.
+     *
+     * Fait explicitement ici plutôt que via #[UniqueEntity(fields: ['slug'])]
+     * sur l'entité : Symfony valide l'entité PENDANT handleRequest() (l'écouteur
+     * POST_SUBMIT de l'extension Validator), avant que ce contrôleur n'ait la
+     * main pour fixer le slug — la contrainte ne voit donc jamais la bonne
+     * valeur et ne peut jamais détecter de collision, laissant l'INSERT/UPDATE
+     * planter en 500 (UniqueConstraintViolationException) à la place.
+     *
+     * $excludeId : id de l'article en cours d'édition (update()) — pour ne
+     * pas le confondre avec un "autre article" alors qu'il s'agit de
+     * lui-même resauvegardé avec le même titre.
+     */
+    private function uniqueArticleSlug(SluggerInterface $slugger, EntityManagerInterface $entityManager, string $title, ?int $excludeId = null): string
+    {
+        $base = (string) $slugger->slug($title)->lower();
+        $repository = $entityManager->getRepository(Article::class);
+
+        $slug = $base;
+        for ($suffix = 2; null !== ($existing = $repository->findOneBy(['slug' => $slug])) && $existing->getId() !== $excludeId; ++$suffix) {
+            $slug = $base.'-'.$suffix;
+        }
+
+        return $slug;
     }
 }
