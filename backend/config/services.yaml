@@ -64,6 +64,11 @@ services:
             $apiKey: '%env(GEMINI_API_KEY)%'
             $model: '%env(GEMINI_MODEL)%'
 
+    App\Service\GeminiTranslator:
+        arguments:
+            $apiKey: '%env(GEMINI_API_KEY)%'
+            $model: '%env(GEMINI_MODEL)%'
+
     App\Service\ClaudeClient:
         arguments:
             $apiKey: '%env(ANTHROPIC_API_KEY)%'
@@ -116,6 +121,10 @@ services:
             - { name: doctrine.event_listener, event: postFlush }
 
     App\EventSubscriber\TotpSecretEncryptionListener:
+        tags:
+            - { name: doctrine.event_listener, event: postLoad }
+
+    App\EventSubscriber\TranslationHydrationListener:
         tags:
             - { name: doctrine.event_listener, event: postLoad }
 

@@ -1,0 +1,15 @@
+{#
+   Bascule globale FR/EN pour un formulaire bilingue entier : désactive la
+   colonne non choisie sur toute la page (chaque <twig:FieldPair> écoute
+   l'événement diffusé ici) et déclenche la traduction en direct vers cette
+   colonne pendant la frappe (cf. bilingual_field_controller.js).
+   Usage : <twig:LocaleToggle /> — une fois par page, au-dessus des champs.
+#}
+<div class="flex items-center gap-3 mb-4" data-controller="locale-toggle">
+	<span class="text-xs opacity-60 font-medium uppercase tracking-wide">Langue en cours d'édition</span>
+	<div class="flex gap-1">
+		<button type="button" class="btn btn-sm btn-primary" data-locale-toggle-target="frBtn" data-action="locale-toggle#chooseFr">Français</button>
+		<button type="button" class="btn btn-sm btn-secondary" data-locale-toggle-target="enBtn" data-action="locale-toggle#chooseEn">English</button>
+	</div>
+	<span class="text-xs opacity-50">L'autre langue se traduit automatiquement pendant que vous écrivez.</span>
+</div>

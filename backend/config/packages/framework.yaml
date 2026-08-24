@@ -128,6 +128,16 @@ framework:
             policy: sliding_window
             limit: 30
             interval: '1 hour'
+        # Traduction en direct pendant la frappe dans un formulaire bilingue du
+        # back-office (fr <-> en, POST /admin/translate) — App\Controller\Admin\
+        # AdminTranslateController, déjà derrière ROLE_ADMIN. Garde-fou contre
+        # un débounce cassé côté client ou un usage anormal, pas une vraie
+        # limite fonctionnelle : l'usage normal reste quelques appels par
+        # minute, jamais des dizaines.
+        admin_translate:
+            policy: sliding_window
+            limit: 60
+            interval: '1 minute'
 
     # HTTP cache et fragments (désactivés par défaut)
     # esi: true

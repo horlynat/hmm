@@ -12,27 +12,29 @@ use App\Entity\Tag;
 use App\Entity\TimeEntry;
 use App\Entity\User;
 use App\Enum\BillingTypeEnum;
-use App\Enum\TaskStatusEnum;
 use App\Enum\BudgetStatusEnum;
 use App\Enum\ProjectPriorityEnum;
 use App\Enum\ProjectStatusEnum;
+use App\Enum\TaskStatusEnum;
 use App\Form\ProjectExpenseType;
 use App\Form\ProjectType;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use App\Repository\ProjectHistoryRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\TagRepository;
+use App\Repository\TranslationRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\ProjectVoter;
+use App\Service\ContentAutoTranslator;
 use App\Service\MediaUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
@@ -415,6 +417,8 @@ final class AdminProjectController extends AbstractController
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
         MediaUploader $mediaUploader,
+        ContentAutoTranslator $autoTranslator,
+        TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
@@ -438,15 +442,23 @@ final class AdminProjectController extends AbstractController
             // Contenu vitrine (étape 2 de l'assistant) — ProjectInfo n'est créé
             // que si l'admin a réellement renseigné au moins un champ.
             $showcase = $this->buildProjectInfoFromForm($form);
-            if ($showcase !== null) {
+            if (null !== $showcase) {
                 $project->setInfo($showcase);
             }
+
+            // Traduction automatique fr -> en de title/description (les champs
+            // vitrine de ProjectInfo — techStack, challenges, résultats — sont
+            // structurés, pas de simples chaînes : hors périmètre ici).
+            $autoTranslator->syncTranslations($project);
 
             // Journaliser la création
             $project->logCreation($this->getAuthenticatedUser());
 
             $entityManager->persist($project);
             $entityManager->flush();
+
+            // Après flush() pour disposer d'un id garanti (projet tout juste créé).
+            $translationRepository->syncFromEntity($project);
 
             $this->addFlash('success', 'Le projet a été créé avec succès.');
 
@@ -474,7 +486,7 @@ final class AdminProjectController extends AbstractController
         $challenges = $this->parsePairs((string) $form->get('challenges')->getData(), 'problem', 'solution');
         $results = $this->parsePairs((string) $form->get('results')->getData(), 'label', 'value');
 
-        if ($role === '' && $repoUrl === '' && !$objectives && !$techStack && !$challenges && !$results) {
+        if ('' === $role && '' === $repoUrl && !$objectives && !$techStack && !$challenges && !$results) {
             return null;
         }
 
@@ -486,13 +498,13 @@ final class AdminProjectController extends AbstractController
         $resultsEn = $this->parsePairs((string) $form->get('resultsEn')->getData(), 'label', 'value');
 
         $info = new ProjectInfo();
-        $info->setRole($role !== '' ? $role : null);
-        $info->setRepoUrl($repoUrl !== '' ? $repoUrl : null);
+        $info->setRole('' !== $role ? $role : null);
+        $info->setRepoUrl('' !== $repoUrl ? $repoUrl : null);
         $info->setObjectives($objectives);
         $info->setTechStack($techStack);
         $info->setChallenges($challenges);
         $info->setResults($results);
-        $info->setRoleEn($roleEn !== '' ? $roleEn : null);
+        $info->setRoleEn('' !== $roleEn ? $roleEn : null);
         $info->setObjectivesEn($objectivesEn ?: null);
         $info->setTechStackEn($techStackEn ?: null);
         $info->setChallengesEn($challengesEn ?: null);
@@ -513,16 +525,16 @@ final class AdminProjectController extends AbstractController
         $items = [];
         foreach (preg_split('/\r?\n/', $raw) ?: [] as $line) {
             $line = trim($line);
-            if ($line === '') {
+            if ('' === $line) {
                 continue;
             }
             [$a, $b] = array_pad(explode('|', $line, 2), 2, null);
             $a = trim((string) $a);
-            if ($a === '') {
+            if ('' === $a) {
                 continue;
             }
-            $b = $b !== null ? trim($b) : '';
-            $items[] = [$keyA => $a, $keyB => $b !== '' ? $b : null];
+            $b = null !== $b ? trim($b) : '';
+            $items[] = [$keyA => $a, $keyB => '' !== $b ? $b : null];
         }
 
         return $items;
@@ -557,6 +569,8 @@ final class AdminProjectController extends AbstractController
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
         MediaUploader $mediaUploader,
+        ContentAutoTranslator $autoTranslator,
+        TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
 
@@ -572,6 +586,9 @@ final class AdminProjectController extends AbstractController
         $oldBudget = $project->getBudget();
         $oldSpent = $project->getSpent();
 
+        // Capturé AVANT `handleRequest` : sert de référence pour détecter quels
+        // champs français ont changé (cf. ContentAutoTranslator::syncTranslations).
+        $originalData = $entityManager->getUnitOfWork()->getOriginalEntityData($project);
         $form = $this->createForm(ProjectType::class, $project);
         $form->handleRequest($request);
 
@@ -583,10 +600,18 @@ final class AdminProjectController extends AbstractController
             // Upload des nouveaux médias
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
 
+            // Traduction automatique fr -> en de title/description (cf. create()
+            // pour le pourquoi ProjectInfo — techStack/challenges/résultats —
+            // reste hors périmètre).
+            $autoTranslator->syncTranslations($project, $originalData);
+
             // Journaliser les modifications
             $this->logProjectChanges($project, $oldStatus, $oldBudget, $oldSpent);
 
             $entityManager->flush();
+
+            $translationRepository->syncFromEntity($project);
+
             $this->addFlash('success', 'Le projet a été mis à jour avec succès.');
 
             return $this->redirectToRoute('admin_project_index');

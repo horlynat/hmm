@@ -32,7 +32,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $heroEyebrow = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $heroEyebrowEn = null;
 
@@ -41,7 +40,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $heroTitle = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $heroTitleEn = null;
 
@@ -50,7 +48,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $heroTitleAccent = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $heroTitleAccentEn = null;
 
@@ -59,7 +56,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $heroSub = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $heroSubEn = null;
 
@@ -73,7 +69,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $profileRole = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $profileRoleEn = null;
 
@@ -81,7 +76,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $profileAvailability = '';
 
-    #[ORM\Column(length: 100, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $profileAvailabilityEn = null;
 
@@ -89,7 +83,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $profileAlso = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $profileAlsoEn = null;
 
@@ -97,7 +90,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $profileLocation = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $profileLocationEn = null;
 
@@ -105,7 +97,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $profileWorkMode = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $profileWorkModeEn = null;
 
@@ -113,7 +104,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $profileLanguages = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $profileLanguagesEn = null;
 
@@ -128,7 +118,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $bioTitle = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $bioTitleEn = null;
 
@@ -136,7 +125,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $bioP1 = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $bioP1En = null;
 
@@ -144,7 +132,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $bioP2 = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $bioP2En = null;
 
@@ -152,7 +139,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $bioP3 = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $bioP3En = null;
 
@@ -162,7 +148,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $visionTitle = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $visionTitleEn = null;
 
@@ -170,7 +155,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $visionLede = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $visionLedeEn = null;
 
@@ -178,7 +162,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $visionTodayText = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $visionTodayTextEn = null;
 
@@ -186,7 +169,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $visionTomorrowText = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $visionTomorrowTextEn = null;
 
@@ -196,7 +178,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $why1Title = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $why1TitleEn = null;
 
@@ -204,7 +185,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $why1Desc = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $why1DescEn = null;
 
@@ -212,7 +192,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $why2Title = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $why2TitleEn = null;
 
@@ -220,7 +199,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $why2Desc = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $why2DescEn = null;
 
@@ -228,7 +206,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $why3Title = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $why3TitleEn = null;
 
@@ -236,7 +213,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $why3Desc = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $why3DescEn = null;
 
@@ -244,7 +220,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $why4Title = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $why4TitleEn = null;
 
@@ -252,7 +227,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $why4Desc = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $why4DescEn = null;
 
@@ -264,7 +238,6 @@ class AboutContent
     private array $beyondLanguages = [];
 
     /** @var string[]|null */
-    #[ORM\Column(type: Types::JSON, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?array $beyondLanguagesEn = null;
 
@@ -274,7 +247,6 @@ class AboutContent
     private array $beyondInterests = [];
 
     /** @var string[]|null */
-    #[ORM\Column(type: Types::JSON, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?array $beyondInterestsEn = null;
 
@@ -284,7 +256,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $ctaTitle = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $ctaTitleEn = null;
 
@@ -292,7 +263,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private string $ctaSub = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $ctaSubEn = null;
 
