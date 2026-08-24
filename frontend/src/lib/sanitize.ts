@@ -2,11 +2,15 @@ import "server-only";
 import sanitizeHtml from "sanitize-html";
 
 /**
- * Sanitise le HTML des articles (rédigé côté admin Symfony) avant injection
- * via `dangerouslySetInnerHTML`. Défense en profondeur : même si la source est
- * de confiance, on neutralise tout script / gestionnaire d'événement inline
- * (`onerror`, `onclick`…) et tout schéma d'URL dangereux (`javascript:`), qui
- * s'exécuteraient sinon (la CSP du site autorise l'inline pour Next/Tailwind).
+ * Sanitise le HTML des contenus rédigés côté admin Symfony (éditeur riche —
+ * cf. assets/controllers/rich_text_controller.js) avant injection via
+ * `dangerouslySetInnerHTML` : corps d'article (Article.content) ET
+ * description complète d'un projet (Project.description), même traitement
+ * pour les deux — malgré le nom, pas spécifique aux articles. Défense en
+ * profondeur : même si la source est de confiance, on neutralise tout script
+ * / gestionnaire d'événement inline (`onerror`, `onclick`…) et tout schéma
+ * d'URL dangereux (`javascript:`), qui s'exécuteraient sinon (la CSP du site
+ * autorise l'inline pour Next/Tailwind).
  *
  * La liste blanche couvre exactement les balises stylées par `.article-body`
  * dans globals.css, plus la mise en forme usuelle.
@@ -15,7 +19,7 @@ export function sanitizeArticleHtml(dirty: string): string {
   return sanitizeHtml(dirty, {
     allowedTags: [
       "p", "br", "hr",
-      "h2", "h3", "h4",
+      "h1", "h2", "h3", "h4",
       "ul", "ol", "li",
       "a", "strong", "b", "em", "i", "u", "s",
       "blockquote", "code", "pre",

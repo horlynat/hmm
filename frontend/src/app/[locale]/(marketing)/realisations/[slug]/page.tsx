@@ -10,6 +10,7 @@ import { jsonLdScript } from "@/lib/json-ld";
 import { siteConfig } from "@/config/site";
 import { projectStatusVariant } from "@/lib/status";
 import { resolveOgLocale, SITE_URL } from "@/lib/metadata";
+import { getArticleExcerpt, sanitizeArticleHtml } from "@/lib/sanitize";
 
 export const dynamic = "force-static";
 
@@ -39,12 +40,18 @@ export async function generateMetadata({
     ? getMediaUrl(project.info.coverImage.filePath)
     : `${SITE_URL}/${locale}/opengraph-image`;
 
+  // `description` peut désormais contenir du HTML structuré (éditeur riche
+  // admin, cf. rich_text_controller.js côté backend) — extrait un résumé
+  // texte brut pour les meta description / Open Graph / Twitter, qui
+  // n'acceptent pas de balisage.
+  const excerpt = getArticleExcerpt(project.description);
+
   return {
     title: project.title,
-    description: project.description,
+    description: excerpt,
     openGraph: {
       title: project.title,
-      description: project.description,
+      description: excerpt,
       type: "article",
       siteName: siteConfig.name,
       locale: resolveOgLocale(locale),
@@ -53,7 +60,7 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: project.title,
-      description: project.description,
+      description: excerpt,
       images: [image],
     },
   };
@@ -106,7 +113,7 @@ export default async function ProjectDetailPage({
     "@context": "https://schema.org",
     "@type": "CreativeWork",
     name: project.title,
-    description: project.description,
+    description: getArticleExcerpt(project.description),
     image: projectImage ? [projectImage] : undefined,
     author: { "@type": "Person", name: siteConfig.name },
     keywords: info?.techStack.length ? info.techStack.map((tech) => tech.name).join(", ") : undefined,
@@ -124,7 +131,13 @@ export default async function ProjectDetailPage({
           <h1 className="mb-5 text-[clamp(1.25rem,2.5vw,1.75rem)] leading-[1.14]">
             {project.title}
           </h1>
-          <p className="mb-3 max-w-[65ch] text-[1.05rem] opacity-75">{project.description}</p>
+          {/* Contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
+              serveur en défense en profondeur avant injection — même
+              traitement que le corps d'article, cf. blog/[slug]/page.tsx. */}
+          <div
+            className="article-body mb-3 max-w-[65ch] text-[1.05rem] opacity-75"
+            dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(project.description) }}
+          />
           {info?.role && (
             <p className="mb-8 text-sm font-semibold text-brand-primary">
               {td("roleLabel")} — {info.role}

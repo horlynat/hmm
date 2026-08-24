@@ -17,8 +17,20 @@ const MAX_TECH_BADGES = 3;
  * des cartes entre elles plutôt que de laisser un texte long déborder. */
 const MAX_DESCRIPTION_LENGTH = 300;
 
+/**
+ * Résumé texte brut affiché sur la carte — `description` peut désormais
+ * contenir du HTML structuré (éditeur riche admin, cf. rich_text_controller.js
+ * côté backend). Composant client (pas d'accès à sanitize-html, "server-only"
+ * côté lib/sanitize.ts) : un simple retrait de balises suffit ici, le résultat
+ * n'est jamais réinjecté en HTML (juste affiché comme texte JSX, échappé
+ * automatiquement par React).
+ */
 function truncateDescription(text: string, length = MAX_DESCRIPTION_LENGTH) {
-  return text.length > length ? `${text.slice(0, length).trimEnd()}…` : text;
+  const plain = text
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return plain.length > length ? `${plain.slice(0, length).trimEnd()}…` : plain;
 }
 
 export function ProjectCard({
