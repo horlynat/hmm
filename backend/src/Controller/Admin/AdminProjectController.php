@@ -24,7 +24,6 @@ use App\Repository\TagRepository;
 use App\Repository\TranslationRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\ProjectVoter;
-use App\Service\ContentAutoTranslator;
 use App\Service\MediaUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
@@ -417,7 +416,6 @@ final class AdminProjectController extends AbstractController
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
         MediaUploader $mediaUploader,
-        ContentAutoTranslator $autoTranslator,
         TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
@@ -445,11 +443,6 @@ final class AdminProjectController extends AbstractController
             if (null !== $showcase) {
                 $project->setInfo($showcase);
             }
-
-            // Traduction automatique fr -> en de title/description (les champs
-            // vitrine de ProjectInfo — techStack, challenges, résultats — sont
-            // structurés, pas de simples chaînes : hors périmètre ici).
-            $autoTranslator->syncTranslations($project);
 
             // Journaliser la création
             $project->logCreation($this->getAuthenticatedUser());
@@ -569,7 +562,6 @@ final class AdminProjectController extends AbstractController
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
         MediaUploader $mediaUploader,
-        ContentAutoTranslator $autoTranslator,
         TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
@@ -586,9 +578,6 @@ final class AdminProjectController extends AbstractController
         $oldBudget = $project->getBudget();
         $oldSpent = $project->getSpent();
 
-        // Capturé AVANT `handleRequest` : sert de référence pour détecter quels
-        // champs français ont changé (cf. ContentAutoTranslator::syncTranslations).
-        $originalData = $entityManager->getUnitOfWork()->getOriginalEntityData($project);
         $form = $this->createForm(ProjectType::class, $project);
         $form->handleRequest($request);
 
@@ -599,11 +588,6 @@ final class AdminProjectController extends AbstractController
 
             // Upload des nouveaux médias
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
-
-            // Traduction automatique fr -> en de title/description (cf. create()
-            // pour le pourquoi ProjectInfo — techStack/challenges/résultats —
-            // reste hors périmètre).
-            $autoTranslator->syncTranslations($project, $originalData);
 
             // Journaliser les modifications
             $this->logProjectChanges($project, $oldStatus, $oldBudget, $oldSpent);

@@ -1,6 +1,8 @@
 {# templates/admin/project/_form_wizard.html.twig
    Assistant de création en 4 étapes — une seule soumission finale.
    Voir assets/controllers/wizard_controller.js pour la navigation. #}
+<twig:LocaleToggle />
+
 {{ form_start(form, {
     'attr': {'class': 'space-y-6', 'novalidate': 'novalidate', 'data-controller': 'wizard'},
     'enctype': 'multipart/form-data'
@@ -34,30 +36,29 @@
             <p class="mt-1 text-sm opacity-60">Le strict nécessaire pour identifier le projet : ce qui apparaît en premier sur la fiche.</p>
         </div>
 
-        <div>
-            {{ form_label(form.title, 'Titre du projet', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
-            {{ form_widget(form.title, {'attr': {'class': 'input w-full text-lg font-semibold', 'placeholder': 'Ex : Refonte de la plateforme e-commerce...'}}) }}
-            {{ form_errors(form.title, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-        </div>
+        <twig:FieldPair :fr="form.title" :en="form.titleEn" />
 
-        <div>
-            {{ form_label(form.titleEn, form.titleEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-            <p class="text-[11px] opacity-40 mb-2">{{ form.titleEn.vars.help }}</p>
-            {{ form_widget(form.titleEn, {'attr': {'class': 'input w-full text-sm', 'placeholder': 'Ex : E-commerce Platform Redesign...'}}) }}
-            {{ form_errors(form.titleEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-        </div>
+        {# Description — wiring bilingue manuel (FieldPair ne gère que les
+           champs texte simples, pas l'éditeur riche Quill par-dessus) #}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-controller="bilingual-field">
+            <div>
+                {{ form_label(form.description, 'Description', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+                <div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Contexte en une phrase ou deux : pour qui, pourquoi, dans quel cadre." data-rich-text-min-height-value="160px">
+                    {{ form_widget(form.description, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source', 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
+                    <div data-rich-text-target="editor"></div>
+                </div>
+                {{ form_errors(form.description, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+            </div>
 
-        <div>
-            {{ form_label(form.description, 'Description', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
-            {{ form_widget(form.description, {'attr': {'class': 'input textarea w-full h-32', 'placeholder': 'Contexte en une phrase ou deux : pour qui, pourquoi, dans quel cadre.'}}) }}
-            {{ form_errors(form.description, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-        </div>
-
-        <div>
-            {{ form_label(form.descriptionEn, form.descriptionEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-            <p class="text-[11px] opacity-40 mb-2">{{ form.descriptionEn.vars.help }}</p>
-            {{ form_widget(form.descriptionEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': 'Context in a sentence or two: for whom, why, in what setting.'}}) }}
-            {{ form_errors(form.descriptionEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+            <div>
+                {{ form_label(form.descriptionEn, form.descriptionEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
+                <p class="text-[11px] opacity-40 mb-2">{{ form.descriptionEn.vars.help }}</p>
+                <div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Context in a sentence or two: for whom, why, in what setting." data-rich-text-min-height-value="120px">
+                    {{ form_widget(form.descriptionEn, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source', 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
+                    <div data-rich-text-target="editor"></div>
+                </div>
+                {{ form_errors(form.descriptionEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+            </div>
         </div>
 
         <div>
@@ -84,72 +85,71 @@
             <p class="mt-1 text-sm opacity-60">Ce contenu alimente la fiche publique du projet et les réponses de l'assistant IA aux visiteurs. Tous les champs sont optionnels, mais plus ils sont précis, plus la fiche est convaincante.</p>
         </div>
 
-        <div>
-            {{ form_label(form.role, form.role.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
-            {{ form_widget(form.role, {'attr': {'class': 'input w-full text-sm', 'placeholder': 'Ex : Développeur full-stack — conception et intégration de bout en bout'}}) }}
-            {{ form_errors(form.role, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+        <twig:FieldPair :fr="form.role" :en="form.roleEn" />
+
+        {# Objectifs/techStack/challenges/results portent un exemple concret en
+           plus de l'aide standard (syntaxe "un par ligne" ou "clé | valeur"
+           peu commune) — wiring bilingue manuel pour le conserver plutôt que
+           de passer par <twig:FieldPair />, qui ne rend que le help brut du
+           champ. #}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-controller="bilingual-field">
+            <div class="field">
+                {{ form_label(form.objectives, form.objectives.vars.label, {'label_attr': {'class': 'field-label'}}) }}
+                <p class="text-[11px] opacity-40 mb-1">{{ form.objectives.vars.help }} — Exemple : Réduire le temps de paiement de 40%</p>
+                {{ form_widget(form.objectives, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Simplifier le parcours d'achat sur mobile\nIntégrer un paiement fiable", 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
+                {{ form_errors(form.objectives, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+            </div>
+            <div class="field">
+                {{ form_label(form.objectivesEn, form.objectivesEn.vars.label, {'label_attr': {'class': 'field-label opacity-70'}}) }}
+                <p class="text-[11px] opacity-40 mb-1">{{ form.objectivesEn.vars.help }}</p>
+                {{ form_widget(form.objectivesEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Simplify the mobile purchase journey\nIntegrate reliable payment", 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
+                {{ form_errors(form.objectivesEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+            </div>
         </div>
 
-        <div>
-            {{ form_label(form.roleEn, form.roleEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-2 opacity-70'}}) }}
-            {{ form_widget(form.roleEn, {'attr': {'class': 'input w-full text-sm', 'placeholder': 'Ex : Full-stack developer — end-to-end design and integration'}}) }}
-            {{ form_errors(form.roleEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-controller="bilingual-field">
+            <div class="field">
+                {{ form_label(form.techStack, form.techStack.vars.label, {'label_attr': {'class': 'field-label'}}) }}
+                <p class="text-[11px] opacity-40 mb-1">{{ form.techStack.vars.help }} — Exemple : Next.js | Rendu rapide et bon référencement</p>
+                {{ form_widget(form.techStack, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Next.js | Rendu rapide et bon référencement\nSymfony / API Platform | API robuste et typée", 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
+                {{ form_errors(form.techStack, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+            </div>
+            <div class="field">
+                {{ form_label(form.techStackEn, form.techStackEn.vars.label, {'label_attr': {'class': 'field-label opacity-70'}}) }}
+                <p class="text-[11px] opacity-40 mb-1">{{ form.techStackEn.vars.help }}</p>
+                {{ form_widget(form.techStackEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Next.js | Fast rendering and good SEO\nSymfony / API Platform | Robust, typed API", 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
+                {{ form_errors(form.techStackEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+            </div>
         </div>
 
-        <div>
-            {{ form_label(form.objectives, form.objectives.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1'}}) }}
-            <p class="text-[11px] opacity-40 mb-2">{{ form.objectives.vars.help }} — Exemple : Réduire le temps de paiement de 40%</p>
-            {{ form_widget(form.objectives, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Simplifier le parcours d'achat sur mobile\nIntégrer un paiement fiable"}}) }}
-            {{ form_errors(form.objectives, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-controller="bilingual-field">
+            <div class="field">
+                {{ form_label(form.challenges, form.challenges.vars.label, {'label_attr': {'class': 'field-label'}}) }}
+                <p class="text-[11px] opacity-40 mb-1">{{ form.challenges.vars.help }} — c'est souvent le point le plus convaincant pour un recruteur.</p>
+                {{ form_widget(form.challenges, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Éviter la survente lors des pics de commandes | Verrouillage optimiste du stock en base", 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
+                {{ form_errors(form.challenges, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+            </div>
+            <div class="field">
+                {{ form_label(form.challengesEn, form.challengesEn.vars.label, {'label_attr': {'class': 'field-label opacity-70'}}) }}
+                <p class="text-[11px] opacity-40 mb-1">{{ form.challengesEn.vars.help }}</p>
+                {{ form_widget(form.challengesEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Avoiding overselling during order spikes | Optimistic stock locking at the database level", 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
+                {{ form_errors(form.challengesEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+            </div>
         </div>
 
-        <div>
-            {{ form_label(form.objectivesEn, form.objectivesEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-            <p class="text-[11px] opacity-40 mb-2">{{ form.objectivesEn.vars.help }}</p>
-            {{ form_widget(form.objectivesEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Simplify the mobile purchase journey\nIntegrate reliable payment"}}) }}
-            {{ form_errors(form.objectivesEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-        </div>
-
-        <div>
-            {{ form_label(form.techStack, form.techStack.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1'}}) }}
-            <p class="text-[11px] opacity-40 mb-2">{{ form.techStack.vars.help }} — Exemple : Next.js | Rendu rapide et bon référencement</p>
-            {{ form_widget(form.techStack, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Next.js | Rendu rapide et bon référencement\nSymfony / API Platform | API robuste et typée"}}) }}
-            {{ form_errors(form.techStack, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-        </div>
-
-        <div>
-            {{ form_label(form.techStackEn, form.techStackEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-            <p class="text-[11px] opacity-40 mb-2">{{ form.techStackEn.vars.help }}</p>
-            {{ form_widget(form.techStackEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Next.js | Fast rendering and good SEO\nSymfony / API Platform | Robust, typed API"}}) }}
-            {{ form_errors(form.techStackEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-        </div>
-
-        <div>
-            {{ form_label(form.challenges, form.challenges.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1'}}) }}
-            <p class="text-[11px] opacity-40 mb-2">{{ form.challenges.vars.help }} — c'est souvent le point le plus convaincant pour un recruteur.</p>
-            {{ form_widget(form.challenges, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Éviter la survente lors des pics de commandes | Verrouillage optimiste du stock en base"}}) }}
-            {{ form_errors(form.challenges, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-        </div>
-
-        <div>
-            {{ form_label(form.challengesEn, form.challengesEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-            <p class="text-[11px] opacity-40 mb-2">{{ form.challengesEn.vars.help }}</p>
-            {{ form_widget(form.challengesEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Avoiding overselling during order spikes | Optimistic stock locking at the database level"}}) }}
-            {{ form_errors(form.challengesEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-        </div>
-
-        <div>
-            {{ form_label(form.results, form.results.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1'}}) }}
-            <p class="text-[11px] opacity-40 mb-2">{{ form.results.vars.help }} — Exemple : Temps de paiement | -40%</p>
-            {{ form_widget(form.results, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Temps de paiement | -40%\nTaux d'abandon panier | -25%"}}) }}
-            {{ form_errors(form.results, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-        </div>
-
-        <div>
-            {{ form_label(form.resultsEn, form.resultsEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-            <p class="text-[11px] opacity-40 mb-2">{{ form.resultsEn.vars.help }}</p>
-            {{ form_widget(form.resultsEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Payment time | -40%\nCart abandonment rate | -25%"}}) }}
-            {{ form_errors(form.resultsEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-controller="bilingual-field">
+            <div class="field">
+                {{ form_label(form.results, form.results.vars.label, {'label_attr': {'class': 'field-label'}}) }}
+                <p class="text-[11px] opacity-40 mb-1">{{ form.results.vars.help }} — Exemple : Temps de paiement | -40%</p>
+                {{ form_widget(form.results, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Temps de paiement | -40%\nTaux d'abandon panier | -25%", 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
+                {{ form_errors(form.results, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+            </div>
+            <div class="field">
+                {{ form_label(form.resultsEn, form.resultsEn.vars.label, {'label_attr': {'class': 'field-label opacity-70'}}) }}
+                <p class="text-[11px] opacity-40 mb-1">{{ form.resultsEn.vars.help }}</p>
+                {{ form_widget(form.resultsEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Payment time | -40%\nCart abandonment rate | -25%", 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
+                {{ form_errors(form.resultsEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+            </div>
         </div>
 
         <div>

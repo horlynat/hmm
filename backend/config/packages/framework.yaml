@@ -139,6 +139,13 @@ framework:
             limit: 60
             interval: '1 minute'
 
+        # Upload d'image dans l'éditeur riche (cf. AdminRichTextController) —
+        # plus coûteux qu'une traduction (écriture disque), plafond plus bas.
+        admin_upload_image:
+            policy: sliding_window
+            limit: 20
+            interval: '1 minute'
+
     # HTTP cache et fragments (désactivés par défaut)
     # esi: true
     # fragments: true

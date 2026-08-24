@@ -1,4 +1,6 @@
 {# templates/admin/project/_form.html.twig #}
+<twig:LocaleToggle />
+
 {{ form_start(form, {
     'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'},
     'enctype': 'multipart/form-data'
@@ -11,18 +13,30 @@
 		{# Utilisation de ta classe .card #}
 
 		<!-- Champ Titre -->
-			<div>{{ form_label(form.title, 'Titre du projet', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}
-			) }}{{ form_widget(form.title, {'attr': {'class': 'input w-full text-lg font-semibold', 'placeholder': 'Ex: Refonte de la plateforme e-commerce...'}}
-			) }}{{ form_errors(form.title, {'attr': {'class': 'text-danger text-xs mt-1'}}
-		) }}
-		</div>
+		<twig:FieldPair :fr="form.title" :en="form.titleEn" />
 
-		<!-- Champ Description -->
-			<div>{{ form_label(form.description, 'Description complète', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}
-			) }}{{ form_widget(form.description, {'attr': {'class': 'input textarea w-full h-[420px] text-base leading-relaxed', 'placeholder': 'Décrivez les objectifs, les livrables et le contexte...'}}
-			) }}{{ form_errors(form.description, {'attr': {'class': 'text-danger text-xs mt-1'}}
-		) }}
-	</div>
+		<!-- Champ Description — wiring bilingue manuel (FieldPair ne gère que
+		     les champs texte simples, pas l'éditeur riche Quill par-dessus) -->
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-controller="bilingual-field">
+			<div>
+				{{ form_label(form.description, 'Description complète', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+				<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Décrivez les objectifs, les livrables et le contexte..." data-rich-text-min-height-value="420px">
+					{{ form_widget(form.description, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source', 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
+					<div data-rich-text-target="editor"></div>
+				</div>
+				{{ form_errors(form.description, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<div>
+				{{ form_label(form.descriptionEn, form.descriptionEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
+				<p class="text-[11px] opacity-40 mb-2">{{ form.descriptionEn.vars.help }}</p>
+				<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Describe the goals, deliverables and context..." data-rich-text-min-height-value="300px">
+					{{ form_widget(form.descriptionEn, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source', 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
+					<div data-rich-text-target="editor"></div>
+				</div>
+				{{ form_errors(form.descriptionEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+		</div>
 	</div>
 
 	<!-- ⚙️ COLONNE LATÉRALE : CONFIGURATION -->

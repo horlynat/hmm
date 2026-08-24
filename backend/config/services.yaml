@@ -48,6 +48,17 @@ services:
             $targetDirectory: '%app.upload_dir%'
             $allowedMimeTypes: ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp']
 
+    # Instance dédiée aux images insérées DANS le corps d'un article/projet
+    # (cf. App\Controller\Admin\AdminRichTextController, rich_text_controller.js)
+    # — pas de PDF (n'a pas de sens comme <img src>) ni de SVG (contenu
+    # potentiellement scripté, acceptable pour un logo choisi par l'admin
+    # lui-même en amont, pas pour un flux d'upload générique dans un texte).
+    app.media_uploader.content:
+        class: App\Service\MediaUploader
+        arguments:
+            $targetDirectory: '%app.upload_dir%'
+            $allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+
     App\Service\JWTService:
         arguments:
             $secret: '%env(APP_JWTSECRET)%'

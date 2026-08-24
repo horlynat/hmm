@@ -14,8 +14,9 @@ use Symfony\Component\Routing\Attribute\Route;
  * Traduction fr <-> en d'un champ, à la volée, pendant la frappe dans un
  * formulaire bilingue du back-office (cf. FieldPair.html.twig +
  * assets/controllers/bilingual_field_controller.js). Lecture seule : ne
- * modifie jamais rien en base — l'enregistrement du formulaire (et le repli
- * ContentAutoTranslator/Claude à la soumission) reste le seul point d'écriture.
+ * modifie jamais rien en base — l'enregistrement du formulaire reste le seul
+ * point d'écriture (aucun filet de traduction automatique côté serveur : une
+ * traduction en direct ratée laisse simplement le champ à compléter à la main).
  *
  * Protégé par la même session ROLE_ADMIN que le reste du back-office ; pas
  * de jeton CSRF explicite requis, la protection CSRF "same-origin" globale
