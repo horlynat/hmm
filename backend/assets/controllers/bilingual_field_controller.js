@@ -5,10 +5,16 @@ import { Controller } from '@hotwired/stimulus';
  * paire de formulaire bilingue (cf. templates/components/FieldPair.html.twig).
  *
  * Le sens de traduction se déduit du champ qui a réellement reçu la frappe —
- * pas besoin de connaître "la langue active" pour ça : un champ <disabled>
+ * pas besoin de connaître "la langue active" pour ça : un champ `readonly`
  * n'émet jamais d'événement `input` utilisateur, donc seul le champ
  * réellement modifiable à cet instant peut déclencher une traduction.
- * L'activation/désactivation elle-même est pilotée globalement par
+ *
+ * La colonne non choisie est verrouillée en lecture seule (`readonly`), pas
+ * `disabled` : un champ `disabled` n'est jamais envoyé à la soumission du
+ * formulaire — Symfony traite alors ce champ comme "vidé" et écrase la valeur
+ * existante en base à chaque enregistrement fait dans l'autre langue. `readonly`
+ * bloque la saisie manuelle tout aussi bien, sans ce risque de perte de
+ * contenu. L'activation/désactivation est pilotée globalement par
  * locale_toggle_controller.js via l'événement `admin:locale-changed`.
  */
 export default class extends Controller {
@@ -36,8 +42,8 @@ export default class extends Controller {
 
     applyLocale(locale) {
         const frActive = 'fr' === locale;
-        this.frTarget.disabled = !frActive;
-        this.enTarget.disabled = frActive;
+        this.frTarget.readOnly = !frActive;
+        this.enTarget.readOnly = frActive;
         this.frTarget.classList.toggle('input-disabled', !frActive);
         this.enTarget.classList.toggle('input-disabled', frActive);
     }
@@ -74,15 +80,15 @@ export default class extends Controller {
             if ('string' === typeof data.translated && '' !== data.translated) {
                 targetEl.value = data.translated;
                 // Signale la mise à jour aux autres écouteurs éventuels
-                // (validation native, etc.) sans redéclencher notre propre
-                // écouteur `input` (le champ cible est désactivé — un
-                // `disabled` n'émet de toute façon jamais d'`input`).
+                // (rich_text_controller.js notamment, cf. reloadFromSource) via
+                // `change`, pas `input` — on ne veut surtout pas redéclencher
+                // notre propre écouteur `input->bilingual-field#schedule...` ici.
                 targetEl.dispatchEvent(new Event('change', { bubbles: true }));
             }
         } catch {
-            // Silencieux : la saisie manuelle reste toujours possible, et le
-            // filet de sécurité côté serveur (ContentAutoTranslator, à
-            // l'enregistrement du formulaire) rattrape une traduction ratée.
+            // Silencieux : la saisie manuelle reste toujours possible — aucun
+            // filet de traduction automatique côté serveur à l'enregistrement,
+            // le champ reste simplement à compléter à la main si l'appel échoue.
         } finally {
             targetEl.classList.remove('opacity-50');
         }

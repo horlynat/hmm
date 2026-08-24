@@ -1,4 +1,6 @@
 {# templates/admin/experience/_form.html.twig #}
+<twig:LocaleToggle />
+
 {{ form_start(form, {
     'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}
 }) }}
@@ -13,16 +15,7 @@
 			class="grid grid-cols-1 md:grid-cols-2 gap-6">
 			<!-- Rôle -->
 			<div class="md:col-span-2">
-				{{ form_label(form.role, 'Poste Occupé | Responsabilité', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
-				{{ form_widget(form.role, {'attr': {'class': 'input w-full font-bold text-brand-dark', 'placeholder': 'Ex: Développeur Full-Stack, Chef de projet...'}}) }}
-				{{ form_errors(form.role, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-			</div>
-
-			<div class="md:col-span-2">
-				{{ form_label(form.roleEn, form.roleEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-				<p class="text-[11px] opacity-40 mb-2">{{ form.roleEn.vars.help }}</p>
-				{{ form_widget(form.roleEn, {'attr': {'class': 'input w-full font-bold text-brand-dark', 'placeholder': 'Ex: Full-Stack Developer, Project Lead...'}}) }}
-				{{ form_errors(form.roleEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				<twig:FieldPair :fr="form.role" :en="form.roleEn" />
 			</div>
 
 			<!-- Entreprise -->
@@ -46,19 +39,7 @@
 		</div>
 
 		<!-- Description -->
-		<div>
-			{{ form_label(form.description, 'Description de la mission', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
-			{{ form_widget(form.description, {'attr': {'class': 'input textarea w-full', 'placeholder': 'Décrivez vos accomplissements, les technologies utilisées...'}}) }}
-			{{ form_errors(form.description, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-		</div>
-
-		<!-- Description (anglais) -->
-		<div>
-			{{ form_label(form.descriptionEn, form.descriptionEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-			<p class="text-[11px] opacity-40 mb-2">{{ form.descriptionEn.vars.help }}</p>
-			{{ form_widget(form.descriptionEn, {'attr': {'class': 'input textarea w-full'}}) }}
-			{{ form_errors(form.descriptionEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-		</div>
+		<twig:FieldPair :fr="form.description" :en="form.descriptionEn" :isTextarea="true" />
 
 	</div>
 

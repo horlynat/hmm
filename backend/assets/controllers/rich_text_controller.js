@@ -67,6 +67,29 @@ export default class extends Controller {
         this.syncToSource = this.syncToSource.bind(this);
         this.quill.on('text-change', this.syncToSource);
 
+        // syncToSource() dispatche `input` sur le textarea source à chaque
+        // frappe (ci-dessous) — c'est ce même événement qu'écoute
+        // bilingual_field_controller.js (cf. FieldPair) pour déclencher la
+        // traduction en direct débouncée : rien de plus à câbler ici pour que
+        // ça fonctionne aussi sur les champs en éditeur riche.
+
+        // Quand ce textarea source reçoit une nouvelle valeur de l'extérieur
+        // (jamais par nous — syncToSource() dispatche `input`, jamais
+        // `change`), recharge Quill pour que l'éditeur visible reflète la
+        // traduction reçue au lieu de rester figé sur l'ancien contenu.
+        this.reloadFromSource = this.reloadFromSource.bind(this);
+        this.sourceTarget.addEventListener('change', this.reloadFromSource);
+
+        // Même dispositif : la bascule FR/EN verrouille le textarea source en
+        // lecture seule (attribut `readonly` — jamais `disabled`, cf.
+        // bilingual_field_controller.js pour le pourquoi) côté colonne non
+        // choisie. Quill tourne au-dessus d'un <div contenteditable>, pas du
+        // textarea lui-même, et ne verrait donc jamais ce verrouillage sans ce
+        // relais explicite.
+        this.observer = new MutationObserver(() => this.quill.enable(!this.sourceTarget.readOnly));
+        this.observer.observe(this.sourceTarget, { attributes: true, attributeFilter: ['readonly'] });
+        this.quill.enable(!this.sourceTarget.readOnly);
+
         // Filet de sécurité : si le formulaire est soumis sans qu'aucune
         // frappe n'ait eu lieu depuis le chargement (contenu prérempli jamais
         // retouché), le textarea contient déjà la bonne valeur d'origine —
@@ -78,7 +101,17 @@ export default class extends Controller {
 
     disconnect() {
         this.form?.removeEventListener('submit', this.syncToSource);
+        this.sourceTarget.removeEventListener('change', this.reloadFromSource);
+        this.observer?.disconnect();
         this.quill = null;
+    }
+
+    /** Recharge le contenu Quill depuis le textarea source (cf. connect()). */
+    reloadFromSource() {
+        this.quill.setContents([]);
+        if ('' !== this.sourceTarget.value.trim()) {
+            this.quill.clipboard.dangerouslyPasteHTML(this.sourceTarget.value);
+        }
     }
 
     syncToSource() {

@@ -1,4 +1,6 @@
 {# templates/admin/article/_form.html.twig #}
+<twig:LocaleToggle />
+
 {{ form_start(form, {
     'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'},
     'enctype': 'multipart/form-data'
@@ -12,59 +14,39 @@
 		class="lg:col-span-2 space-y-6 card">
 
 		<!-- Champ Titre -->
-		<div>
-			{{ form_label(form.title, 'Titre de l\'article', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
-            {{ form_widget(form.title, {'attr': {'class': 'input w-full text-lg font-semibold', 'placeholder': 'Ex: 10 astuces indispensables...'}}) }}
-            {% if form_errors(form.title) %}
-                <p class="text-danger text-xs mt-1.5 flex items-center gap-1 font-medium">
-                    <i class="ti ti-alert-circle"></i>
-                    {{ form_errors(form.title)|striptags }}
-                </p>
-            {% endif %}
-        </div>
+		<twig:FieldPair :fr="form.title" :en="form.titleEn" />
 
-        <!-- Champ Titre (anglais) -->
-        <div>
-            {{ form_label(form.titleEn, form.titleEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-            <p class="text-[11px] opacity-40 mb-2">{{ form.titleEn.vars.help }}</p>
-            {{ form_widget(form.titleEn, {'attr': {'class': 'input w-full text-lg font-semibold', 'placeholder': 'Ex: 10 essential tips...'}}) }}
-            {% if form_errors(form.titleEn) %}
-                <p class="text-danger text-xs mt-1.5 flex items-center gap-1 font-medium">
-                    <i class="ti ti-alert-circle"></i>
-                    {{ form_errors(form.titleEn)|striptags }}
-                </p>
-            {% endif %}
-        </div>
-
-        <!-- Champ Contenu -->
-        <div>
-            {{ form_label(form.content, 'Corps de l\'article', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
-			<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Rédigez votre histoire ici..." data-rich-text-min-height-value="420px">
-				{{ form_widget(form.content, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source'}}) }}
-				<div data-rich-text-target="editor"></div>
+		<!-- Champ Contenu — wiring bilingue manuel (FieldPair ne gère que les
+		     champs texte simples, pas l'éditeur riche Quill par-dessus) -->
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-controller="bilingual-field">
+			<div>
+				{{ form_label(form.content, 'Corps de l\'article', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+				<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Rédigez votre histoire ici..." data-rich-text-min-height-value="420px">
+					{{ form_widget(form.content, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source', 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
+					<div data-rich-text-target="editor"></div>
+				</div>
+				{% if form_errors(form.content) %}
+					<p class="text-danger text-xs mt-1.5 flex items-center gap-1 font-medium">
+						<i class="ti ti-alert-circle"></i>
+						{{ form_errors(form.content)|striptags }}
+					</p>
+				{% endif %}
 			</div>
-			{% if form_errors(form.content) %}
-				<p class="text-danger text-xs mt-1.5 flex items-center gap-1 font-medium">
-					<i class="ti ti-alert-circle"></i>
-					{{ form_errors(form.content)|striptags }}
-				</p>
-			{% endif %}
-		</div>
 
-		<!-- Champ Contenu (anglais) -->
-		<div>
-			{{ form_label(form.contentEn, form.contentEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-			<p class="text-[11px] opacity-40 mb-2">{{ form.contentEn.vars.help }}</p>
-			<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Write your story here..." data-rich-text-min-height-value="300px">
-				{{ form_widget(form.contentEn, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source'}}) }}
-				<div data-rich-text-target="editor"></div>
+			<div>
+				{{ form_label(form.contentEn, form.contentEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
+				<p class="text-[11px] opacity-40 mb-2">{{ form.contentEn.vars.help }}</p>
+				<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Write your story here..." data-rich-text-min-height-value="300px">
+					{{ form_widget(form.contentEn, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source', 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
+					<div data-rich-text-target="editor"></div>
+				</div>
+				{% if form_errors(form.contentEn) %}
+					<p class="text-danger text-xs mt-1.5 flex items-center gap-1 font-medium">
+						<i class="ti ti-alert-circle"></i>
+						{{ form_errors(form.contentEn)|striptags }}
+					</p>
+				{% endif %}
 			</div>
-			{% if form_errors(form.contentEn) %}
-				<p class="text-danger text-xs mt-1.5 flex items-center gap-1 font-medium">
-					<i class="ti ti-alert-circle"></i>
-					{{ form_errors(form.contentEn)|striptags }}
-				</p>
-			{% endif %}
 		</div>
 
 	</div>

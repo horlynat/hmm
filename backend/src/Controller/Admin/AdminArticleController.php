@@ -10,7 +10,6 @@ use App\Repository\ArticleRepository;
 use App\Repository\TranslationRepository;
 use App\Security\Voter\ArticleVoter;
 use App\Service\AuditLogger;
-use App\Service\ContentAutoTranslator;
 use App\Service\MediaUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -66,7 +65,6 @@ final class AdminArticleController extends AbstractController
         SluggerInterface $slugger,
         MediaUploader $uploader,
         AuditLogger $auditLogger,
-        ContentAutoTranslator $autoTranslator,
         TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted(ArticleVoter::CREATE);
@@ -88,10 +86,6 @@ final class AdminArticleController extends AbstractController
                     $article->addTag($defaultTag);
                 }
             }
-
-            // Article neuf : pas d'état "original" en base, tout champ anglais
-            // laissé vide est donc traduit automatiquement depuis le français.
-            $autoTranslator->syncTranslations($article);
 
             $entityManager->persist($article);
             $entityManager->flush();
@@ -141,14 +135,10 @@ final class AdminArticleController extends AbstractController
         SluggerInterface $slugger,
         MediaUploader $uploader,
         AuditLogger $auditLogger,
-        ContentAutoTranslator $autoTranslator,
         TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted(ArticleVoter::EDIT, $article);
 
-        // Capturé AVANT `handleRequest` : sert de référence pour détecter quels
-        // champs français ont changé (cf. ContentAutoTranslator::syncTranslations).
-        $originalData = $entityManager->getUnitOfWork()->getOriginalEntityData($article);
         $form = $this->createForm(ArticleType::class, $article);
         $form->handleRequest($request);
 
@@ -157,11 +147,6 @@ final class AdminArticleController extends AbstractController
 
             // Traitement de l'image (réutilisable sans duplication !)
             $this->handleImageUpload($form, $article, $uploader, $entityManager);
-
-            // Traduction automatique fr -> en des champs laissés vides, ou dont
-            // le français a changé sans que l'anglais ait été retouché à la
-            // main dans cette même soumission.
-            $autoTranslator->syncTranslations($article, $originalData);
 
             $auditLogger->log(Article::class, $article->getId(), $article->getTitle(), 'updated');
             $entityManager->flush();

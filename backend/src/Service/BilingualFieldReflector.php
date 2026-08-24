@@ -5,9 +5,10 @@ namespace App\Service;
 /**
  * Découvre par réflexion les paires de champs "xxx" / "xxxEn" d'une entité
  * bilingue — accesseurs getXxx()/setXxx() + getXxxEn()/setXxxEn() attendus,
- * rien d'autre à déclarer côté entité. Partagé entre App\Service\
- * ContentAutoTranslator (traduction Claude au moment de l'enregistrement) et
- * App\Repository\TranslationRepository (stockage dans la table `translation`).
+ * rien d'autre à déclarer côté entité. Utilisé par App\Repository\
+ * TranslationRepository pour l'hydratation/le stockage dans la table
+ * `translation` (la traduction elle-même se fait en direct côté formulaire —
+ * cf. assets/controllers/bilingual_field_controller.js — pas ici).
  */
 final class BilingualFieldReflector
 {
@@ -57,20 +58,5 @@ final class BilingualFieldReflector
         $type = $params[0]->getType();
 
         return $type instanceof \ReflectionNamedType && 'array' === $type->getName();
-    }
-
-    public function isBlank(mixed $value): bool
-    {
-        if (null === $value) {
-            return true;
-        }
-        if (is_string($value)) {
-            return '' === trim($value);
-        }
-        if (is_array($value)) {
-            return [] === $value;
-        }
-
-        return false;
     }
 }

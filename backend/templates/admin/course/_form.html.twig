@@ -1,4 +1,6 @@
 {# templates/admin/course/_form.html.twig #}
+<twig:LocaleToggle />
+
 {{ form_start(form, {
     'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}
 }) }}
@@ -11,16 +13,7 @@
 
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 			<div class="md:col-span-2">
-				{{ form_label(form.title, 'Diplôme ou Certification', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
-				{{ form_widget(form.title, {'attr': {'class': 'input w-full font-bold text-brand-dark', 'placeholder': 'Ex: Master Ingénierie Logicielle...'}}) }}
-				{{ form_errors(form.title, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-			</div>
-
-			<div class="md:col-span-2">
-				{{ form_label(form.titleEn, form.titleEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-				<p class="text-[11px] opacity-40 mb-2">{{ form.titleEn.vars.help }}</p>
-				{{ form_widget(form.titleEn, {'attr': {'class': 'input w-full font-bold text-brand-dark', 'placeholder': 'Ex: Master in Software Engineering...'}}) }}
-				{{ form_errors(form.titleEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				<twig:FieldPair :fr="form.title" :en="form.titleEn" />
 			</div>
 
 			<div class="md:col-span-2">
@@ -41,18 +34,7 @@
 			</div>
 		</div>
 
-		<div>
-			{{ form_label(form.description, 'Description du cursus', {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
-			{{ form_widget(form.description, {'attr': {'class': 'input textarea w-full', 'placeholder': 'Mentionnez vos spécialités, projets...'}}) }}
-			{{ form_errors(form.description, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-		</div>
-
-		<div>
-			{{ form_label(form.descriptionEn, form.descriptionEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-			<p class="text-[11px] opacity-40 mb-2">{{ form.descriptionEn.vars.help }}</p>
-			{{ form_widget(form.descriptionEn, {'attr': {'class': 'input textarea w-full'}}) }}
-			{{ form_errors(form.descriptionEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-		</div>
+		<twig:FieldPair :fr="form.description" :en="form.descriptionEn" :isTextarea="true" />
 
 	</div>
 
