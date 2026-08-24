@@ -37,7 +37,7 @@
 				{% if article.media is not empty %}
 					{% set uploadedMedia = article.media|first %}
 					<div class="rounded-md overflow-hidden max-h-96 border border-gray-100">
-						<img src="{{ asset('uploads/articles/' ~ uploadedMedia.filePath) }}" alt="{{ uploadedMedia.altText|default('Couverture') }}" class="w-full object-cover">
+						<img src="{{ asset(uploadedMedia.filePath) }}" alt="{{ uploadedMedia.altText|default('Couverture') }}" class="w-full object-cover">
 					</div>
 				{% endif %}
 

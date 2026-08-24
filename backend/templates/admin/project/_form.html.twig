@@ -141,7 +141,10 @@
 			{% if project is defined and project.media is not empty %}
 				{% set uploadedMedia = project.media|first %}
 				<div class="mb-3 rounded-md overflow-hidden border border-gray-100 max-h-36 flex items-center justify-center group relative">
-					<img src="{{ asset('uploads/projects/' ~ uploadedMedia.filePath) }}" alt="{{ uploadedMedia.altText|default('Couverture') }}" class="object-cover h-full w-full transition group-hover:scale-105">
+					{# Media::$filePath contient déjà le chemin complet depuis la
+					   racine web ("/uploads/projects/xxx.png", cf. MediaUploader::upload()
+					   -> 'path' => '/uploads/'.$relativePath) — ne pas le repréfixer. #}
+					<img src="{{ asset(uploadedMedia.filePath) }}" alt="{{ uploadedMedia.altText|default('Couverture') }}" class="object-cover h-full w-full transition group-hover:scale-105">
 				</div>
 			{% endif %}
 
