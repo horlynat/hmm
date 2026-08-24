@@ -27,6 +27,9 @@ class TestimonialType extends AbstractType
             ])
             ->add('content', TextareaType::class, [
                 'label' => 'Témoignage',
+                // Testimonial::$content est un `string` non nullable — cf.
+                // ArticleType::content pour le pourquoi de cette option.
+                'empty_data' => '',
                 'attr' => [
                     'rows' => 6,
                     'placeholder' => 'Contenu du témoignage (10 à 255 caractères)',

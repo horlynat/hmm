@@ -20,6 +20,9 @@ class ArticleType extends AbstractType
         $builder
             ->add('title', TextType::class, [
                 'label' => 'Titre',
+                // Article::$title est un `string` non nullable — cf.
+                // ArticleType::content ci-dessous pour le pourquoi.
+                'empty_data' => '',
                 'attr' => [
                     'maxlength' => 255,
                     'placeholder' => 'Entrez le titre de l’article'
@@ -36,6 +39,13 @@ class ArticleType extends AbstractType
             ])
             ->add('content', TextareaType::class, [
                 'label' => 'Contenu',
+                // Article::$content est un `string` non nullable — si le champ
+                // venait à être absent de la soumission (ex. navigateur en
+                // JS désactivé face à l'éditeur riche), Symfony le traiterait
+                // sinon comme "vidé" (null) et ferait planter le mapping avant
+                // même la validation. '' reste une valeur licite, rejetée
+                // ensuite proprement par la contrainte NotBlank de l'entité.
+                'empty_data' => '',
                 'attr' => [
                     'rows' => 8,
                     'placeholder' => 'Rédigez le contenu de l’article (min. 20 caractères)'

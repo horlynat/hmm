@@ -21,6 +21,9 @@ class CourseType extends AbstractType
         $builder
             ->add('title', TextType::class, [
                 'label' => 'Titre du cours',
+                // Course::$title est un `string` non nullable — cf.
+                // ArticleType::content pour le pourquoi de cette option.
+                'empty_data' => '',
                 'attr' => [
                     'maxlength' => 255,
                     'placeholder' => 'Entrez le titre du cours'
@@ -52,6 +55,7 @@ class CourseType extends AbstractType
             ])
             ->add('description', TextareaType::class, [
                 'label' => 'Description',
+                'empty_data' => '',
                 'attr' => [
                     'rows' => 6,
                     'placeholder' => 'Décrivez le contenu du cours (min. 10 caractères)'

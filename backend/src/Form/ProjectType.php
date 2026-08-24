@@ -26,6 +26,9 @@ class ProjectType extends AbstractType
         $builder
             ->add('title', TextType::class, [
                 'label' => 'Titre du projet',
+                // Project::$title est un `string` non nullable — cf.
+                // ArticleType::content pour le pourquoi de cette option.
+                'empty_data' => '',
             ])
             ->add('titleEn', TextType::class, [
                 'label' => 'Titre du projet (anglais)',
@@ -35,6 +38,14 @@ class ProjectType extends AbstractType
             ->add('description', TextareaType::class, [
                 'label' => 'Description',
                 'required' => false,
+                // Project::$description est un `string` non nullable — si le
+                // champ venait à être absent de la soumission (ex. navigateur
+                // en JS désactivé face à l'éditeur riche), Symfony le
+                // traiterait sinon comme "vidé" (null) et ferait planter le
+                // mapping avant même la validation. '' reste une valeur
+                // licite, rejetée ensuite proprement par la contrainte
+                // NotBlank de l'entité.
+                'empty_data' => '',
             ])
             ->add('descriptionEn', TextareaType::class, [
                 'label' => 'Description (anglais)',
