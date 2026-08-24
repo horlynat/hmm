@@ -49,14 +49,20 @@
 
         <div>
             {{ form_label(form.description, 'Description', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
-            {{ form_widget(form.description, {'attr': {'class': 'input textarea w-full h-32', 'placeholder': 'Contexte en une phrase ou deux : pour qui, pourquoi, dans quel cadre.'}}) }}
+            <div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Contexte en une phrase ou deux : pour qui, pourquoi, dans quel cadre." data-rich-text-min-height-value="160px">
+                {{ form_widget(form.description, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source'}}) }}
+                <div data-rich-text-target="editor"></div>
+            </div>
             {{ form_errors(form.description, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
         </div>
 
         <div>
             {{ form_label(form.descriptionEn, form.descriptionEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
             <p class="text-[11px] opacity-40 mb-2">{{ form.descriptionEn.vars.help }}</p>
-            {{ form_widget(form.descriptionEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': 'Context in a sentence or two: for whom, why, in what setting.'}}) }}
+            <div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Context in a sentence or two: for whom, why, in what setting." data-rich-text-min-height-value="120px">
+                {{ form_widget(form.descriptionEn, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source'}}) }}
+                <div data-rich-text-target="editor"></div>
+            </div>
             {{ form_errors(form.descriptionEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
         </div>
 
