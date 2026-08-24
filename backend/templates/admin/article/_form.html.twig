@@ -39,7 +39,10 @@
         <!-- Champ Contenu -->
         <div>
             {{ form_label(form.content, 'Corps de l\'article', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
-			{{ form_widget(form.content, {'attr': {'class': 'input textarea w-full h-[420px] text-base leading-relaxed', 'placeholder': 'Rédigez votre histoire ici...'}}) }}
+			<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Rédigez votre histoire ici..." data-rich-text-min-height-value="420px">
+				{{ form_widget(form.content, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source'}}) }}
+				<div data-rich-text-target="editor"></div>
+			</div>
 			{% if form_errors(form.content) %}
 				<p class="text-danger text-xs mt-1.5 flex items-center gap-1 font-medium">
 					<i class="ti ti-alert-circle"></i>
@@ -52,7 +55,10 @@
 		<div>
 			{{ form_label(form.contentEn, form.contentEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
 			<p class="text-[11px] opacity-40 mb-2">{{ form.contentEn.vars.help }}</p>
-			{{ form_widget(form.contentEn, {'attr': {'class': 'input textarea w-full h-[300px] text-base leading-relaxed', 'placeholder': 'Write your story here...'}}) }}
+			<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Write your story here..." data-rich-text-min-height-value="300px">
+				{{ form_widget(form.contentEn, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source'}}) }}
+				<div data-rich-text-target="editor"></div>
+			</div>
 			{% if form_errors(form.contentEn) %}
 				<p class="text-danger text-xs mt-1.5 flex items-center gap-1 font-medium">
 					<i class="ti ti-alert-circle"></i>

@@ -424,6 +424,52 @@ summary:focus-visible {
 .dark .badge-info    { color: #7dd3fc; }
 }
 
+/* Éditeur riche (Quill, cf. assets/controllers/rich_text_controller.js) —
+   harmonisé avec .input plutôt que le thème "snow" par défaut. */
+.rich-text-editor {
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(3, 4, 94, 0.15);
+    background-color: var(--color-bg-card);
+    overflow: hidden;
+}
+.rich-text-editor .ql-toolbar.ql-snow {
+    border: none;
+    border-bottom: 1px solid rgba(3, 4, 94, 0.15);
+    font-family: inherit;
+}
+.rich-text-editor .ql-container.ql-snow {
+    border: none;
+    font-family: inherit;
+    font-size: 1rem;
+}
+.rich-text-editor .ql-editor {
+    line-height: 1.6;
+}
+.rich-text-editor .ql-editor.ql-blank::before {
+    color: rgb(156 163 175);
+    font-style: normal;
+}
+.rich-text-editor:focus-within {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-primary) 20%, transparent);
+    border-color: var(--color-brand-primary);
+}
+.dark .rich-text-editor {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+.dark .rich-text-editor .ql-toolbar.ql-snow {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+.dark .rich-text-editor .ql-snow .ql-stroke {
+    stroke: #d1d5db;
+}
+.dark .rich-text-editor .ql-snow .ql-fill {
+    fill: #d1d5db;
+}
+.dark .rich-text-editor .ql-snow .ql-picker {
+    color: #d1d5db;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    Accessibilité & Performance (Respect des préférences système)
 ───────────────────────────────────────────────────────────────────────────── */

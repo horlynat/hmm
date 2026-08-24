@@ -19,8 +19,24 @@
 
 		<!-- Champ Description -->
 			<div>{{ form_label(form.description, 'Description complète', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}
-			) }}{{ form_widget(form.description, {'attr': {'class': 'input textarea w-full h-[420px] text-base leading-relaxed', 'placeholder': 'Décrivez les objectifs, les livrables et le contexte...'}}
-			) }}{{ form_errors(form.description, {'attr': {'class': 'text-danger text-xs mt-1'}}
+			) }}
+			<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Décrivez les objectifs, les livrables et le contexte..." data-rich-text-min-height-value="420px">
+				{{ form_widget(form.description, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source'}}) }}
+				<div data-rich-text-target="editor"></div>
+			</div>
+			{{ form_errors(form.description, {'attr': {'class': 'text-danger text-xs mt-1'}}
+		) }}
+	</div>
+
+		<!-- Champ Description (anglais) -->
+			<div>{{ form_label(form.descriptionEn, form.descriptionEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}
+			) }}
+			<p class="text-[11px] opacity-40 mb-2">{{ form.descriptionEn.vars.help }}</p>
+			<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Describe the goals, deliverables and context..." data-rich-text-min-height-value="300px">
+				{{ form_widget(form.descriptionEn, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source'}}) }}
+				<div data-rich-text-target="editor"></div>
+			</div>
+			{{ form_errors(form.descriptionEn, {'attr': {'class': 'text-danger text-xs mt-1'}}
 		) }}
 	</div>
 	</div>
