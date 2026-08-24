@@ -108,9 +108,22 @@ export default class extends Controller {
 
     /** Recharge le contenu Quill depuis le textarea source (cf. connect()). */
     reloadFromSource() {
-        this.quill.setContents([]);
+        // Ne jamais écraser une saisie en cours : si cet éditeur a le focus,
+        // l'admin est probablement en train d'y taper — une traduction
+        // arrivée entre-temps (déclenchée plus tôt depuis l'autre langue,
+        // répondant après que l'admin a basculé ici pour continuer à écrire)
+        // ne doit pas effacer ce qu'il vient de saisir.
+        if (this.quill.hasFocus()) {
+            return;
+        }
+        // Source 'silent' : sinon setContents()/dangerouslyPasteHTML()
+        // émettent eux-mêmes `text-change`, qui redéclenche syncToSource()
+        // AVANT que ce recharge n'ait fini — celui-ci écrase alors
+        // sourceTarget.value (avec le contenu vide de l'étape setContents([]))
+        // avant même que le HTML rechargé n'ait pu y être re-collé.
+        this.quill.setContents([], 'silent');
         if ('' !== this.sourceTarget.value.trim()) {
-            this.quill.clipboard.dangerouslyPasteHTML(this.sourceTarget.value);
+            this.quill.clipboard.dangerouslyPasteHTML(this.sourceTarget.value, 'silent');
         }
     }
 

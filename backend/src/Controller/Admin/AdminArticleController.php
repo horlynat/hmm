@@ -73,9 +73,15 @@ final class AdminArticleController extends AbstractController
         $form = $this->createForm(ArticleType::class, $article);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        // Fixé AVANT isValid() (qui déclenche la validation, dont
+        // #[UniqueEntity(fields: ['slug'])]) — sinon la contrainte verrait
+        // encore le slug vide/précédent et ne pourrait jamais détecter de
+        // collision, laissant l'INSERT planter en 500 à la place.
+        if ($form->isSubmitted()) {
             $article->setSlug($slugger->slug($article->getTitle())->lower());
+        }
 
+        if ($form->isSubmitted() && $form->isValid()) {
             // Extraction et traitement de l'image via la méthode optimisée
             $this->handleImageUpload($form, $article, $uploader, $entityManager);
 
@@ -142,9 +148,12 @@ final class AdminArticleController extends AbstractController
         $form = $this->createForm(ArticleType::class, $article);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        // Fixé AVANT isValid() — cf. create() pour le pourquoi.
+        if ($form->isSubmitted()) {
             $article->setSlug($slugger->slug($article->getTitle())->lower());
+        }
 
+        if ($form->isSubmitted() && $form->isValid()) {
             // Traitement de l'image (réutilisable sans duplication !)
             $this->handleImageUpload($form, $article, $uploader, $entityManager);
 

@@ -429,11 +429,15 @@ final class AdminProjectController extends AbstractController
         ]);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            // Générer le slug
-            $slug = $slugger->slug($project->getTitle())->lower();
-            $project->setSlug($slug);
+        // Fixé AVANT isValid() (qui déclenche la validation, dont
+        // #[UniqueEntity(fields: ['slug'])]) — sinon la contrainte verrait
+        // encore le slug vide/précédent et ne pourrait jamais détecter de
+        // collision, laissant l'INSERT planter en 500 à la place.
+        if ($form->isSubmitted()) {
+            $project->setSlug($slugger->slug($project->getTitle())->lower());
+        }
 
+        if ($form->isSubmitted() && $form->isValid()) {
             // Upload des médias
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
 
@@ -581,11 +585,12 @@ final class AdminProjectController extends AbstractController
         $form = $this->createForm(ProjectType::class, $project);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            // Mettre à jour le slug
-            $slug = $slugger->slug($project->getTitle())->lower();
-            $project->setSlug($slug);
+        // Fixé AVANT isValid() — cf. create() pour le pourquoi.
+        if ($form->isSubmitted()) {
+            $project->setSlug($slugger->slug($project->getTitle())->lower());
+        }
 
+        if ($form->isSubmitted() && $form->isValid()) {
             // Upload des nouveaux médias
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
 
