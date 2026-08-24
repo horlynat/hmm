@@ -1,9 +1,27 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { ContactPageClient } from "./ContactPageClient";
+import { buildPageMetadata } from "@/lib/metadata";
 
 // Requis pour la CSP stricte par nonce (cf. src/proxy.ts, src/lib/csp.ts) :
 // un nonce ne peut être généré qu'au moment de la requête, donc cette page ne
 // peut pas être prérendue statiquement.
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "contact" });
+  return buildPageMetadata({
+    locale,
+    pathname: "/contact",
+    title: `${t("title")} ${t("titleAccent")}`,
+    description: t("sub"),
+  });
+}
 
 export default async function ContactPage({
   searchParams,

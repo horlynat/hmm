@@ -7,6 +7,7 @@ import { sanitizeArticleHtml, getArticleExcerpt } from "@/lib/sanitize";
 import { getMediaUrl } from "@/lib/media";
 import { jsonLdScript } from "@/lib/json-ld";
 import { siteConfig } from "@/config/site";
+import { resolveOgLocale, SITE_URL } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -19,7 +20,14 @@ export async function generateMetadata({
   if (!article) return {};
 
   const description = getArticleExcerpt(article.content);
-  const image = article.media[0] ? getMediaUrl(article.media[0].filePath) : undefined;
+  // Sans image propre à l'article, repli sur l'image générée par
+  // `[locale]/opengraph-image.tsx` — référencée explicitement, car Next.js
+  // ne la rattache PAS automatiquement dès qu'une route définit son propre
+  // `openGraph` (vérifié en dev : le rattachement implicite ne se produit
+  // jamais dans ce cas, cf. commentaire dans lib/metadata.ts).
+  const image = article.media[0]
+    ? getMediaUrl(article.media[0].filePath)
+    : `${SITE_URL}/${locale}/opengraph-image`;
 
   return {
     title: article.title,
@@ -28,7 +36,15 @@ export async function generateMetadata({
       title: article.title,
       description,
       type: "article",
-      images: image ? [image] : undefined,
+      siteName: siteConfig.name,
+      locale: resolveOgLocale(locale),
+      images: [image],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description,
+      images: [image],
     },
   };
 }

@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Horlynat — Développeur Full-Stack",
     short_name: "Horlynat",
     description:
-      "Portfolio de Horlynat Mampassi Mbama — développeur full-stack, mobile et intégrateur de solutions IA, consultant en cybersécurité et technicien en assurances.",
+      "Portfolio de Horlynat MAMPASSI MBAMA — développeur full-stack, mobile et intégrateur de solutions IA, consultant en cybersécurité et technicien en assurances.",
     start_url: "/",
     scope: "/",
     display: "standalone",

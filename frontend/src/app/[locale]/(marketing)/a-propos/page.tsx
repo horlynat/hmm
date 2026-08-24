@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { Badge, ButtonLink, Card, Reveal } from "@/components/ui";
@@ -17,8 +18,24 @@ import { getExperiences } from "@/lib/api/experiences";
 import { getCourses } from "@/lib/api/courses";
 import { getSkills } from "@/lib/api/skills";
 import { getAboutContent } from "@/lib/api/about-content";
+import { buildPageMetadata } from "@/lib/metadata";
 
 export const dynamic = "force-static";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "about" });
+  return buildPageMetadata({
+    locale,
+    pathname: "/a-propos",
+    title: `${t("title")} ${t("titleAccent")}`,
+    description: t("sub"),
+  });
+}
 
 export default async function AboutPage({
   params,

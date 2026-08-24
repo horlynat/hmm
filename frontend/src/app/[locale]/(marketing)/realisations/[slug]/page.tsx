@@ -9,6 +9,7 @@ import { getMediaUrl } from "@/lib/media";
 import { jsonLdScript } from "@/lib/json-ld";
 import { siteConfig } from "@/config/site";
 import { projectStatusVariant } from "@/lib/status";
+import { resolveOgLocale, SITE_URL } from "@/lib/metadata";
 
 export const dynamic = "force-static";
 
@@ -30,7 +31,13 @@ export async function generateMetadata({
 
   if (!project) return {};
 
-  const image = project.info?.coverImage ? getMediaUrl(project.info.coverImage.filePath) : undefined;
+  // Sans image de couverture, repli sur l'image générée par
+  // `[locale]/opengraph-image.tsx` — référencée explicitement (Next.js ne la
+  // rattache pas automatiquement quand la route définit son propre
+  // `openGraph`, cf. commentaire dans lib/metadata.ts).
+  const image = project.info?.coverImage
+    ? getMediaUrl(project.info.coverImage.filePath)
+    : `${SITE_URL}/${locale}/opengraph-image`;
 
   return {
     title: project.title,
@@ -39,7 +46,15 @@ export async function generateMetadata({
       title: project.title,
       description: project.description,
       type: "article",
-      images: image ? [image] : undefined,
+      siteName: siteConfig.name,
+      locale: resolveOgLocale(locale),
+      images: [image],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: project.title,
+      description: project.description,
+      images: [image],
     },
   };
 }

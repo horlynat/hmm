@@ -1,0 +1,4466 @@
+{
+  "common.siteName": {
+    "fr": "yrr41j",
+    "en": "yrr41j"
+  },
+  "common.ctaConfierProjet": {
+    "fr": "-ysl0ld",
+    "en": "mn1z9k"
+  },
+  "common.ctaParlerAssistant": {
+    "fr": "-nqrz6h",
+    "en": "xhdkbe"
+  },
+  "common.ctaTelechargerCv": {
+    "fr": "r1on1h",
+    "en": "-ehnkgf"
+  },
+  "common.backToTop": {
+    "fr": "-n555k8",
+    "en": "fqjv97"
+  },
+  "common.whatsapp": {
+    "fr": "-6splkt",
+    "en": "oehlzp"
+  },
+  "common.toggleTheme": {
+    "fr": "o7556l",
+    "en": "-7u4ni9"
+  },
+  "common.openMenu": {
+    "fr": "-sej7gx",
+    "en": "-1il2b5"
+  },
+  "common.closeMenu": {
+    "fr": "8laxxv",
+    "en": "7qi7ll"
+  },
+  "common.skipToContent": {
+    "fr": "t11ykg",
+    "en": "acacj3"
+  },
+  "common.aVenir": {
+    "fr": "-5fer75",
+    "en": "-3uxqbz"
+  },
+  "common.present": {
+    "fr": "-cc76kf",
+    "en": "t3a8ll"
+  },
+  "common.envoiEnCours": {
+    "fr": "gry136",
+    "en": "tejfpo"
+  },
+  "common.envoye": {
+    "fr": "-d7s7ki",
+    "en": "hf0wp4"
+  },
+  "common.readMore": {
+    "fr": "z574ut",
+    "en": "-y2zgek"
+  },
+  "common.seeProject": {
+    "fr": "t8l59n",
+    "en": "-8ocipq"
+  },
+  "common.seeDetails": {
+    "fr": "2x5die",
+    "en": "502b2n"
+  },
+  "common.loading": {
+    "fr": "cumiz4",
+    "en": "gt4auu"
+  },
+  "validation.required": {
+    "fr": "wnklu4",
+    "en": "-dcvq5"
+  },
+  "validation.nameRequired": {
+    "fr": "-aoh4nm",
+    "en": "-ob4xww"
+  },
+  "validation.email": {
+    "fr": "-ugpckn",
+    "en": "-e31y13"
+  },
+  "validation.emailRequired": {
+    "fr": "gvx11o",
+    "en": "-srg7ah"
+  },
+  "validation.passwordRequired": {
+    "fr": "4l29c7",
+    "en": "c2nrd2"
+  },
+  "validation.passwordWeak": {
+    "fr": "xumnt9",
+    "en": "-4p0zp1"
+  },
+  "validation.passwordStrengthLabel": {
+    "fr": "-b35zj7",
+    "en": "x1muf2"
+  },
+  "validation.passwordStrengthWeak": {
+    "fr": "-4wczt9",
+    "en": "hh7t7s"
+  },
+  "validation.passwordStrengthFair": {
+    "fr": "-uzpb18",
+    "en": "h7sxa4"
+  },
+  "validation.passwordStrengthGood": {
+    "fr": "jxi9v",
+    "en": "h8lrsz"
+  },
+  "validation.passwordStrengthStrong": {
+    "fr": "-6rvbma",
+    "en": "-i1i5nb"
+  },
+  "validation.phoneInvalid": {
+    "fr": "b8423r",
+    "en": "cq63i2"
+  },
+  "validation.phoneRequiredForChannel": {
+    "fr": "-3sy106",
+    "en": "q7vj93"
+  },
+  "validation.url": {
+    "fr": "5wvt36",
+    "en": "tawxjl"
+  },
+  "validation.agreeTerms": {
+    "fr": "7kd03z",
+    "en": "-wvwwy4"
+  },
+  "validation.selectRequired": {
+    "fr": "r6kga4",
+    "en": "y1goqr"
+  },
+  "validation.tooLong": {
+    "fr": "9g375g",
+    "en": "k22mb8"
+  },
+  "validation.tooShort": {
+    "fr": "-p6voa9",
+    "en": "649hcm"
+  },
+  "validation.genericError": {
+    "fr": "arrtxe",
+    "en": "wr7sty"
+  },
+  "validation.networkError": {
+    "fr": "-bau9hr",
+    "en": "e9mgmm"
+  },
+  "validation.rateLimited": {
+    "fr": "v87zco",
+    "en": "fqgoi7"
+  },
+  "validation.passwordMismatch": {
+    "fr": "-jltfx3",
+    "en": "dqinqc"
+  },
+  "nav.apropos": {
+    "fr": "-vepo7b",
+    "en": "y5jwmv"
+  },
+  "nav.competences": {
+    "fr": "og81xy",
+    "en": "-mfwuoy"
+  },
+  "nav.realisations": {
+    "fr": "dmt3zq",
+    "en": "-l4i596"
+  },
+  "nav.blog": {
+    "fr": "h5svy6",
+    "en": "h5svy6"
+  },
+  "nav.contact": {
+    "fr": "-u7kvy4",
+    "en": "-u7kvy4"
+  },
+  "nav.compte": {
+    "fr": "-penar8",
+    "en": "lprklj"
+  },
+  "nav.connexion": {
+    "fr": "4gsrwb",
+    "en": "-fpasck"
+  },
+  "footer.note": {
+    "fr": "jgle4j",
+    "en": "-gu165m"
+  },
+  "footer.navHeading": {
+    "fr": "-ac7bas",
+    "en": "-ac7bas"
+  },
+  "footer.connectHeading": {
+    "fr": "njo1ia",
+    "en": "-gkitgj"
+  },
+  "footer.legalHeading": {
+    "fr": "-tlzltd",
+    "en": "-vmkg51"
+  },
+  "footer.rights": {
+    "fr": "2j6l6n",
+    "en": "fefnyc"
+  },
+  "home.eyebrow": {
+    "fr": "-8eh0f9",
+    "en": "ymisfr"
+  },
+  "home.roles": {
+    "fr": "ov7g91",
+    "en": "3aub23"
+  },
+  "home.title": {
+    "fr": "-i8cqg8",
+    "en": "-tdmt2i"
+  },
+  "home.titleAccent": {
+    "fr": "-z7m4b3",
+    "en": "-6mihaw"
+  },
+  "home.sub": {
+    "fr": "2hp0jq",
+    "en": "ywtdku"
+  },
+  "home.ctaFreelance": {
+    "fr": "rupthe",
+    "en": "-cid46y"
+  },
+  "home.founderBadge": {
+    "fr": "-2rxjls",
+    "en": "-rrtotd"
+  },
+  "home.diagramCaption": {
+    "fr": "ls9q3w",
+    "en": "-cpjjo0"
+  },
+  "home.stats.experience": {
+    "fr": "hd09ne",
+    "en": "-fpsxyi"
+  },
+  "home.stats.projects": {
+    "fr": "-rci72n",
+    "en": "9qi3gi"
+  },
+  "home.stats.freelance": {
+    "fr": "stz3on",
+    "en": "-i8nli9"
+  },
+  "home.stats.open": {
+    "fr": "-56wqdz",
+    "en": "hd0kd2"
+  },
+  "home.about.eyebrow": {
+    "fr": "-vepo7b",
+    "en": "y5jwmv"
+  },
+  "home.about.title": {
+    "fr": "q7ytac",
+    "en": "p0b1h8"
+  },
+  "home.about.p1": {
+    "fr": "-ua841l",
+    "en": "-dw5j01"
+  },
+  "home.about.p2": {
+    "fr": "zguyv1",
+    "en": "-94w5e1"
+  },
+  "home.about.cta": {
+    "fr": "5r8498",
+    "en": "8wabx1"
+  },
+  "home.about.highlightTitle": {
+    "fr": "-rzx1nw",
+    "en": "3jl1bj"
+  },
+  "home.about.highlightDesc": {
+    "fr": "-n8x75i",
+    "en": "e0vcme"
+  },
+  "home.about.visionLabel": {
+    "fr": "ksmu9k",
+    "en": "ksmu9k"
+  },
+  "home.about.visionText": {
+    "fr": "-yhlvfe",
+    "en": "lkvuae"
+  },
+  "home.about.missionLabel": {
+    "fr": "u8vpeg",
+    "en": "u8vpeg"
+  },
+  "home.about.missionText": {
+    "fr": "2tc0e6",
+    "en": "ce1psv"
+  },
+  "home.skills.eyebrow": {
+    "fr": "og81xy",
+    "en": "-mfwuoy"
+  },
+  "home.skills.title": {
+    "fr": "-xzt98d",
+    "en": "6xw48y"
+  },
+  "home.skills.lede": {
+    "fr": "-efwuu0",
+    "en": "q0rr2d"
+  },
+  "home.skills.empty": {
+    "fr": "-o5374x",
+    "en": "-bih4ng"
+  },
+  "home.skills.cta": {
+    "fr": "5592ye",
+    "en": "-fxrepa"
+  },
+  "home.projects.eyebrow": {
+    "fr": "dmt3zq",
+    "en": "-l4i596"
+  },
+  "home.projects.title": {
+    "fr": "-g2ubw7",
+    "en": "-2gpysb"
+  },
+  "home.projects.lede": {
+    "fr": "-pkld7q",
+    "en": "-43mk62"
+  },
+  "home.projects.empty": {
+    "fr": "ruixrr",
+    "en": "-7ynz84"
+  },
+  "home.projects.cta": {
+    "fr": "-gkektm",
+    "en": "-lb33za"
+  },
+  "home.testimonials.eyebrow": {
+    "fr": "-nuxa95",
+    "en": "-rr0bo4"
+  },
+  "home.testimonials.title": {
+    "fr": "o2iuco",
+    "en": "g30ubt"
+  },
+  "home.testimonials.empty": {
+    "fr": "-rni827",
+    "en": "-k5aswq"
+  },
+  "home.blog.eyebrow": {
+    "fr": "h5svy6",
+    "en": "h5svy6"
+  },
+  "home.blog.title": {
+    "fr": "at8thg",
+    "en": "-r8c9ov"
+  },
+  "home.blog.lede": {
+    "fr": "-b12qyp",
+    "en": "3tvidd"
+  },
+  "home.blog.empty": {
+    "fr": "fp1fo1",
+    "en": "-q63hap"
+  },
+  "home.freelance.eyebrow": {
+    "fr": "hvlxq9",
+    "en": "moh253"
+  },
+  "home.freelance.title": {
+    "fr": "x0koe8",
+    "en": "-4gfjrl"
+  },
+  "home.freelance.lede": {
+    "fr": "ifi58k",
+    "en": "kzjscn"
+  },
+  "home.freelance.point1": {
+    "fr": "-dz3yik",
+    "en": "7temn5"
+  },
+  "home.freelance.point2": {
+    "fr": "jeqynk",
+    "en": "yjo1er"
+  },
+  "home.freelance.point3": {
+    "fr": "8oa87f",
+    "en": "lzmiui"
+  },
+  "home.freelance.cardTitle": {
+    "fr": "-n2bl55",
+    "en": "knk17v"
+  },
+  "home.freelance.cardDesc": {
+    "fr": "-jo5us8",
+    "en": "rpk16i"
+  },
+  "home.freelance.cardCta": {
+    "fr": "-ptx1fd",
+    "en": "-ndgk9b"
+  },
+  "home.contactCta.title": {
+    "fr": "-u6dqbw",
+    "en": "-ovvtrg"
+  },
+  "home.contactCta.sub": {
+    "fr": "18rmgs",
+    "en": "-uaz39i"
+  },
+  "about.eyebrow": {
+    "fr": "-vepo7b",
+    "en": "y5jwmv"
+  },
+  "about.title": {
+    "fr": "c63e0b",
+    "en": "-g0r7y9"
+  },
+  "about.titleAccent": {
+    "fr": "ujdql9",
+    "en": "o5yt9k"
+  },
+  "about.sub": {
+    "fr": "hkwvxn",
+    "en": "v37u2m"
+  },
+  "about.card.name": {
+    "fr": "ivumsu",
+    "en": "ivumsu"
+  },
+  "about.card.role": {
+    "fr": "6r9oor",
+    "en": "-e16eq2"
+  },
+  "about.card.dispo": {
+    "fr": "-uvobr1",
+    "en": "-saldqz"
+  },
+  "about.card.disponible": {
+    "fr": "-ymg34j",
+    "en": "-44izet"
+  },
+  "about.card.aussi": {
+    "fr": "yg2i3z",
+    "en": "h596ih"
+  },
+  "about.card.aussiValue": {
+    "fr": "-10ubwt",
+    "en": "xijkbe"
+  },
+  "about.card.localisation": {
+    "fr": "-8rlrts",
+    "en": "-q4iqk5"
+  },
+  "about.card.localisationValue": {
+    "fr": "dijkh8",
+    "en": "dijkh8"
+  },
+  "about.card.mode": {
+    "fr": "d8q39x",
+    "en": "erg35z"
+  },
+  "about.card.modeValue": {
+    "fr": "-x1rxwm",
+    "en": "yrpihe"
+  },
+  "about.card.langues": {
+    "fr": "niovyn",
+    "en": "e26drd"
+  },
+  "about.card.languesValue": {
+    "fr": "-v9wlfx",
+    "en": "-m0nsm9"
+  },
+  "about.bio.eyebrow": {
+    "fr": "qzd2nr",
+    "en": "-ekvmq6"
+  },
+  "about.bio.title": {
+    "fr": "u9cxa",
+    "en": "e5fy9n"
+  },
+  "about.bio.p1": {
+    "fr": "-hu7un4",
+    "en": "g7tcth"
+  },
+  "about.bio.p2": {
+    "fr": "itfku0",
+    "en": "-rwgpit"
+  },
+  "about.bio.p3": {
+    "fr": "-fvp4fk",
+    "en": "-x1ojxt"
+  },
+  "about.vision.eyebrow": {
+    "fr": "ksmu9k",
+    "en": "ksmu9k"
+  },
+  "about.vision.title": {
+    "fr": "q9jug7",
+    "en": "flojao"
+  },
+  "about.vision.lede": {
+    "fr": "-423ov9",
+    "en": "-re04rt"
+  },
+  "about.vision.today": {
+    "fr": "-cc76kf",
+    "en": "-rorfp9"
+  },
+  "about.vision.todayText": {
+    "fr": "-52w8ov",
+    "en": "l6g040"
+  },
+  "about.vision.tomorrow": {
+    "fr": "-waslay",
+    "en": "u6gwqj"
+  },
+  "about.vision.tomorrowText": {
+    "fr": "-t8ixma",
+    "en": "-6tbk1r"
+  },
+  "about.formation.eyebrow": {
+    "fr": "mcermb",
+    "en": "9z3c58"
+  },
+  "about.formation.title": {
+    "fr": "-e29gxa",
+    "en": "30c3ra"
+  },
+  "about.formation.typeDiploma": {
+    "fr": "oydzaw",
+    "en": "-9g1hpf"
+  },
+  "about.formation.typeCertification": {
+    "fr": "-yje0c9",
+    "en": "-yje0c9"
+  },
+  "about.formation.typeTraining": {
+    "fr": "-hmepky",
+    "en": "8n2ah2"
+  },
+  "about.experience.eyebrow": {
+    "fr": "p919wy",
+    "en": "-eqedfu"
+  },
+  "about.experience.title": {
+    "fr": "-5me8rv",
+    "en": "-42qp8x"
+  },
+  "about.skillsDetail.eyebrow": {
+    "fr": "og81xy",
+    "en": "-mfwuoy"
+  },
+  "about.skillsDetail.title": {
+    "fr": "-jw5yyz",
+    "en": "-2bpr3l"
+  },
+  "about.skillsDetail.lede": {
+    "fr": "-mtn81h",
+    "en": "-b6kvjh"
+  },
+  "about.why.eyebrow": {
+    "fr": "j2lkzj",
+    "en": "z1zlww"
+  },
+  "about.why.title": {
+    "fr": "ui38ld",
+    "en": "-3e2xb3"
+  },
+  "about.why.card1Title": {
+    "fr": "-m110ro",
+    "en": "jv056n"
+  },
+  "about.why.card1Desc": {
+    "fr": "rbgqxc",
+    "en": "wep1lv"
+  },
+  "about.why.card2Title": {
+    "fr": "hjiv02",
+    "en": "-2b3njf"
+  },
+  "about.why.card2Desc": {
+    "fr": "-2l7n4v",
+    "en": "7dhqzs"
+  },
+  "about.why.card3Title": {
+    "fr": "-9qzgwg",
+    "en": "-hr5nnq"
+  },
+  "about.why.card3Desc": {
+    "fr": "qmdday",
+    "en": "gyzjdq"
+  },
+  "about.why.card4Title": {
+    "fr": "-ctpq95",
+    "en": "-q16kn6"
+  },
+  "about.why.card4Desc": {
+    "fr": "mnurvv",
+    "en": "ayc1oj"
+  },
+  "about.beyond.eyebrow": {
+    "fr": "3kju62",
+    "en": "-vypm1"
+  },
+  "about.beyond.title": {
+    "fr": "-4fo1d",
+    "en": "-4r0rjr"
+  },
+  "about.beyond.langues": {
+    "fr": "niovyn",
+    "en": "e26drd"
+  },
+  "about.beyond.langue1": {
+    "fr": "-cy17wv",
+    "en": "-xj7f8l"
+  },
+  "about.beyond.langue2": {
+    "fr": "-oaya8x",
+    "en": "b4roy3"
+  },
+  "about.beyond.interets": {
+    "fr": "al67l9",
+    "en": "-9gpa4l"
+  },
+  "about.beyond.interet1": {
+    "fr": "ce746o",
+    "en": "-74t88n"
+  },
+  "about.beyond.interet2": {
+    "fr": "iwg2fg",
+    "en": "t8sc8m"
+  },
+  "about.cta.title": {
+    "fr": "-horwgp",
+    "en": "367ttq"
+  },
+  "about.cta.sub": {
+    "fr": "-cyhto3",
+    "en": "-o30h5"
+  },
+  "skills.eyebrow": {
+    "fr": "og81xy",
+    "en": "-mfwuoy"
+  },
+  "skills.title": {
+    "fr": "-k3iycq",
+    "en": "-8s93nd"
+  },
+  "skills.titleAccent": {
+    "fr": "-73w22h",
+    "en": "-qdtqif"
+  },
+  "skills.sub": {
+    "fr": "42uv5r",
+    "en": "krs862"
+  },
+  "skills.stats.total": {
+    "fr": "og81xy",
+    "en": "-mfwuoy"
+  },
+  "skills.stats.categories": {
+    "fr": "4gt97y",
+    "en": "-25asiz"
+  },
+  "skills.stats.level": {
+    "fr": "-adqi8u",
+    "en": "89xgzn"
+  },
+  "skills.list.eyebrow": {
+    "fr": "og81xy",
+    "en": "-mfwuoy"
+  },
+  "skills.list.title": {
+    "fr": "-575ixj",
+    "en": "x993s3"
+  },
+  "skills.list.lede": {
+    "fr": "kwp0ha",
+    "en": "-u42pj1"
+  },
+  "skills.list.empty": {
+    "fr": "-o5374x",
+    "en": "-bih4ng"
+  },
+  "skills.domain.eyebrow": {
+    "fr": "6xw9ub",
+    "en": "l0vbpr"
+  },
+  "skills.domain.title": {
+    "fr": "g97tn5",
+    "en": "-p85vqe"
+  },
+  "skills.domain.lede": {
+    "fr": "hcnp5k",
+    "en": "-tnsfwl"
+  },
+  "skills.domain.cyberTitle": {
+    "fr": "-nm2ayx",
+    "en": "7fm0yz"
+  },
+  "skills.domain.cyberText": {
+    "fr": "udy9as",
+    "en": "-iwtbnr"
+  },
+  "skills.domain.assuranceTitle": {
+    "fr": "kbfg4o",
+    "en": "-cm4uq8"
+  },
+  "skills.domain.assuranceText": {
+    "fr": "-cvm1vt",
+    "en": "m70rat"
+  },
+  "skills.soft.eyebrow": {
+    "fr": "-kjus6",
+    "en": "-izjlw4"
+  },
+  "skills.soft.title": {
+    "fr": "-8eymdl",
+    "en": "egliaz"
+  },
+  "skills.soft.lede": {
+    "fr": "h8et5h",
+    "en": "nre2h3"
+  },
+  "skills.soft.items": {
+    "fr": "-3apbad",
+    "en": "h6fc5b"
+  },
+  "skills.tools.eyebrow": {
+    "fr": "n03pgy",
+    "en": "-5r72wn"
+  },
+  "skills.tools.title": {
+    "fr": "-m4zcyh",
+    "en": "lke2dg"
+  },
+  "skills.tools.items": {
+    "fr": "1xnw66",
+    "en": "1xnw66"
+  },
+  "skills.cta.title": {
+    "fr": "y225yg",
+    "en": "1a0gax"
+  },
+  "skills.cta.sub": {
+    "fr": "u2flqg",
+    "en": "-gnvdi3"
+  },
+  "projects.eyebrow": {
+    "fr": "dmt3zq",
+    "en": "-l4i596"
+  },
+  "projects.title": {
+    "fr": "-781wb5",
+    "en": "-7whv77"
+  },
+  "projects.titleAccent": {
+    "fr": "-nh8s3p",
+    "en": "-vo4s8z"
+  },
+  "projects.sub": {
+    "fr": "-xttesq",
+    "en": "ir2f65"
+  },
+  "projects.stats.statTotal": {
+    "fr": "muva4v",
+    "en": "-yt5rhy"
+  },
+  "projects.stats.statActive": {
+    "fr": "o4ykod",
+    "en": "bb95lo"
+  },
+  "projects.stats.statCompleted": {
+    "fr": "rcibgl",
+    "en": "810xyx"
+  },
+  "projects.caseStudy.eyebrow": {
+    "fr": "3pyed1",
+    "en": "-wby68p"
+  },
+  "projects.caseStudy.title": {
+    "fr": "-32jisi",
+    "en": "9xva84"
+  },
+  "projects.caseStudy.lede": {
+    "fr": "xe2kc4",
+    "en": "6hw89l"
+  },
+  "projects.caseStudy.badge": {
+    "fr": "-hdjs33",
+    "en": "-24uje8"
+  },
+  "projects.caseStudy.cardTitle": {
+    "fr": "-jrqd64",
+    "en": "94v0p1"
+  },
+  "projects.caseStudy.cardText": {
+    "fr": "-9pwcfx",
+    "en": "-eeojn6"
+  },
+  "projects.caseStudy.bodyTitle": {
+    "fr": "qvek00",
+    "en": "qvek00"
+  },
+  "projects.caseStudy.bodyText1": {
+    "fr": "gs8vpm",
+    "en": "z5cgp9"
+  },
+  "projects.caseStudy.bodyText2": {
+    "fr": "w9yrbw",
+    "en": "tvarkm"
+  },
+  "projects.caseStudy.linkText": {
+    "fr": "-sxoxox",
+    "en": "-pafqb8"
+  },
+  "projects.list.eyebrow": {
+    "fr": "kax7dl",
+    "en": "-sp06ne"
+  },
+  "projects.list.title": {
+    "fr": "-xiox3",
+    "en": "-oo0uvg"
+  },
+  "projects.list.lede": {
+    "fr": "-ffd83",
+    "en": "q23inz"
+  },
+  "projects.list.empty": {
+    "fr": "-xo9hmw",
+    "en": "bdei3w"
+  },
+  "projects.list.filterAll": {
+    "fr": "hfr8br",
+    "en": "jwt0j"
+  },
+  "projects.list.previous": {
+    "fr": "-jyilww",
+    "en": "-k3ajuf"
+  },
+  "projects.list.next": {
+    "fr": "jgvpws",
+    "en": "hca559"
+  },
+  "projects.list.pageIndicator": {
+    "fr": "-qlmiro",
+    "en": "-hfhdd3"
+  },
+  "projects.status.a_venir": {
+    "fr": "1mmjdo",
+    "en": "obbvr8"
+  },
+  "projects.status.en_cours": {
+    "fr": "o4ykod",
+    "en": "bb95lo"
+  },
+  "projects.status.suspendu": {
+    "fr": "-xt1a49",
+    "en": "-k8sn3w"
+  },
+  "projects.status.collaboration": {
+    "fr": "88s6db",
+    "en": "88s6db"
+  },
+  "projects.status.termine": {
+    "fr": "uo3g8c",
+    "en": "810xyx"
+  },
+  "projects.detail.roleLabel": {
+    "fr": "3o1z1t",
+    "en": "copf7e"
+  },
+  "projects.detail.objectivesLabel": {
+    "fr": "-7rybym",
+    "en": "yfiynz"
+  },
+  "projects.detail.stackLabel": {
+    "fr": "-cxfuxg",
+    "en": "e6rkde"
+  },
+  "projects.detail.challengesLabel": {
+    "fr": "-xbvvs7",
+    "en": "51ui7k"
+  },
+  "projects.detail.challengeLabel": {
+    "fr": "h943vc",
+    "en": "pryndt"
+  },
+  "projects.detail.solutionLabel": {
+    "fr": "-mrpu7t",
+    "en": "-mrpu7t"
+  },
+  "projects.detail.resultsLabel": {
+    "fr": "-vij89n",
+    "en": "-qdnk5u"
+  },
+  "projects.detail.repoLink": {
+    "fr": "eoe81r",
+    "en": "-3r0btj"
+  },
+  "projects.detail.architectureLabel": {
+    "fr": "hd3q5p",
+    "en": "hd3q5p"
+  },
+  "projects.detail.galleryLabel": {
+    "fr": "-6dfr1h",
+    "en": "kl6es2"
+  },
+  "projects.detail.deadlineInDays": {
+    "fr": "8tsllo",
+    "en": "-1x3gpa"
+  },
+  "projects.detail.deadlineOverdueDays": {
+    "fr": "1m2xgs",
+    "en": "-adcf4"
+  },
+  "projects.detail.invoicesLabel": {
+    "fr": "d3pd67",
+    "en": "-bv79ob"
+  },
+  "projects.detail.viewAllInvoices": {
+    "fr": "-ou7oeu",
+    "en": "-2jto3k"
+  },
+  "projects.cta.title": {
+    "fr": "-u6dqbw",
+    "en": "-ovvtrg"
+  },
+  "projects.cta.sub": {
+    "fr": "18rmgs",
+    "en": "-uaz39i"
+  },
+  "projects.cta.linkText": {
+    "fr": "-6no58r",
+    "en": "yqa7vf"
+  },
+  "projects.cta.proposeLinkText": {
+    "fr": "-v7diug",
+    "en": "-rxjxmp"
+  },
+  "blog.eyebrow": {
+    "fr": "h5svy6",
+    "en": "h5svy6"
+  },
+  "blog.title": {
+    "fr": "ipqtmm",
+    "en": "-pge42i"
+  },
+  "blog.titleAccent": {
+    "fr": "4drx7w",
+    "en": "v52zpj"
+  },
+  "blog.sub": {
+    "fr": "rdj57k",
+    "en": "xaddja"
+  },
+  "blog.empty": {
+    "fr": "fp1fo1",
+    "en": "-q63hap"
+  },
+  "blog.stats.articles": {
+    "fr": "doyxtr",
+    "en": "-m59kf"
+  },
+  "blog.stats.topics": {
+    "fr": "galahm",
+    "en": "-orkwje"
+  },
+  "blog.newsletter.title": {
+    "fr": "1qf3pe",
+    "en": "-hm1j8y"
+  },
+  "blog.newsletter.text": {
+    "fr": "uo4ph7",
+    "en": "-z61u69"
+  },
+  "blog.newsletter.placeholder": {
+    "fr": "2ouq5k",
+    "en": "88wl7s"
+  },
+  "blog.newsletter.submit": {
+    "fr": "-48gm83",
+    "en": "-36yzhi"
+  },
+  "blog.newsletter.success": {
+    "fr": "-79dhfd",
+    "en": "tzoipk"
+  },
+  "blog.newsletter.note": {
+    "fr": "n535qh",
+    "en": "-fisz3k"
+  },
+  "freelances.eyebrow": {
+    "fr": "hvlxq9",
+    "en": "moh253"
+  },
+  "freelances.title": {
+    "fr": "-acqejp",
+    "en": "-hp59lx"
+  },
+  "freelances.titleAccent": {
+    "fr": "acwz6n",
+    "en": "ffi0pc"
+  },
+  "freelances.sub": {
+    "fr": "-egj2h0",
+    "en": "y6bf1"
+  },
+  "freelances.ctaCreate": {
+    "fr": "xmdkx4",
+    "en": "m8yric"
+  },
+  "freelances.stats.qualified": {
+    "fr": "-5g86kq",
+    "en": "-s7d99a"
+  },
+  "freelances.stats.contact": {
+    "fr": "g5qnj",
+    "en": "pga3rt"
+  },
+  "freelances.stats.open": {
+    "fr": "5xl8j4",
+    "en": "-5hw55k"
+  },
+  "freelances.how.eyebrow": {
+    "fr": "-xsaegz",
+    "en": "xvhkf7"
+  },
+  "freelances.how.title": {
+    "fr": "9zib4r",
+    "en": "4wcxj8"
+  },
+  "freelances.how.lede": {
+    "fr": "9pjnsy",
+    "en": "-1wokre"
+  },
+  "freelances.how.step1Title": {
+    "fr": "-3ja0zo",
+    "en": "-g8q3dn"
+  },
+  "freelances.how.step1Desc": {
+    "fr": "-tuv54v",
+    "en": "yvn6cn"
+  },
+  "freelances.how.step2Title": {
+    "fr": "y0xots",
+    "en": "-vvf4is"
+  },
+  "freelances.how.step2Desc": {
+    "fr": "zh9eco",
+    "en": "kjwl92"
+  },
+  "freelances.how.step3Title": {
+    "fr": "-wd9i26",
+    "en": "qx1pcw"
+  },
+  "freelances.how.step3Desc": {
+    "fr": "-8ugad8",
+    "en": "r84xjm"
+  },
+  "freelances.benefits.eyebrow": {
+    "fr": "-roged0",
+    "en": "jeqi1q"
+  },
+  "freelances.benefits.title": {
+    "fr": "-seq2rt",
+    "en": "2x36aw"
+  },
+  "freelances.benefits.b1Title": {
+    "fr": "-24b0q1",
+    "en": "yfem0d"
+  },
+  "freelances.benefits.b1Desc": {
+    "fr": "n0v5lr",
+    "en": "k6suta"
+  },
+  "freelances.benefits.b2Title": {
+    "fr": "-cm2ym2",
+    "en": "e15lzv"
+  },
+  "freelances.benefits.b2Desc": {
+    "fr": "-pve3xg",
+    "en": "o2w2vf"
+  },
+  "freelances.benefits.b3Title": {
+    "fr": "-8r7up5",
+    "en": "-jklihd"
+  },
+  "freelances.benefits.b3Desc": {
+    "fr": "-91enyb",
+    "en": "owlsjg"
+  },
+  "freelances.benefits.b4Title": {
+    "fr": "49of33",
+    "en": "-3sbjcu"
+  },
+  "freelances.benefits.b4Desc": {
+    "fr": "yr45zt",
+    "en": "hgcg4w"
+  },
+  "freelances.signup.eyebrow": {
+    "fr": "-on4vhw",
+    "en": "-fpajei"
+  },
+  "freelances.signup.title": {
+    "fr": "-wrzafg",
+    "en": "-yvg737"
+  },
+  "freelances.signup.lede": {
+    "fr": "-erno8z",
+    "en": "7hmhtw"
+  },
+  "freelances.signup.faq1Q": {
+    "fr": "-67ao9w",
+    "en": "-pkcajw"
+  },
+  "freelances.signup.faq1A": {
+    "fr": "fv3g4u",
+    "en": "-bbdfjv"
+  },
+  "freelances.signup.faq2Q": {
+    "fr": "mhr6sd",
+    "en": "-zawoyk"
+  },
+  "freelances.signup.faq2A": {
+    "fr": "-z52kt3",
+    "en": "-wch84x"
+  },
+  "freelances.signup.faq3Q": {
+    "fr": "7bhc0k",
+    "en": "5xj70u"
+  },
+  "freelances.signup.faq3A": {
+    "fr": "-1ml5sn",
+    "en": "kembuy"
+  },
+  "freelances.signup.sectionIdentity": {
+    "fr": "-4wbvpq",
+    "en": "-4wbye6"
+  },
+  "freelances.signup.nameLabel": {
+    "fr": "k563c",
+    "en": "hc7col"
+  },
+  "freelances.signup.namePlaceholder": {
+    "fr": "uymkve",
+    "en": "ijsu4s"
+  },
+  "freelances.signup.emailLabel": {
+    "fr": "-ytl454",
+    "en": "-ytl454"
+  },
+  "freelances.signup.emailPlaceholder": {
+    "fr": "2ouq5k",
+    "en": "88wl7s"
+  },
+  "freelances.signup.passwordLabel": {
+    "fr": "pg6jh9",
+    "en": "-loc8bf"
+  },
+  "freelances.signup.passwordPlaceholder": {
+    "fr": "59v26e",
+    "en": "-2vfmky"
+  },
+  "freelances.signup.passwordHint": {
+    "fr": "-uo4ml7",
+    "en": "-fajako"
+  },
+  "freelances.signup.sectionExpertise": {
+    "fr": "fqfapf",
+    "en": "fqfapf"
+  },
+  "freelances.signup.specialtiesLabel": {
+    "fr": "r9dmfm",
+    "en": "u8curs"
+  },
+  "freelances.signup.specialtyBackend": {
+    "fr": "e9bntc",
+    "en": "e9bntc"
+  },
+  "freelances.signup.specialtyFrontend": {
+    "fr": "-47dlma",
+    "en": "-47dlma"
+  },
+  "freelances.signup.specialtyMobile": {
+    "fr": "xc7k1q",
+    "en": "xc7k1q"
+  },
+  "freelances.signup.specialtyAi": {
+    "fr": "gcbgh",
+    "en": "es1e9"
+  },
+  "freelances.signup.specialtyCyber": {
+    "fr": "-nm2ayx",
+    "en": "7fm0yz"
+  },
+  "freelances.signup.specialtyDesign": {
+    "fr": "-w7crby",
+    "en": "-w7crby"
+  },
+  "freelances.signup.sectionAvailability": {
+    "fr": "-sxl4a3",
+    "en": "qzaylz"
+  },
+  "freelances.signup.dispoLabel": {
+    "fr": "-uvobr1",
+    "en": "-saldqz"
+  },
+  "freelances.signup.dispoImmediate": {
+    "fr": "-q85hyh",
+    "en": "p6mjwz"
+  },
+  "freelances.signup.dispo2Weeks": {
+    "fr": "-wmvcw9",
+    "en": "-qnmh8c"
+  },
+  "freelances.signup.dispo1Month": {
+    "fr": "nfydhf",
+    "en": "az2qys"
+  },
+  "freelances.signup.dispoDiscuss": {
+    "fr": "e9f17j",
+    "en": "s44k3p"
+  },
+  "freelances.signup.portfolioLabel": {
+    "fr": "d2dd11",
+    "en": "-hypfjt"
+  },
+  "freelances.signup.portfolioPlaceholder": {
+    "fr": "-rxzlgl",
+    "en": "-y5r38b"
+  },
+  "freelances.signup.sectionAbout": {
+    "fr": "-vn586",
+    "en": "-vcobs8"
+  },
+  "freelances.signup.bioLabel": {
+    "fr": "-59e72f",
+    "en": "wfn6a3"
+  },
+  "freelances.signup.bioPlaceholder": {
+    "fr": "-lb39ch",
+    "en": "-nu7d43"
+  },
+  "freelances.signup.bioHint": {
+    "fr": "t6i4mb",
+    "en": "-evtov1"
+  },
+  "freelances.signup.agreeTerms": {
+    "fr": "zfj6t9",
+    "en": "jkux8s"
+  },
+  "freelances.signup.submit": {
+    "fr": "-286yml",
+    "en": "1vvk13"
+  },
+  "freelances.signup.success": {
+    "fr": "7zsirw",
+    "en": "unones"
+  },
+  "freelances.signup.error": {
+    "fr": "arrtxe",
+    "en": "wr7sty"
+  },
+  "freelances.signup.errorRequired": {
+    "fr": "dh0838",
+    "en": "fgcx9m"
+  },
+  "contact.eyebrow": {
+    "fr": "-tvmu41",
+    "en": "37i3te"
+  },
+  "contact.title": {
+    "fr": "k9dpph",
+    "en": "-mdl0vl"
+  },
+  "contact.titleAccent": {
+    "fr": "cgwhnf",
+    "en": "-ua55s5"
+  },
+  "contact.sub": {
+    "fr": "-6pjg5j",
+    "en": "au2uk2"
+  },
+  "contact.modeDevis": {
+    "fr": "h1x2ro",
+    "en": "1mhq48"
+  },
+  "contact.modeDevisSub": {
+    "fr": "-ijhqom",
+    "en": "-8fyalg"
+  },
+  "contact.modeRdv": {
+    "fr": "k4lla6",
+    "en": "nb75xa"
+  },
+  "contact.modeRdvSub": {
+    "fr": "a1or7c",
+    "en": "-7rf8c3"
+  },
+  "contact.modeProjet": {
+    "fr": "-ysl0ld",
+    "en": "mn1z9k"
+  },
+  "contact.modeProjetSub": {
+    "fr": "-j3ay94",
+    "en": "-ehztm0"
+  },
+  "contact.modeFreelance": {
+    "fr": "rupthe",
+    "en": "-cid46y"
+  },
+  "contact.modeFreelanceSub": {
+    "fr": "b71u3g",
+    "en": "-u2k7w4"
+  },
+  "contact.projet.badge": {
+    "fr": "-dtfdg5",
+    "en": "-qxo8wl"
+  },
+  "contact.projet.title": {
+    "fr": "-8c2xii",
+    "en": "-r01o1b"
+  },
+  "contact.projet.text": {
+    "fr": "-12gwgg",
+    "en": "-wd2oob"
+  },
+  "contact.projet.step1Title": {
+    "fr": "-epdskc",
+    "en": "-4te9vl"
+  },
+  "contact.projet.step1Desc": {
+    "fr": "8utuqg",
+    "en": "lc5fe0"
+  },
+  "contact.projet.step2Title": {
+    "fr": "iahmdm",
+    "en": "a7c83"
+  },
+  "contact.projet.step2Desc": {
+    "fr": "mt7j12",
+    "en": "clyz25"
+  },
+  "contact.projet.step3Title": {
+    "fr": "43avn3",
+    "en": "-ojc3ky"
+  },
+  "contact.projet.step3Desc": {
+    "fr": "-ldu6jz",
+    "en": "-443hhe"
+  },
+  "contact.projet.step4Title": {
+    "fr": "ypy9s9",
+    "en": "-5yn72a"
+  },
+  "contact.projet.step4Desc": {
+    "fr": "9h8ql1",
+    "en": "-9fwdbt"
+  },
+  "contact.projet.cta": {
+    "fr": "dxgqxy",
+    "en": "-j0a008"
+  },
+  "contact.projet.haveAccount": {
+    "fr": "dvhasf",
+    "en": "-a2ag0l"
+  },
+  "contact.projet.loginLink": {
+    "fr": "8eh8hn",
+    "en": "-fpasck"
+  },
+  "contact.freelance.badge": {
+    "fr": "y8f3e6",
+    "en": "-dwq1fi"
+  },
+  "contact.freelance.title": {
+    "fr": "-98tdez",
+    "en": "dccrv8"
+  },
+  "contact.freelance.text": {
+    "fr": "-wreszh",
+    "en": "-ckl76r"
+  },
+  "contact.freelance.linkMore": {
+    "fr": "-6jw3gz",
+    "en": "ei1r7"
+  },
+  "contact.wizard.progressLabel": {
+    "fr": "-9j7iqk",
+    "en": "hcjpiz"
+  },
+  "contact.wizard.phaseProject": {
+    "fr": "7yl1sk",
+    "en": "xos31n"
+  },
+  "contact.wizard.phaseDiscovery": {
+    "fr": "jljx2o",
+    "en": "pva81g"
+  },
+  "contact.wizard.phaseContext": {
+    "fr": "-d1y5yu",
+    "en": "-u7hwff"
+  },
+  "contact.wizard.phaseBudget": {
+    "fr": "gtegaj",
+    "en": "gtegaj"
+  },
+  "contact.wizard.phaseContact": {
+    "fr": "-u7kvy4",
+    "en": "-u7kvy4"
+  },
+  "contact.wizard.phaseReview": {
+    "fr": "v1km01",
+    "en": "v9mgco"
+  },
+  "contact.wizard.step1Label": {
+    "fr": "-rxrvsw",
+    "en": "gjvok2"
+  },
+  "contact.wizard.step1Question": {
+    "fr": "-tphkxr",
+    "en": "-ntfjom"
+  },
+  "contact.wizard.typeWeb": {
+    "fr": "-thcypo",
+    "en": "y0fjdh"
+  },
+  "contact.wizard.typeMobile": {
+    "fr": "x6bh4e",
+    "en": "6fq3x9"
+  },
+  "contact.wizard.typeIa": {
+    "fr": "812hiw",
+    "en": "o8ewro"
+  },
+  "contact.wizard.typeCyber": {
+    "fr": "3l8efc",
+    "en": "-rpk3vz"
+  },
+  "contact.wizard.typeAssurance": {
+    "fr": "-uxz5vj",
+    "en": "ty3k84"
+  },
+  "contact.wizard.typeDesign": {
+    "fr": "7p2r7w",
+    "en": "-vxbrnu"
+  },
+  "contact.wizard.typeOther": {
+    "fr": "-4674lk",
+    "en": "-dpgfl7"
+  },
+  "contact.wizard.typeWebDesc": {
+    "fr": "puad6i",
+    "en": "vdpbwk"
+  },
+  "contact.wizard.typeMobileDesc": {
+    "fr": "hq4g8v",
+    "en": "5xla2l"
+  },
+  "contact.wizard.typeIaDesc": {
+    "fr": "-kiwqjk",
+    "en": "-5dxxn"
+  },
+  "contact.wizard.typeCyberDesc": {
+    "fr": "-7qvtmt",
+    "en": "vqxzlc"
+  },
+  "contact.wizard.typeAssuranceDesc": {
+    "fr": "-n2j7q",
+    "en": "trzoe5"
+  },
+  "contact.wizard.typeDesignDesc": {
+    "fr": "ara22a",
+    "en": "2qmb4k"
+  },
+  "contact.wizard.typeOtherDesc": {
+    "fr": "-af2gyh",
+    "en": "-24d7fa"
+  },
+  "contact.wizard.step2Label": {
+    "fr": "vul9b",
+    "en": "v89ys3"
+  },
+  "contact.wizard.step2QuestionWeb": {
+    "fr": "gm3g0n",
+    "en": "-ibv0a5"
+  },
+  "contact.wizard.webSiteVitrine": {
+    "fr": "h391pm",
+    "en": "-pohxxk"
+  },
+  "contact.wizard.webEcommerce": {
+    "fr": "vpi2i0",
+    "en": "2gr99e"
+  },
+  "contact.wizard.webSaas": {
+    "fr": "-3f2vod",
+    "en": "-zhu125"
+  },
+  "contact.wizard.webBackoffice": {
+    "fr": "-cca8pg",
+    "en": "gugutf"
+  },
+  "contact.wizard.webApi": {
+    "fr": "7q6he3",
+    "en": "-3eb3fl"
+  },
+  "contact.wizard.webRefonte": {
+    "fr": "-dgwtmq",
+    "en": "-mqycij"
+  },
+  "contact.wizard.webMaintenance": {
+    "fr": "-ea15wv",
+    "en": "-bury9p"
+  },
+  "contact.wizard.webAutre": {
+    "fr": "yg349d",
+    "en": "-tz5xyk"
+  },
+  "contact.wizard.step2QuestionMobile": {
+    "fr": "evmh6h",
+    "en": "hsds4f"
+  },
+  "contact.wizard.mobileIos": {
+    "fr": "klqdz",
+    "en": "klqdz"
+  },
+  "contact.wizard.mobileAndroid": {
+    "fr": "yrp8et",
+    "en": "yrp8et"
+  },
+  "contact.wizard.mobileCrossPlatform": {
+    "fr": "c3i12l",
+    "en": "6wib2c"
+  },
+  "contact.wizard.mobileRefonte": {
+    "fr": "-y4smel",
+    "en": "-9tz3xd"
+  },
+  "contact.wizard.mobileMaintenance": {
+    "fr": "-bhcmow",
+    "en": "-buiprb"
+  },
+  "contact.wizard.mobileAutre": {
+    "fr": "yg349d",
+    "en": "-tz5xyk"
+  },
+  "contact.wizard.step2QuestionIa": {
+    "fr": "-oo971g",
+    "en": "-imqxg8"
+  },
+  "contact.wizard.iaChatbot": {
+    "fr": "c1cpp2",
+    "en": "oy03de"
+  },
+  "contact.wizard.iaAutomatisation": {
+    "fr": "-mrpwii",
+    "en": "qohamq"
+  },
+  "contact.wizard.iaAnalyseDonnees": {
+    "fr": "-344qhu",
+    "en": "-wuc12n"
+  },
+  "contact.wizard.iaGenerationContenu": {
+    "fr": "-br2kd3",
+    "en": "va0qqp"
+  },
+  "contact.wizard.iaRecommandation": {
+    "fr": "-3jrvsh",
+    "en": "-mruwgi"
+  },
+  "contact.wizard.iaAssistantMetier": {
+    "fr": "eu18v0",
+    "en": "1qw3pt"
+  },
+  "contact.wizard.iaAutre": {
+    "fr": "yg349d",
+    "en": "-tz5xyk"
+  },
+  "contact.wizard.step2QuestionCyber": {
+    "fr": "-ntqo7i",
+    "en": "m1frpf"
+  },
+  "contact.wizard.cyberAudit": {
+    "fr": "-9r2ph5",
+    "en": "vlo5sr"
+  },
+  "contact.wizard.cyberConformite": {
+    "fr": "-42xl6u",
+    "en": "4a9uvi"
+  },
+  "contact.wizard.cyberAcces": {
+    "fr": "f7ulq9",
+    "en": "-6ktk1s"
+  },
+  "contact.wizard.cyberIncident": {
+    "fr": "c5a8z4",
+    "en": "-64hvz4"
+  },
+  "contact.wizard.cyberFormation": {
+    "fr": "z5e6gm",
+    "en": "aowzw"
+  },
+  "contact.wizard.cyberAutre": {
+    "fr": "yg349d",
+    "en": "-tz5xyk"
+  },
+  "contact.wizard.step2QuestionAssurance": {
+    "fr": "-ntqo7i",
+    "en": "m1frpf"
+  },
+  "contact.wizard.assuranceAnalyseContrat": {
+    "fr": "8i1vn4",
+    "en": "-cg00r9"
+  },
+  "contact.wizard.assuranceCotation": {
+    "fr": "r5zte1",
+    "en": "9prpxq"
+  },
+  "contact.wizard.assuranceMiseEnPlace": {
+    "fr": "-gvo7d0",
+    "en": "1c5bdu"
+  },
+  "contact.wizard.assuranceGestionPortefeuille": {
+    "fr": "l4ddzf",
+    "en": "-dtb20c"
+  },
+  "contact.wizard.assuranceSinistre": {
+    "fr": "-tiymmi",
+    "en": "-g8hqc3"
+  },
+  "contact.wizard.assuranceConseilRisques": {
+    "fr": "-46prji",
+    "en": "-dbzr76"
+  },
+  "contact.wizard.assuranceAutre": {
+    "fr": "yg349d",
+    "en": "-tz5xyk"
+  },
+  "contact.wizard.step2QuestionDesign": {
+    "fr": "-ntqo7i",
+    "en": "m1frpf"
+  },
+  "contact.wizard.designIdentite": {
+    "fr": "-iapg1a",
+    "en": "-b5jbga"
+  },
+  "contact.wizard.designUiUx": {
+    "fr": "-y5nm43",
+    "en": "-gejxy"
+  },
+  "contact.wizard.designRefonteSite": {
+    "fr": "-licxn4",
+    "en": "-7hmfly"
+  },
+  "contact.wizard.designSupportsImprimes": {
+    "fr": "-hskm10",
+    "en": "-dtbh7m"
+  },
+  "contact.wizard.designAutre": {
+    "fr": "yg349d",
+    "en": "-tz5xyk"
+  },
+  "contact.wizard.step2QuestionOther": {
+    "fr": "-830579",
+    "en": "uyhfy1"
+  },
+  "contact.wizard.step2PlaceholderOther": {
+    "fr": "ilgypv",
+    "en": "-x9f8v7"
+  },
+  "contact.wizard.step3Label": {
+    "fr": "tph2bi",
+    "en": "-p4fsz0"
+  },
+  "contact.wizard.step3Question": {
+    "fr": "-94hweb",
+    "en": "-iukb1w"
+  },
+  "contact.wizard.sourceGoogle": {
+    "fr": "-kidc1q",
+    "en": "gmw28l"
+  },
+  "contact.wizard.sourceSocial": {
+    "fr": "-s0vam1",
+    "en": "-dvo1f5"
+  },
+  "contact.wizard.sourceReco": {
+    "fr": "-11rh8d",
+    "en": "-lmc2jh"
+  },
+  "contact.wizard.sourceOther": {
+    "fr": "yg349d",
+    "en": "-tz5xyk"
+  },
+  "contact.wizard.step4Label": {
+    "fr": "-ci0ilf",
+    "en": "-ag1iqz"
+  },
+  "contact.wizard.step4Question": {
+    "fr": "-qvqtu",
+    "en": "xhrz1v"
+  },
+  "contact.wizard.descPlaceholder": {
+    "fr": "-2s10j3",
+    "en": "-xob8c"
+  },
+  "contact.wizard.fileLabel": {
+    "fr": "iq2msl",
+    "en": "-v9a1ay"
+  },
+  "contact.wizard.fileHint": {
+    "fr": "-c0obo2",
+    "en": "-q92ope"
+  },
+  "contact.wizard.step5Label": {
+    "fr": "gblygs",
+    "en": "48crh2"
+  },
+  "contact.wizard.step5Question": {
+    "fr": "lt9c1i",
+    "en": "ocb5kb"
+  },
+  "contact.wizard.step5QuestionOther": {
+    "fr": "-oact2",
+    "en": "-x6ec2k"
+  },
+  "contact.wizard.currencyLabel": {
+    "fr": "-w5p4va",
+    "en": "4jrokv"
+  },
+  "contact.wizard.budgetLow": {
+    "fr": "-wvmnv9",
+    "en": "-r89j3o"
+  },
+  "contact.wizard.budgetToDefine": {
+    "fr": "-64lc62",
+    "en": "-igedfe"
+  },
+  "contact.wizard.step6Label": {
+    "fr": "-pvvmg5",
+    "en": "iwr1p3"
+  },
+  "contact.wizard.step6Question": {
+    "fr": "-rkxkz7",
+    "en": "3b5s9w"
+  },
+  "contact.wizard.delaiAsap": {
+    "fr": "kxpp2c",
+    "en": "81f4zg"
+  },
+  "contact.wizard.delai1Month": {
+    "fr": "nfydhf",
+    "en": "az2qys"
+  },
+  "contact.wizard.delai3Months": {
+    "fr": "-vu7eso",
+    "en": "qfwpym"
+  },
+  "contact.wizard.delaiNone": {
+    "fr": "yyg1ew",
+    "en": "-uleqyl"
+  },
+  "contact.wizard.step7Label": {
+    "fr": "2xqum2",
+    "en": "xl5bx4"
+  },
+  "contact.wizard.step7Question": {
+    "fr": "yd61u5",
+    "en": "-twad1x"
+  },
+  "contact.wizard.nameLabel": {
+    "fr": "k563c",
+    "en": "hc7col"
+  },
+  "contact.wizard.namePlaceholder": {
+    "fr": "uymkve",
+    "en": "ijsu4s"
+  },
+  "contact.wizard.emailLabel": {
+    "fr": "-ytl454",
+    "en": "-ytl454"
+  },
+  "contact.wizard.emailPlaceholder": {
+    "fr": "2ouq5k",
+    "en": "88wl7s"
+  },
+  "contact.wizard.phoneLabel": {
+    "fr": "-r3exeg",
+    "en": "-tol7ey"
+  },
+  "contact.wizard.phonePlaceholder": {
+    "fr": "-f572fp",
+    "en": "-e866ep"
+  },
+  "contact.wizard.phoneHint": {
+    "fr": "s4veou",
+    "en": "-zif2uc"
+  },
+  "contact.wizard.canalLabel": {
+    "fr": "38fjp5",
+    "en": "icogsg"
+  },
+  "contact.wizard.canalEmail": {
+    "fr": "-ytl454",
+    "en": "-ytl454"
+  },
+  "contact.wizard.canalWhatsapp": {
+    "fr": "-8uex3m",
+    "en": "-8uex3m"
+  },
+  "contact.wizard.canalPhone": {
+    "fr": "yd9bvg",
+    "en": "-cnk7cg"
+  },
+  "contact.wizard.step8Label": {
+    "fr": "vrdbo9",
+    "en": "-mrkftz"
+  },
+  "contact.wizard.step8Question": {
+    "fr": "-9za8a",
+    "en": "30en96"
+  },
+  "contact.wizard.recapSectionProject": {
+    "fr": "8h2pdu",
+    "en": "rjrfxw"
+  },
+  "contact.wizard.recapSectionBudget": {
+    "fr": "ntyaiu",
+    "en": "-5hk8b6"
+  },
+  "contact.wizard.recapSectionContact": {
+    "fr": "yd61u5",
+    "en": "-9oqumt"
+  },
+  "contact.wizard.editStep": {
+    "fr": "x9j8dl",
+    "en": "h7b1p2"
+  },
+  "contact.wizard.recapType": {
+    "fr": "9t1le7",
+    "en": "1zet73"
+  },
+  "contact.wizard.recapCategoryDetail": {
+    "fr": "8uu9aa",
+    "en": "-l7uqn4"
+  },
+  "contact.wizard.recapSource": {
+    "fr": "q95jnf",
+    "en": "-ifdbik"
+  },
+  "contact.wizard.recapDesc": {
+    "fr": "j1zn54",
+    "en": "j1zn54"
+  },
+  "contact.wizard.recapFile": {
+    "fr": "h599ti",
+    "en": "gwwd0d"
+  },
+  "contact.wizard.recapFileNone": {
+    "fr": "24phlv",
+    "en": "hcgb8o"
+  },
+  "contact.wizard.recapBudget": {
+    "fr": "gtegaj",
+    "en": "gtegaj"
+  },
+  "contact.wizard.recapDelai": {
+    "fr": "-xe9e3v",
+    "en": "-5iyl8h"
+  },
+  "contact.wizard.recapName": {
+    "fr": "k563c",
+    "en": "hc7col"
+  },
+  "contact.wizard.recapEmail": {
+    "fr": "-ytl454",
+    "en": "-ytl454"
+  },
+  "contact.wizard.recapPhone": {
+    "fr": "-r3exeg",
+    "en": "-tol7ey"
+  },
+  "contact.wizard.recapCanal": {
+    "fr": "mheb3c",
+    "en": "hdto1s"
+  },
+  "contact.wizard.recapEmpty": {
+    "fr": "65o0",
+    "en": "65o0"
+  },
+  "contact.wizard.reassurance1": {
+    "fr": "epqg02",
+    "en": "-i0exe"
+  },
+  "contact.wizard.reassurance2": {
+    "fr": "5gfr92",
+    "en": "-pf81ug"
+  },
+  "contact.wizard.trustResponseTime": {
+    "fr": "m68gp8",
+    "en": "-g1e4wa"
+  },
+  "contact.wizard.trustConfidential": {
+    "fr": "-jo91tp",
+    "en": "j52yvg"
+  },
+  "contact.wizard.trustNoCommitment": {
+    "fr": "-degedz",
+    "en": "ykk1hs"
+  },
+  "contact.wizard.consent": {
+    "fr": "wnj4f6",
+    "en": "dv2xyp"
+  },
+  "contact.wizard.errorRequired": {
+    "fr": "-22chda",
+    "en": "-7q6ija"
+  },
+  "contact.wizard.errorPhoneRequired": {
+    "fr": "-3sy106",
+    "en": "q7vj93"
+  },
+  "contact.wizard.back": {
+    "fr": "-jyilww",
+    "en": "h5lmah"
+  },
+  "contact.wizard.next": {
+    "fr": "jgvpws",
+    "en": "hca559"
+  },
+  "contact.wizard.continueWithAssistant": {
+    "fr": "-kp7vt7",
+    "en": "-v8f9ca"
+  },
+  "contact.wizard.iaGenerating": {
+    "fr": "3cvzg",
+    "en": "yx0tyb"
+  },
+  "contact.wizard.iaLabel": {
+    "fr": "-4colj7",
+    "en": "prg87a"
+  },
+  "contact.wizard.iaQuestion": {
+    "fr": "pxtds0",
+    "en": "5qrv9l"
+  },
+  "contact.wizard.iaAnswerPlaceholder": {
+    "fr": "-lr4o4l",
+    "en": "-ry7m0k"
+  },
+  "contact.wizard.iaSkip": {
+    "fr": "-tlpa",
+    "en": "hf4mtd"
+  },
+  "contact.wizard.iaAnswer": {
+    "fr": "rqura9",
+    "en": "-xs21q"
+  },
+  "contact.wizard.iaThanks": {
+    "fr": "v70jte",
+    "en": "e79bnn"
+  },
+  "contact.wizard.iaQuestionOther": {
+    "fr": "79v209",
+    "en": "-j0raaf"
+  },
+  "contact.wizard.iaQuestionBudget": {
+    "fr": "-evflfz",
+    "en": "-w5jcpg"
+  },
+  "contact.wizard.iaQuestionDefault": {
+    "fr": "-hsxeqn",
+    "en": "-khlhom"
+  },
+  "contact.wizard.iaQuestionLast": {
+    "fr": "fk9vyo",
+    "en": "-4pymav"
+  },
+  "contact.wizard.sendRequest": {
+    "fr": "6iqthy",
+    "en": "-fga9yn"
+  },
+  "contact.wizard.successTitle": {
+    "fr": "-xeiqq1",
+    "en": "c3qwfr"
+  },
+  "contact.wizard.successText": {
+    "fr": "ngbh8p",
+    "en": "-42slyh"
+  },
+  "contact.wizard.successNextTitle": {
+    "fr": "ry9dge",
+    "en": "-ibqwgq"
+  },
+  "contact.wizard.successStep1": {
+    "fr": "enh5rq",
+    "en": "-kvv60d"
+  },
+  "contact.wizard.successStep2": {
+    "fr": "-hxuh2q",
+    "en": "-d5ru8j"
+  },
+  "contact.wizard.successStep3": {
+    "fr": "-5u0mtc",
+    "en": "-tiz0jr"
+  },
+  "contact.wizard.errorSubmit": {
+    "fr": "-e1yp2t",
+    "en": "epfhdt"
+  },
+  "contact.rdv.badge": {
+    "fr": "-pfotbk",
+    "en": "7t4b4l"
+  },
+  "contact.rdv.title": {
+    "fr": "c8pfly",
+    "en": "vgw8wr"
+  },
+  "contact.rdv.text": {
+    "fr": "-8xzwju",
+    "en": "iwgmde"
+  },
+  "contact.rdv.point1": {
+    "fr": "xkj3lc",
+    "en": "-zimji"
+  },
+  "contact.rdv.point2": {
+    "fr": "-4p2jgb",
+    "en": "-uiaob"
+  },
+  "contact.rdv.point3": {
+    "fr": "t2s41n",
+    "en": "vxxrn4"
+  },
+  "contact.rdv.badgeDuration": {
+    "fr": "-3famka",
+    "en": "-3famka"
+  },
+  "contact.rdv.badgeFree": {
+    "fr": "-h5oefc",
+    "en": "ykk1hs"
+  },
+  "contact.rdv.badgeConfirm": {
+    "fr": "-kqvv6q",
+    "en": "2mck98"
+  },
+  "contact.rdv.sectionContact": {
+    "fr": "yd61u5",
+    "en": "-9oqumt"
+  },
+  "contact.rdv.nameLabel": {
+    "fr": "k563c",
+    "en": "hc7col"
+  },
+  "contact.rdv.namePlaceholder": {
+    "fr": "uymkve",
+    "en": "ijsu4s"
+  },
+  "contact.rdv.companyLabel": {
+    "fr": "-6o1mcg",
+    "en": "-jm2aa0"
+  },
+  "contact.rdv.companyPlaceholder": {
+    "fr": "ne0wjx",
+    "en": "-asezta"
+  },
+  "contact.rdv.emailLabel": {
+    "fr": "-ytl454",
+    "en": "-ytl454"
+  },
+  "contact.rdv.emailPlaceholder": {
+    "fr": "2ouq5k",
+    "en": "88wl7s"
+  },
+  "contact.rdv.phoneLabel": {
+    "fr": "-r3exeg",
+    "en": "-tol7ey"
+  },
+  "contact.rdv.phonePlaceholder": {
+    "fr": "-f572fp",
+    "en": "-e866ep"
+  },
+  "contact.rdv.phoneHint": {
+    "fr": "s4veou",
+    "en": "-zif2uc"
+  },
+  "contact.rdv.canalLabel": {
+    "fr": "38fjp5",
+    "en": "icogsg"
+  },
+  "contact.rdv.canalEmail": {
+    "fr": "-ytl454",
+    "en": "-ytl454"
+  },
+  "contact.rdv.canalWhatsapp": {
+    "fr": "-8uex3m",
+    "en": "-8uex3m"
+  },
+  "contact.rdv.canalPhone": {
+    "fr": "yd9bvg",
+    "en": "-cnk7cg"
+  },
+  "contact.rdv.sectionSlot": {
+    "fr": "byzu4e",
+    "en": "1m4s2h"
+  },
+  "contact.rdv.slotLabel": {
+    "fr": "-phz9af",
+    "en": "fyajur"
+  },
+  "contact.rdv.slotMonMorning": {
+    "fr": "c1qdby",
+    "en": "-1i46tl"
+  },
+  "contact.rdv.slotMonAfternoon": {
+    "fr": "-18kne9",
+    "en": "knfh3n"
+  },
+  "contact.rdv.slotTueMorning": {
+    "fr": "-sausdl",
+    "en": "ogqpv3"
+  },
+  "contact.rdv.slotTueAfternoon": {
+    "fr": "qh8f6e",
+    "en": "-f67oo5"
+  },
+  "contact.rdv.slotWedMorning": {
+    "fr": "-2hicnb",
+    "en": "ospewx"
+  },
+  "contact.rdv.slotWedAfternoon": {
+    "fr": "-pmeowc",
+    "en": "z8wb7t"
+  },
+  "contact.rdv.slotTimezoneHint": {
+    "fr": "mwkphz",
+    "en": "jqh41f"
+  },
+  "contact.rdv.sectionSubject": {
+    "fr": "-doin9k",
+    "en": "-rojmgb"
+  },
+  "contact.rdv.subjectLabel": {
+    "fr": "-doin9k",
+    "en": "-rojmgb"
+  },
+  "contact.rdv.subjectNew": {
+    "fr": "-ym6bq5",
+    "en": "ek8p87"
+  },
+  "contact.rdv.subjectCyber": {
+    "fr": "2na77v",
+    "en": "lx6ima"
+  },
+  "contact.rdv.subjectAssurance": {
+    "fr": "4cu5ro",
+    "en": "-sox5mf"
+  },
+  "contact.rdv.subjectSinistre": {
+    "fr": "31mi2a",
+    "en": "-tfv2op"
+  },
+  "contact.rdv.subjectDesign": {
+    "fr": "-onje59",
+    "en": "-cwh29b"
+  },
+  "contact.rdv.subjectFreelance": {
+    "fr": "vycnsk",
+    "en": "-tzypkj"
+  },
+  "contact.rdv.subjectQuestion": {
+    "fr": "-vbfawb",
+    "en": "-kth8dl"
+  },
+  "contact.rdv.subjectFollowup": {
+    "fr": "-p15jm1",
+    "en": "-oa11o5"
+  },
+  "contact.rdv.subjectOther": {
+    "fr": "yg349d",
+    "en": "-tz5xyk"
+  },
+  "contact.rdv.messageLabel": {
+    "fr": "-lqctw4",
+    "en": "m7er9i"
+  },
+  "contact.rdv.messagePlaceholder": {
+    "fr": "b5heec",
+    "en": "-lwr33w"
+  },
+  "contact.rdv.agreeTerms": {
+    "fr": "-oc27c5",
+    "en": "-vrdr70"
+  },
+  "contact.rdv.submit": {
+    "fr": "sba6yw",
+    "en": "ubo5t6"
+  },
+  "contact.rdv.success": {
+    "fr": "-9tbmc4",
+    "en": "604r1b"
+  },
+  "contact.rdv.error": {
+    "fr": "arrtxe",
+    "en": "wr7sty"
+  },
+  "contact.rdv.errorRequired": {
+    "fr": "mrd4sa",
+    "en": "b8buzm"
+  },
+  "contact.rdv.errorPhoneRequired": {
+    "fr": "-3sy106",
+    "en": "q7vj93"
+  },
+  "helpCenter.eyebrow": {
+    "fr": "9cpnlf",
+    "en": "-ovubsg"
+  },
+  "helpCenter.title": {
+    "fr": "-210c29",
+    "en": "lojquh"
+  },
+  "helpCenter.titleAccent": {
+    "fr": "-yjkdkd",
+    "en": "-w03s6o"
+  },
+  "helpCenter.sub": {
+    "fr": "5qso80",
+    "en": "-p64ckd"
+  },
+  "helpCenter.docsHeading": {
+    "fr": "-xsaegz",
+    "en": "xvhkf7"
+  },
+  "helpCenter.faqHeading": {
+    "fr": "9aukt1",
+    "en": "5aqxuo"
+  },
+  "helpCenter.ctaTitle": {
+    "fr": "-e63nj0",
+    "en": "-b7btg"
+  },
+  "helpCenter.ctaText": {
+    "fr": "-fzjwsz",
+    "en": "-rwa22l"
+  },
+  "helpCenter.ctaButton": {
+    "fr": "cljup1",
+    "en": "c7g67p"
+  },
+  "supportTicket.form.eyebrow": {
+    "fr": "mp5bw5",
+    "en": "mp5bw5"
+  },
+  "supportTicket.form.title": {
+    "fr": "6575hy",
+    "en": "-7tdatn"
+  },
+  "supportTicket.form.titleAccent": {
+    "fr": "-3tane2",
+    "en": "-svu6st"
+  },
+  "supportTicket.form.sub": {
+    "fr": "bbqtr",
+    "en": "etrfsc"
+  },
+  "supportTicket.form.nameLabel": {
+    "fr": "k563c",
+    "en": "hc7col"
+  },
+  "supportTicket.form.emailLabel": {
+    "fr": "-ytl454",
+    "en": "-ytl454"
+  },
+  "supportTicket.form.subjectLabel": {
+    "fr": "-s2edrn",
+    "en": "fz15tk"
+  },
+  "supportTicket.form.messageLabel": {
+    "fr": "-cjne7l",
+    "en": "-ylvcmy"
+  },
+  "supportTicket.form.messagePlaceholder": {
+    "fr": "2itszt",
+    "en": "-oraeiy"
+  },
+  "supportTicket.form.submit": {
+    "fr": "1bz6bx",
+    "en": "xsozsw"
+  },
+  "supportTicket.form.success": {
+    "fr": "k8vo4x",
+    "en": "-ggan6n"
+  },
+  "supportTicket.form.error": {
+    "fr": "arrtxe",
+    "en": "wr7sty"
+  },
+  "supportTicket.form.rateLimited": {
+    "fr": "-17cras",
+    "en": "-kn5upw"
+  },
+  "supportTicket.thread.statusLabel": {
+    "fr": "-iarbar",
+    "en": "-iarbbm"
+  },
+  "supportTicket.thread.youLabel": {
+    "fr": "hgutih",
+    "en": "kc751"
+  },
+  "supportTicket.thread.supportLabel": {
+    "fr": "mp5bw5",
+    "en": "mp5bw5"
+  },
+  "supportTicket.thread.replyLabel": {
+    "fr": "r5sabg",
+    "en": "-z3r1fs"
+  },
+  "supportTicket.thread.replyPlaceholder": {
+    "fr": "bu4nqf",
+    "en": "kvabio"
+  },
+  "supportTicket.thread.replySubmit": {
+    "fr": "ghb59c",
+    "en": "hf0wbc"
+  },
+  "supportTicket.thread.replySuccess": {
+    "fr": "9ja5x8",
+    "en": "-53ay5j"
+  },
+  "supportTicket.thread.replyError": {
+    "fr": "arrtxe",
+    "en": "wr7sty"
+  },
+  "supportTicket.thread.replyRateLimited": {
+    "fr": "-17cras",
+    "en": "-kn5upw"
+  },
+  "legal.mentions.title": {
+    "fr": "t6zpw4",
+    "en": "o77ye9"
+  },
+  "legal.mentions.lastUpdate": {
+    "fr": "d0q37h",
+    "en": "a09a8f"
+  },
+  "legal.mentions.editorTitle": {
+    "fr": "2b26he",
+    "en": "-6y5mqr"
+  },
+  "legal.mentions.editorText": {
+    "fr": "-gwdqh3",
+    "en": "eyhxop"
+  },
+  "legal.mentions.hostingTitle": {
+    "fr": "-rq61za",
+    "en": "-psb6vq"
+  },
+  "legal.mentions.hostingText": {
+    "fr": "-ahnjb8",
+    "en": "5taoop"
+  },
+  "legal.mentions.ipTitle": {
+    "fr": "-r4ve7l",
+    "en": "-8mqydt"
+  },
+  "legal.mentions.ipText": {
+    "fr": "-emk5y9",
+    "en": "-8z3diz"
+  },
+  "legal.mentions.moreTitle": {
+    "fr": "-vfwhx4",
+    "en": "o0gsv"
+  },
+  "legal.mentions.moreText": {
+    "fr": "-mw9rvk",
+    "en": "-2x7gmy"
+  },
+  "legal.privacy.title": {
+    "fr": "-9os8br",
+    "en": "-ai0iju"
+  },
+  "legal.privacy.lastUpdate": {
+    "fr": "d0q37h",
+    "en": "a09a8f"
+  },
+  "legal.privacy.intro": {
+    "fr": "-le1fx6",
+    "en": "apt477"
+  },
+  "legal.privacy.controllerTitle": {
+    "fr": "ayga8y",
+    "en": "-2vwab2"
+  },
+  "legal.privacy.controllerText": {
+    "fr": "fjapu7",
+    "en": "iig99j"
+  },
+  "legal.privacy.dataTitle": {
+    "fr": "-pca3tt",
+    "en": "-rz5o43"
+  },
+  "legal.privacy.dataContact": {
+    "fr": "bp5pt4",
+    "en": "da0x2g"
+  },
+  "legal.privacy.dataAccount": {
+    "fr": "y15z0j",
+    "en": "-6x21w3"
+  },
+  "legal.privacy.dataProject": {
+    "fr": "-d5v1w1",
+    "en": "i0pr95"
+  },
+  "legal.privacy.dataFreelance": {
+    "fr": "40q5l7",
+    "en": "ujji0w"
+  },
+  "legal.privacy.dataTechnical": {
+    "fr": "9avpji",
+    "en": "3nqjfo"
+  },
+  "legal.privacy.dataAiAssistant": {
+    "fr": "-pfwwho",
+    "en": "50txvf"
+  },
+  "legal.privacy.purposeTitle": {
+    "fr": "yw08s4",
+    "en": "vnvyqy"
+  },
+  "legal.privacy.purposeText": {
+    "fr": "ktoq8e",
+    "en": "2ox63q"
+  },
+  "legal.privacy.legalBasisTitle": {
+    "fr": "dh5akl",
+    "en": "k37ktp"
+  },
+  "legal.privacy.legalBasisText": {
+    "fr": "-vmos7h",
+    "en": "-pgsain"
+  },
+  "legal.privacy.retentionTitle": {
+    "fr": "f62td7",
+    "en": "it7dz1"
+  },
+  "legal.privacy.retentionText": {
+    "fr": "kch9tj",
+    "en": "c3jkua"
+  },
+  "legal.privacy.recipientsTitle": {
+    "fr": "-nqn8m0",
+    "en": "-aim3ik"
+  },
+  "legal.privacy.recipientsText": {
+    "fr": "gy0hw9",
+    "en": "-yl66e7"
+  },
+  "legal.privacy.rightsTitle": {
+    "fr": "-qxpp",
+    "en": "-asuf7k"
+  },
+  "legal.privacy.rightsText": {
+    "fr": "lqjm7z",
+    "en": "-eqzzj8"
+  },
+  "legal.privacy.rightsContact": {
+    "fr": "dmqgxp",
+    "en": "9gzk26"
+  },
+  "legal.privacy.securityTitle": {
+    "fr": "n1hfu4",
+    "en": "-gxya74"
+  },
+  "legal.privacy.securityText": {
+    "fr": "-ecjerf",
+    "en": "csxhq9"
+  },
+  "legal.privacy.cookiesTitle": {
+    "fr": "-tvc9jf",
+    "en": "-tvc9jf"
+  },
+  "legal.privacy.cookiesText": {
+    "fr": "-6b2vs5",
+    "en": "o0ngrk"
+  },
+  "legal.cookies.title": {
+    "fr": "-sok0sg",
+    "en": "-r5aq4q"
+  },
+  "legal.cookies.lastUpdate": {
+    "fr": "d0q37h",
+    "en": "a09a8f"
+  },
+  "legal.cookies.intro": {
+    "fr": "-hg432w",
+    "en": "-cn07sh"
+  },
+  "legal.cookies.essentialTitle": {
+    "fr": "-4j51k0",
+    "en": "w495v0"
+  },
+  "legal.cookies.essentialText": {
+    "fr": "gxupfd",
+    "en": "vg6wnc"
+  },
+  "legal.cookies.sessionCookiePurpose": {
+    "fr": "-35dcc5",
+    "en": "-g63xyy"
+  },
+  "legal.cookies.sessionCookieDuration": {
+    "fr": "p9ljo6",
+    "en": "-yg9d62"
+  },
+  "legal.cookies.localeCookiePurpose": {
+    "fr": "4gu0te",
+    "en": "-l9h3h0"
+  },
+  "legal.cookies.localeCookieDuration": {
+    "fr": "-ybgtl5",
+    "en": "lvyl2p"
+  },
+  "legal.cookies.localStorageTitle": {
+    "fr": "-r05z10",
+    "en": "-ez2o0y"
+  },
+  "legal.cookies.localStorageText": {
+    "fr": "-y3xb15",
+    "en": "-ljonu8"
+  },
+  "legal.cookies.noTrackingTitle": {
+    "fr": "-1gpym0",
+    "en": "rfcrh1"
+  },
+  "legal.cookies.noTrackingText": {
+    "fr": "-ejdlpm",
+    "en": "-dqgkr1"
+  },
+  "legal.cookies.noBannerTitle": {
+    "fr": "-t6rm75",
+    "en": "j45ovl"
+  },
+  "legal.cookies.noBannerText": {
+    "fr": "6dp730",
+    "en": "-oy34i0"
+  },
+  "legal.cookies.controlTitle": {
+    "fr": "-sgv8y5",
+    "en": "-2d1we1"
+  },
+  "legal.cookies.controlText": {
+    "fr": "-94iulb",
+    "en": "1srpri"
+  },
+  "legal.terms.title": {
+    "fr": "jemrck",
+    "en": "-s0brol"
+  },
+  "legal.terms.lastUpdate": {
+    "fr": "d0q37h",
+    "en": "a09a8f"
+  },
+  "legal.terms.intro": {
+    "fr": "-feg6jm",
+    "en": "f1rwc4"
+  },
+  "legal.terms.objectTitle": {
+    "fr": "-u90yma",
+    "en": "87h7uu"
+  },
+  "legal.terms.objectText": {
+    "fr": "-wc00w1",
+    "en": "yibio"
+  },
+  "legal.terms.accessTitle": {
+    "fr": "xxm545",
+    "en": "-6l05en"
+  },
+  "legal.terms.accessText": {
+    "fr": "-o5v6gs",
+    "en": "r6orra"
+  },
+  "legal.terms.accountsTitle": {
+    "fr": "j2twzi",
+    "en": "y2n3i3"
+  },
+  "legal.terms.accountsText": {
+    "fr": "-gv53ec",
+    "en": "5s19kx"
+  },
+  "legal.terms.contentTitle": {
+    "fr": "-r4ve7l",
+    "en": "-8mqydt"
+  },
+  "legal.terms.contentText": {
+    "fr": "nosqt9",
+    "en": "1gyh5p"
+  },
+  "legal.terms.aiTitle": {
+    "fr": "-uda2be",
+    "en": "-mhu0va"
+  },
+  "legal.terms.aiText": {
+    "fr": "-x1ma9f",
+    "en": "-hytwzx"
+  },
+  "legal.terms.liabilityTitle": {
+    "fr": "-c7udcm",
+    "en": "vmv1br"
+  },
+  "legal.terms.liabilityText": {
+    "fr": "-cy4gde",
+    "en": "jiwht6"
+  },
+  "legal.terms.lawTitle": {
+    "fr": "-16izoz",
+    "en": "-doisbx"
+  },
+  "legal.terms.lawText": {
+    "fr": "-x3kilb",
+    "en": "-qyinlp"
+  },
+  "legal.terms.changesTitle": {
+    "fr": "ooicka",
+    "en": "rhokm6"
+  },
+  "legal.terms.changesText": {
+    "fr": "hhakh4",
+    "en": "4td2jy"
+  },
+  "notFound.code": {
+    "fr": "-7t1385",
+    "en": "-rw4cbg"
+  },
+  "notFound.title": {
+    "fr": "-xat6um",
+    "en": "v4pv9h"
+  },
+  "notFound.sub": {
+    "fr": "vwtozs",
+    "en": "nlv16f"
+  },
+  "notFound.backHome": {
+    "fr": "-z2dpgk",
+    "en": "-9ja0mj"
+  },
+  "errorPage.code": {
+    "fr": "-bdzg1p",
+    "en": "-yqj5t0"
+  },
+  "errorPage.title": {
+    "fr": "-dhm9qn",
+    "en": "-8c598x"
+  },
+  "errorPage.sub": {
+    "fr": "-2xqd8m",
+    "en": "-doq5wf"
+  },
+  "errorPage.retry": {
+    "fr": "-z63tov",
+    "en": "o0aw09"
+  },
+  "errorPage.backHome": {
+    "fr": "-z2dpgk",
+    "en": "-9ja0mj"
+  },
+  "aiAssistant.title": {
+    "fr": "-zh8kci",
+    "en": "-xrujub"
+  },
+  "aiAssistant.sub": {
+    "fr": "dhbcu4",
+    "en": "-ywp1mk"
+  },
+  "aiAssistant.startersLabel": {
+    "fr": "-3jzvc6",
+    "en": "-yaf50r"
+  },
+  "aiAssistant.greeting": {
+    "fr": "-j4qdmq",
+    "en": "-ywdu6p"
+  },
+  "aiAssistant.placeholder": {
+    "fr": "9acyzg",
+    "en": "z2cqkr"
+  },
+  "aiAssistant.send": {
+    "fr": "ghb59c",
+    "en": "hf0wbc"
+  },
+  "aiAssistant.close": {
+    "fr": "-rih5nu",
+    "en": "-2nfr0j"
+  },
+  "aiAssistant.chipPresentation": {
+    "fr": "mbrg6b",
+    "en": "-p11b42"
+  },
+  "aiAssistant.chipCompetences": {
+    "fr": "eiyalx",
+    "en": "d0mwwg"
+  },
+  "aiAssistant.chipRealisations": {
+    "fr": "-9w57gp",
+    "en": "vu76jc"
+  },
+  "aiAssistant.chipPhilosophie": {
+    "fr": "hs3tbe",
+    "en": "-erxg46"
+  },
+  "aiAssistant.chipPourquoi": {
+    "fr": "21c7zb",
+    "en": "jdj4s5"
+  },
+  "aiAssistant.chipProjet": {
+    "fr": "-ysl0ld",
+    "en": "mn1z9k"
+  },
+  "aiAssistant.fallback": {
+    "fr": "jsx7t4",
+    "en": "86s2e5"
+  },
+  "aiAssistant.answerPresentation": {
+    "fr": "-pj4myx",
+    "en": "-xdyakx"
+  },
+  "aiAssistant.answerCompetences": {
+    "fr": "8tr5j6",
+    "en": "rl1vxc"
+  },
+  "aiAssistant.answerRealisations": {
+    "fr": "-g88yua",
+    "en": "-lbf4ag"
+  },
+  "aiAssistant.answerPhilosophie": {
+    "fr": "-klybyb",
+    "en": "-5gq9d1"
+  },
+  "aiAssistant.answerPourquoi": {
+    "fr": "-tc2f8",
+    "en": "-v0ajr2"
+  },
+  "aiAssistant.answerProjet": {
+    "fr": "-jvywh5",
+    "en": "-2heoo4"
+  },
+  "aiAssistant.thinking": {
+    "fr": "-f87lfr",
+    "en": "dt38z3"
+  },
+  "aiAssistant.errorRateLimited": {
+    "fr": "wdoded",
+    "en": "rv4neo"
+  },
+  "aiAssistant.errorUnavailable": {
+    "fr": "vjlm8p",
+    "en": "-nkp1mp"
+  },
+  "auth.login.eyebrow": {
+    "fr": "-ze9gph",
+    "en": "hem3kk"
+  },
+  "auth.login.title": {
+    "fr": "lecdu5",
+    "en": "-b58ejg"
+  },
+  "auth.login.titleAccent": {
+    "fr": "-a5jrtm",
+    "en": "mn43lf"
+  },
+  "auth.login.subtitle": {
+    "fr": "g16ha9",
+    "en": "ig2k7a"
+  },
+  "auth.login.secureBadge1": {
+    "fr": "-41vtz",
+    "en": "8a0ucg"
+  },
+  "auth.login.secureBadge2": {
+    "fr": "-c5tihd",
+    "en": "-9yawcj"
+  },
+  "auth.login.secureBadge3": {
+    "fr": "4kvg7m",
+    "en": "ssng6z"
+  },
+  "auth.login.emailLabel": {
+    "fr": "i9rrkp",
+    "en": "-o7u93g"
+  },
+  "auth.login.emailPlaceholder": {
+    "fr": "2ouq5k",
+    "en": "88wl7s"
+  },
+  "auth.login.passwordLabel": {
+    "fr": "pg6jh9",
+    "en": "-loc8bf"
+  },
+  "auth.login.passwordPlaceholder": {
+    "fr": "-3xdlf9",
+    "en": "13g1do"
+  },
+  "auth.login.submit": {
+    "fr": "-elmcnd",
+    "en": "-fpasck"
+  },
+  "auth.login.invalidCredentials": {
+    "fr": "-uaz9v4",
+    "en": "ccboff"
+  },
+  "auth.login.notVerifiedError": {
+    "fr": "77yk2d",
+    "en": "l3xhtd"
+  },
+  "auth.login.notVerifiedHint": {
+    "fr": "7hv3bq",
+    "en": "-p2um25"
+  },
+  "auth.login.notVerifiedDismiss": {
+    "fr": "-2v1gx3",
+    "en": "z951ik"
+  },
+  "auth.login.error": {
+    "fr": "-7jyv0r",
+    "en": "108nfq"
+  },
+  "auth.login.noAccount": {
+    "fr": "-i7len8",
+    "en": "-jd64mt"
+  },
+  "auth.login.registerLink": {
+    "fr": "2mk4eu",
+    "en": "-vxiam2"
+  },
+  "auth.login.forgotPasswordLink": {
+    "fr": "-fg9nag",
+    "en": "-jexk7k"
+  },
+  "auth.login.resendVerificationLink": {
+    "fr": "-ro5tr1",
+    "en": "y07a5i"
+  },
+  "auth.login.twoFactor.title": {
+    "fr": "-gb3ix6",
+    "en": "88cnp2"
+  },
+  "auth.login.twoFactor.subtitle": {
+    "fr": "cb07bs",
+    "en": "fytwdl"
+  },
+  "auth.login.twoFactor.codeLabel": {
+    "fr": "-qt2s6j",
+    "en": "ehrscy"
+  },
+  "auth.login.twoFactor.codePlaceholder": {
+    "fr": "ix7ni5",
+    "en": "ix7ni5"
+  },
+  "auth.login.twoFactor.submit": {
+    "fr": "5lq51i",
+    "en": "ivwdon"
+  },
+  "auth.login.twoFactor.back": {
+    "fr": "j3u5sj",
+    "en": "kysvli"
+  },
+  "auth.login.twoFactor.invalidCode": {
+    "fr": "ghz9v8",
+    "en": "-e5djtr"
+  },
+  "auth.login.twoFactor.tooManyAttempts": {
+    "fr": "w9m38z",
+    "en": "-kn5upw"
+  },
+  "auth.login.twoFactor.error": {
+    "fr": "-yqq4xg",
+    "en": "im8a0n"
+  },
+  "auth.forgotPassword.eyebrow": {
+    "fr": "-zaw0bo",
+    "en": "3pugoo"
+  },
+  "auth.forgotPassword.title": {
+    "fr": "4u1qei",
+    "en": "-7ppft0"
+  },
+  "auth.forgotPassword.titleAccent": {
+    "fr": "o5ydbt",
+    "en": "5dqiwh"
+  },
+  "auth.forgotPassword.subtitle": {
+    "fr": "snzvew",
+    "en": "-xnoede"
+  },
+  "auth.forgotPassword.emailLabel": {
+    "fr": "i9rrkp",
+    "en": "-o7u93g"
+  },
+  "auth.forgotPassword.emailPlaceholder": {
+    "fr": "2ouq5k",
+    "en": "88wl7s"
+  },
+  "auth.forgotPassword.submit": {
+    "fr": "jrfilv",
+    "en": "-2w651b"
+  },
+  "auth.forgotPassword.success": {
+    "fr": "-3t78is",
+    "en": "sri1vt"
+  },
+  "auth.forgotPassword.error": {
+    "fr": "-dsmxs5",
+    "en": "mbx800"
+  },
+  "auth.verificationEmail.title": {
+    "fr": "25k1we",
+    "en": "-9jy6qz"
+  },
+  "auth.verificationEmail.subtitle": {
+    "fr": "nv9yju",
+    "en": "-j7rbpt"
+  },
+  "auth.verificationEmail.emailLabel": {
+    "fr": "i9rrkp",
+    "en": "-o7u93g"
+  },
+  "auth.verificationEmail.emailPlaceholder": {
+    "fr": "2ouq5k",
+    "en": "88wl7s"
+  },
+  "auth.verificationEmail.submit": {
+    "fr": "jrfilv",
+    "en": "-h0rqhp"
+  },
+  "auth.verificationEmail.success": {
+    "fr": "-kb2ru9",
+    "en": "-ev8r4w"
+  },
+  "auth.verificationEmail.error": {
+    "fr": "-dsmxs5",
+    "en": "mbx800"
+  },
+  "auth.verificationEmail.confirmTitle": {
+    "fr": "-ci2hjm",
+    "en": "3b7dxz"
+  },
+  "auth.verificationEmail.confirmSubtitle": {
+    "fr": "-ug5bk8",
+    "en": "bzuj24"
+  },
+  "auth.verificationEmail.verifying": {
+    "fr": "-npu13m",
+    "en": "-2xivr1"
+  },
+  "auth.verificationEmail.confirmSuccess": {
+    "fr": "-gxzbqk",
+    "en": "-fntk36"
+  },
+  "auth.verificationEmail.confirmError": {
+    "fr": "-kf0h3c",
+    "en": "vkfkus"
+  },
+  "auth.verificationEmail.loginLink": {
+    "fr": "-elmcnd",
+    "en": "-fpasck"
+  },
+  "auth.verificationEmail.requestNewLink": {
+    "fr": "-mzxuj2",
+    "en": "mfzd5i"
+  },
+  "auth.resetPassword.title": {
+    "fr": "-8ol94a",
+    "en": "-7hw9eb"
+  },
+  "auth.resetPassword.subtitle": {
+    "fr": "3s3m6h",
+    "en": "-r5bxti"
+  },
+  "auth.resetPassword.passwordLabel": {
+    "fr": "-ysqnnw",
+    "en": "gtmyjp"
+  },
+  "auth.resetPassword.confirmPasswordLabel": {
+    "fr": "vuhwi5",
+    "en": "-smqbuj"
+  },
+  "auth.resetPassword.submit": {
+    "fr": "jazd9c",
+    "en": "-cvkvu4"
+  },
+  "auth.resetPassword.success": {
+    "fr": "a2md5b",
+    "en": "5m93jo"
+  },
+  "auth.resetPassword.loginLink": {
+    "fr": "3lmchc",
+    "en": "-3k8pmf"
+  },
+  "auth.resetPassword.error": {
+    "fr": "44y6j0",
+    "en": "1qiqsh"
+  },
+  "auth.register.eyebrow": {
+    "fr": "-6a6o8r",
+    "en": "-pqrxc0"
+  },
+  "auth.register.title": {
+    "fr": "-cr088z",
+    "en": "-bvhxq8"
+  },
+  "auth.register.titleAccent": {
+    "fr": "ruq61e",
+    "en": "9z6ie2"
+  },
+  "auth.register.subtitle": {
+    "fr": "mydfmy",
+    "en": "j6i5fl"
+  },
+  "auth.register.secureBadge1": {
+    "fr": "-41vtz",
+    "en": "8a0ucg"
+  },
+  "auth.register.secureBadge2": {
+    "fr": "-c5tihd",
+    "en": "-9yawcj"
+  },
+  "auth.register.secureBadge3": {
+    "fr": "4kvg7m",
+    "en": "ssng6z"
+  },
+  "auth.register.tabClient": {
+    "fr": "os2pra",
+    "en": "y2plr9"
+  },
+  "auth.register.tabFreelance": {
+    "fr": "-shbfx8",
+    "en": "-8prkgj"
+  },
+  "auth.register.haveAccount": {
+    "fr": "-aed9wu",
+    "en": "-a2ag0l"
+  },
+  "auth.register.loginLink": {
+    "fr": "-elmcnd",
+    "en": "-fpasck"
+  },
+  "auth.register.client.nameLabel": {
+    "fr": "-w41ys",
+    "en": "-kc7km0"
+  },
+  "auth.register.client.namePlaceholder": {
+    "fr": "-hbx9je",
+    "en": "-u5sn9h"
+  },
+  "auth.register.client.emailLabel": {
+    "fr": "i9rrkp",
+    "en": "-o7u93g"
+  },
+  "auth.register.client.emailPlaceholder": {
+    "fr": "2ouq5k",
+    "en": "88wl7s"
+  },
+  "auth.register.client.phoneLabel": {
+    "fr": "i5tz4w",
+    "en": "-rk2fwz"
+  },
+  "auth.register.client.phonePlaceholder": {
+    "fr": "-nhhr65",
+    "en": "-nhhr65"
+  },
+  "auth.register.client.passwordLabel": {
+    "fr": "pg6jh9",
+    "en": "-loc8bf"
+  },
+  "auth.register.client.passwordPlaceholder": {
+    "fr": "-pc5y7o",
+    "en": "-va9rdr"
+  },
+  "auth.register.client.passwordHint": {
+    "fr": "f8i1cv",
+    "en": "-4p0zp1"
+  },
+  "auth.register.client.agreeTerms": {
+    "fr": "zfj6t9",
+    "en": "jkux8s"
+  },
+  "auth.register.client.errorRequired": {
+    "fr": "sqbcsr",
+    "en": "-rh5t70"
+  },
+  "auth.register.client.submit": {
+    "fr": "-286yml",
+    "en": "1vvk13"
+  },
+  "auth.register.client.success": {
+    "fr": "-6zcppq",
+    "en": "jflw86"
+  },
+  "auth.register.client.error": {
+    "fr": "z4sdsa",
+    "en": "-mc0z03"
+  },
+  "auth.account.welcome": {
+    "fr": "jnpl77",
+    "en": "xu2goj"
+  },
+  "auth.account.dashboardTitle": {
+    "fr": "cngwas",
+    "en": "-n0wo4w"
+  },
+  "auth.account.heroSubtitle": {
+    "fr": "fbxist",
+    "en": "zbrakk"
+  },
+  "auth.account.roleClient": {
+    "fr": "i5dst5",
+    "en": "nk52h4"
+  },
+  "auth.account.roleFreelance": {
+    "fr": "pengwx",
+    "en": "-x86mr"
+  },
+  "auth.account.verifyWarning": {
+    "fr": "jb4q76",
+    "en": "-irjnlr"
+  },
+  "auth.account.verifiedBadge": {
+    "fr": "-hfbfp0",
+    "en": "-bxgecs"
+  },
+  "auth.account.unverifiedBadge": {
+    "fr": "hgkslb",
+    "en": "-w6beex"
+  },
+  "auth.account.backLink": {
+    "fr": "rqa0iy",
+    "en": "we2ii3"
+  },
+  "auth.account.hero.progressLabel": {
+    "fr": "-al8bqa",
+    "en": "8abfio"
+  },
+  "auth.account.hero.progressCaption": {
+    "fr": "nj53x3",
+    "en": "-f6fdm0"
+  },
+  "auth.account.hero.progressAvgCaption": {
+    "fr": "o70n5i",
+    "en": "-t1qoze"
+  },
+  "auth.account.header.backToSite": {
+    "fr": "suwczm",
+    "en": "-9dbytv"
+  },
+  "auth.account.header.userMenu": {
+    "fr": "7eu46q",
+    "en": "-pkehw2"
+  },
+  "auth.account.nav.title": {
+    "fr": "5vp7mz",
+    "en": "-wfdu7m"
+  },
+  "auth.account.nav.dashboard": {
+    "fr": "cngwas",
+    "en": "-n0wo4w"
+  },
+  "auth.account.nav.profile": {
+    "fr": "osc4pc",
+    "en": "-ujo06t"
+  },
+  "auth.account.nav.logout": {
+    "fr": "pfzwak",
+    "en": "afm045"
+  },
+  "auth.account.nav.myProjects": {
+    "fr": "-g2iq0u",
+    "en": "-lpdiru"
+  },
+  "auth.account.nav.myQuotes": {
+    "fr": "-qgd37i",
+    "en": "-6re60"
+  },
+  "auth.account.nav.projectManagement": {
+    "fr": "-yn2lbk",
+    "en": "-f1rvm2"
+  },
+  "auth.account.nav.availableProjects": {
+    "fr": "v0mgn1",
+    "en": "-f9p9gx"
+  },
+  "auth.account.nav.invoices": {
+    "fr": "-80tksc",
+    "en": "zcvlca"
+  },
+  "auth.account.nav.messages": {
+    "fr": "-u539v0",
+    "en": "-u539v0"
+  },
+  "auth.account.nav.changePassword": {
+    "fr": "xnzx4",
+    "en": "y2c69l"
+  },
+  "auth.account.nav.security": {
+    "fr": "-hcoepw",
+    "en": "-rjbt03"
+  },
+  "auth.account.nav.settings": {
+    "fr": "-ssulk7",
+    "en": "ivjj31"
+  },
+  "auth.account.nav.dataExport": {
+    "fr": "-t02hqg",
+    "en": "-iqe1xu"
+  },
+  "auth.account.nav.deleteAccount": {
+    "fr": "kkll9",
+    "en": "j6s312"
+  },
+  "auth.account.nav.help": {
+    "fr": "h56y6v",
+    "en": "h8z4lb"
+  },
+  "auth.account.nav.groupActivity": {
+    "fr": "-pxk61f",
+    "en": "-3is7y7"
+  },
+  "auth.account.nav.groupAccount": {
+    "fr": "-penar8",
+    "en": "lprklj"
+  },
+  "auth.account.nav.groupDanger": {
+    "fr": "w0fq5j",
+    "en": "-wofmrp"
+  },
+  "auth.account.nav.newQuoteCta": {
+    "fr": "7iy2o",
+    "en": "vv8jbt"
+  },
+  "auth.account.nav.pendingQuotesBadge": {
+    "fr": "tc8vqd",
+    "en": "vjga4k"
+  },
+  "auth.account.nav.collapseMenu": {
+    "fr": "b9y7r",
+    "en": "-jfi3ta"
+  },
+  "auth.account.nav.expandMenu": {
+    "fr": "2vgll",
+    "en": "9pvftr"
+  },
+  "auth.account.sections.collaboratingProjects": {
+    "fr": "573dwf",
+    "en": "yappjn"
+  },
+  "auth.account.sections.clientProjects": {
+    "fr": "-g2iq0u",
+    "en": "-lpdiru"
+  },
+  "auth.account.sections.quotes": {
+    "fr": "-qgd37i",
+    "en": "-6re60"
+  },
+  "auth.account.sections.emptyProjects": {
+    "fr": "-n2g3v3",
+    "en": "-xi34nh"
+  },
+  "auth.account.sections.emptyQuotes": {
+    "fr": "f3wuvk",
+    "en": "t4bl5t"
+  },
+  "auth.account.sections.quoteBudget": {
+    "fr": "gtegaj",
+    "en": "gtegaj"
+  },
+  "auth.account.sections.quoteConverted": {
+    "fr": "-wwcbo4",
+    "en": "h9syno"
+  },
+  "auth.account.sections.viewAll": {
+    "fr": "-gtfysm",
+    "en": "ljugw8"
+  },
+  "auth.account.sections.upcomingDeadlines": {
+    "fr": "-pddtrh",
+    "en": "-bzj9uf"
+  },
+  "auth.account.sections.emptyDeadlines": {
+    "fr": "m3e6hz",
+    "en": "1ylgnc"
+  },
+  "auth.account.sections.overdue": {
+    "fr": "-ur5js5",
+    "en": "-c2fgak"
+  },
+  "auth.account.sections.activity": {
+    "fr": "-lc28ed",
+    "en": "fpvc1c"
+  },
+  "auth.account.sections.emptyActivity": {
+    "fr": "nx7ibb",
+    "en": "-ch4vi0"
+  },
+  "auth.account.sections.messages": {
+    "fr": "-gr1ocg",
+    "en": "-bhb3e5"
+  },
+  "auth.account.sections.emptyMessages": {
+    "fr": "-1rwkmu",
+    "en": "-wv79x7"
+  },
+  "auth.account.sections.recentInvoices": {
+    "fr": "eaek3y",
+    "en": "-gfkwnb"
+  },
+  "auth.account.sections.emptyInvoices": {
+    "fr": "-oq6af8",
+    "en": "xoucyn"
+  },
+  "auth.account.sections.revenueChart": {
+    "fr": "426jej",
+    "en": "xdh58f"
+  },
+  "auth.account.sections.projectsByStatus": {
+    "fr": "8eqsk5",
+    "en": "1rpmyz"
+  },
+  "auth.account.sections.inProgressProjects": {
+    "fr": "-me8hho",
+    "en": "q9yhqz"
+  },
+  "auth.account.sections.overview": {
+    "fr": "-7eg16",
+    "en": "-io22bd"
+  },
+  "auth.account.sections.activityGroup": {
+    "fr": "-2xwrr3",
+    "en": "-2xwufj"
+  },
+  "auth.account.sections.projectsAndBilling": {
+    "fr": "-4226ol",
+    "en": "-7xzyvv"
+  },
+  "auth.account.invoiceTableColumns.invoice": {
+    "fr": "-cd63rs",
+    "en": "-aapc15"
+  },
+  "auth.account.invoiceTableColumns.project": {
+    "fr": "7yl1sk",
+    "en": "xos31n"
+  },
+  "auth.account.invoiceTableColumns.amount": {
+    "fr": "-q3s52z",
+    "en": "-1h1y2g"
+  },
+  "auth.account.invoiceTableColumns.status": {
+    "fr": "-iarbar",
+    "en": "-iarbbm"
+  },
+  "auth.account.stats.activeProjects": {
+    "fr": "-1lqoe5",
+    "en": "-xo6zjk"
+  },
+  "auth.account.stats.pendingQuotes": {
+    "fr": "4evkhn",
+    "en": "xidzls"
+  },
+  "auth.account.stats.unpaidInvoices": {
+    "fr": "ns21vs",
+    "en": "-a333gd"
+  },
+  "auth.account.stats.assignedProjects": {
+    "fr": "-vx3j0y",
+    "en": "-x7nvag"
+  },
+  "auth.account.quoteStatus.pending": {
+    "fr": "-fmdwf8",
+    "en": "-fmf42b"
+  },
+  "auth.account.quoteStatus.accepted": {
+    "fr": "tokpoc",
+    "en": "tohzrt"
+  },
+  "auth.account.quoteStatus.suspended": {
+    "fr": "hgl5lk",
+    "en": "hgktpl"
+  },
+  "auth.account.quoteStatus.rejected": {
+    "fr": "-wj1ryh",
+    "en": "-y62jry"
+  },
+  "auth.account.invoiceStatus.pending": {
+    "fr": "c5md1u",
+    "en": "y8ypim"
+  },
+  "auth.account.invoiceStatus.paid": {
+    "fr": "-ts6uhs",
+    "en": "hdauvo"
+  },
+  "auth.account.invoiceStatus.cancelled": {
+    "fr": "-vhahv4",
+    "en": "-mt037x"
+  },
+  "auth.account.project.progress": {
+    "fr": "s8jfcu",
+    "en": "-mcgfhp"
+  },
+  "auth.account.project.deadline": {
+    "fr": "6q2rxy",
+    "en": "-w8tbug"
+  },
+  "auth.account.project.noDeadline": {
+    "fr": "-yv4w6j",
+    "en": "4a8nlb"
+  },
+  "auth.account.projectDetail.budgetLabel": {
+    "fr": "-hbksg2",
+    "en": "-1ab0wk"
+  },
+  "auth.account.projectDetail.descriptionLabel": {
+    "fr": "j1zn54",
+    "en": "j1zn54"
+  },
+  "auth.account.projectDetail.notFoundTitle": {
+    "fr": "uqwj8t",
+    "en": "-gqygi2"
+  },
+  "auth.account.projectDetail.notFoundText": {
+    "fr": "-qo0eav",
+    "en": "gdc9fy"
+  },
+  "auth.account.projectDetail.discussionLabel": {
+    "fr": "-ylvqfc",
+    "en": "-ylvqfc"
+  },
+  "auth.account.projectDetail.emptyDiscussion": {
+    "fr": "-z8b56r",
+    "en": "s7ylu4"
+  },
+  "auth.account.projectDetail.messagePlaceholder": {
+    "fr": "nqq6ty",
+    "en": "-aov5bz"
+  },
+  "auth.account.projectDetail.send": {
+    "fr": "ghb59c",
+    "en": "hf0wbc"
+  },
+  "auth.account.projectDetail.sending": {
+    "fr": "-d7n85b",
+    "en": "-5qaoh8"
+  },
+  "auth.account.projectDetail.you": {
+    "fr": "hgutih",
+    "en": "kc751"
+  },
+  "auth.account.projectDetail.closeDiscussion": {
+    "fr": "euh1gm",
+    "en": "-24w08g"
+  },
+  "auth.account.projectDetail.openDiscussion": {
+    "fr": "vedosi",
+    "en": "l1jwiu"
+  },
+  "auth.account.quoteDetail.messageLabel": {
+    "fr": "-sgupj7",
+    "en": "-sgupj7"
+  },
+  "auth.account.quoteDetail.clarificationsLabel": {
+    "fr": "-suz9fg",
+    "en": "nsos6o"
+  },
+  "auth.account.quoteDetail.notFoundTitle": {
+    "fr": "nxlbha",
+    "en": "mwdffo"
+  },
+  "auth.account.quoteDetail.notFoundText": {
+    "fr": "-nrhyaw",
+    "en": "1nylxs"
+  },
+  "auth.account.quoteDetail.sentOnLabel": {
+    "fr": "5tvo62",
+    "en": "udi5"
+  },
+  "auth.account.quoteDetail.convertedBanner": {
+    "fr": "-sgyjp8",
+    "en": "mxyhm1"
+  },
+  "auth.account.quoteDetail.viewProjectCta": {
+    "fr": "t8l59n",
+    "en": "-pvsgvj"
+  },
+  "auth.account.myProjectsPage.subtitle": {
+    "fr": "3g1nfa",
+    "en": "-3b1qou"
+  },
+  "auth.account.myProjectsPage.statTotal": {
+    "fr": "muva4v",
+    "en": "-yt5rhy"
+  },
+  "auth.account.myProjectsPage.statActive": {
+    "fr": "o4ykod",
+    "en": "bb95lo"
+  },
+  "auth.account.myProjectsPage.statUpcoming": {
+    "fr": "1mmjdo",
+    "en": "obbvr8"
+  },
+  "auth.account.myProjectsPage.statCompleted": {
+    "fr": "rcibgl",
+    "en": "810xyx"
+  },
+  "auth.account.myQuotesPage.subtitle": {
+    "fr": "-wrutto",
+    "en": "-ls6n7n"
+  },
+  "auth.account.myQuotesPage.statTotal": {
+    "fr": "dblrvp",
+    "en": "-8j90g0"
+  },
+  "auth.account.myQuotesPage.statPending": {
+    "fr": "-fmdwf8",
+    "en": "-fmf42b"
+  },
+  "auth.account.myQuotesPage.statAccepted": {
+    "fr": "-38mjrf",
+    "en": "tohzrt"
+  },
+  "auth.account.newQuotePage.title": {
+    "fr": "7iy2o",
+    "en": "vv8jbt"
+  },
+  "auth.account.newQuotePage.subtitle": {
+    "fr": "6ixym1",
+    "en": "a2ui3a"
+  },
+  "auth.account.newQuotePage.successCta": {
+    "fr": "oc5njw",
+    "en": "ccpzmn"
+  },
+  "auth.account.messagesPage.title": {
+    "fr": "-u539v0",
+    "en": "-u539v0"
+  },
+  "auth.account.messagesPage.subtitle": {
+    "fr": "13nsag",
+    "en": "p3fauy"
+  },
+  "auth.account.messagesPage.empty": {
+    "fr": "-1rwkmu",
+    "en": "-wv79x7"
+  },
+  "auth.account.messagesPage.teamLabel": {
+    "fr": "-nw4hcb",
+    "en": "xfhuvj"
+  },
+  "auth.account.messagesPage.youLabel": {
+    "fr": "hgutih",
+    "en": "kc751"
+  },
+  "auth.account.messagesPage.replyLabel": {
+    "fr": "-cjne7l",
+    "en": "-ylvcmy"
+  },
+  "auth.account.messagesPage.replyPlaceholder": {
+    "fr": "-qqky4f",
+    "en": "-evbq1b"
+  },
+  "auth.account.messagesPage.replySubmit": {
+    "fr": "ghb59c",
+    "en": "hf0wbc"
+  },
+  "auth.account.messagesPage.replySuccess": {
+    "fr": "-hcd9po",
+    "en": "-f3vfre"
+  },
+  "auth.account.messagesPage.replyError": {
+    "fr": "arrtxe",
+    "en": "wr7sty"
+  },
+  "auth.profile.title": {
+    "fr": "osc4pc",
+    "en": "-ujo06t"
+  },
+  "auth.profile.subtitle": {
+    "fr": "-wuorho",
+    "en": "-1e15zc"
+  },
+  "auth.profile.roleClient": {
+    "fr": "rb40mt",
+    "en": "rb40mt"
+  },
+  "auth.profile.roleFreelance": {
+    "fr": "dpted1",
+    "en": "dpted1"
+  },
+  "auth.profile.memberSince": {
+    "fr": "-pipev8",
+    "en": "-pw2ozg"
+  },
+  "auth.profile.fullNameLabel": {
+    "fr": "-w41ys",
+    "en": "-kc7km0"
+  },
+  "auth.profile.phoneLabel": {
+    "fr": "-r3exeg",
+    "en": "-tol7ey"
+  },
+  "auth.profile.phoneLocked": {
+    "fr": "-3yyq4o",
+    "en": "ccavn5"
+  },
+  "auth.profile.bioLabel": {
+    "fr": "nfvlmb",
+    "en": "miednk"
+  },
+  "auth.profile.specialtiesLabel": {
+    "fr": "-6k5etq",
+    "en": "6zqe64"
+  },
+  "auth.profile.specialtiesPlaceholder": {
+    "fr": "k98ueh",
+    "en": "4niaiu"
+  },
+  "auth.profile.availabilityLabel": {
+    "fr": "-uvobr1",
+    "en": "-saldqz"
+  },
+  "auth.profile.portfolioLabel": {
+    "fr": "5pk54h",
+    "en": "5pkbq5"
+  },
+  "auth.profile.submit": {
+    "fr": "fa31pv",
+    "en": "8hdgxs"
+  },
+  "auth.profile.success": {
+    "fr": "-r5x43p",
+    "en": "46xf3t"
+  },
+  "auth.profile.error": {
+    "fr": "k7ed96",
+    "en": "-l0a7k3"
+  },
+  "auth.profile.security.title": {
+    "fr": "n1hfu4",
+    "en": "-gxya74"
+  },
+  "auth.profile.security.emailVerified": {
+    "fr": "gibptu",
+    "en": "-e4ldqw"
+  },
+  "auth.profile.security.emailUnverified": {
+    "fr": "-egjpn5",
+    "en": "6qhrff"
+  },
+  "auth.profile.security.twoFactorEnabled": {
+    "fr": "id3ajj",
+    "en": "exxv7f"
+  },
+  "auth.profile.security.twoFactorDisabled": {
+    "fr": "-uuen72",
+    "en": "geqep4"
+  },
+  "auth.profile.security.twoFactorHint": {
+    "fr": "b46wiw",
+    "en": "-rcoxjn"
+  },
+  "auth.profile.security.twoFactorHintOptional": {
+    "fr": "owg571",
+    "en": "yd2hpg"
+  },
+  "auth.profile.security.twoFactorReminder.message": {
+    "fr": "zdvm4r",
+    "en": "-l9ylou"
+  },
+  "auth.profile.security.twoFactorReminder.cta": {
+    "fr": "-aslx1z",
+    "en": "-vzy221"
+  },
+  "auth.profile.security.resendButton": {
+    "fr": "rkjde7",
+    "en": "-ejrjso"
+  },
+  "auth.profile.security.resendPending": {
+    "fr": "-kgab06",
+    "en": "-5qaoh8"
+  },
+  "auth.profile.security.resendSuccess": {
+    "fr": "-g7lwri",
+    "en": "u684y2"
+  },
+  "auth.profile.security.resendError": {
+    "fr": "unyo54",
+    "en": "-jbonh0"
+  },
+  "auth.profile.security.subtitle": {
+    "fr": "33vlbe",
+    "en": "wmppmp"
+  },
+  "auth.profile.security.emailGroupTitle": {
+    "fr": "i9rrkp",
+    "en": "-o7u93g"
+  },
+  "auth.profile.security.twoFactorGroupTitle": {
+    "fr": "w7befq",
+    "en": "ze82qg"
+  },
+  "auth.profile.security.lastLoginGroupTitle": {
+    "fr": "1jdew8",
+    "en": "-cwuh9b"
+  },
+  "auth.profile.security.lastLoginAtLabel": {
+    "fr": "h6pjxu",
+    "en": "h6pjxu"
+  },
+  "auth.profile.security.lastLocationLabel": {
+    "fr": "5wejdl",
+    "en": "-yj14w1"
+  },
+  "auth.profile.security.lastLocationCoordinatesLabel": {
+    "fr": "-hf0sb7",
+    "en": "lboaha"
+  },
+  "auth.profile.security.lastDeviceLabel": {
+    "fr": "p2j0mi",
+    "en": "-w5pgqe"
+  },
+  "auth.profile.security.lastDeviceTypeLabel": {
+    "fr": "-7aalqz",
+    "en": "bc6dr4"
+  },
+  "auth.profile.security.lastDeviceBrandLabel": {
+    "fr": "qyiul9",
+    "en": "yv554t"
+  },
+  "auth.profile.security.lastIpLabel": {
+    "fr": "-dbzfko",
+    "en": "4wirl1"
+  },
+  "auth.profile.security.twoFactorSetup.title": {
+    "fr": "tu1wdz",
+    "en": "-9929c5"
+  },
+  "auth.profile.security.twoFactorSetup.subtitle": {
+    "fr": "-y6jymj",
+    "en": "v7ytrn"
+  },
+  "auth.profile.security.twoFactorSetup.loading": {
+    "fr": "wjbybg",
+    "en": "-v3d27q"
+  },
+  "auth.profile.security.twoFactorSetup.qrAlt": {
+    "fr": "xbr7dh",
+    "en": "-ll8uxm"
+  },
+  "auth.profile.security.twoFactorSetup.scanEyebrow": {
+    "fr": "loesml",
+    "en": "-u1lt9n"
+  },
+  "auth.profile.security.twoFactorSetup.cantScan": {
+    "fr": "-abx9lx",
+    "en": "jwgd1o"
+  },
+  "auth.profile.security.twoFactorSetup.enterManually": {
+    "fr": "-quljj9",
+    "en": "3r47p1"
+  },
+  "auth.profile.security.twoFactorSetup.codeInstruction": {
+    "fr": "4ikxfy",
+    "en": "-8fgjse"
+  },
+  "auth.profile.security.twoFactorSetup.codeLabel": {
+    "fr": "-qt2s6j",
+    "en": "ehrscy"
+  },
+  "auth.profile.security.twoFactorSetup.codePlaceholder": {
+    "fr": "ix7ni5",
+    "en": "ix7ni5"
+  },
+  "auth.profile.security.twoFactorSetup.submit": {
+    "fr": "mtgf5k",
+    "en": "-2y1ysz"
+  },
+  "auth.profile.security.twoFactorSetup.invalidCode": {
+    "fr": "ghz9v8",
+    "en": "-e5djtr"
+  },
+  "auth.profile.security.twoFactorSetup.tooManyAttempts": {
+    "fr": "w9m38z",
+    "en": "-kn5upw"
+  },
+  "auth.profile.security.twoFactorSetup.error": {
+    "fr": "-qmr52f",
+    "en": "87rs0s"
+  },
+  "auth.profile.security.twoFactorSetup.loadError": {
+    "fr": "8y9v6y",
+    "en": "-4uk66a"
+  },
+  "auth.profile.security.twoFactorSetup.retry": {
+    "fr": "-z63tov",
+    "en": "-ss2210"
+  },
+  "auth.profile.security.twoFactorSetup.recoveryTitle": {
+    "fr": "1y1noz",
+    "en": "crcwhn"
+  },
+  "auth.profile.security.twoFactorSetup.recoverySubtitle": {
+    "fr": "ks69cf",
+    "en": "yy0uu2"
+  },
+  "auth.profile.security.twoFactorSetup.recoveryAck": {
+    "fr": "-vhnmsl",
+    "en": "-lhhfsl"
+  },
+  "auth.profile.security.twoFactorSetup.copyAll": {
+    "fr": "95ylnh",
+    "en": "h2qj38"
+  },
+  "auth.profile.security.twoFactorSetup.copied": {
+    "fr": "zasy0w",
+    "en": "su5sv0"
+  },
+  "auth.profile.security.twoFactorSetup.copySecret": {
+    "fr": "iidwht",
+    "en": "hlw418"
+  },
+  "auth.profile.security.twoFactorSetup.appHint": {
+    "fr": "-2zt9tn",
+    "en": "-2zt9tn"
+  },
+  "auth.profile.security.twoFactorSetup.activateButton": {
+    "fr": "ob2h7u",
+    "en": "-w118yo"
+  },
+  "auth.profile.dataExport.title": {
+    "fr": "-t02hqg",
+    "en": "-iqe1xu"
+  },
+  "auth.profile.dataExport.description": {
+    "fr": "te1zwi",
+    "en": "mk0dz2"
+  },
+  "auth.profile.dataExport.downloadButton": {
+    "fr": "-96sfu5",
+    "en": "87tpsj"
+  },
+  "auth.profile.dataExport.contentHint": {
+    "fr": "-5r96fl",
+    "en": "qz7mwu"
+  },
+  "auth.profile.dangerZone.title": {
+    "fr": "kkll9",
+    "en": "j6s312"
+  },
+  "auth.profile.dangerZone.description": {
+    "fr": "6v0nai",
+    "en": "pedi3w"
+  },
+  "auth.profile.dangerZone.deleteButton": {
+    "fr": "kkll9",
+    "en": "j6s312"
+  },
+  "auth.profile.dangerZone.confirmPrompt": {
+    "fr": "r1mxy",
+    "en": "-et31j8"
+  },
+  "auth.profile.dangerZone.confirmButton": {
+    "fr": "ovvfqh",
+    "en": "pcyler"
+  },
+  "auth.profile.dangerZone.confirmPending": {
+    "fr": "u1nup9",
+    "en": "-osgqu2"
+  },
+  "auth.profile.dangerZone.cancelButton": {
+    "fr": "-vhd7fl",
+    "en": "m6bofa"
+  },
+  "auth.profile.overview.completeBadge": {
+    "fr": "-qnucko",
+    "en": "-6uk57m"
+  },
+  "auth.profile.overview.portfolioLink": {
+    "fr": "wjbl45",
+    "en": "c48jar"
+  },
+  "auth.profile.overview.checklistTitle": {
+    "fr": "q4i5lb",
+    "en": "-yw9uxd"
+  },
+  "auth.profile.overview.experienceValue": {
+    "fr": "5ed9zu",
+    "en": "-7fcq6m"
+  },
+  "auth.profile.yearsOfExperienceLabel": {
+    "fr": "-r6ztmf",
+    "en": "-r5gnid"
+  },
+  "auth.profile.cityLabel": {
+    "fr": "-qttmwe",
+    "en": "h6avpx"
+  },
+  "auth.profile.linkedinLabel": {
+    "fr": "-x3t4ji",
+    "en": "-x3t4ji"
+  },
+  "auth.profile.githubLabel": {
+    "fr": "dpzl19",
+    "en": "dpzl19"
+  },
+  "auth.profile.languagesLabel": {
+    "fr": "-w0dxy5",
+    "en": "oa4yk9"
+  },
+  "auth.profile.languageFrench": {
+    "fr": "55ka4j",
+    "en": "33evra"
+  },
+  "auth.profile.languageEnglish": {
+    "fr": "-yxtned",
+    "en": "9bphx0"
+  },
+  "auth.profile.languageSpanish": {
+    "fr": "-86xijn",
+    "en": "d7e86o"
+  },
+  "auth.profile.languagePortuguese": {
+    "fr": "utox8s",
+    "en": "wgxaff"
+  },
+  "auth.profile.professionalLinksLabel": {
+    "fr": "-y1sw1v",
+    "en": "hz3e6o"
+  },
+  "auth.profile.fieldLocked": {
+    "fr": "g1mg2v",
+    "en": "cpv77s"
+  },
+  "auth.profile.allFieldsLocked": {
+    "fr": "wykmie",
+    "en": "-s75pj8"
+  },
+  "auth.profile.completeCta": {
+    "fr": "v8dclh",
+    "en": "-pp4xw8"
+  },
+  "auth.changePassword.title": {
+    "fr": "xnzx4",
+    "en": "y2c69l"
+  },
+  "auth.changePassword.subtitle": {
+    "fr": "-agbx6g",
+    "en": "hp9xmf"
+  },
+  "auth.changePassword.currentPasswordLabel": {
+    "fr": "-ul7pcz",
+    "en": "72k0se"
+  },
+  "auth.changePassword.newPasswordLabel": {
+    "fr": "-ysqnnw",
+    "en": "gtmyjp"
+  },
+  "auth.changePassword.confirmPasswordLabel": {
+    "fr": "-9xjdss",
+    "en": "q98cg5"
+  },
+  "auth.changePassword.passwordHint": {
+    "fr": "f8i1cv",
+    "en": "-4p0zp1"
+  },
+  "auth.changePassword.submit": {
+    "fr": "-9fj3rx",
+    "en": "58azki"
+  },
+  "auth.changePassword.success": {
+    "fr": "wuc2cp",
+    "en": "-visb5x"
+  },
+  "auth.changePassword.error": {
+    "fr": "-uqwmwo",
+    "en": "-qh1xye"
+  },
+  "auth.projectManagement.title": {
+    "fr": "-yn2lbk",
+    "en": "-f1rvm2"
+  },
+  "auth.projectManagement.subtitle": {
+    "fr": "sxym2l",
+    "en": "bko6zw"
+  },
+  "auth.projectManagement.statTotal": {
+    "fr": "muva4v",
+    "en": "-yt5rhy"
+  },
+  "auth.projectManagement.statActive": {
+    "fr": "o4ykod",
+    "en": "bb95lo"
+  },
+  "auth.projectManagement.statUpcoming": {
+    "fr": "1mmjdo",
+    "en": "obbvr8"
+  },
+  "auth.projectManagement.tabs.mine": {
+    "fr": "-g2iq0u",
+    "en": "-lpdiru"
+  },
+  "auth.projectManagement.tabs.open": {
+    "fr": "v0mgn1",
+    "en": "-f9p9gx"
+  },
+  "auth.projectManagement.tabs.requests": {
+    "fr": "klgnwi",
+    "en": "4kj8a4"
+  },
+  "auth.projectManagement.roles.client": {
+    "fr": "rb40mt",
+    "en": "rb40mt"
+  },
+  "auth.projectManagement.roles.owner": {
+    "fr": "-azypbl",
+    "en": "-wehldv"
+  },
+  "auth.projectManagement.roles.collaborator": {
+    "fr": "88pqyt",
+    "en": "kvyq56"
+  },
+  "auth.projectManagement.mineColumns.project": {
+    "fr": "7yl1sk",
+    "en": "xos31n"
+  },
+  "auth.projectManagement.mineColumns.role": {
+    "fr": "hh0ddx",
+    "en": "heng4q"
+  },
+  "auth.projectManagement.mineColumns.progress": {
+    "fr": "s8jfcu",
+    "en": "-mcgfhp"
+  },
+  "auth.projectManagement.mineColumns.deadline": {
+    "fr": "6q2rxy",
+    "en": "-w8tbug"
+  },
+  "auth.projectManagement.mineColumns.status": {
+    "fr": "-iarbar",
+    "en": "-iarbbm"
+  },
+  "auth.projectManagement.openColumns.project": {
+    "fr": "7yl1sk",
+    "en": "xos31n"
+  },
+  "auth.projectManagement.openColumns.skills": {
+    "fr": "og81xy",
+    "en": "-mfwuoy"
+  },
+  "auth.projectManagement.openColumns.priority": {
+    "fr": "zftlsc",
+    "en": "zftj3w"
+  },
+  "auth.projectManagement.openColumns.deadline": {
+    "fr": "6q2rxy",
+    "en": "-w8tbug"
+  },
+  "auth.projectManagement.openColumns.status": {
+    "fr": "-iarbar",
+    "en": "-iarbbm"
+  },
+  "auth.projectManagement.searchPlaceholder": {
+    "fr": "z51mtx",
+    "en": "-vodytm"
+  },
+  "auth.projectManagement.noResults": {
+    "fr": "yijoow",
+    "en": "fj8vb4"
+  },
+  "auth.projectManagement.requests.empty": {
+    "fr": "9d10nf",
+    "en": "ghpp03"
+  },
+  "auth.projectManagement.requests.requestedOn": {
+    "fr": "1o1kt2",
+    "en": "-z2ihsd"
+  },
+  "auth.projectManagement.requests.status.pending": {
+    "fr": "-fmdwf8",
+    "en": "-fmf42b"
+  },
+  "auth.projectManagement.requests.status.approved": {
+    "fr": "tokpoc",
+    "en": "tohzrt"
+  },
+  "auth.projectManagement.requests.status.rejected": {
+    "fr": "-wj1ryh",
+    "en": "-y62jry"
+  },
+  "auth.projectManagement.profileBanner.title": {
+    "fr": "95viq7",
+    "en": "-1kwe0v"
+  },
+  "auth.projectManagement.profileBanner.body": {
+    "fr": "t2h2j9",
+    "en": "63gewa"
+  },
+  "auth.projectManagement.profileBanner.cta": {
+    "fr": "v8dclh",
+    "en": "-pp4xw8"
+  },
+  "auth.availableProjects.title": {
+    "fr": "v0mgn1",
+    "en": "-f9p9gx"
+  },
+  "auth.availableProjects.subtitle": {
+    "fr": "-8qd7ki",
+    "en": "-ff14he"
+  },
+  "auth.availableProjects.empty": {
+    "fr": "-rgqu9o",
+    "en": "-juoetj"
+  },
+  "auth.availableProjects.deadline": {
+    "fr": "jciq1g",
+    "en": "-r08l8y"
+  },
+  "auth.availableProjects.joinCta": {
+    "fr": "-ut93pu",
+    "en": "-ygphx6"
+  },
+  "auth.availableProjects.joining": {
+    "fr": "-kgab06",
+    "en": "-5qaoh8"
+  },
+  "auth.availableProjects.joined": {
+    "fr": "am0dyn",
+    "en": "-wsuk7s"
+  },
+  "auth.availableProjects.pending": {
+    "fr": "-s9j2qj",
+    "en": "-9bvsay"
+  },
+  "auth.availableProjects.joinError": {
+    "fr": "xrqznq",
+    "en": "480omv"
+  },
+  "auth.availableProjects.profileBanner.title": {
+    "fr": "95viq7",
+    "en": "-1kwe0v"
+  },
+  "auth.availableProjects.profileBanner.body": {
+    "fr": "-26x5r0",
+    "en": "ailnsk"
+  },
+  "auth.availableProjects.profileBanner.cta": {
+    "fr": "v8dclh",
+    "en": "-pp4xw8"
+  },
+  "auth.workspace.backLink": {
+    "fr": "a89gpi",
+    "en": "2hcf2y"
+  },
+  "auth.workspace.readOnlyBanner.title": {
+    "fr": "-sut7dq",
+    "en": "-wsl4us"
+  },
+  "auth.workspace.readOnlyBanner.body": {
+    "fr": "1zl0jh",
+    "en": "dyoi85"
+  },
+  "auth.workspace.readOnlyBanner.cta": {
+    "fr": "v8dclh",
+    "en": "-pp4xw8"
+  },
+  "auth.workspace.readOnlyBanner.discussionHint": {
+    "fr": "a0e3l2",
+    "en": "uzkk3i"
+  },
+  "auth.workspace.team.title": {
+    "fr": "-dax4rw",
+    "en": "-wa38f8"
+  },
+  "auth.workspace.team.ownerLabel": {
+    "fr": "3jpjc6",
+    "en": "hb62is"
+  },
+  "auth.workspace.team.collaboratorLabel": {
+    "fr": "88pqyt",
+    "en": "kvyq56"
+  },
+  "auth.workspace.tasks.title": {
+    "fr": "-mjn281",
+    "en": "-rw6rxm"
+  },
+  "auth.workspace.tasks.empty": {
+    "fr": "l8g2tl",
+    "en": "8habgx"
+  },
+  "auth.workspace.tasks.notAssigned": {
+    "fr": "-apf8pq",
+    "en": "-hawmhz"
+  },
+  "auth.workspace.tasks.updateError": {
+    "fr": "dlmqqd",
+    "en": "-jp8g1j"
+  },
+  "auth.workspace.tasks.dueLabel": {
+    "fr": "6q2rxy",
+    "en": "jywhc"
+  },
+  "auth.workspace.tasks.overdueLabel": {
+    "fr": "-ur5js5",
+    "en": "-c2fgak"
+  },
+  "auth.workspace.tasks.status.todo": {
+    "fr": "-60dlvh",
+    "en": "-rpysto"
+  },
+  "auth.workspace.tasks.status.in_progress": {
+    "fr": "o4ykod",
+    "en": "bb95lo"
+  },
+  "auth.workspace.tasks.status.done": {
+    "fr": "rcib4j",
+    "en": "h6ydb2"
+  },
+  "auth.workspace.tasks.status.blocked": {
+    "fr": "-vlgech",
+    "en": "-vtemfc"
+  },
+  "auth.workspace.time.title": {
+    "fr": "-98ajqr",
+    "en": "-sifgqu"
+  },
+  "auth.workspace.time.totalLabel": {
+    "fr": "63b38z",
+    "en": "5eek1r"
+  },
+  "auth.workspace.time.mineLabel": {
+    "fr": "-tff8ss",
+    "en": "-vyjwz4"
+  },
+  "auth.workspace.time.historyEmpty": {
+    "fr": "-2hjp5d",
+    "en": "-yn91di"
+  },
+  "auth.workspace.time.formTitle": {
+    "fr": "xsxt1x",
+    "en": "1t4x07"
+  },
+  "auth.workspace.time.hoursLabel": {
+    "fr": "qjho9k",
+    "en": "-xczp6z"
+  },
+  "auth.workspace.time.minutesLabel": {
+    "fr": "rwy06d",
+    "en": "rwy06d"
+  },
+  "auth.workspace.time.descriptionLabel": {
+    "fr": "j1zn54",
+    "en": "j1zn54"
+  },
+  "auth.workspace.time.dateLabel": {
+    "fr": "h6pjxu",
+    "en": "h6pjxu"
+  },
+  "auth.workspace.time.taskLabel": {
+    "fr": "d1fsqh",
+    "en": "-8nwrga"
+  },
+  "auth.workspace.time.noTask": {
+    "fr": "jr0qm2",
+    "en": "ngnfor"
+  },
+  "auth.workspace.time.submit": {
+    "fr": "kubt6s",
+    "en": "heyibn"
+  },
+  "auth.workspace.time.submitting": {
+    "fr": "-gfkhxu",
+    "en": "g07khk"
+  },
+  "auth.workspace.time.success": {
+    "fr": "-ao0u37",
+    "en": "ds02p3"
+  },
+  "auth.invoices.title": {
+    "fr": "-80tksc",
+    "en": "zcvlca"
+  },
+  "auth.invoices.subtitle": {
+    "fr": "-qp26gu",
+    "en": "kzcyra"
+  },
+  "auth.invoices.viewProject": {
+    "fr": "t8l59n",
+    "en": "-8ocipq"
+  },
+  "auth.invoices.empty": {
+    "fr": "5ywa4c",
+    "en": "-rzgujp"
+  },
+  "auth.invoices.totalUnpaid": {
+    "fr": "-rtm4jl",
+    "en": "6pydj3"
+  },
+  "auth.invoices.dueDate": {
+    "fr": "6q2rxy",
+    "en": "t4hf5y"
+  },
+  "auth.invoices.noDueDate": {
+    "fr": "-yv4w6j",
+    "en": "4a8nlb"
+  },
+  "auth.invoices.issuedOn": {
+    "fr": "-uc89ky",
+    "en": "-u59d00"
+  },
+  "auth.invoices.paidOn": {
+    "fr": "-k463h1",
+    "en": "-5pew33"
+  },
+  "auth.invoices.overdue": {
+    "fr": "-ur5js5",
+    "en": "-c2fgak"
+  },
+  "auth.invoices.validateButton": {
+    "fr": "-m50sxk",
+    "en": "abyfvu"
+  },
+  "auth.invoices.validating": {
+    "fr": "-28n8p5",
+    "en": "en068w"
+  },
+  "auth.invoices.validatedOn": {
+    "fr": "-e1buix",
+    "en": "-jws8a4"
+  },
+  "auth.invoices.requestRevisionButton": {
+    "fr": "-sms88n",
+    "en": "-63lyi3"
+  },
+  "auth.invoices.revisionPlaceholder": {
+    "fr": "jbty2g",
+    "en": "edjqwj"
+  },
+  "auth.invoices.revisionSubmit": {
+    "fr": "-ysibxn",
+    "en": "eqcpvt"
+  },
+  "auth.invoices.revisionSending": {
+    "fr": "-d7n85b",
+    "en": "-5qaoh8"
+  },
+  "auth.invoices.revisionCancel": {
+    "fr": "-vhd7fl",
+    "en": "m6bofa"
+  },
+  "auth.invoices.revisionRequiredError": {
+    "fr": "-2inqgr",
+    "en": "ellz19"
+  },
+  "auth.invoices.revisionRequestedNote": {
+    "fr": "kn3wvn",
+    "en": "-8s2dew"
+  },
+  "auth.invoices.genericError": {
+    "fr": "p3rtyv",
+    "en": "-lcam3w"
+  },
+  "auth.invoices.documentTitle": {
+    "fr": "-cd63rs",
+    "en": "-aapc15"
+  },
+  "auth.invoices.billedTo": {
+    "fr": "-lbt4gs",
+    "en": "sp0wpb"
+  },
+  "auth.invoices.descriptionLabel": {
+    "fr": "j1zn54",
+    "en": "j1zn54"
+  },
+  "auth.invoices.amountLabel": {
+    "fr": "-q3s52z",
+    "en": "-1h1y2g"
+  },
+  "auth.invoices.totalLabel": {
+    "fr": "-roh880",
+    "en": "-roh880"
+  },
+  "auth.invoices.projectRefLabel": {
+    "fr": "7yl1sk",
+    "en": "xos31n"
+  },
+  "auth.invoices.qtyLabel": {
+    "fr": "k79q6",
+    "en": "k771q"
+  },
+  "auth.invoices.unitPriceLabel": {
+    "fr": "7hiuye",
+    "en": "-lrkxv1"
+  },
+  "auth.invoices.contactNote": {
+    "fr": "crmf08",
+    "en": "-vlbgkb"
+  },
+  "auth.invoices.contactCta": {
+    "fr": "-h1db4q",
+    "en": "-agad86"
+  },
+  "auth.invoices.statTotalPaid": {
+    "fr": "-78tr31",
+    "en": "-78u64o"
+  },
+  "auth.invoices.statCount": {
+    "fr": "-ggoibe",
+    "en": "k2j3ag"
+  },
+  "auth.invoices.filterAll": {
+    "fr": "-5oll2g",
+    "en": "jwt0j"
+  },
+  "auth.invoices.filterPending": {
+    "fr": "-fmdwf8",
+    "en": "-fmf42b"
+  },
+  "auth.invoices.filterPaid": {
+    "fr": "4kic1",
+    "en": "hdauvo"
+  },
+  "auth.invoices.filterRevision": {
+    "fr": "-3w4g5u",
+    "en": "-zc5c2a"
+  },
+  "auth.invoices.emptyFiltered": {
+    "fr": "2sio3n",
+    "en": "c13rti"
+  },
+  "auth.settings.title": {
+    "fr": "-ssulk7",
+    "en": "ivjj31"
+  },
+  "auth.settings.subtitle": {
+    "fr": "-2p9z5m",
+    "en": "7yr6zf"
+  },
+  "auth.settings.appearanceLabel": {
+    "fr": "-45s0gp",
+    "en": "qvpoe4"
+  },
+  "auth.settings.appearanceHint": {
+    "fr": "mk7a77",
+    "en": "-llrl7c"
+  },
+  "auth.settings.languageLabel": {
+    "fr": "c7r04i",
+    "en": "is87uw"
+  },
+  "auth.settings.languageHint": {
+    "fr": "7rlim",
+    "en": "-udq557"
+  }
+}
