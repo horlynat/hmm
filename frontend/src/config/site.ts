@@ -1,5 +1,5 @@
 export const siteConfig = {
-  name: "Horlynat Mampassi Mbama",
+  name: "Horlynat MAMPASSI MBAMA",
   whatsappUrl: "https://wa.me/242066429090",
   social: {
     linkedin: "https://www.linkedin.com/in/horlynat/",
