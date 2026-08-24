@@ -5,6 +5,8 @@
 {% block body %}
 	<twig:PageHeader title="Page d'accueil" subtitle="Hero, teaser à propos, pitch freelance et appel à l'action — bilingue FR/EN." icon="ti-home" />
 
+	<twig:LocaleToggle />
+
 	{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
 
 	<div class="panel">

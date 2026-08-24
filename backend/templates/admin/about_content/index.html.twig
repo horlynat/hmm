@@ -5,6 +5,8 @@
 {% block body %}
 	<twig:PageHeader title='Page "À propos"' subtitle="Hero, profil, bio, vision, différenciateurs, à-côtés — bilingue FR/EN." icon="ti-user" />
 
+	<twig:LocaleToggle />
+
 	{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
 
 	<div class="panel">

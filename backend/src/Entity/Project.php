@@ -2,17 +2,9 @@
 
 namespace App\Entity;
 
-use App\Entity\Invoice;
-use App\Entity\Media;
-use App\Entity\ProjectExpense;
-use App\Entity\ProjectHistory;
-use App\Entity\ProjectInfo;
-use App\Entity\Skill;
-use App\Entity\Tag;
 use App\Entity\Traits\CreatedAtTrait;
 use App\Entity\Traits\SlugTrait;
 use App\Entity\Traits\UpdatedAtTrait;
-use App\Entity\User;
 use App\Enum\BillingTypeEnum;
 use App\Enum\InvoiceStatusEnum;
 use App\Enum\ProjectPriorityEnum;
@@ -28,7 +20,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
-#[UniqueEntity(fields: ['slug'], message: "Ce slug est déjà utilisé pour un autre projet.")]
+#[UniqueEntity(fields: ['slug'], message: 'Ce slug est déjà utilisé pour un autre projet.')]
 #[ORM\HasLifecycleCallbacks]
 class Project
 {
@@ -43,31 +35,29 @@ class Project
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Assert\NotBlank(message: "Le titre est obligatoire.")]
+    #[Assert\NotBlank(message: 'Le titre est obligatoire.')]
     #[Assert\Length(min: 3, max: 255)]
     #[Groups(['api_public', 'api_admin'])]
     private string $title = '';
 
     /** Titre en anglais — optionnel, retombe sur `title` (FR) côté frontend si vide. */
-    #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $titleEn = null;
 
     #[ORM\Column(type: Types::TEXT)]
-    #[Assert\NotBlank(message: "La description est obligatoire.")]
+    #[Assert\NotBlank(message: 'La description est obligatoire.')]
     #[Assert\Length(min: 20)]
     #[Groups(['api_public', 'api_admin'])]
     private string $description = '';
 
     /** Description en anglais — optionnel, retombe sur `description` (FR) côté frontend si vide. */
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $descriptionEn = null;
 
     #[ORM\Column(length: 255)]
-    #[Assert\NotBlank(message: "Le lien est obligatoire.")]
-    #[Assert\Url(message: "Le lien doit être une URL valide.")]
+    #[Assert\NotBlank(message: 'Le lien est obligatoire.')]
+    #[Assert\Url(message: 'Le lien doit être une URL valide.')]
     #[Groups(['api_public', 'api_admin'])]
     private string $link = '';
 
@@ -89,7 +79,7 @@ class Project
     private int $progress = 0;
 
     #[ORM\Column(type: 'decimal', precision: 12, scale: 2)]
-    #[Assert\PositiveOrZero(message: "Le budget doit être positif ou nul.")]
+    #[Assert\PositiveOrZero(message: 'Le budget doit être positif ou nul.')]
     #[Groups(['api_admin'])]
     private string $budget = '0.00';
 
@@ -157,7 +147,7 @@ class Project
 
     /** @var Collection<int, Media> */
     #[ORM\OneToMany(mappedBy: 'project', targetEntity: Media::class, cascade: ['persist'], orphanRemoval: true)]
-    #[Groups(["api_public", "api_detailed"])]
+    #[Groups(['api_public', 'api_detailed'])]
     private Collection $media;
 
     #[ORM\OneToOne(mappedBy: 'project', targetEntity: ProjectInfo::class, cascade: ['persist', 'remove'])]
@@ -217,6 +207,7 @@ class Project
     public function setTitle(string $title): static
     {
         $this->title = $title;
+
         return $this;
     }
 
@@ -228,6 +219,7 @@ class Project
     public function setTitleEn(?string $titleEn): static
     {
         $this->titleEn = $titleEn;
+
         return $this;
     }
 
@@ -239,6 +231,7 @@ class Project
     public function setDescription(string $description): static
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -250,6 +243,7 @@ class Project
     public function setDescriptionEn(?string $descriptionEn): static
     {
         $this->descriptionEn = $descriptionEn;
+
         return $this;
     }
 
@@ -261,6 +255,7 @@ class Project
     public function setLink(string $link): static
     {
         $this->link = $link;
+
         return $this;
     }
 
@@ -277,12 +272,14 @@ class Project
         if (!$this->skills->contains($skill)) {
             $this->skills->add($skill);
         }
+
         return $this;
     }
 
     public function removeSkill(Skill $skill): static
     {
         $this->skills->removeElement($skill);
+
         return $this;
     }
 
@@ -300,6 +297,7 @@ class Project
             $this->media->add($media);
             $media->setProject($this);
         }
+
         return $this;
     }
 
@@ -310,6 +308,7 @@ class Project
                 $media->setProject(null);
             }
         }
+
         return $this;
     }
 
@@ -320,10 +319,11 @@ class Project
 
     public function setInfo(?ProjectInfo $info): static
     {
-        if ($info !== null) {
+        if (null !== $info) {
             $info->setProject($this);
         }
         $this->info = $info;
+
         return $this;
     }
 
@@ -335,6 +335,7 @@ class Project
     public function setStatus(ProjectStatusEnum $status): static
     {
         $this->status = $status;
+
         return $this;
     }
 
@@ -346,6 +347,7 @@ class Project
     public function setPriority(?ProjectPriorityEnum $priority): static
     {
         $this->priority = $priority;
+
         return $this;
     }
 
@@ -357,6 +359,7 @@ class Project
     public function setBillingType(?BillingTypeEnum $billingType): static
     {
         $this->billingType = $billingType;
+
         return $this;
     }
 
@@ -368,6 +371,7 @@ class Project
     public function setProgress(int $progress): static
     {
         $this->progress = $progress;
+
         return $this;
     }
 
@@ -379,6 +383,7 @@ class Project
     public function setBudget(string $budget): static
     {
         $this->budget = $budget;
+
         return $this;
     }
 
@@ -390,6 +395,7 @@ class Project
     public function setSpent(string $spent): static
     {
         $this->spent = $spent;
+
         return $this;
     }
 
@@ -401,6 +407,7 @@ class Project
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
+
         return $this;
     }
 
@@ -412,6 +419,7 @@ class Project
     public function setUpdatedAt(?\DateTimeImmutable $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
         return $this;
     }
 
@@ -423,6 +431,7 @@ class Project
     public function setStartedAt(?\DateTimeImmutable $startedAt): static
     {
         $this->startedAt = $startedAt;
+
         return $this;
     }
 
@@ -434,6 +443,7 @@ class Project
     public function setCompletedAt(?\DateTimeImmutable $completedAt): static
     {
         $this->completedAt = $completedAt;
+
         return $this;
     }
 
@@ -445,6 +455,7 @@ class Project
     public function setOwner(User $owner): static
     {
         $this->owner = $owner;
+
         return $this;
     }
 
@@ -462,6 +473,7 @@ class Project
             $this->collaborators->add($collaborator);
             $collaborator->addCollaboratingProject($this);
         }
+
         return $this;
     }
 
@@ -470,6 +482,7 @@ class Project
         if ($this->collaborators->removeElement($collaborator)) {
             $collaborator->removeCollaboratingProject($this);
         }
+
         return $this;
     }
 
@@ -495,12 +508,14 @@ class Project
             $this->histories->add($history);
             $history->setProject($this);
         }
+
         return $this;
     }
 
     public function removeHistory(ProjectHistory $history): static
     {
         $this->histories->removeElement($history);
+
         return $this;
     }
 
@@ -518,12 +533,14 @@ class Project
             $this->expenses->add($expense);
             $expense->setProject($this);
         }
+
         return $this;
     }
 
     public function removeExpense(ProjectExpense $expense): static
     {
         $this->expenses->removeElement($expense);
+
         return $this;
     }
 
@@ -541,12 +558,14 @@ class Project
             $this->invoices->add($invoice);
             $invoice->setProject($this);
         }
+
         return $this;
     }
 
     public function removeInvoice(Invoice $invoice): static
     {
         $this->invoices->removeElement($invoice);
+
         return $this;
     }
 
@@ -558,6 +577,7 @@ class Project
                 $total = bcadd($total, $invoice->getAmount(), 2);
             }
         }
+
         return $total;
     }
 
@@ -569,6 +589,7 @@ class Project
     public function setClient(?User $client): static
     {
         $this->client = $client;
+
         return $this;
     }
 
@@ -580,6 +601,7 @@ class Project
     public function setSourceQuoteRequest(?QuoteRequest $sourceQuoteRequest): static
     {
         $this->sourceQuoteRequest = $sourceQuoteRequest;
+
         return $this;
     }
 
@@ -635,6 +657,7 @@ class Project
             }
         }
         $this->spent = $total;
+
         return $this;
     }
 
@@ -647,6 +670,7 @@ class Project
                 $total = bcadd($total, $expense->getAmount(), 2);
             }
         }
+
         return $total;
     }
 
@@ -668,17 +692,17 @@ class Project
 
     public function getFormattedBudget(): string
     {
-        return number_format((float) $this->budget, 2, ',', ' ') . ' €';
+        return number_format((float) $this->budget, 2, ',', ' ').' €';
     }
 
     public function getFormattedSpent(): string
     {
-        return number_format((float) $this->spent, 2, ',', ' ') . ' €';
+        return number_format((float) $this->spent, 2, ',', ' ').' €';
     }
 
     public function getFormattedRemainingBudget(): string
     {
-        return number_format((float) $this->getRemainingBudget(), 2, ',', ' ') . ' €';
+        return number_format((float) $this->getRemainingBudget(), 2, ',', ' ').' €';
     }
 
     public function addToHistory(string $action, User $user, ?string $details = null): static
@@ -691,6 +715,7 @@ class Project
             ->setDetails($details);
 
         $this->histories->add($history);
+
         return $this;
     }
 
@@ -703,8 +728,9 @@ class Project
     public function logUpdate(User $user, array $changes = []): static
     {
         $details = !empty($changes)
-            ? 'Champs modifiés : ' . implode(', ', array_keys($changes))
+            ? 'Champs modifiés : '.implode(', ', array_keys($changes))
             : 'Mise à jour du projet';
+
         return $this->addToHistory('updated', $user, $details);
     }
 
@@ -731,6 +757,7 @@ class Project
             ->setUser($user);
 
         $this->attachExpense($expense, $user);
+
         return $this;
     }
 
@@ -764,6 +791,7 @@ class Project
                 $expense->getDescription() ?? 'Sans description'
             ));
         }
+
         return $this;
     }
 
@@ -782,6 +810,7 @@ class Project
             $task->setProject($this);
         }
         $this->recalculateProgress();
+
         return $this;
     }
 
@@ -790,6 +819,7 @@ class Project
         if ($this->tasks->removeElement($task)) {
             $this->recalculateProgress();
         }
+
         return $this;
     }
 
@@ -819,6 +849,7 @@ class Project
         if ($total > 0) {
             $this->progress = (int) round(100 * $this->getDoneTasksCount() / $total);
         }
+
         return $this;
     }
 
@@ -981,9 +1012,9 @@ class Project
             return 'Attention';
         } elseif ($percentage >= 50) {
             return 'En cours';
-        } else {
-            return 'Sous contrôle';
         }
+
+        return 'Sous contrôle';
     }
 
     public function getBudgetStatusBadgeClass(): string
@@ -996,9 +1027,9 @@ class Project
             return 'bg-yellow-500 text-black';
         } elseif ($percentage >= 50) {
             return 'bg-blue-500 text-white';
-        } else {
-            return 'bg-green-500 text-white';
         }
+
+        return 'bg-green-500 text-white';
     }
 
     /**
@@ -1019,14 +1050,14 @@ class Project
         $result = $query->getSingleResult();
 
         $totalBudget = $result['totalBudget'] ?? '0.00';
-        $totalSpent  = $result['totalSpent'] ?? '0.00';
+        $totalSpent = $result['totalSpent'] ?? '0.00';
 
         return [
-            'totalBudget'     => (string) $totalBudget,
-            'totalSpent'      => (string) $totalSpent,
-            'totalProjects'   => (int) ($result['totalProjects'] ?? 0),
+            'totalBudget' => (string) $totalBudget,
+            'totalSpent' => (string) $totalSpent,
+            'totalProjects' => (int) ($result['totalProjects'] ?? 0),
             'overBudgetCount' => (int) ($result['overBudgetCount'] ?? 0),
-            'lowBudgetCount'  => (int) ($result['lowBudgetCount'] ?? 0),
+            'lowBudgetCount' => (int) ($result['lowBudgetCount'] ?? 0),
             'remainingBudget' => bcsub((string) $totalBudget, (string) $totalSpent, 2),
         ];
     }
@@ -1043,7 +1074,7 @@ class Project
      */
     public function isPastDeadline(): bool
     {
-        if (!$this->deadline || $this->status === ProjectStatusEnum::COMPLETED) {
+        if (!$this->deadline || ProjectStatusEnum::COMPLETED === $this->status) {
             return false;
         }
 
@@ -1061,9 +1092,9 @@ class Project
 
         $now = new \DateTimeImmutable('today');
         $deadlineDay = \DateTimeImmutable::createFromInterface($this->deadline)->setTime(0, 0, 0);
-        
+
         $interval = $now->diff($deadlineDay);
-        
+
         return (int) $interval->format('%r%a');
     }
 

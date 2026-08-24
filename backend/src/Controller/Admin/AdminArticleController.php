@@ -7,8 +7,10 @@ use App\Entity\Media;
 use App\Entity\Tag;
 use App\Form\ArticleType;
 use App\Repository\ArticleRepository;
+use App\Repository\TranslationRepository;
 use App\Security\Voter\ArticleVoter;
 use App\Service\AuditLogger;
+use App\Service\ContentAutoTranslator;
 use App\Service\MediaUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -63,7 +65,9 @@ final class AdminArticleController extends AbstractController
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
         MediaUploader $uploader,
-        AuditLogger $auditLogger
+        AuditLogger $auditLogger,
+        ContentAutoTranslator $autoTranslator,
+        TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted(ArticleVoter::CREATE);
 
@@ -85,20 +89,28 @@ final class AdminArticleController extends AbstractController
                 }
             }
 
+            // Article neuf : pas d'état "original" en base, tout champ anglais
+            // laissé vide est donc traduit automatiquement depuis le français.
+            $autoTranslator->syncTranslations($article);
+
             $entityManager->persist($article);
             $entityManager->flush();
 
             $auditLogger->log(Article::class, $article->getId(), $article->getTitle(), 'created');
             $entityManager->flush();
 
+            // Après flush() pour disposer d'un id garanti (article tout juste créé).
+            $translationRepository->syncFromEntity($article);
+
             $this->addFlash('success', 'L\'article a été créé avec succès.');
+
             return $this->redirectToRoute('admin_article_index');
         }
 
         return $this->render('admin/article/create.html.twig', [
-            'form'         => $form->createView(),
-            'article'      => $article,
-            'action'       => $this->generateUrl('admin_article_create'),
+            'form' => $form->createView(),
+            'article' => $article,
+            'action' => $this->generateUrl('admin_article_create'),
             'button_label' => 'Enregistrer l\'article',
         ]);
     }
@@ -128,10 +140,15 @@ final class AdminArticleController extends AbstractController
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
         MediaUploader $uploader,
-        AuditLogger $auditLogger
+        AuditLogger $auditLogger,
+        ContentAutoTranslator $autoTranslator,
+        TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted(ArticleVoter::EDIT, $article);
 
+        // Capturé AVANT `handleRequest` : sert de référence pour détecter quels
+        // champs français ont changé (cf. ContentAutoTranslator::syncTranslations).
+        $originalData = $entityManager->getUnitOfWork()->getOriginalEntityData($article);
         $form = $this->createForm(ArticleType::class, $article);
         $form->handleRequest($request);
 
@@ -141,17 +158,25 @@ final class AdminArticleController extends AbstractController
             // Traitement de l'image (réutilisable sans duplication !)
             $this->handleImageUpload($form, $article, $uploader, $entityManager);
 
+            // Traduction automatique fr -> en des champs laissés vides, ou dont
+            // le français a changé sans que l'anglais ait été retouché à la
+            // main dans cette même soumission.
+            $autoTranslator->syncTranslations($article, $originalData);
+
             $auditLogger->log(Article::class, $article->getId(), $article->getTitle(), 'updated');
             $entityManager->flush();
 
+            $translationRepository->syncFromEntity($article);
+
             $this->addFlash('success', 'L\'article a été mis à jour avec succès.');
+
             return $this->redirectToRoute('admin_article_index');
         }
 
         return $this->render('admin/article/update.html.twig', [
-            'form'         => $form->createView(),
-            'article'      => $article,
-            'action'       => $this->generateUrl('admin_article_update', ['slug' => $article->getSlug()]), 
+            'form' => $form->createView(),
+            'article' => $article,
+            'action' => $this->generateUrl('admin_article_update', ['slug' => $article->getSlug()]),
             'button_label' => 'Mettre à jour l\'article',
         ]);
     }
@@ -165,15 +190,15 @@ final class AdminArticleController extends AbstractController
         Request $request,
         #[MapEntity(mapping: ['slug' => 'slug'])] Article $article,
         EntityManagerInterface $entityManager,
-        AuditLogger $auditLogger
+        AuditLogger $auditLogger,
     ): Response {
         $this->denyAccessUnlessGranted(ArticleVoter::DELETE, $article);
 
-        if ($this->isCsrfTokenValid('admin_article_delete_' . $article->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('admin_article_delete_'.$article->getId(), $request->request->get('_token'))) {
             $auditLogger->log(Article::class, $article->getId(), $article->getTitle(), 'deleted');
             $entityManager->remove($article);
             $entityManager->flush();
-            
+
             $this->addFlash('success', 'L\'article a été supprimé avec succès.');
         } else {
             $this->addFlash('error', 'Token CSRF invalide. Action de suppression annulée.');
@@ -190,10 +215,10 @@ final class AdminArticleController extends AbstractController
      * Gère l'extraction, le téléversement et l'association d'un fichier média à un article.
      */
     private function handleImageUpload(
-        FormInterface $form, 
-        Article $article, 
-        MediaUploader $uploader, 
-        EntityManagerInterface $entityManager
+        FormInterface $form,
+        Article $article,
+        MediaUploader $uploader,
+        EntityManagerInterface $entityManager,
     ): void {
         $imageFile = $form->has('media') ? $form->get('media')->getData() : null;
 

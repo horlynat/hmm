@@ -6,7 +6,9 @@ use App\Entity\AboutContent;
 use App\Entity\User;
 use App\Form\AboutContentType;
 use App\Repository\AboutContentRepository;
+use App\Repository\TranslationRepository;
 use App\Service\AuditLogger;
+use App\Service\ContentAutoTranslator;
 use App\Service\MediaUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -32,10 +34,15 @@ class AdminAboutContentController extends AbstractController
         EntityManagerInterface $entityManager,
         MediaUploader $uploader,
         AuditLogger $auditLogger,
+        ContentAutoTranslator $autoTranslator,
+        TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
         $content = $aboutContentRepository->getContent();
+        // Capturé AVANT `handleRequest` : sert de référence pour détecter quels
+        // champs français ont changé (cf. ContentAutoTranslator::syncTranslations).
+        $originalData = $entityManager->getUnitOfWork()->getOriginalEntityData($content);
         $form = $this->createForm(AboutContentType::class, $content);
         $form->handleRequest($request);
 
@@ -54,6 +61,12 @@ class AdminAboutContentController extends AbstractController
             $interestsEn = $this->parseLines((string) $form->get('beyondInterestsEn')->getData());
             $content->setBeyondInterestsEn($interestsEn ?: null);
 
+            // Traduction automatique fr -> en des champs laissés vides, ou dont
+            // le français a changé sans que l'anglais ait été retouché à la
+            // main dans cette même soumission — jamais de blocage si l'appel
+            // Claude échoue, le contenu français reste la source de vérité.
+            $translatedFields = $autoTranslator->syncTranslations($content, $originalData);
+
             $user = $this->getUser();
             $content->setUpdatedAt(new \DateTimeImmutable());
             $content->setUpdatedBy($user instanceof User ? $user : null);
@@ -62,7 +75,16 @@ class AdminAboutContentController extends AbstractController
             $auditLogger->log(AboutContent::class, (int) $content->getId(), 'about_content', 'updated');
             $entityManager->flush();
 
-            $this->addFlash('success', 'Le contenu de la page "À propos" a été mis à jour avec succès.');
+            // Écrit les champs "xxxEn" (transitoires, non mappés Doctrine)
+            // dans la table `translation` — après flush() pour disposer d'un
+            // id garanti même sur une entité tout juste créée.
+            $translationRepository->syncFromEntity($content);
+
+            $message = 'Le contenu de la page "À propos" a été mis à jour avec succès.';
+            if ($translatedFields) {
+                $message .= ' Traduit automatiquement : '.implode(', ', $translatedFields).'.';
+            }
+            $this->addFlash('success', $message);
 
             return $this->redirectToRoute('admin_about_content_index', [], Response::HTTP_SEE_OTHER);
         }
