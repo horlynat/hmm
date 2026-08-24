@@ -109,3 +109,18 @@ echo "==> État final"
 echo "==> Vérification santé publique"
 curl -sf -o /dev/null -w "horlynat.com      : %{http_code}\n" https://horlynat.com
 curl -sf -o /dev/null -w "api.horlynat.com  : %{http_code}\n" https://api.horlynat.com/api
+
+# Nettoyage Docker -- seulement une fois le déploiement confirmé sain
+# ci-dessus (jamais avant : un rollback manuel entre deux étapes doit garder
+# les images/layers encore disponibles localement). Constaté en prod :
+# 89,95 Go de cache de build accumulés en ~2 semaines (`docker system df`),
+# alors que les vraies données (volumes uploads_data/mysql_data) pesaient
+# quelques centaines de Mo. Purge intégrale (pas de filtre d'âge) et non
+# `--filter until=...` : le `build --no-cache frontend` ci-dessus (nécessaire,
+# cf. commentaire) écrit du cache neuf à CHAQUE déploiement sans jamais le
+# relire -- même le cache créé il y a 5 minutes ne sert donc plus à rien dès
+# cette ligne. Sans risque pour les volumes nommés : `image`/`builder prune`
+# n'y touchent jamais, seul un `--volumes` explicite le ferait (absent ici).
+echo "==> Nettoyage Docker (cache de build + images inutilisées)"
+docker builder prune -af
+docker image prune -af
