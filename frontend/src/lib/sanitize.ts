@@ -19,7 +19,7 @@ export function sanitizeArticleHtml(dirty: string): string {
   return sanitizeHtml(dirty, {
     allowedTags: [
       "p", "br", "hr",
-      "h2", "h3", "h4",
+      "h1", "h2", "h3", "h4",
       "ul", "ol", "li",
       "a", "strong", "b", "em", "i", "u", "s",
       "blockquote", "code", "pre",
