@@ -470,6 +470,88 @@ summary:focus-visible {
     color: #d1d5db;
 }
 
+/* Aperçu en lecture du contenu HTML des articles/projets (fiches "détails"
+   du back-office) — mêmes règles que .article-body côté frontend public
+   (frontend/src/app/globals.css), pour que ce que voit l'admin ici
+   corresponde à ce que voient les visiteurs. overflow-wrap en plus : un lien
+   ou mot long sans espace (URL...) ne doit jamais faire déborder la carte. */
+.article-body {
+    overflow-wrap: break-word;
+}
+.article-body :where(p) {
+    margin: 0 0 1.1em;
+}
+.article-body :where(h1) {
+    font-family: var(--font-heading);
+    font-size: 1.65rem;
+    margin: 2em 0 0.7em;
+}
+.article-body :where(h2) {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    margin: 1.8em 0 0.6em;
+}
+.article-body :where(h3) {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    margin: 1.4em 0 0.5em;
+}
+.article-body :where(h4) {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    margin: 1.2em 0 0.4em;
+}
+.article-body :where(ul, ol) {
+    margin: 0 0 1.1em;
+    padding-left: 1.4em;
+}
+.article-body :where(a) {
+    color: var(--color-brand-primary);
+    text-decoration: underline;
+}
+.article-body :where(img) {
+    border-radius: var(--radius-md);
+    margin: 1.2em 0;
+    max-width: 100%;
+}
+.article-body :where(blockquote) {
+    margin: 0 0 1.1em;
+    padding-left: 1em;
+    border-left: 3px solid var(--color-brand-primary);
+    opacity: 0.85;
+    font-style: italic;
+}
+.article-body :where(code) {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--color-bg-default);
+    padding: 0.15em 0.4em;
+    border-radius: var(--radius-sm);
+}
+.article-body :where(pre) {
+    margin: 0 0 1.1em;
+    padding: 1em;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-default);
+    overflow-x: auto;
+}
+.article-body :where(pre code) {
+    background: none;
+    padding: 0;
+}
+/* Alignement — classes posées par Quill côté admin (attributor de classe,
+   pas de style inline : cf. rich_text_controller.js,
+   Quill.register(Quill.import('attributors/class/align'), true)). */
+.article-body :where(.ql-align-center) {
+    text-align: center;
+}
+.article-body :where(.ql-align-right) {
+    text-align: right;
+}
+.article-body :where(.ql-align-justify) {
+    text-align: justify;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    Accessibilité & Performance (Respect des préférences système)
 ───────────────────────────────────────────────────────────────────────────── */
