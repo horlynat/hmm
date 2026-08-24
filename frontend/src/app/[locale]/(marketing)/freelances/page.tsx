@@ -1,9 +1,26 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Badge, Card, Reveal } from "@/components/ui";
 import { PageHero } from "@/components/sections/PageHero";
 import { FreelanceForm } from "@/components/sections/FreelanceForm";
+import { buildPageMetadata } from "@/lib/metadata";
 
 export const dynamic = "force-static";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "freelances" });
+  return buildPageMetadata({
+    locale,
+    pathname: "/freelances",
+    title: `${t("title")} ${t("titleAccent")}`,
+    description: t("sub"),
+  });
+}
 
 export default async function FreelancesPage({
   params,

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Activity, CheckCircle2, FolderKanban } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -5,8 +6,24 @@ import { Badge, ButtonLink, Card, Reveal, StatCard } from "@/components/ui";
 import { PageHero } from "@/components/sections/PageHero";
 import { ProjectsGrid } from "@/components/sections/ProjectsGrid";
 import { getProjects } from "@/lib/api/projects";
+import { buildPageMetadata } from "@/lib/metadata";
 
 export const dynamic = "force-static";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "projects" });
+  return buildPageMetadata({
+    locale,
+    pathname: "/realisations",
+    title: `${t("title")} ${t("titleAccent")}`,
+    description: t("sub"),
+  });
+}
 
 export default async function ProjectsPage({
   params,

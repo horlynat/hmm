@@ -1,12 +1,29 @@
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Layers, FolderKanban, Gauge } from "lucide-react";
 import { Badge, ButtonLink, Card, Reveal, StatCard } from "@/components/ui";
 import { PageHero } from "@/components/sections/PageHero";
 import { SkillsByCategory } from "@/components/sections/SkillsByCategory";
 import { getSkills } from "@/lib/api/skills";
+import { buildPageMetadata } from "@/lib/metadata";
 
 export const dynamic = "force-static";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "skills" });
+  return buildPageMetadata({
+    locale,
+    pathname: "/competences",
+    title: `${t("title")} ${t("titleAccent")}`,
+    description: t("sub"),
+  });
+}
 
 function DocumentIcon() {
   return (

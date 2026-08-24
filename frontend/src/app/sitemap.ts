@@ -29,10 +29,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     getArticles(routing.defaultLocale),
   ]);
 
+  // Pas de `lastModified` : ni l'API projets/articles ni ces pages statiques
+  // n'exposent de vraie date de dernière modification aujourd'hui. Google
+  // recommande explicitement d'omettre `lastmod` plutôt que d'y mettre une
+  // date inexacte (ex. `new Date()`, toujours "maintenant" à chaque build) —
+  // un faux signal de fraîcheur est pire que l'absence de signal. À
+  // réintroduire côté `getProjects`/`getArticles` le jour où l'API expose un
+  // vrai `updatedAt` (nécessite un changement côté backend, hors périmètre
+  // de ce fichier).
   const staticEntries: MetadataRoute.Sitemap = STATIC_PATHNAMES.flatMap((pathname) =>
     routing.locales.map((locale) => ({
       url: `${SITE_URL}${getPathname({ locale, href: pathname })}`,
-      lastModified: new Date(),
     })),
   );
 
@@ -42,7 +49,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         locale,
         href: { pathname: "/realisations/[slug]", params: { slug: project.slug } },
       })}`,
-      lastModified: new Date(),
     })),
   );
 
@@ -52,7 +58,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         locale,
         href: { pathname: "/blog/[slug]", params: { slug: article.slug } },
       })}`,
-      lastModified: new Date(),
     })),
   );
 

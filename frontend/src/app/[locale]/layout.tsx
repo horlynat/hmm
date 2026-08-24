@@ -10,6 +10,7 @@ import { InlineScript } from "@/components/ui";
 import { siteConfig } from "@/config/site";
 import { getHomeContent } from "@/lib/api/home-content";
 import { jsonLdScript } from "@/lib/json-ld";
+import { buildPageMetadata, SITE_URL } from "@/lib/metadata";
 import "../globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
@@ -27,8 +28,6 @@ const fraunces = Fraunces({
 
 const THEME_INIT_SCRIPT = `(function(){try{var saved=localStorage.getItem('theme');var wantsDark=saved?saved==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(wantsDark)document.documentElement.classList.add('dark');}catch(e){}})();`;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://horlynat.com";
-
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
@@ -44,15 +43,25 @@ export async function generateMetadata({
   // les traductions statiques si l'API est momentanément indisponible — une
   // métadonnée dégradée reste préférable à une page qui ne se génère pas.
   const content = await getHomeContent(locale);
+  // Titre du site fixé par choix de marque ("Horlynat | Portail Digital")
+  // plutôt que dérivé du hero-eyebrow admin — indépendant de la locale.
+  const defaultTitle = "Horlynat | Portail Digital";
+  const description = content?.heroSub ?? t("sub");
 
   return {
+    // Racine de résolution des URLs relatives (og:image générée par
+    // opengraph-image.tsx notamment) — absent jusqu'ici, Next.js le
+    // réclamait en warning. Posé ici plutôt que dans buildPageMetadata()
+    // pour n'exister qu'une seule fois, au niveau racine.
+    metadataBase: new URL(SITE_URL),
+    ...buildPageMetadata({ locale, pathname: "/", title: defaultTitle, description }),
+    // Le titre garde sa forme "template" (contrairement aux autres pages, qui
+    // fournissent une simple string) : c'est ce patron que Next.js applique
+    // ensuite au titre de toutes les pages filles.
     title: {
       template: "%s — Horlynat",
-      // Titre du site fixé par choix de marque ("Horlynat | Portail Digital")
-      // plutôt que dérivé du hero-eyebrow admin — indépendant de la locale.
-      default: "Horlynat | Portail Digital",
+      default: defaultTitle,
     },
-    description: content?.heroSub ?? t("sub"),
   };
 }
 
@@ -87,13 +96,29 @@ export default async function LocaleLayout({
   // du rendu statique. Réel uniquement sur /contact (cf. src/proxy.ts).
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
+  // `@id` sur les deux schémas : permet à Google de les traiter comme la
+  // même entité référencée (Person.worksFor <-> Organization.founder) au
+  // lieu de deux blocs dupliqués sans lien explicite entre eux.
   const personJsonLd = {
     "@context": "https://schema.org",
     "@type": "Person",
+    "@id": `${SITE_URL}/#person`,
     name: siteConfig.name,
     url: SITE_URL,
     jobTitle: homeContent?.heroEyebrow ?? th("eyebrow"),
-    sameAs: [siteConfig.social.linkedin, siteConfig.social.github],
+    sameAs: [siteConfig.social.linkedin, siteConfig.social.github, siteConfig.social.facebook],
+    worksFor: { "@id": `${SITE_URL}/#organization` },
+  };
+
+  // Nom repris de `home.founderBadge` ("Fondateur · Digital Business
+  // Group") — pas une valeur inventée pour ce schema.
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${SITE_URL}/#organization`,
+    name: "Digital Business Group",
+    url: SITE_URL,
+    founder: { "@id": `${SITE_URL}/#person` },
   };
 
   return (
@@ -113,6 +138,12 @@ export default async function LocaleLayout({
           nonce={nonce}
           suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: jsonLdScript(personJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: jsonLdScript(organizationJsonLd) }}
         />
       </head>
       <body className="flex min-h-full flex-col antialiased">

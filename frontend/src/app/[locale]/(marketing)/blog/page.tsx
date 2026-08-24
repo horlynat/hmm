@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Newspaper, Tag as TagIcon } from "lucide-react";
 import { Badge, ButtonLink, Reveal, StatCard } from "@/components/ui";
@@ -5,8 +6,24 @@ import { PageHero } from "@/components/sections/PageHero";
 import { ArticleCard } from "@/components/sections/ArticleCard";
 import { NewsletterForm } from "@/components/sections/NewsletterForm";
 import { getArticles } from "@/lib/api/articles";
+import { buildPageMetadata } from "@/lib/metadata";
 
 export const dynamic = "force-static";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "blog" });
+  return buildPageMetadata({
+    locale,
+    pathname: "/blog",
+    title: `${t("title")} ${t("titleAccent")}`,
+    description: t("sub"),
+  });
+}
 
 export default async function BlogPage({
   params,
