@@ -59,6 +59,11 @@ export function Header() {
           ? "border-[var(--border-softer)] bg-bg-default/85 shadow-sm backdrop-blur-md"
           : "border-transparent bg-transparent",
       )}
+      // Ancre pour les transitions de page (cf. globals.css,
+      // ::view-transition-group(site-header)) : ne change jamais entre deux
+      // pages, ne doit donc pas participer au fondu — sans ce nom, deux
+      // copies se chevauchent brièvement à l'identique à chaque navigation.
+      style={{ viewTransitionName: "site-header" }}
     >
       <nav
         ref={navRef}

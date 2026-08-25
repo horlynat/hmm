@@ -197,6 +197,37 @@
       scroll-behavior: auto !important;
     }
   }
+
+  /* Transitions de page (API View Transitions du navigateur, cf.
+     useViewTransitionNavigation.ts) — `*`/`*::before`/`*::after` ci-dessus ne
+     matchent PAS les pseudo-éléments ::view-transition-* (rendus dans un
+     "top layer" séparé, hors de l'arbre DOM normal) : neutralisation dédiée,
+     recommandée telle quelle par le guide View Transitions de Next.js. */
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0s !important;
+    }
+  }
+
+  /* Pendant une transition, l'overlay ::view-transition capte les clics —
+     sans ça, les clics pendant l'animation (courte, ~250ms) sont perdus. */
+  ::view-transition {
+    pointer-events: none;
+  }
+
+  /* Le header (sticky) ne doit pas participer au fondu de page — sinon deux
+     copies (ancienne + nouvelle) se chevauchent brièvement à l'identique,
+     un flash inutile puisqu'il ne change jamais entre deux pages du site. */
+  ::view-transition-group(site-header) {
+    animation: none;
+  }
+  ::view-transition-old(site-header),
+  ::view-transition-new(site-header) {
+    animation: none;
+  }
 }
 
 @layer components {

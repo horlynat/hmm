@@ -12,6 +12,7 @@ import { siteConfig } from "@/config/site";
 import { projectStatusVariant } from "@/lib/status";
 import { resolveOgLocale, SITE_URL } from "@/lib/metadata";
 import { getArticleExcerpt, sanitizeArticleHtml } from "@/lib/sanitize";
+import { projectImageTransitionName } from "@/lib/viewTransitionNames";
 
 export const dynamic = "force-static";
 
@@ -202,7 +203,10 @@ export default async function ProjectDetailPage({
       <section className="px-6 py-6">
         <div className="mx-auto max-w-[840px]">
           <Card variant="soft" className="overflow-hidden p-0">
-            <div className="relative h-[260px] w-full bg-brand-light sm:h-[320px]">
+            <div
+              className={info?.coverImage ? "vt-target relative h-[260px] w-full bg-brand-light sm:h-[320px]" : "relative h-[260px] w-full bg-brand-light sm:h-[320px]"}
+              style={info?.coverImage ? { viewTransitionName: projectImageTransitionName(project.id) } : undefined}
+            >
               {info?.coverImage ? (
                 <Image
                   src={getMediaUrl(info.coverImage.filePath)}
@@ -385,6 +389,7 @@ export default async function ProjectDetailPage({
                 href={{ pathname: "/realisations/[slug]", params: { slug: nextProject.slug } }}
                 image={nextProjectImage}
                 imageAlt={nextProject.info?.coverImage?.altText ?? nextProject.title}
+                imageTransitionName={projectImageTransitionName(nextProject.id)}
               />
             </Reveal>
           )}

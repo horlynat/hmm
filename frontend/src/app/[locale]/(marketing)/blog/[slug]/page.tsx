@@ -7,6 +7,7 @@ import { NextUpCard } from "@/components/sections/NextUpCard";
 import { getArticleBySlug, getArticles } from "@/lib/api/articles";
 import { sanitizeArticleHtml, getArticleExcerpt, getReadingTimeMinutes } from "@/lib/sanitize";
 import { getMediaUrl } from "@/lib/media";
+import { articleImageTransitionName } from "@/lib/viewTransitionNames";
 import { jsonLdScript } from "@/lib/json-ld";
 import { siteConfig } from "@/config/site";
 import { resolveOgLocale, SITE_URL } from "@/lib/metadata";
@@ -129,7 +130,10 @@ export default async function ArticleDetailPage({
           <div className="mx-auto max-w-[760px]">
             <Reveal delay={0}>
               <Card variant="soft" className="overflow-hidden p-0">
-                <div className="relative h-[240px] w-full bg-brand-light sm:h-[380px]">
+                <div
+                  className="vt-target relative h-[240px] w-full bg-brand-light sm:h-[380px]"
+                  style={{ viewTransitionName: articleImageTransitionName(article.id) }}
+                >
                   <Image
                     src={articleImage}
                     alt={article.media[0]?.altText ?? article.title}
@@ -166,6 +170,7 @@ export default async function ArticleDetailPage({
                   href={{ pathname: "/blog/[slug]", params: { slug: nextArticle.slug } }}
                   image={nextArticleImage}
                   imageAlt={nextArticle.media[0]?.altText ?? nextArticle.title}
+                  imageTransitionName={articleImageTransitionName(nextArticle.id)}
                 />
               </Reveal>
             )}
