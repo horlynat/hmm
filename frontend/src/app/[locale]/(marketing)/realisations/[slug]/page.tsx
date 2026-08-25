@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Badge, ButtonLink, Card, Reveal } from "@/components/ui";
+import { Badge, Breadcrumb, ButtonLink, Card, HeroBackground, Reveal } from "@/components/ui";
 import { ProjectVisual } from "@/components/sections/ProjectVisual";
 import { getProjectBySlug, getProjectSlugs } from "@/lib/api/projects";
 import { getMediaUrl } from "@/lib/media";
@@ -126,24 +126,41 @@ export default async function ProjectDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdScript(projectJsonLd) }}
       />
-      <section className="px-6 pt-14 pb-8">
-        <div className="mx-auto max-w-[840px]">
-          <h1 className="mb-5 text-[clamp(1.25rem,2.5vw,1.75rem)] leading-[1.14]">
+      {/* Même habillage (fond dégradé + grille de points) que le hero de
+          toutes les autres pages publiques, cf. PageHero — jusqu'ici absent
+          des pages de détail, qui tranchaient à plat sur le reste du site
+          (h1 notamment réduit à une taille de sous-titre). */}
+      <section className="relative overflow-hidden px-6 pt-14 pb-8">
+        <HeroBackground />
+        <div className="relative mx-auto max-w-[840px]">
+          <div className="mb-6">
+            <Breadcrumb items={[{ label: t("eyebrow"), href: "/realisations" }, { label: project.title }]} />
+          </div>
+          <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
+            {t("eyebrow")}
+          </Badge>
+          {/* Volontairement pas de classe hero-in sur le h1 : candidat LCP le
+              plus probable de la page, cf. commentaire dans PageHero.tsx. Et
+              volontairement alignée sur la taille du h1 de l'article (au lieu
+              du clamp(1.25rem,2.5vw,1.75rem) précédent, de la taille d'un
+              sous-titre) : c'est le plus grand titre de la page. */}
+          <h1 className="mb-5 text-[clamp(2.25rem,4.5vw,3.75rem)] leading-[1.14]">
             {project.title}
           </h1>
           {/* Contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
               serveur en défense en profondeur avant injection — même
               traitement que le corps d'article, cf. blog/[slug]/page.tsx. */}
           <div
-            className="article-body mb-3 max-w-[65ch] text-[1.05rem] opacity-75"
+            className="article-body hero-in mb-3 max-w-[65ch] text-[1.05rem] opacity-75"
+            style={{ animationDelay: "0.16s" }}
             dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(project.description) }}
           />
           {info?.role && (
-            <p className="mb-8 text-sm font-semibold text-brand-primary">
+            <p className="hero-in mb-8 text-sm font-semibold text-brand-primary" style={{ animationDelay: "0.16s" }}>
               {td("roleLabel")} — {info.role}
             </p>
           )}
-          <div className="flex flex-wrap gap-3.5">
+          <div className="hero-in flex flex-wrap gap-3.5" style={{ animationDelay: "0.24s" }}>
             {project.link ? (
               <>
                 <a href={project.link} target="_blank" rel="noopener" className="btn-primary">

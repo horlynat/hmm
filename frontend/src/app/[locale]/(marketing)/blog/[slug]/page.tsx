@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Badge, ButtonLink } from "@/components/ui";
+import { Badge, Breadcrumb, ButtonLink, Card, HeroBackground, Reveal } from "@/components/ui";
 import { getArticleBySlug } from "@/lib/api/articles";
 import { sanitizeArticleHtml, getArticleExcerpt } from "@/lib/sanitize";
 import { getMediaUrl } from "@/lib/media";
@@ -75,36 +76,77 @@ export default async function ArticleDetailPage({
   };
 
   return (
-    <article className="px-6 py-16">
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdScript(articleJsonLd) }}
       />
-      <div className="mx-auto max-w-[760px]">
-        {article.tags.length > 0 && (
-          <div className="mb-4 flex flex-wrap gap-1.5">
-            {article.tags.map((tag) => (
-              <Badge key={tag.id} variant="outline">
-                {tag.name}
-              </Badge>
-            ))}
+
+      {/* Même habillage (fond dégradé + grille de points) que le hero de
+          toutes les autres pages publiques, cf. PageHero — jusqu'ici absent
+          des pages de détail, qui tranchaient à plat sur le reste du site. */}
+      <section className="relative overflow-hidden px-6 pt-14 pb-8">
+        <HeroBackground />
+        <div className="relative mx-auto max-w-[760px]">
+          <div className="mb-6">
+            <Breadcrumb items={[{ label: t("eyebrow"), href: "/blog" }, { label: article.title }]} />
           </div>
-        )}
-        <h1 className="mb-8 text-[clamp(2.25rem,4.5vw,3.75rem)] leading-[1.14]">
-          {article.title}
-        </h1>
-        {/* Contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
-            serveur en défense en profondeur avant injection. */}
-        <div
-          className="article-body opacity-85"
-          dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(article.content) }}
-        />
-        <div className="mt-10 border-t border-[var(--border-softer)] pt-6">
-          <ButtonLink href="/blog" variant="secondary">
-            {t("eyebrow")} ←
-          </ButtonLink>
+          <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
+            {t("eyebrow")}
+          </Badge>
+          {/* Volontairement pas de classe hero-in sur le h1 : candidat LCP le
+              plus probable de la page, cf. commentaire dans PageHero.tsx. */}
+          <h1 className="mb-4 text-[clamp(2.25rem,4.5vw,3.75rem)] leading-[1.14]">
+            {article.title}
+          </h1>
+          {article.tags.length > 0 && (
+            <div className="hero-in flex flex-wrap gap-1.5" style={{ animationDelay: "0.16s" }}>
+              {article.tags.map((tag) => (
+                <Badge key={tag.id} variant="outline">
+                  {tag.name}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
-    </article>
+      </section>
+
+      {articleImage && (
+        <section className="px-6 pb-6">
+          <div className="mx-auto max-w-[760px]">
+            <Reveal delay={0}>
+              <Card variant="soft" className="overflow-hidden p-0">
+                <div className="relative h-[240px] w-full bg-brand-light sm:h-[380px]">
+                  <Image
+                    src={articleImage}
+                    alt={article.media[0]?.altText ?? article.title}
+                    fill
+                    sizes="760px"
+                    className="object-cover"
+                    priority
+                  />
+                </div>
+              </Card>
+            </Reveal>
+          </div>
+        </section>
+      )}
+
+      <section className="px-6 pt-2 pb-16">
+        <div className="mx-auto max-w-[760px]">
+          {/* Contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
+              serveur en défense en profondeur avant injection. */}
+          <div
+            className="article-body opacity-85"
+            dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(article.content) }}
+          />
+          <div className="mt-10 border-t border-[var(--border-softer)] pt-6">
+            <ButtonLink href="/blog" variant="secondary">
+              {t("eyebrow")} ←
+            </ButtonLink>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
