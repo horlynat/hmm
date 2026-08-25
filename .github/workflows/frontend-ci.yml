@@ -8,9 +8,19 @@ name: Frontend CI
 # + seed) à chaque CI, pour un gain limité à l'échelle de ce projet. Le
 # build réel se fait donc toujours sur le VPS pendant le déploiement (cf.
 # deploy.yml + infra/scripts/deploy-remote.sh), où `backend` tourne déjà.
-# Cette CI se limite donc au lint et aux tests unitaires (Vitest), qui n'ont
-# pas cette dépendance. `test:e2e` (Playwright) reste volontairement manuel,
-# pour la même raison.
+# `test:e2e` (Playwright) reste volontairement manuel, pour la même raison
+# (backend requis).
+#
+# En revanche `type-check` (tsc --noEmit) EST lancé : c'est de l'analyse
+# statique pure, aucune dépendance au backend, et ça couvre exactement la
+# classe de bug qu'un `next build` local aurait attrapée mais que ni eslint
+# ni vitest ne détectent — un import cassé vers un module inexistant
+# (`Cannot find module`). Incident réel du 25/08/2026 : frontend/src/lib/
+# text.ts était référencé par des composants déjà commités mais n'avait
+# lui-même jamais été commité (fonctionnait en local où le fichier existait
+# sur le disque, invisible à un checkout propre) — passé inaperçu par lint
+# + test, découvert seulement au build Docker du déploiement, sur le VPS
+# de prod. `tsc --noEmit` aurait bloqué la PR avant le merge.
 on:
   pull_request:
     branches: [main]
@@ -42,4 +52,5 @@ jobs:
       - run: npm install -g npm@11
       - run: npm ci
       - run: npm run lint
+      - run: npm run type-check
       - run: npm run test
