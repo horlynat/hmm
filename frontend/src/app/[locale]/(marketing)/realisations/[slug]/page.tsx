@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Badge, Breadcrumb, ButtonLink, Card, HeroBackground, Reveal } from "@/components/ui";
+import { AnimatedStatValue, Badge, Breadcrumb, ButtonLink, Card, HeroBackground, ReadingProgressBar, Reveal } from "@/components/ui";
 import { ProjectVisual } from "@/components/sections/ProjectVisual";
 import { NextUpCard } from "@/components/sections/NextUpCard";
 import { getProjectBySlug, getProjects, getProjectSlugs } from "@/lib/api/projects";
@@ -137,6 +137,7 @@ export default async function ProjectDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdScript(projectJsonLd) }}
       />
+      <ReadingProgressBar />
       {/* Même habillage (fond dégradé + grille de points) que le hero de
           toutes les autres pages publiques, cf. PageHero — jusqu'ici absent
           des pages de détail, qui tranchaient à plat sur le reste du site
@@ -242,7 +243,7 @@ export default async function ProjectDetailPage({
                       className="mb-1 text-[clamp(1.5rem,3vw,2rem)] font-semibold text-brand-primary"
                       style={{ fontFamily: "var(--font-heading)" }}
                     >
-                      {result.value}
+                      <AnimatedStatValue value={result.value} />
                     </div>
                     <div className="text-sm opacity-70">{result.label}</div>
                   </div>

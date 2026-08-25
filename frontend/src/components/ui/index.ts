@@ -12,6 +12,8 @@ export { StatCard } from "./StatCard";
 export { SettingsSection, SettingsSectionGroup } from "./SettingsSection";
 export { Skeleton } from "./Skeleton";
 export { Reveal } from "./Reveal";
+export { AnimatedStatValue } from "./AnimatedStatValue";
+export { ReadingProgressBar } from "./ReadingProgressBar";
 export { HeroBackground } from "./HeroBackground";
 export { Chip } from "./Chip";
 export { Logo } from "./Logo";

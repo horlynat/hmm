@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Badge, Breadcrumb, ButtonLink, Card, HeroBackground, Reveal } from "@/components/ui";
+import { Badge, Breadcrumb, ButtonLink, Card, HeroBackground, ReadingProgressBar, Reveal } from "@/components/ui";
 import { NextUpCard } from "@/components/sections/NextUpCard";
 import { getArticleBySlug, getArticles } from "@/lib/api/articles";
 import { sanitizeArticleHtml, getArticleExcerpt, getReadingTimeMinutes } from "@/lib/sanitize";
@@ -92,6 +92,7 @@ export default async function ArticleDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdScript(articleJsonLd) }}
       />
+      <ReadingProgressBar />
 
       {/* Même habillage (fond dégradé + grille de points) que le hero de
           toutes les autres pages publiques, cf. PageHero — jusqu'ici absent
@@ -144,7 +145,7 @@ export default async function ArticleDetailPage({
         </section>
       )}
 
-      <section className="px-6 pt-2 pb-16">
+      <section className="article-detail px-6 pt-2 pb-16">
         <div className="mx-auto max-w-[760px]">
           {/* Contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
               serveur en défense en profondeur avant injection. */}

@@ -423,6 +423,50 @@
   .article-body :where(p) {
     margin: 0 0 1.1em;
   }
+  /* Lettrine sur le tout premier paragraphe — traitement éditorial, pas de
+     JS. `.article-detail` scope volontairement le traitement à l'article —
+     la description d'un projet (qui partage aussi `.article-body`, cf.
+     commentaire dans blog/[slug]/page.tsx) est trop courte pour qu'une
+     lettrine y ait du sens. Deux sélecteurs : Quill enveloppe normalement
+     tout paragraphe dans un <p>, mais le contenu de certains articles
+     (vérifié en pratique) est du texte brut sans wrapper — le second
+     sélecteur couvre ce cas (mêmes propriétés, sans effet de conflit si les
+     deux s'appliquaient à la fois). Sans effet si l'article commence par une
+     image ou un titre, ce n'est pas critique. */
+  .article-detail .article-body > :where(p):first-of-type::first-letter,
+  .article-detail .article-body::first-letter {
+    float: left;
+    font-family: var(--font-heading);
+    font-size: 3.4em;
+    line-height: 0.85;
+    font-weight: 700;
+    color: var(--color-brand-primary);
+    margin: 0.03em 0.08em 0 0;
+  }
+  /* Citation en évidence, façon magazine — plus qu'un simple filet de
+     couleur : grande taille, signe de citation décoratif. */
+  .article-body :where(blockquote) {
+    position: relative;
+    margin: 1.6em 0;
+    padding: 0.2em 0 0.2em 1.3em;
+    border-left: 3px solid var(--color-brand-primary);
+    font-family: var(--font-heading);
+    font-size: 1.25em;
+    line-height: 1.45;
+    font-style: italic;
+    color: var(--color-brand-dark);
+  }
+  .article-body :where(blockquote)::before {
+    content: "\201C";
+    position: absolute;
+    left: -0.05em;
+    top: -0.15em;
+    font-family: var(--font-heading);
+    font-size: 2.2em;
+    font-style: normal;
+    color: var(--color-brand-primary);
+    opacity: 0.35;
+  }
   /* h1 dans le corps : distinct du h1 de page (titre de l'article/projet,
      affiché séparément juste au-dessus) — volontairement plus petit pour ne
      pas créer deux titres visuellement identiques empilés. */
@@ -458,13 +502,6 @@
     border-radius: var(--radius-md);
     margin: 1.2em 0;
     max-width: 100%;
-  }
-  .article-body :where(blockquote) {
-    margin: 0 0 1.1em;
-    padding-left: 1em;
-    border-left: 3px solid var(--color-brand-primary);
-    opacity: 0.85;
-    font-style: italic;
   }
   .article-body :where(code) {
     font-family: var(--font-mono);
