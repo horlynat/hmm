@@ -34,7 +34,7 @@
 								<a href="{{ path('admin_tag_update', {'id': tag.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ tag.name }}">
 									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
 								</a>
-								<twig:DeleteModal :id="tag.id" :action="path('admin_tag_delete', {id: tag.id})" :token="csrf_token('delete' ~ tag.id)" :label="tag.name" entity="ce tag" />
+								<twig:DeleteModal :id="tag.id" :action="path('admin_tag_delete', {id: tag.id})" :token="csrf_token('admin_tag_delete_' ~ tag.id)" :label="tag.name" entity="ce tag" />
 							</div>
 						</td>
 					</tr>

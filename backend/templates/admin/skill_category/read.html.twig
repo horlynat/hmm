@@ -24,7 +24,7 @@
 
 			<div class="flex gap-3 mt-8">
 				<a href="{{ path('admin_skill_category_update', {'id': skill_category.id}) }}" class="btn btn-primary">Modifier</a>
-				<twig:DeleteModal :id="skill_category.id" :action="path('admin_skill_category_delete', {id: skill_category.id})" :token="csrf_token('delete' ~ skill_category.id)" :label="skill_category.name" entity="cette catégorie" />
+				<twig:DeleteModal :id="skill_category.id" :action="path('admin_skill_category_delete', {id: skill_category.id})" :token="csrf_token('admin_skill_category_delete_' ~ skill_category.id)" :label="skill_category.name" entity="cette catégorie" />
 			</div>
 		</div>
 	</div>

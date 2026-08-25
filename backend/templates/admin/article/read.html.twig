@@ -89,7 +89,7 @@
 							<span>Modifier l'article</span>
 						</a>
 						<div class="w-full [&>div]:w-full [&_.btn]:w-full text-center">
-							<twig:DeleteModal :id="article.id" :action="path('admin_article_delete', {slug: article.slug})" :token="csrf_token('delete' ~ article.id)" :label="article.title" entity="cet article" />
+							<twig:DeleteModal :id="article.id" :action="path('admin_article_delete', {slug: article.slug})" :token="csrf_token('admin_article_delete_' ~ article.id)" :label="article.title" entity="cet article" />
 						</div>
 					</div>
 				</div>

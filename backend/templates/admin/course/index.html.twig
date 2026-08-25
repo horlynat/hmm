@@ -48,7 +48,7 @@
 								<a href="{{ path('admin_course_update', {'id': course.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ course.title }}">
 									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
 								</a>
-								<twig:DeleteModal :id="course.id" :action="path('admin_course_delete', {id: course.id})" :token="csrf_token('delete' ~ course.id)" :label="course.title" entity="cette formation" />
+								<twig:DeleteModal :id="course.id" :action="path('admin_course_delete', {id: course.id})" :token="csrf_token('admin_course_delete_' ~ course.id)" :label="course.title" entity="cette formation" />
 							</div>
 						</td>
 					</tr>
