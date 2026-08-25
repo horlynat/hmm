@@ -20,7 +20,11 @@ use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
-#[UniqueEntity(fields: ['slug'], message: 'Ce slug est déjà utilisé pour un autre projet.')]
+// entityClass explicite — cf. commentaire identique dans App\Entity\Skill
+// pour le pourquoi (sans lui : 500 sur TOUTE requête POST/PUT via l'API,
+// pas seulement les slugs en doublon — vérifié en pratique, ProjectApiResource
+// n'est pas lui-même mappé Doctrine).
+#[UniqueEntity(fields: ['slug'], message: 'Ce slug est déjà utilisé pour un autre projet.', entityClass: Project::class)]
 #[ORM\HasLifecycleCallbacks]
 class Project
 {
@@ -105,8 +109,17 @@ class Project
     #[Groups(['api_admin'])]
     private Collection $collaborators;
 
-    /** @var Collection<int, ProjectHistory> */
-    #[ORM\OneToMany(mappedBy: 'project', targetEntity: ProjectHistory::class, cascade: ['persist'], orphanRemoval: true)]
+    /**
+     * Pas d'orphanRemoval : c'est un journal d'audit append-only (removeHistory()
+     * n'est appelé nulle part dans l'app) — avec orphanRemoval, Doctrine supprimait
+     * en cascade TOUT l'historique dès que le projet lui-même était supprimé, y
+     * compris l'entrée "project_deleted" qu'on vient d'y ajouter dans le même flush,
+     * la rendant illisible. Sans cascade ORM, c'est la contrainte SQL du côté
+     * ProjectHistory (onDelete: SET NULL) qui prend le relais et préserve les lignes.
+     *
+     * @var Collection<int, ProjectHistory>
+     */
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: ProjectHistory::class, cascade: ['persist'])]
     private Collection $histories;
 
     /** @var Collection<int, ProjectJoinRequest> */
@@ -710,6 +723,7 @@ class Project
         $history = new ProjectHistory();
         $history
             ->setProject($this)
+            ->setProjectTitle($this->getTitle())
             ->setAction($action)
             ->setUser($user)
             ->setDetails($details);

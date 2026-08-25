@@ -59,6 +59,8 @@ class AdminSecurityAuditController extends AbstractController
         'marked_paid_by_creator' => 'Marquée payée par son propre créateur (SoD)',
         'super_admin_elevated' => 'Élévation Super Admin activée',
         'super_admin_deelevated' => 'Élévation Super Admin désactivée',
+        'project_deleted' => 'Suppression du projet',
+        'media_removed' => 'Suppression d\'un média',
     ];
 
     /** Types d'entités trackées, dans l'ordre d'affichage du filtre. */
@@ -96,7 +98,10 @@ class AdminSecurityAuditController extends AbstractController
         foreach ($projectHistoryRepository->findRecent(self::FETCH_POOL) as $history) {
             $entries[] = [
                 'date' => $history->getCreatedAt(),
-                'label' => sprintf('Projet « %s »', $history->getProject()->getTitle()),
+                // Copie figée du titre (ProjectHistory::$projectTitle) : reste correct même
+                // si le projet a depuis été supprimé (project_id passe à NULL, pas de cascade) —
+                // sans quoi l'entrée "project_deleted" elle-même serait illisible ici.
+                'label' => sprintf('Projet « %s »', $history->getProjectTitle()),
                 'actionCode' => $history->getAction(),
                 'actionLabel' => $this->actionLabel($history->getAction()),
                 'user' => $history->getUser(),

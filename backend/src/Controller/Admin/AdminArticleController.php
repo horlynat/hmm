@@ -11,6 +11,7 @@ use App\Repository\TranslationRepository;
 use App\Security\Voter\ArticleVoter;
 use App\Service\AuditLogger;
 use App\Service\MediaUploader;
+use App\Service\NewsletterNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -66,6 +67,7 @@ final class AdminArticleController extends AbstractController
         MediaUploader $uploader,
         AuditLogger $auditLogger,
         TranslationRepository $translationRepository,
+        NewsletterNotifier $newsletterNotifier,
     ): Response {
         $this->denyAccessUnlessGranted(ArticleVoter::CREATE);
 
@@ -74,7 +76,7 @@ final class AdminArticleController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $article->setSlug($slugger->slug($article->getTitle())->lower());
+            $article->setSlug($this->uniqueArticleSlug($slugger, $entityManager, $article->getTitle()));
 
             // Extraction et traitement de l'image via la méthode optimisée
             $this->handleImageUpload($form, $article, $uploader, $entityManager);
@@ -95,6 +97,11 @@ final class AdminArticleController extends AbstractController
 
             // Après flush() pour disposer d'un id garanti (article tout juste créé).
             $translationRepository->syncFromEntity($article);
+
+            // Tout article créé est public dès sa création (pas de statut
+            // brouillon sur cette entité, cf. App\Entity\Article) — la
+            // notification part donc systématiquement ici, sans condition.
+            $newsletterNotifier->notifyNewContent($article->getTitle(), 'article', $article->getSlug());
 
             $this->addFlash('success', 'L\'article a été créé avec succès.');
 
@@ -143,7 +150,7 @@ final class AdminArticleController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $article->setSlug($slugger->slug($article->getTitle())->lower());
+            $article->setSlug($this->uniqueArticleSlug($slugger, $entityManager, $article->getTitle(), $article->getId()));
 
             // Traitement de l'image (réutilisable sans duplication !)
             $this->handleImageUpload($form, $article, $uploader, $entityManager);
@@ -220,5 +227,34 @@ final class AdminArticleController extends AbstractController
             $entityManager->persist($media);
             $article->addMedia($media);
         }
+    }
+
+    /**
+     * Génère un slug garanti unique pour un titre donné — ajoute un suffixe
+     * numérique ("-2", "-3", ...) si le slug de base est déjà pris par un
+     * autre article.
+     *
+     * Fait explicitement ici plutôt que via #[UniqueEntity(fields: ['slug'])]
+     * sur l'entité : Symfony valide l'entité PENDANT handleRequest() (l'écouteur
+     * POST_SUBMIT de l'extension Validator), avant que ce contrôleur n'ait la
+     * main pour fixer le slug — la contrainte ne voit donc jamais la bonne
+     * valeur et ne peut jamais détecter de collision, laissant l'INSERT/UPDATE
+     * planter en 500 (UniqueConstraintViolationException) à la place.
+     *
+     * $excludeId : id de l'article en cours d'édition (update()) — pour ne
+     * pas le confondre avec un "autre article" alors qu'il s'agit de
+     * lui-même resauvegardé avec le même titre.
+     */
+    private function uniqueArticleSlug(SluggerInterface $slugger, EntityManagerInterface $entityManager, string $title, ?int $excludeId = null): string
+    {
+        $base = (string) $slugger->slug($title)->lower();
+        $repository = $entityManager->getRepository(Article::class);
+
+        $slug = $base;
+        for ($suffix = 2; null !== ($existing = $repository->findOneBy(['slug' => $slug])) && $existing->getId() !== $excludeId; ++$suffix) {
+            $slug = $base.'-'.$suffix;
+        }
+
+        return $slug;
     }
 }

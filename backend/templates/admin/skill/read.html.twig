@@ -49,7 +49,7 @@
 							<span>Modifier</span>
 						</a>
 						<div class="w-full [&>div]:w-full [&_.btn]:w-full text-center">
-							<twig:DeleteModal :id="skill.id" :action="path('admin_skill_delete', {id: skill.id})" :token="csrf_token('delete' ~ skill.id)" :label="skill.name" entity="cette compétence" />
+							<twig:DeleteModal :id="skill.id" :action="path('admin_skill_delete', {id: skill.id})" :token="csrf_token('admin_skill_delete_' ~ skill.id)" :label="skill.name" entity="cette compétence" />
 						</div>
 					</div>
 				</div>

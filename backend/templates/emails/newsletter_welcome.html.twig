@@ -1,0 +1,37 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% set isEn = 'en' == locale %}
+
+{% block title %}{{ isEn ? 'Welcome to the newsletter' : 'Bienvenue dans la newsletter' }}{% endblock %}
+{% block preheader %}{{ isEn ? 'Subscription confirmed — you will receive upcoming articles and projects.' : 'Inscription confirmée — vous recevrez les prochains articles et projets.' }}{% endblock %}
+{% block badge_label %}Newsletter{% endblock %}
+{% block badge_color %}#e0e7ff{% endblock %}
+{% block badge_text_color %}#3730a3{% endblock %}
+
+{% block body %}
+	<h1 style="margin:0 0 16px; font-size:20px; color:#03045e;">{{ isEn ? 'Welcome!' : 'Bienvenue !' }}</h1>
+
+	<p style="margin:0 0 16px;">{{ isEn ? 'Hello,' : 'Bonjour,' }}</p>
+	<p style="margin:0 0 24px;">
+		{% if isEn %}
+			Your subscription is confirmed. You will now receive an email for every new article published on the blog, and every new project added to the portfolio — occasional, never more than one per publication.
+		{% else %}
+			Votre inscription est confirmée. Vous recevrez désormais un e-mail à chaque nouvel article publié sur le blog, et à chaque nouveau projet ajouté aux réalisations — occasionnel, jamais plus d'un par publication.
+		{% endif %}
+	</p>
+
+	<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+		<tr>
+			<td align="center" bgcolor="#0077b6" style="background-color:#0077b6; border-radius:6px;">
+				<a href="{{ blogUrl }}" style="display:inline-block; padding:12px 24px; color:#ffffff; font-size:14px; font-weight:bold; text-decoration:none; font-family:Arial, Helvetica, sans-serif;">
+					{{ isEn ? 'Browse the blog' : 'Parcourir le blog' }}
+				</a>
+			</td>
+		</tr>
+	</table>
+
+	<p style="margin:0; font-size:12px; color:#8b949e;">
+		{{ isEn ? 'You can unsubscribe in one click from any of these emails — ' : "Vous pourrez toujours vous désinscrire en un clic depuis n'importe lequel de ces e-mails — " }}
+		<a href="{{ unsubscribeUrl }}" style="color:#57606a;">{{ isEn ? 'including this one' : 'y compris celui-ci' }}</a>.
+	</p>
+{% endblock %}

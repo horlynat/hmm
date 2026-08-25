@@ -56,7 +56,7 @@
 							<span>Modifier le tag</span>
 						</a>
 						<div class="w-full [&>form]:w-full text-center">
-							<twig:DeleteModal :id="tag.id" :action="path('admin_tag_delete', {id: tag.id})" :token="csrf_token('delete' ~ tag.id)" :label="tag.name" entity="ce tag" />
+							<twig:DeleteModal :id="tag.id" :action="path('admin_tag_delete', {id: tag.id})" :token="csrf_token('admin_tag_delete_' ~ tag.id)" :label="tag.name" entity="ce tag" />
 						</div>
 					</div>
 				</div>

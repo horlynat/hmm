@@ -11,6 +11,11 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
+// Pas de #[UniqueEntity(fields: ['slug'])] ici : inefficace dans ce flux —
+// Symfony valide l'entité PENDANT handleRequest() (POST_SUBMIT de
+// l'extension Validator), avant que AdminArticleController n'ait la main
+// pour calculer le slug depuis le titre. L'unicité est garantie autrement,
+// par construction, dans AdminArticleController::uniqueArticleSlug().
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 class Article
 {

@@ -36,7 +36,7 @@
 								<a href="{{ path('admin_skill_update', {'id': skill.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ skill.name }}">
 									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
 								</a>
-								<twig:DeleteModal :id="skill.id" :action="path('admin_skill_delete', {id: skill.id})" :token="csrf_token('delete' ~ skill.id)" :label="skill.name" entity="cette compétence" />
+								<twig:DeleteModal :id="skill.id" :action="path('admin_skill_delete', {id: skill.id})" :token="csrf_token('admin_skill_delete_' ~ skill.id)" :label="skill.name" entity="cette compétence" />
 							</div>
 						</td>
 					</tr>

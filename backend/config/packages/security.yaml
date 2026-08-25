@@ -124,6 +124,7 @@ security:
         - { path: ^/reinitialiser-mot-de-passe, roles: PUBLIC_ACCESS } # Formulaire de réinitialisation via lien email, idem
         - { path: ^/register, roles: ROLE_ADMIN }           # Inscription réservée aux admins (création d'un compte administrateur). L'inscription publique passe par le frontend Next.js (ApiResource *Registration)
         - { path: ^/verify/email, roles: PUBLIC_ACCESS }    # Vérification email publique
+        - { path: ^/newsletter, roles: PUBLIC_ACCESS }      # Confirmation/désinscription newsletter (NewsletterConfirmationController) — lien cliqué depuis un client mail par un visiteur sans compte, jamais authentifié. Sans cette règle, le catch-all ci-dessous redirige vers /login (constaté en pratique).
         - { path: ^/api, roles: PUBLIC_ACCESS }              # Sécurité déléguée à API Platform (attribut `security` par opération, cf. *ApiResource)
         - { path: ^/2fa, role: IS_AUTHENTICATED_2FA_IN_PROGRESS } # /2fa + /2fa_check (formulaire + vérification) : le token Scheb en cours de 2FA ne porte aucun rôle métier tant que le second facteur n'est pas validé — sans cette règle, le catch-all ci-dessous bloquerait la connexion de tout compte 2FA avant même d'atteindre l'écran de code.
         - { path: ^/logout, roles: PUBLIC_ACCESS }           # Toujours atteignable (y compris session déjà partiellement invalidée), pour ne jamais piéger un utilisateur qui veut se déconnecter.

@@ -25,6 +25,7 @@ use App\Repository\TranslationRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\ProjectVoter;
 use App\Service\MediaUploader;
+use App\Service\NewsletterNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
@@ -417,6 +418,7 @@ final class AdminProjectController extends AbstractController
         SluggerInterface $slugger,
         MediaUploader $mediaUploader,
         TranslationRepository $translationRepository,
+        NewsletterNotifier $newsletterNotifier,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
@@ -430,9 +432,7 @@ final class AdminProjectController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Générer le slug
-            $slug = $slugger->slug($project->getTitle())->lower();
-            $project->setSlug($slug);
+            $project->setSlug($this->uniqueProjectSlug($slugger, $entityManager, $project->getTitle()));
 
             // Upload des médias
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
@@ -452,6 +452,16 @@ final class AdminProjectController extends AbstractController
 
             // Après flush() pour disposer d'un id garanti (projet tout juste créé).
             $translationRepository->syncFromEntity($project);
+
+            // Notification newsletter UNIQUEMENT si ce projet a un contenu
+            // vitrine ($showcase non null, cf. buildProjectInfoFromForm()) :
+            // Project sert aussi à la gestion interne de projets
+            // freelance/client (budget, factures, collaborateurs...), sans
+            // rapport avec le portfolio public — les abonnés ne doivent
+            // jamais être notifiés de la création d'un projet client interne.
+            if (null !== $showcase) {
+                $newsletterNotifier->notifyNewContent($project->getTitle(), 'project', $project->getSlug());
+            }
 
             $this->addFlash('success', 'Le projet a été créé avec succès.');
 
@@ -582,9 +592,7 @@ final class AdminProjectController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Mettre à jour le slug
-            $slug = $slugger->slug($project->getTitle())->lower();
-            $project->setSlug($slug);
+            $project->setSlug($this->uniqueProjectSlug($slugger, $entityManager, $project->getTitle(), $project->getId()));
 
             // Upload des nouveaux médias
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
@@ -651,12 +659,38 @@ final class AdminProjectController extends AbstractController
         Project $project,
         EntityManagerInterface $entityManager,
         Request $request,
+        MediaUploader $mediaUploader,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::DELETE, $project);
 
+        // Double sécurité : empêche la suppression des projets terminés ou suspendus
+        // (même garde-fou que pour la modification — cf. update() — un projet clos
+        // dont le budget/les dépenses/le temps sont déjà arrêtés ne doit pas pouvoir
+        // disparaître d'un simple clic).
+        if ($this->isProjectLocked($project)) {
+            $this->addFlash('error', 'Impossible de supprimer ce projet (statut : '.$project->getStatusLabel().').');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
         if ($this->isCsrfTokenValid('admin_project_delete_'.$project->getId(), $request->request->get('_token'))) {
-            // Journaliser la suppression (avant la suppression pour conserver l'accès)
+            // Nettoyage des fichiers physiques des médias liés (même logique que deleteMedia()) :
+            // supprimer le projet ne doit pas laisser de fichiers orphelins dans public/uploads/projects/.
+            foreach ($project->getMedia() as $media) {
+                $mediaUploader->delete(basename($media->getFilePath()), 'projects');
+            }
+
+            // Journaliser la suppression (avant la suppression pour conserver l'accès à
+            // l'entité). Survit à la suppression : ProjectHistory.project_id passe à NULL
+            // au lieu d'être supprimé en cascade, et ProjectHistory::$projectTitle conserve
+            // le nom du projet indépendamment de la relation — cf. ProjectHistory.
+            //
+            // persist() explicite indispensable ici : le cascade "persist" porté par
+            // Project::$histories ne se déclenche PAS pour une entité déjà programmée
+            // pour suppression dans le même flush() — sans cet appel, cette entrée
+            // précise ne serait jamais insérée en base (vérifié en pratique).
             $project->addToHistory('project_deleted', $this->getAuthenticatedUser(), 'Projet supprimé');
+            $entityManager->persist($project->getHistories()->last());
 
             $entityManager->remove($project);
             $entityManager->flush();
@@ -1644,5 +1678,35 @@ final class AdminProjectController extends AbstractController
         if (!empty($changes)) {
             $project->logUpdate($this->getAuthenticatedUser(), $changes);
         }
+    }
+
+    /**
+     * Génère un slug garanti unique pour un titre donné — ajoute un suffixe
+     * numérique ("-2", "-3", ...) si le slug de base est déjà pris par un
+     * autre projet.
+     *
+     * Fait explicitement ici plutôt que de compter sur
+     * #[UniqueEntity(fields: ['slug'])] (déclaré sur Project) : Symfony
+     * valide l'entité PENDANT handleRequest() (l'écouteur POST_SUBMIT de
+     * l'extension Validator), avant que ce contrôleur n'ait la main pour
+     * fixer le slug — la contrainte ne voit donc jamais la bonne valeur et
+     * ne peut jamais détecter de collision, laissant l'INSERT/UPDATE planter
+     * en 500 (UniqueConstraintViolationException) à la place.
+     *
+     * $excludeId : id du projet en cours d'édition (update()) — pour ne pas
+     * le confondre avec un "autre projet" alors qu'il s'agit de lui-même
+     * resauvegardé avec le même titre.
+     */
+    private function uniqueProjectSlug(SluggerInterface $slugger, EntityManagerInterface $entityManager, string $title, ?int $excludeId = null): string
+    {
+        $base = (string) $slugger->slug($title)->lower();
+        $repository = $entityManager->getRepository(Project::class);
+
+        $slug = $base;
+        for ($suffix = 2; null !== ($existing = $repository->findOneBy(['slug' => $slug])) && $existing->getId() !== $excludeId; ++$suffix) {
+            $slug = $base.'-'.$suffix;
+        }
+
+        return $slug;
     }
 }

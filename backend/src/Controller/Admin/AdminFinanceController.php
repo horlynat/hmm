@@ -104,7 +104,9 @@ final class AdminFinanceController extends AbstractController
 
             $entries[] = [
                 'date' => $history->getCreatedAt(),
-                'label' => sprintf('Projet « %s »', $history->getProject()->getTitle()),
+                // Copie figée du titre (ProjectHistory::$projectTitle) : reste correct même
+                // si le projet a depuis été supprimé (project_id passe à NULL, pas de cascade).
+                'label' => sprintf('Projet « %s »', $history->getProjectTitle()),
                 'actionLabel' => $this->journalActionLabel($history->getAction()),
                 'user' => $history->getUser(),
             ];
