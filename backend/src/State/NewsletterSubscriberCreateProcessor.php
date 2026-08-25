@@ -39,6 +39,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * file Messenger. Aucune notification tant que le lien n'est pas cliqué
  * (cf. NewsletterConfirmationController::confirm(), qui envoie ensuite
  * l'e-mail de bienvenue).
+ *
+ * @implements ProcessorInterface<NewsletterSubscriberApiResource, NewsletterSubscriber>
  */
 final class NewsletterSubscriberCreateProcessor implements ProcessorInterface
 {
@@ -54,8 +56,6 @@ final class NewsletterSubscriberCreateProcessor implements ProcessorInterface
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): NewsletterSubscriber
     {
-        \assert($data instanceof NewsletterSubscriberApiResource);
-
         // Même compteur que les autres formulaires publics (contact, devis,
         // témoignage) — cf. docblock de PublicSubmissionThrottler, qui liste
         // déjà "inscription" parmi les flux visés.

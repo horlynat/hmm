@@ -34,6 +34,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  * contexte à résumer, pas une donnée à vérifier contre un corpus tiers de
  * chunks. Toujours Sonnet (jamais le repli Haiku du chat) : fonctionnalité
  * opt-in à faible volume, la qualité prime sur le coût.
+ *
+ * @implements ProcessorInterface<AiContentSummaryApiResource, AiContentSummaryApiResource>
  */
 final class AiContentSummaryProcessor implements ProcessorInterface
 {
@@ -65,8 +67,6 @@ final class AiContentSummaryProcessor implements ProcessorInterface
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): AiContentSummaryApiResource
     {
-        \assert($data instanceof AiContentSummaryApiResource);
-
         $settings = $this->settingsRepository->getSettings();
         $locale = $data->getLocale() ?: 'fr';
         $question = trim($data->getQuestion());
@@ -234,7 +234,12 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         return 'en' === $locale && null !== $en && '' !== $en ? $en : $fr;
     }
 
-    /** @param array<int, mixed> $fr @param array<int, mixed>|null $en @return array<int, mixed> */
+    /**
+     * @param array<int, mixed>      $fr
+     * @param array<int, mixed>|null $en
+     *
+     * @return array<int, mixed>
+     */
     private function pickLocalizedList(array $fr, ?array $en, string $locale): array
     {
         return 'en' === $locale && null !== $en && [] !== $en ? $en : $fr;
