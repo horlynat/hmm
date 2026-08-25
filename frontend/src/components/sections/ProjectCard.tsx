@@ -3,11 +3,12 @@
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import type { Project } from "@/lib/types";
-import { Link } from "@/i18n/navigation";
-import { Badge, Card } from "@/components/ui";
+import { Badge, Card, ViewTransitionLink } from "@/components/ui";
 import { ProjectVisual } from "./ProjectVisual";
 import { getMediaUrl } from "@/lib/media";
 import { projectStatusVariant } from "@/lib/status";
+import { getExcerpt } from "@/lib/text";
+import { projectImageTransitionName } from "@/lib/viewTransitionNames";
 
 /** Nombre de technologies affichées par carte — assez pour donner une idée de la
  * stack sans faire déborder une carte de largeur réduite (grille 2 colonnes). */
@@ -16,22 +17,6 @@ const MAX_TECH_BADGES = 3;
 /** Longueur max de la description affichée sur la carte — harmonise la hauteur
  * des cartes entre elles plutôt que de laisser un texte long déborder. */
 const MAX_DESCRIPTION_LENGTH = 300;
-
-/**
- * Résumé texte brut affiché sur la carte — `description` peut désormais
- * contenir du HTML structuré (éditeur riche admin, cf. rich_text_controller.js
- * côté backend). Composant client (pas d'accès à sanitize-html, "server-only"
- * côté lib/sanitize.ts) : un simple retrait de balises suffit ici, le résultat
- * n'est jamais réinjecté en HTML (juste affiché comme texte JSX, échappé
- * automatiquement par React).
- */
-function truncateDescription(text: string, length = MAX_DESCRIPTION_LENGTH) {
-  const plain = text
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  return plain.length > length ? `${plain.slice(0, length).trimEnd()}…` : plain;
-}
 
 export function ProjectCard({
   project,
@@ -45,13 +30,19 @@ export function ProjectCard({
   const coverImage = project.info?.coverImage;
   const techStack = project.info?.techStack.slice(0, MAX_TECH_BADGES) ?? [];
 
+  const transitionName = coverImage ? projectImageTransitionName(project.id) : undefined;
+
   return (
     <Card className={`flex flex-col overflow-hidden p-0 ${className ?? ""}`}>
-      <Link
+      <ViewTransitionLink
         href={{ pathname: "/realisations/[slug]", params: { slug: project.slug } }}
+        viewTransitionName={transitionName}
         className="contents"
       >
-        <div className="relative h-[130px] w-full overflow-hidden bg-brand-light">
+        <div
+          className={coverImage ? "vt-target relative h-[130px] w-full overflow-hidden bg-brand-light" : "relative h-[130px] w-full overflow-hidden bg-brand-light"}
+          style={transitionName ? { viewTransitionName: transitionName } : undefined}
+        >
           {coverImage ? (
             <Image
               src={getMediaUrl(coverImage.filePath)}
@@ -78,7 +69,7 @@ export function ProjectCard({
             {project.title}
           </div>
           <p className="flex-1 text-base leading-relaxed opacity-70">
-            {truncateDescription(project.description)}
+            {getExcerpt(project.description, MAX_DESCRIPTION_LENGTH)}
           </p>
           <div className="mt-4 flex flex-wrap gap-1.5">
             {techStack.map((tech) => (
@@ -88,14 +79,15 @@ export function ProjectCard({
             ))}
           </div>
         </div>
-      </Link>
+      </ViewTransitionLink>
       <div className="flex flex-wrap gap-x-4 gap-y-2 px-5 pb-5">
-        <Link
+        <ViewTransitionLink
           href={{ pathname: "/realisations/[slug]", params: { slug: project.slug } }}
+          viewTransitionName={transitionName}
           className="text-sm font-semibold text-brand-primary hover:underline"
         >
           {tc("seeDetails")} →
-        </Link>
+        </ViewTransitionLink>
         {project.link && (
           <a
             href={project.link}

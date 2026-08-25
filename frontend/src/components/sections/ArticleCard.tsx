@@ -2,15 +2,11 @@
 
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { Badge, Card } from "@/components/ui";
-import { Link } from "@/i18n/navigation";
+import { Badge, Card, ViewTransitionLink } from "@/components/ui";
 import { getMediaUrl } from "@/lib/media";
+import { getExcerpt } from "@/lib/text";
+import { articleImageTransitionName } from "@/lib/viewTransitionNames";
 import type { Article } from "@/lib/types";
-
-function excerpt(html: string, length = 140) {
-  const text = html.replace(/<[^>]+>/g, "");
-  return text.length > length ? `${text.slice(0, length)}…` : text;
-}
 
 export function ArticleCard({ article }: { article: Article }) {
   const tc = useTranslations("common");
@@ -19,7 +15,10 @@ export function ArticleCard({ article }: { article: Article }) {
   return (
     <Card className="flex flex-col overflow-hidden p-0">
       {image ? (
-        <div className="relative h-[130px] w-full bg-brand-light">
+        <div
+          className="vt-target relative h-[130px] w-full bg-brand-light"
+          style={{ viewTransitionName: articleImageTransitionName(article.id) }}
+        >
           <Image
             src={getMediaUrl(image.filePath)}
             alt={image.altText ?? article.title}
@@ -51,13 +50,14 @@ export function ArticleCard({ article }: { article: Article }) {
         >
           {article.title}
         </div>
-        <p className="flex-1 text-sm opacity-70">{excerpt(article.content)}</p>
-        <Link
+        <p className="flex-1 text-sm opacity-70">{getExcerpt(article.content, 140)}</p>
+        <ViewTransitionLink
           href={{ pathname: "/blog/[slug]", params: { slug: article.slug } }}
+          viewTransitionName={image ? articleImageTransitionName(article.id) : undefined}
           className="mt-3 text-sm font-semibold text-brand-primary hover:underline"
         >
           {tc("readMore")} →
-        </Link>
+        </ViewTransitionLink>
       </div>
     </Card>
   );

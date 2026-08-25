@@ -326,7 +326,8 @@
       "deadlineInDays": "{days, plural, one {In # day} other {In # days}}",
       "deadlineOverdueDays": "{days, plural, one {# day overdue} other {# days overdue}}",
       "invoicesLabel": "Related invoices",
-      "viewAllInvoices": "View all my invoices"
+      "viewAllInvoices": "View all my invoices",
+      "nextProject": "Next project"
     },
     "cta": {
       "title": "Got a project in mind?",
@@ -341,6 +342,8 @@
     "titleAccent": "and lessons learned.",
     "sub": "Thoughts on architecture, technical choices and my view of the craft — between development, cybersecurity and insurance.",
     "empty": "Articles will appear here as soon as they're published.",
+    "readingTime": "{minutes} min read",
+    "nextArticle": "Next article",
     "stats": {
       "articles": "Published articles",
       "topics": "Topics covered"
@@ -350,8 +353,7 @@
       "text": "An occasional email, no spam — only when a new article or project comes out.",
       "placeholder": "you@example.com",
       "submit": "Subscribe",
-      "success": "Subscription confirmed, thank you!",
-      "note": "Feature coming soon — subscriptions aren't stored yet."
+      "success": "Almost there! Check your inbox to confirm your subscription."
     }
   },
   "freelances": {
@@ -838,7 +840,13 @@
     "answerProjet": "Tell me the type of service, your indicative budget and desired timeline, and I'll prepare your request for Horlynat.",
     "thinking": "The assistant is thinking…",
     "errorRateLimited": "Too many questions sent. Please wait a moment before trying again.",
-    "errorUnavailable": "The conversational assistant is temporarily unavailable."
+    "errorUnavailable": "The conversational assistant is temporarily unavailable.",
+    "pageInsight": {
+      "cta": "Ask the AI for a summary",
+      "title": "AI summary",
+      "disclaimer": "Generated from this page's content.",
+      "followUpPlaceholder": "A question about this content?"
+    }
   },
   "auth": {
     "login": {

@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Badge, ButtonLink } from "@/components/ui";
-import { getArticleBySlug } from "@/lib/api/articles";
-import { sanitizeArticleHtml, getArticleExcerpt } from "@/lib/sanitize";
+import { Badge, Breadcrumb, ButtonLink, Card, HeroBackground, ReadingProgressBar, Reveal } from "@/components/ui";
+import { NextUpCard } from "@/components/sections/NextUpCard";
+import { AiPageInsight } from "@/components/ai-assistant/AiPageInsight";
+import { getArticleBySlug, getArticles } from "@/lib/api/articles";
+import { sanitizeArticleHtml, getArticleExcerpt, getReadingTimeMinutes } from "@/lib/sanitize";
 import { getMediaUrl } from "@/lib/media";
+import { articleImageTransitionName } from "@/lib/viewTransitionNames";
 import { jsonLdScript } from "@/lib/json-ld";
 import { siteConfig } from "@/config/site";
 import { resolveOgLocale, SITE_URL } from "@/lib/metadata";
@@ -55,16 +59,27 @@ export default async function ArticleDetailPage({
   params: Promise<{ slug: string; locale: string }>;
 }) {
   const { slug, locale } = await params;
-  const [article, t] = await Promise.all([
+  const [article, articles, t, tc] = await Promise.all([
     getArticleBySlug(slug, locale),
+    getArticles(locale),
     getTranslations({ locale, namespace: "blog" }),
+    getTranslations({ locale, namespace: "common" }),
   ]);
 
   if (!article) {
     notFound();
   }
 
+  // Article suivant dans la liste (bouclé : le dernier renvoie au premier),
+  // affiché en fin de page plutôt qu'un simple lien retour — cf. NextUpCard.
+  // Masqué s'il n'y a qu'un seul article publié (n'aurait rien à proposer).
+  const currentIndex = articles.findIndex((a) => a.slug === article.slug);
+  const nextArticle = articles.length > 1 ? articles[(currentIndex + 1) % articles.length] : null;
+  const nextArticleImage = nextArticle?.media[0] ? getMediaUrl(nextArticle.media[0].filePath) : undefined;
+
   const articleImage = article.media[0] ? getMediaUrl(article.media[0].filePath) : undefined;
+  const readingTime = getReadingTimeMinutes(article.content);
+
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -75,36 +90,105 @@ export default async function ArticleDetailPage({
   };
 
   return (
-    <article className="px-6 py-16">
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdScript(articleJsonLd) }}
       />
-      <div className="mx-auto max-w-[760px]">
-        {article.tags.length > 0 && (
-          <div className="mb-4 flex flex-wrap gap-1.5">
-            {article.tags.map((tag) => (
-              <Badge key={tag.id} variant="outline">
-                {tag.name}
-              </Badge>
-            ))}
+      <ReadingProgressBar />
+
+      {/* Même habillage (fond dégradé + grille de points) que le hero de
+          toutes les autres pages publiques, cf. PageHero — jusqu'ici absent
+          des pages de détail, qui tranchaient à plat sur le reste du site. */}
+      <section className="relative overflow-hidden px-6 pt-14 pb-8">
+        <HeroBackground />
+        <div className="relative mx-auto max-w-[760px]">
+          <div className="mb-6">
+            <Breadcrumb items={[{ label: t("eyebrow"), href: "/blog" }, { label: article.title }]} />
           </div>
-        )}
-        <h1 className="mb-8 text-[clamp(2.25rem,4.5vw,3.75rem)] leading-[1.14]">
-          {article.title}
-        </h1>
-        {/* Contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
-            serveur en défense en profondeur avant injection. */}
-        <div
-          className="article-body opacity-85"
-          dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(article.content) }}
-        />
-        <div className="mt-10 border-t border-[var(--border-softer)] pt-6">
-          <ButtonLink href="/blog" variant="secondary">
-            {t("eyebrow")} ←
-          </ButtonLink>
+          <div className="hero-in mb-4 flex flex-wrap items-center gap-3" style={{ animationDelay: "0s" }}>
+            <Badge variant="accent">{t("eyebrow")}</Badge>
+            <span className="text-sm font-medium opacity-60">{t("readingTime", { minutes: readingTime })}</span>
+          </div>
+          {/* Volontairement pas de classe hero-in sur le h1 : candidat LCP le
+              plus probable de la page, cf. commentaire dans PageHero.tsx.
+              Taille alignée sur PageHero.tsx (clamp(1.75rem,3vw,2.75rem)) —
+              la référence utilisée initialement ici était surdimensionnée et
+              cassait la cohérence avec le reste du site. */}
+          <h1 className="mb-4 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
+            {article.title}
+          </h1>
+          {article.tags.length > 0 && (
+            <div className="hero-in mb-5 flex flex-wrap gap-1.5" style={{ animationDelay: "0.16s" }}>
+              {article.tags.map((tag) => (
+                <Badge key={tag.id} variant="outline">
+                  {tag.name}
+                </Badge>
+              ))}
+            </div>
+          )}
+          {/* Dans le hero, pas en fin de page : un visiteur qui ne lit pas
+              jusqu'au bout ne verrait jamais l'offre de résumé sinon (retour
+              direct suite à ce constat). */}
+          <div className="hero-in" style={{ animationDelay: "0.24s" }}>
+            <AiPageInsight slug={article.slug} contentType="article" />
+          </div>
         </div>
-      </div>
-    </article>
+      </section>
+
+      {articleImage && (
+        <section className="px-6 pb-6">
+          <div className="mx-auto max-w-[760px]">
+            <Reveal delay={0}>
+              <Card variant="soft" className="overflow-hidden p-0">
+                <div
+                  className="vt-target relative h-[240px] w-full bg-brand-light sm:h-[380px]"
+                  style={{ viewTransitionName: articleImageTransitionName(article.id) }}
+                >
+                  <Image
+                    src={articleImage}
+                    alt={article.media[0]?.altText ?? article.title}
+                    fill
+                    sizes="760px"
+                    className="object-cover"
+                    priority
+                  />
+                </div>
+              </Card>
+            </Reveal>
+          </div>
+        </section>
+      )}
+
+      <section className="article-detail px-6 pt-2 pb-16">
+        <div className="mx-auto max-w-[760px]">
+          {/* Contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
+              serveur en défense en profondeur avant injection. */}
+          <div
+            className="article-body opacity-85"
+            dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(article.content) }}
+          />
+
+          <div className="mt-10 border-t border-[var(--border-softer)] pt-6">
+            <ButtonLink href="/blog" variant="secondary" className="mb-6">
+              {t("eyebrow")} ←
+            </ButtonLink>
+            {nextArticle && (
+              <Reveal delay={0}>
+                <NextUpCard
+                  eyebrow={t("nextArticle")}
+                  title={nextArticle.title}
+                  cta={tc("readMore")}
+                  href={{ pathname: "/blog/[slug]", params: { slug: nextArticle.slug } }}
+                  image={nextArticleImage}
+                  imageAlt={nextArticle.media[0]?.altText ?? nextArticle.title}
+                  imageTransitionName={articleImageTransitionName(nextArticle.id)}
+                />
+              </Reveal>
+            )}
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

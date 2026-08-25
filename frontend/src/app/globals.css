@@ -197,6 +197,37 @@
       scroll-behavior: auto !important;
     }
   }
+
+  /* Transitions de page (API View Transitions du navigateur, cf.
+     useViewTransitionNavigation.ts) — `*`/`*::before`/`*::after` ci-dessus ne
+     matchent PAS les pseudo-éléments ::view-transition-* (rendus dans un
+     "top layer" séparé, hors de l'arbre DOM normal) : neutralisation dédiée,
+     recommandée telle quelle par le guide View Transitions de Next.js. */
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0s !important;
+    }
+  }
+
+  /* Pendant une transition, l'overlay ::view-transition capte les clics —
+     sans ça, les clics pendant l'animation (courte, ~250ms) sont perdus. */
+  ::view-transition {
+    pointer-events: none;
+  }
+
+  /* Le header (sticky) ne doit pas participer au fondu de page — sinon deux
+     copies (ancienne + nouvelle) se chevauchent brièvement à l'identique,
+     un flash inutile puisqu'il ne change jamais entre deux pages du site. */
+  ::view-transition-group(site-header) {
+    animation: none;
+  }
+  ::view-transition-old(site-header),
+  ::view-transition-new(site-header) {
+    animation: none;
+  }
 }
 
 @layer components {
@@ -418,10 +449,189 @@
     box-shadow: 0 12px 28px -6px var(--assistant-shadow);
   }
 
+  /* AiPageInsight (résumé IA d'un article/projet) : identité visuelle
+     distincte d'AiAssistantWidget (crème/terracotta ci-dessus, --assistant-*)
+     — dégradé de marque du site (--cta-gradient-*, même que .btn-primary) +
+     bordure scintillante animée + halo lumineux qui respire, pour se lire
+     comme une capacité de LA PAGE plutôt qu'un second produit de chat.
+     Bordure dégradée sans pseudo-élément supplémentaire : deux fonds
+     superposés, l'un clippé au padding-box (fond réel de la carte), l'autre
+     au border-box (le dégradé, visible uniquement sur les 1,5px de `border:
+     solid transparent`) — le "flux lumineux" vient de `background-position`
+     animé sur ce second calque (un dégradé linéaire bien plus large que la
+     bordure qui défile en boucle). Volontairement PAS de rotation via
+     `conic-gradient(from <angle animée par @property>)` : @property imbriqué
+     dans `@layer` n'est pas fiable avec la chaîne de build CSS de ce projet
+     (constaté en pratique — le `var()` invalide fait tomber tout le raccourci
+     `background` à `none`) ; `background-position` est une technique standard
+     sans cette dépendance, tout aussi "vivante". Le premier calque utilise un
+     dégradé plat (même couleur aux deux bornes) plutôt qu'une couleur unie
+     directe : `background-color` n'est autorisé que sur le DERNIER calque
+     d'un raccourci `background` multi-calques — une couleur unie sur un
+     calque antérieur invalide silencieusement tout le raccourci (constaté en
+     pratique : les 7 propriétés longues qu'il développe retombaient toutes à
+     une valeur vide, donc `background-image: none` au final). */
+  .ai-insight-shell {
+    position: relative;
+    isolation: isolate;
+    border: 1.5px solid transparent;
+    border-radius: calc(var(--radius-lg) + 2px);
+    background:
+      linear-gradient(var(--color-bg-card), var(--color-bg-card)) padding-box,
+      linear-gradient(
+          115deg,
+          var(--cta-gradient-from) 0%,
+          var(--color-brand-accent) 20%,
+          var(--cta-gradient-to) 40%,
+          var(--cta-gradient-from) 60%,
+          var(--color-brand-accent) 80%,
+          var(--cta-gradient-to) 100%
+        )
+        border-box;
+    background-size:
+      100% 100%,
+      300% 300%;
+    /* Deux animations sur une seule déclaration `animation` — jamais deux
+       classes séparées portant chacune un raccourci `animation` sur le même
+       élément : la dernière règle du cascade l'emporte ENTIÈREMENT sur
+       `animation` (pas de fusion propriété par propriété comme pour
+       `background`), donc la deuxième écraserait silencieusement la
+       première (constaté en pratique avec .ai-insight-panel-in). */
+    animation:
+      ai-insight-border-flow 7s linear infinite,
+      ai-insight-panel-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+    box-shadow:
+      0 24px 60px -18px color-mix(in srgb, var(--cta-gradient-from) 55%, transparent),
+      0 10px 30px -12px rgba(0, 0, 0, 0.35),
+      0 0 0 1px color-mix(in srgb, var(--color-brand-accent) 12%, transparent);
+  }
+  @keyframes ai-insight-border-flow {
+    0% {
+      background-position: 0 0, 0% 50%;
+    }
+    100% {
+      background-position: 0 0, 200% 50%;
+    }
+  }
+  /* Halo flou derrière le panneau, qui respire lentement — jamais figé,
+     discret (z-index négatif contenu par `isolation: isolate` ci-dessus,
+     ne fuit pas sous le reste de la page). */
+  .ai-insight-shell::before {
+    content: "";
+    position: absolute;
+    inset: -20px;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-brand-accent) 40%, transparent),
+      transparent 72%
+    );
+    filter: blur(22px);
+    animation: ai-insight-glow-pulse 3.4s ease-in-out infinite;
+  }
+  @keyframes ai-insight-glow-pulse {
+    0%,
+    100% {
+      opacity: 0.5;
+      transform: scale(0.96);
+    }
+    50% {
+      opacity: 0.85;
+      transform: scale(1.04);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ai-insight-shell {
+      animation: none;
+    }
+    .ai-insight-shell::before {
+      animation: none;
+      opacity: 0.6;
+    }
+  }
+  /* Entrée du panneau à l'ouverture — glisse et apparaît depuis son point
+     d'ancrage plutôt que de surgir brutalement. Référencée directement dans
+     la déclaration `animation` combinée de .ai-insight-shell ci-dessus, pas
+     via une classe séparée (cf. son commentaire). */
+  @keyframes ai-insight-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  /* Anneau pulsé discret derrière l'icône du header, même grammaire que
+     .assistant-ping mais coloré marque du site (pas --assistant-accent) —
+     appuie l'identité "IA en action" sans dupliquer l'autre widget. */
+  @keyframes ai-insight-icon-pulse {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, white 55%, transparent);
+    }
+    100% {
+      box-shadow: 0 0 0 10px color-mix(in srgb, white 0%, transparent);
+    }
+  }
+  .ai-insight-icon-pulse {
+    animation: ai-insight-icon-pulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ai-insight-icon-pulse {
+      animation: none;
+    }
+  }
+
   /* Contenu HTML des articles et projets (rédigé côté admin Symfony, éditeur
      riche — cf. backend/assets/controllers/rich_text_controller.js) */
   .article-body :where(p) {
     margin: 0 0 1.1em;
+  }
+  /* Lettrine sur le tout premier paragraphe — traitement éditorial, pas de
+     JS. `.article-detail` scope volontairement le traitement à l'article —
+     la description d'un projet (qui partage aussi `.article-body`, cf.
+     commentaire dans blog/[slug]/page.tsx) est trop courte pour qu'une
+     lettrine y ait du sens. Deux sélecteurs : Quill enveloppe normalement
+     tout paragraphe dans un <p>, mais le contenu de certains articles
+     (vérifié en pratique) est du texte brut sans wrapper — le second
+     sélecteur couvre ce cas (mêmes propriétés, sans effet de conflit si les
+     deux s'appliquaient à la fois). Sans effet si l'article commence par une
+     image ou un titre, ce n'est pas critique. */
+  .article-detail .article-body > :where(p):first-of-type::first-letter,
+  .article-detail .article-body::first-letter {
+    float: left;
+    font-family: var(--font-heading);
+    font-size: 3.4em;
+    line-height: 0.85;
+    font-weight: 700;
+    color: var(--color-brand-primary);
+    margin: 0.03em 0.08em 0 0;
+  }
+  /* Citation en évidence, façon magazine — plus qu'un simple filet de
+     couleur : grande taille, signe de citation décoratif. */
+  .article-body :where(blockquote) {
+    position: relative;
+    margin: 1.6em 0;
+    padding: 0.2em 0 0.2em 1.3em;
+    border-left: 3px solid var(--color-brand-primary);
+    font-family: var(--font-heading);
+    font-size: 1.25em;
+    line-height: 1.45;
+    font-style: italic;
+    color: var(--color-brand-dark);
+  }
+  .article-body :where(blockquote)::before {
+    content: "\201C";
+    position: absolute;
+    left: -0.05em;
+    top: -0.15em;
+    font-family: var(--font-heading);
+    font-size: 2.2em;
+    font-style: normal;
+    color: var(--color-brand-primary);
+    opacity: 0.35;
   }
   /* h1 dans le corps : distinct du h1 de page (titre de l'article/projet,
      affiché séparément juste au-dessus) — volontairement plus petit pour ne
@@ -458,13 +668,6 @@
     border-radius: var(--radius-md);
     margin: 1.2em 0;
     max-width: 100%;
-  }
-  .article-body :where(blockquote) {
-    margin: 0 0 1.1em;
-    padding-left: 1em;
-    border-left: 3px solid var(--color-brand-primary);
-    opacity: 0.85;
-    font-style: italic;
   }
   .article-body :where(code) {
     font-family: var(--font-mono);

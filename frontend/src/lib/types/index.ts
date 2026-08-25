@@ -214,6 +214,26 @@ export type AiAssistantChatResult =
   | { ok: true; answer: string; suggestions: string[] }
   | { ok: false; error: "rate_limited" | "unavailable" | "network_error" };
 
+/**
+ * cf. App\ApiResource\AiContentSummaryApiResource — endpoint dédié au résumé,
+ * distinct du chat FAQ (App\ApiResource\AiAssistantChatApiResource).
+ *
+ * Volontairement PAS de `title`/`content` ici : le serveur résout le contenu
+ * réel depuis `slug` (AiContentSummaryProcessor::resolveContent()) plutôt
+ * que de faire confiance à un texte fourni par l'appelant — cf. le docblock
+ * de AiContentSummaryApiResource pour la faille que ça fermait (contenu
+ * arbitraire injectable directement dans le system prompt, hors filtre
+ * anti-injection).
+ */
+export interface AiContentSummaryPayload {
+  slug: string;
+  contentType: "article" | "project";
+  /** Question de suivi du visiteur — vide sur le premier appel (résumé initial, cf. AiContentSummaryProcessor::defaultSeedQuestion). */
+  question: string;
+  history: Array<{ role: "user" | "assistant"; text: string }>;
+  locale: string;
+}
+
 /** Miroir du groupe `api_public` de App\Entity\ContactMessage. */
 export interface ContactMessagePayload {
   source: string;

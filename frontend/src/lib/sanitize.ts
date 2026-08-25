@@ -16,7 +16,7 @@ import sanitizeHtml from "sanitize-html";
  * dans globals.css, plus la mise en forme usuelle.
  */
 export function sanitizeArticleHtml(dirty: string): string {
-  return sanitizeHtml(dirty, {
+  return normalizeNonBreakingSpaces(sanitizeHtml(dirty, {
     allowedTags: [
       "p", "br", "hr",
       "h1", "h2", "h3", "h4",
@@ -48,7 +48,20 @@ export function sanitizeArticleHtml(dirty: string): string {
       }),
     },
     disallowedTagsMode: "discard",
-  });
+  }));
+}
+
+/**
+ * Remplace les espaces insécables (entité `&nbsp;` ou caractère U+00A0 déjà
+ * décodé) par de vraies espaces normales. Sans ça, un contenu collé depuis
+ * une source qui en truffe le texte (Word, certains exports) devient un seul
+ * bloc insécable : le navigateur ne peut plus y couper de ligne, le texte
+ * déborde de son conteneur au lieu de passer à la ligne (constaté en
+ * pratique sur un article réel — cf. rich_text_controller.js pour le même
+ * traitement côté saisie, qui empêche la pollution à la source).
+ */
+function normalizeNonBreakingSpaces(html: string): string {
+  return html.replace(/&nbsp;/gi, " ").replace(/\u00a0/g, " ");
 }
 
 /** Extrait un résumé texte brut du contenu d'un article, pour les meta description / JSON-LD. */
@@ -59,4 +72,11 @@ export function getArticleExcerpt(dirty: string, maxLength = 155): string {
 
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+/** Temps de lecture estimé (minutes, arrondi au supérieur, jamais 0) — ~200 mots/min en lecture silencieuse. */
+export function getReadingTimeMinutes(dirty: string, wordsPerMinute = 200): number {
+  const text = sanitizeHtml(dirty, { allowedTags: [], allowedAttributes: {} }).trim();
+  const wordCount = text.length > 0 ? text.split(/\s+/).length : 0;
+  return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
 }

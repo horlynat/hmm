@@ -326,7 +326,8 @@
       "deadlineInDays": "{days, plural, one {Dans # jour} other {Dans # jours}}",
       "deadlineOverdueDays": "{days, plural, one {En retard d'# jour} other {En retard de # jours}}",
       "invoicesLabel": "Factures liées",
-      "viewAllInvoices": "Voir toutes mes factures"
+      "viewAllInvoices": "Voir toutes mes factures",
+      "nextProject": "Projet suivant"
     },
     "cta": {
       "title": "Un projet en tête ?",
@@ -341,6 +342,8 @@
     "titleAccent": "et retours d'expérience.",
     "sub": "Réflexions sur l'architecture, les choix techniques et ma vision du métier — entre développement, cybersécurité et assurance.",
     "empty": "Les articles seront affichés ici dès leur publication.",
+    "readingTime": "{minutes} min de lecture",
+    "nextArticle": "Article suivant",
     "stats": {
       "articles": "Articles publiés",
       "topics": "Sujets abordés"
@@ -350,8 +353,7 @@
       "text": "Un e-mail occasionnel, pas de spam — seulement quand un nouvel article ou un nouveau projet sort.",
       "placeholder": "vous@exemple.com",
       "submit": "S'abonner",
-      "success": "Inscription confirmée, merci !",
-      "note": "Fonctionnalité à venir — les inscriptions ne sont pas encore enregistrées."
+      "success": "Presque ! Vérifiez votre boîte mail pour confirmer votre inscription."
     }
   },
   "freelances": {
@@ -838,7 +840,13 @@
     "answerProjet": "Décrivez-moi le type de prestation, votre budget indicatif et votre délai souhaité, et je préparerai votre demande pour Horlynat.",
     "thinking": "L'assistant réfléchit…",
     "errorRateLimited": "Trop de questions envoyées. Merci de patienter un peu avant de réessayer.",
-    "errorUnavailable": "L'assistant conversationnel est momentanément indisponible."
+    "errorUnavailable": "L'assistant conversationnel est momentanément indisponible.",
+    "pageInsight": {
+      "cta": "Demander un résumé à l'IA",
+      "title": "Résumé par l'IA",
+      "disclaimer": "Généré à partir du contenu de cette page.",
+      "followUpPlaceholder": "Une question sur ce contenu ?"
+    }
   },
   "auth": {
     "login": {

@@ -2,15 +2,19 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Badge, ButtonLink, Card, Reveal } from "@/components/ui";
+import { AnimatedStatValue, Badge, Breadcrumb, ButtonLink, Card, HeroBackground, ReadingProgressBar, Reveal } from "@/components/ui";
 import { ProjectVisual } from "@/components/sections/ProjectVisual";
-import { getProjectBySlug, getProjectSlugs } from "@/lib/api/projects";
+import { NextUpCard } from "@/components/sections/NextUpCard";
+import { ProjectDeviceFrame } from "@/components/sections/ProjectDeviceFrame";
+import { AiPageInsight } from "@/components/ai-assistant/AiPageInsight";
+import { getProjectBySlug, getProjects, getProjectSlugs } from "@/lib/api/projects";
 import { getMediaUrl } from "@/lib/media";
 import { jsonLdScript } from "@/lib/json-ld";
 import { siteConfig } from "@/config/site";
 import { projectStatusVariant } from "@/lib/status";
 import { resolveOgLocale, SITE_URL } from "@/lib/metadata";
 import { getArticleExcerpt, sanitizeArticleHtml } from "@/lib/sanitize";
+import { projectImageTransitionName } from "@/lib/viewTransitionNames";
 
 export const dynamic = "force-static";
 
@@ -88,8 +92,9 @@ export default async function ProjectDetailPage({
   params: Promise<{ slug: string; locale: string }>;
 }) {
   const { slug, locale } = await params;
-  const [project, t, td, tc] = await Promise.all([
+  const [project, projects, t, td, tc] = await Promise.all([
     getProjectBySlug(slug, locale),
+    getProjects(locale),
     getTranslations({ locale, namespace: "projects" }),
     getTranslations({ locale, namespace: "projects.detail" }),
     getTranslations({ locale, namespace: "common" }),
@@ -101,6 +106,15 @@ export default async function ProjectDetailPage({
 
   const tStatus = await getTranslations({ locale, namespace: "projects.status" });
   const info = project.info;
+
+  // Projet suivant dans la liste (bouclé : le dernier renvoie au premier),
+  // affiché en fin de page plutôt qu'un simple lien retour — cf. NextUpCard.
+  // Masqué s'il n'y a qu'un seul projet publié (n'aurait rien à proposer).
+  const currentIndex = projects.findIndex((p) => p.slug === project.slug);
+  const nextProject = projects.length > 1 ? projects[(currentIndex + 1) % projects.length] : null;
+  const nextProjectImage = nextProject?.info?.coverImage
+    ? getMediaUrl(nextProject.info.coverImage.filePath)
+    : undefined;
   // `project.media ?? []` : robuste si l'API ne renvoie pas encore ce champ
   // (cache de fetch antérieur à son passage en `api_public`, backend plus
   // ancien, etc.) — le frontend et le backend sont déployés séparément.
@@ -126,24 +140,44 @@ export default async function ProjectDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdScript(projectJsonLd) }}
       />
-      <section className="px-6 pt-14 pb-8">
-        <div className="mx-auto max-w-[840px]">
-          <h1 className="mb-5 text-[clamp(1.25rem,2.5vw,1.75rem)] leading-[1.14]">
+      <ReadingProgressBar />
+      {/* Même habillage (fond dégradé + grille de points) que le hero de
+          toutes les autres pages publiques, cf. PageHero — jusqu'ici absent
+          des pages de détail, qui tranchaient à plat sur le reste du site
+          (h1 notamment réduit à une taille de sous-titre). */}
+      <section className="relative overflow-hidden px-6 pt-14 pb-8">
+        <HeroBackground />
+        <div className="relative mx-auto max-w-[840px]">
+          <div className="mb-6">
+            <Breadcrumb items={[{ label: t("eyebrow"), href: "/realisations" }, { label: project.title }]} />
+          </div>
+          <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
+            {t("eyebrow")}
+          </Badge>
+          {/* Volontairement pas de classe hero-in sur le h1 : candidat LCP le
+              plus probable de la page, cf. commentaire dans PageHero.tsx.
+              Taille alignée sur PageHero.tsx (clamp(1.75rem,3vw,2.75rem)) —
+              ni la taille de sous-titre d'origine (clamp(1.25rem,2.5vw,1.75rem))
+              ni la taille surdimensionnée choisie ensuite (calée sur l'ancien
+              h1 de l'article, lui-même trop grand) ne correspondaient au
+              standard déjà établi sur le reste du site. */}
+          <h1 className="mb-5 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
             {project.title}
           </h1>
           {/* Contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
               serveur en défense en profondeur avant injection — même
               traitement que le corps d'article, cf. blog/[slug]/page.tsx. */}
           <div
-            className="article-body mb-3 max-w-[65ch] text-[1.05rem] opacity-75"
+            className="article-body hero-in mb-3 max-w-[65ch] text-[1.05rem] opacity-75"
+            style={{ animationDelay: "0.16s" }}
             dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(project.description) }}
           />
           {info?.role && (
-            <p className="mb-8 text-sm font-semibold text-brand-primary">
+            <p className="hero-in mb-8 text-sm font-semibold text-brand-primary" style={{ animationDelay: "0.16s" }}>
               {td("roleLabel")} — {info.role}
             </p>
           )}
-          <div className="flex flex-wrap gap-3.5">
+          <div className="hero-in flex flex-wrap gap-3.5" style={{ animationDelay: "0.24s" }}>
             {project.link ? (
               <>
                 <a href={project.link} target="_blank" rel="noopener" className="btn-primary">
@@ -167,13 +201,21 @@ export default async function ProjectDetailPage({
               </a>
             )}
           </div>
+          {/* Dans le hero, pas en fin de page : un visiteur qui ne lit pas
+              jusqu'au bout ne verrait jamais l'offre de résumé sinon. */}
+          <div className="hero-in mt-6" style={{ animationDelay: "0.32s" }}>
+            <AiPageInsight slug={project.slug} contentType="project" />
+          </div>
         </div>
       </section>
 
       <section className="px-6 py-6">
         <div className="mx-auto max-w-[840px]">
-          <Card variant="soft" className="overflow-hidden p-0">
-            <div className="relative h-[260px] w-full bg-brand-light sm:h-[320px]">
+          <ProjectDeviceFrame liveUrl={project.link || undefined} liveLabel={tc("seeProject")}>
+            <div
+              className={info?.coverImage ? "vt-target relative h-[260px] w-full bg-brand-light sm:h-[320px]" : "relative h-[260px] w-full bg-brand-light sm:h-[320px]"}
+              style={info?.coverImage ? { viewTransitionName: projectImageTransitionName(project.id) } : undefined}
+            >
               {info?.coverImage ? (
                 <Image
                   src={getMediaUrl(info.coverImage.filePath)}
@@ -192,9 +234,38 @@ export default async function ProjectDetailPage({
                 {tStatus(project.status)}
               </Badge>
             </div>
-          </Card>
+          </ProjectDeviceFrame>
         </div>
       </section>
+
+      {/* La preuve d'impact vient tout de suite après la couverture, avant
+          l'architecture/la stack/les défis : on mène par le résultat plutôt
+          que de le faire attendre en bas de page derrière les détails
+          techniques — c'est le contenu le plus "vendeur" de la page. */}
+      {info && info.results.length > 0 && (
+        <section className="border-y border-[var(--border-softer)] bg-bg-card px-6 py-14">
+          <div className="mx-auto max-w-[840px]">
+            <Reveal delay={0}>
+              <h2 className="mb-6 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                {td("resultsLabel")}
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                {info.results.map((result) => (
+                  <div key={result.label} className="soft-card p-5 text-center">
+                    <div
+                      className="mb-1 text-[clamp(1.5rem,3vw,2rem)] font-semibold text-brand-primary"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      <AnimatedStatValue value={result.value} />
+                    </div>
+                    <div className="text-sm opacity-70">{result.label}</div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+        </section>
+      )}
 
       {info?.architectureDiagram && (
         <section className="px-6 py-6">
@@ -313,36 +384,24 @@ export default async function ProjectDetailPage({
         </section>
       )}
 
-      {info && info.results.length > 0 && (
-        <section className="border-y border-[var(--border-softer)] bg-bg-card px-6 py-14">
-          <div className="mx-auto max-w-[840px]">
-            <Reveal delay={0}>
-              <h2 className="mb-6 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-                {td("resultsLabel")}
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                {info.results.map((result) => (
-                  <div key={result.label} className="soft-card p-5 text-center">
-                    <div
-                      className="mb-1 text-[clamp(1.5rem,3vw,2rem)] font-semibold text-brand-primary"
-                      style={{ fontFamily: "var(--font-heading)" }}
-                    >
-                      {result.value}
-                    </div>
-                    <div className="text-sm opacity-70">{result.label}</div>
-                  </div>
-                ))}
-              </div>
-            </Reveal>
-          </div>
-        </section>
-      )}
-
       <section className="px-6 py-10">
         <div className="mx-auto max-w-[840px] border-t border-[var(--border-softer)] pt-6">
-          <ButtonLink href="/realisations" variant="secondary">
+          <ButtonLink href="/realisations" variant="secondary" className="mb-6">
             {t("eyebrow")} ←
           </ButtonLink>
+          {nextProject && (
+            <Reveal delay={0}>
+              <NextUpCard
+                eyebrow={td("nextProject")}
+                title={nextProject.title}
+                cta={tc("seeDetails")}
+                href={{ pathname: "/realisations/[slug]", params: { slug: nextProject.slug } }}
+                image={nextProjectImage}
+                imageAlt={nextProject.info?.coverImage?.altText ?? nextProject.title}
+                imageTransitionName={projectImageTransitionName(nextProject.id)}
+              />
+            </Reveal>
+          )}
         </div>
       </section>
     </>
