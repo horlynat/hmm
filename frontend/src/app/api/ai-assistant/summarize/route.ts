@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = (await request.json().catch(() => null)) as AiContentSummaryPayload | null;
-  if (!body || typeof body.title !== "string" || !body.title.trim() || typeof body.content !== "string" || !body.content.trim()) {
+  if (!body || typeof body.slug !== "string" || !body.slug.trim()) {
     return NextResponse.json({ ok: false, error: "invalid_input" }, { status: 400 });
   }
 
@@ -34,8 +34,7 @@ export async function POST(request: NextRequest) {
         ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
       },
       body: JSON.stringify({
-        title: body.title,
-        content: body.content,
+        slug: body.slug,
         contentType: body.contentType === "project" ? "project" : "article",
         question: typeof body.question === "string" ? body.question : "",
         history: Array.isArray(body.history) ? body.history : [],

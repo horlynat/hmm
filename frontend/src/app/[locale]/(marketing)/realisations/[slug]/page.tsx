@@ -122,21 +122,6 @@ export default async function ProjectDetailPage({
     (m) => m.id !== info?.coverImage?.id && m.id !== info?.architectureDiagram?.id,
   );
 
-  // Texte brut pour AiPageInsight — /api/ai-assistant/summarize (endpoint
-  // dédié au résumé) valide `content` à 6000 caractères max côté backend.
-  // Agrège tout ce qui donne une vraie matière (description, rôle,
-  // objectifs, stack, résultats chiffrés) — pas seulement `description`,
-  // souvent trop courte à elle seule pour un résumé convaincant.
-  const projectPlainContent = [
-    getArticleExcerpt(project.description, 2000),
-    info?.role ? `Rôle : ${info.role}.` : "",
-    info?.objectives.length ? `Objectifs : ${info.objectives.join(" ; ")}.` : "",
-    info?.techStack.length ? `Stack technique : ${info.techStack.map((tech) => tech.name).join(", ")}.` : "",
-    info?.results.length ? `Résultats : ${info.results.map((r) => `${r.label} : ${r.value}`).join(" ; ")}.` : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
-
   const projectImage = info?.coverImage ? getMediaUrl(info.coverImage.filePath) : undefined;
   const projectJsonLd = {
     "@context": "https://schema.org",
@@ -219,7 +204,7 @@ export default async function ProjectDetailPage({
           {/* Dans le hero, pas en fin de page : un visiteur qui ne lit pas
               jusqu'au bout ne verrait jamais l'offre de résumé sinon. */}
           <div className="hero-in mt-6" style={{ animationDelay: "0.32s" }}>
-            <AiPageInsight title={project.title} content={projectPlainContent} contentType="project" />
+            <AiPageInsight slug={project.slug} contentType="project" />
           </div>
         </div>
       </section>

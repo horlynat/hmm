@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocale, useTranslations } from "next-intl";
 import { Send, Sparkles, X } from "lucide-react";
@@ -12,9 +12,13 @@ interface Message {
 }
 
 interface AiPageInsightProps {
-  title: string;
-  /** Texte brut (HTML déjà retiré), déjà borné en longueur côté page — cf. blog/[slug] et realisations/[slug]. */
-  content: string;
+  /**
+   * Slug de l'article/projet — jamais son contenu : le serveur résout et
+   * construit le texte à résumer lui-même depuis l'entité réelle en base
+   * (App\State\AiContentSummaryProcessor::resolveContent()). Le client ne
+   * fournit intentionnellement PAS `title`/`content` — cf. docblock ci-dessous.
+   */
+  slug: string;
   contentType: "article" | "project";
 }
 
@@ -28,28 +32,44 @@ interface AiPageInsightProps {
  * question et de ne s'appuyer QUE sur un corpus curé — testé en pratique,
  * réutiliser ce chat pour résumer un article produisait des réponses
  * évasives ("je n'ai pas accès au contenu complet"). L'endpoint dédié a un
- * prompt taillé pour la tâche : `content` EST la matière à résumer.
+ * prompt taillé pour la tâche : le contenu résolu côté serveur EST la
+ * matière à résumer.
+ *
+ * Sécurité — ne JAMAIS envoyer `title`/`content` depuis ce composant : une
+ * première version le faisait, et rien côté API n'empêchait un appelant
+ * direct (hors de cette page) de forger un contenu arbitraire, qui
+ * atterrissait tel quel dans la partie SYSTEM du prompt Claude, hors du
+ * filtre anti-injection (cf. docblock de AiContentSummaryApiResource côté
+ * backend pour le détail). On n'envoie que `slug` : une donnée opaque, sans
+ * valeur d'injection possible, que le serveur résout lui-même contre
+ * l'entité réelle. Le texte affiché dans les bulles (réponse ET question du
+ * visiteur) passe par `{m.text}` en JSX, jamais `dangerouslySetInnerHTML` —
+ * React échappe systématiquement, aucune injection HTML possible même si le
+ * modèle renvoyait du balisage.
  *
  * Identité visuelle volontairement DIFFÉRENTE d'AiAssistantWidget.tsx (crème
  * + terracotta + serif éditorial, pensé comme un produit conversationnel à
  * part) : ici, dégradé de marque du site (--cta-gradient-from/to, le même
- * que .btn-primary et les CTA de clôture des pages liste) + jetons de marque
- * standard — pour se lire comme une capacité de LA PAGE elle-même, pas
+ * que .btn-primary et les CTA de clôture des pages liste) + bordure
+ * scintillante tournante + halo lumineux (cf. .ai-insight-shell dans
+ * globals.css) — pour se lire comme une capacité de LA PAGE elle-même, pas
  * comme "vous parlez maintenant à un autre produit".
  *
  * Présentation en fenêtre flottante ancrée à droite, rendue via un portail
  * React (document.body) — pas inline dans le flux de la page : ne déforme
  * jamais la mise en page du hero, et le visiteur peut continuer à lire
  * l'article pendant que le panneau reste ouvert à côté (retour utilisateur
- * explicite). Le portail est nécessaire, pas cosmétique : le bouton
- * déclencheur est enveloppé dans un `.hero-in` dont l'animation pose un
- * `transform` persistant (fill-mode both) sur son conteneur — n'importe quel
- * ancêtre avec un `transform` non-`none` devient un "containing block" CSS
- * pour tout descendant `position: fixed`, qui se positionnerait alors par
- * rapport à CET ancêtre au lieu du vrai viewport (constaté en pratique : le
- * panneau se retrouvait mal placé/coupé). Le portail sort le panneau de cet
- * arbre DOM, hors d'atteinte de ce piège CSS classique, quel que soit
- * l'ancêtre du bouton qui l'a ouvert.
+ * explicite — donc pas de fond assombri qui gênerait cette lecture : la
+ * fermeture au clic extérieur passe par une couche invisible, cf. plus bas).
+ * Le portail est nécessaire, pas cosmétique : le bouton déclencheur est
+ * enveloppé dans un `.hero-in` dont l'animation pose un `transform`
+ * persistant (fill-mode both) sur son conteneur — n'importe quel ancêtre
+ * avec un `transform` non-`none` devient un "containing block" CSS pour tout
+ * descendant `position: fixed`, qui se positionnerait alors par rapport à
+ * CET ancêtre au lieu du vrai viewport (constaté en pratique : le panneau se
+ * retrouvait mal placé/coupé). Le portail sort le panneau de cet arbre DOM,
+ * hors d'atteinte de ce piège CSS classique, quel que soit l'ancêtre du
+ * bouton qui l'a ouvert.
  *
  * Volontairement PAS déclenché automatiquement au chargement : chaque appel
  * accepté par le backend coûte réellement (Claude, cf. App\Service\
@@ -57,7 +77,7 @@ interface AiPageInsightProps {
  * flottante (20/h, cf. route.ts) — seul un clic explicite du visiteur
  * déclenche le premier appel.
  */
-export function AiPageInsight({ title, content, contentType }: AiPageInsightProps) {
+export function AiPageInsight({ slug, contentType }: AiPageInsightProps) {
   const t = useTranslations("aiAssistant");
   const tp = useTranslations("aiAssistant.pageInsight");
   const locale = useLocale();
@@ -65,6 +85,36 @@ export function AiPageInsight({ title, content, contentType }: AiPageInsightProp
   const [messages, setMessages] = useState<Message[]>([]);
   const [pending, setPending] = useState(false);
   const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Défilement automatique vers le dernier message — sans ça, une réponse
+  // longue ou plusieurs tours de suivi laissent le visiteur sur un panneau
+  // qui semble figé, obligé de faire défiler lui-même pour voir la réponse.
+  useEffect(() => {
+    if (started) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages, pending, started]);
+
+  // Focus la barre de suivi dès l'ouverture — le visiteur peut enchaîner une
+  // question sans avoir à cliquer dans le champ.
+  useEffect(() => {
+    if (started) {
+      inputRef.current?.focus();
+    }
+  }, [started]);
+
+  // Fermeture au clavier (Échap) — attendu sur toute fenêtre flottante de ce
+  // type, cf. convention dialog standard.
+  useEffect(() => {
+    if (!started) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setStarted(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [started]);
 
   async function ask(question: string, historyBefore: Message[], displayText?: string) {
     setPending(true);
@@ -76,8 +126,7 @@ export function AiPageInsight({ title, content, contentType }: AiPageInsightProp
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title,
-          content,
+          slug,
           contentType,
           question,
           history: historyBefore.map((m) => ({
@@ -130,101 +179,115 @@ export function AiPageInsight({ title, content, contentType }: AiPageInsightProp
   }
 
   const panel = (
-    <div
-      role="dialog"
-      aria-label={tp("title")}
-      className="fixed top-24 right-6 z-40 flex max-h-[calc(100vh-8rem)] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[var(--radius-lg)] shadow-2xl"
-      style={{ background: "var(--color-bg-card)", border: "1px solid var(--border-softer)" }}
-    >
+    <>
+      {/* Couche invisible plein écran pour fermer au clic extérieur — jamais
+          de fond assombri (le visiteur doit pouvoir continuer à lire la page
+          à côté, cf. docblock). z-index sous le panneau (40), au-dessus du
+          reste de la page. */}
       <div
-        className="flex items-center gap-3 px-5 py-4 text-white"
-        style={{ background: "linear-gradient(135deg, var(--cta-gradient-from), var(--cta-gradient-to) 80%)" }}
+        className="fixed inset-0 z-30"
+        aria-hidden="true"
+        onClick={() => setStarted(false)}
+      />
+      <div
+        role="dialog"
+        aria-label={tp("title")}
+        aria-modal="false"
+        className="ai-insight-shell fixed top-24 right-6 z-40 flex max-h-[calc(100vh-8rem)] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden"
       >
-        <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15"
-          aria-hidden="true"
-        >
-          <Sparkles className="h-4 w-4" strokeWidth={2} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="text-[0.95rem] font-semibold leading-tight" style={{ fontFamily: "var(--font-heading)" }}>
-            {tp("title")}
-          </div>
-          <div className="font-mono text-[0.68rem] uppercase tracking-wide opacity-80">{tp("disclaimer")}</div>
-        </div>
-        <button
-          type="button"
-          onClick={() => setStarted(false)}
-          aria-label={t("close")}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/15"
-        >
-          <X className="h-4 w-4" strokeWidth={2} />
-        </button>
-      </div>
-
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-5" aria-live="polite">
-        {messages.map((m, i) =>
-          m.who === "bot" && i === 0 ? (
-            // Réponse au résumé initial : texte simple, pas une bulle de
-            // chat — comme un vrai paragraphe de résumé, pas un tour de
-            // conversation (rien ne l'a "demandé" à l'écran, cf. handleStart).
-            <p key={i} className="text-[0.92rem] leading-relaxed text-brand-dark">
-              {m.text}
-            </p>
-          ) : (
-            <div
-              key={i}
-              className={
-                m.who === "user"
-                  ? "ml-auto max-w-[92%] rounded-2xl rounded-br-[6px] bg-brand-light/40 px-4 py-3 text-[0.9rem] leading-relaxed text-brand-dark"
-                  : "max-w-[92%] rounded-2xl rounded-bl-[6px] border border-[var(--border-softer)] bg-bg-card px-4 py-3 text-[0.9rem] leading-relaxed text-brand-dark"
-              }
-            >
-              {m.text}
-            </div>
-          ),
-        )}
-        {pending && (
-          <div className="flex w-fit items-center gap-2 rounded-2xl rounded-bl-[6px] border border-[var(--border-softer)] bg-bg-card px-4 py-3">
-            <span className="flex gap-1">
-              <span className="assistant-dot" style={{ background: "var(--color-brand-primary)", animationDelay: "0ms" }} />
-              <span className="assistant-dot" style={{ background: "var(--color-brand-primary)", animationDelay: "160ms" }} />
-              <span className="assistant-dot" style={{ background: "var(--color-brand-primary)", animationDelay: "320ms" }} />
-            </span>
-            <span className="font-mono text-[0.7rem] opacity-60">{t("thinking")}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2 p-4" style={{ borderTop: "1px solid var(--border-softer)" }}>
         <div
-          className="flex flex-1 items-center gap-2 rounded-full py-2 pl-4 pr-2"
-          style={{ background: "var(--color-bg-default)", border: "1px solid var(--border-softer)" }}
+          className="flex items-center gap-3 px-5 py-4 text-white"
+          style={{ background: "linear-gradient(135deg, var(--cta-gradient-from), var(--cta-gradient-to) 80%)" }}
         >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleFollowUp();
-            }}
-            type="text"
-            placeholder={tp("followUpPlaceholder")}
-            disabled={pending}
-            className="min-w-0 flex-1 bg-transparent text-[0.88rem] text-brand-dark outline-none placeholder:opacity-50 disabled:cursor-not-allowed"
-          />
+          <span
+            className="ai-insight-icon-pulse flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15"
+            aria-hidden="true"
+          >
+            <Sparkles className="h-4 w-4" strokeWidth={2} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[0.95rem] font-semibold leading-tight" style={{ fontFamily: "var(--font-heading)" }}>
+              {tp("title")}
+            </div>
+            <div className="font-mono text-[0.68rem] uppercase tracking-wide opacity-80">{tp("disclaimer")}</div>
+          </div>
           <button
             type="button"
-            onClick={handleFollowUp}
-            disabled={pending || !input.trim()}
-            aria-label={t("send")}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white transition-opacity disabled:opacity-40"
-            style={{ background: "var(--color-brand-primary)" }}
+            onClick={() => setStarted(false)}
+            aria-label={t("close")}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/15"
           >
-            <Send className="h-3.5 w-3.5" strokeWidth={2.25} />
+            <X className="h-4 w-4" strokeWidth={2} />
           </button>
         </div>
+
+        <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-5" aria-live="polite">
+          {messages.map((m, i) =>
+            m.who === "bot" && i === 0 ? (
+              // Réponse au résumé initial : texte simple, pas une bulle de
+              // chat — comme un vrai paragraphe de résumé, pas un tour de
+              // conversation (rien ne l'a "demandé" à l'écran, cf. handleStart).
+              <p key={i} className="text-[0.92rem] leading-relaxed text-brand-dark">
+                {m.text}
+              </p>
+            ) : (
+              <div
+                key={i}
+                className={
+                  m.who === "user"
+                    ? "ml-auto max-w-[92%] rounded-2xl rounded-br-[6px] bg-brand-light/40 px-4 py-3 text-[0.9rem] leading-relaxed text-brand-dark"
+                    : "max-w-[92%] rounded-2xl rounded-bl-[6px] border border-[var(--border-softer)] bg-bg-card px-4 py-3 text-[0.9rem] leading-relaxed text-brand-dark"
+                }
+              >
+                {m.text}
+              </div>
+            ),
+          )}
+          {pending && (
+            <div className="flex w-fit items-center gap-2 rounded-2xl rounded-bl-[6px] border border-[var(--border-softer)] bg-bg-card px-4 py-3">
+              <span className="flex gap-1">
+                <span className="assistant-dot" style={{ background: "var(--color-brand-primary)", animationDelay: "0ms" }} />
+                <span className="assistant-dot" style={{ background: "var(--color-brand-primary)", animationDelay: "160ms" }} />
+                <span className="assistant-dot" style={{ background: "var(--color-brand-primary)", animationDelay: "320ms" }} />
+              </span>
+              <span className="font-mono text-[0.7rem] opacity-60">{t("thinking")}</span>
+            </div>
+          )}
+          {/* Ancre de défilement automatique — cf. useEffect ci-dessus. */}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="flex items-center gap-2 p-4" style={{ borderTop: "1px solid var(--border-softer)" }}>
+          <div
+            className="flex flex-1 items-center gap-2 rounded-full py-2 pl-4 pr-2"
+            style={{ background: "var(--color-bg-default)", border: "1px solid var(--border-softer)" }}
+          >
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleFollowUp();
+              }}
+              type="text"
+              placeholder={tp("followUpPlaceholder")}
+              disabled={pending}
+              className="min-w-0 flex-1 bg-transparent text-[0.88rem] text-brand-dark outline-none placeholder:opacity-50 disabled:cursor-not-allowed"
+            />
+            <button
+              type="button"
+              onClick={handleFollowUp}
+              disabled={pending || !input.trim()}
+              aria-label={t("send")}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white transition-opacity disabled:opacity-40"
+              style={{ background: "var(--color-brand-primary)" }}
+            >
+              <Send className="h-3.5 w-3.5" strokeWidth={2.25} />
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 
   return typeof document !== "undefined" ? createPortal(panel, document.body) : panel;

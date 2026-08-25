@@ -80,12 +80,6 @@ export default async function ArticleDetailPage({
   const articleImage = article.media[0] ? getMediaUrl(article.media[0].filePath) : undefined;
   const readingTime = getReadingTimeMinutes(article.content);
 
-  // Texte brut (HTML retiré) pour AiPageInsight — /api/ai-assistant/summarize
-  // (endpoint dédié au résumé, cf. son docblock) valide `content` à 6000
-  // caractères max côté backend ; 4000 (≈ 700-800 mots) couvre largement un
-  // article de blog avec de la marge.
-  const articlePlainContent = getArticleExcerpt(article.content, 4000);
-
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -137,7 +131,7 @@ export default async function ArticleDetailPage({
               jusqu'au bout ne verrait jamais l'offre de résumé sinon (retour
               direct suite à ce constat). */}
           <div className="hero-in" style={{ animationDelay: "0.24s" }}>
-            <AiPageInsight title={article.title} content={articlePlainContent} contentType="article" />
+            <AiPageInsight slug={article.slug} contentType="article" />
           </div>
         </div>
       </section>
