@@ -133,8 +133,25 @@ export default class extends Controller {
             : this.quill.root.innerHTML;
         // Quill représente un éditeur vide par "<p><br></p>" — on retombe sur
         // une chaîne vide plutôt que d'enregistrer ce balisage vide en base.
-        this.sourceTarget.value = this.quill.getLength() > 1 ? html : '';
+        this.sourceTarget.value = this.quill.getLength() > 1 ? this.normalizeSpaces(html) : '';
         this.sourceTarget.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    /**
+     * Remplace les espaces insécables par de vraies espaces normales. Le
+     * navigateur (contenteditable) et/ou le contenu collé depuis une source
+     * externe (Word, certains exports) peuvent en truffer le texte — jusqu'à
+     * en remplacer CHAQUE espace, constaté en pratique sur un article réel.
+     * Le texte devient alors un seul bloc insécable, sans point de coupure
+     * pour le navigateur en fin de ligne : il déborde de son conteneur au
+     * lieu de passer à la ligne. Traité ici, à la source, pour que ni la
+     * base ni la traduction en direct (qui lit sourceTarget.value, cf.
+     * bilingual_field_controller.js) n'en héritent — cf. aussi
+     * frontend/src/lib/sanitize.ts pour le même traitement en filet de
+     * sécurité au rendu, contre du contenu déjà enregistré avant ce correctif.
+     */
+    normalizeSpaces(html) {
+        return html.replace(/&nbsp;/gi, ' ').replace(/\u00a0/g, ' ');
     }
 
     /** Ouvre un sélecteur de fichier, uploade vers le serveur, insère l'URL renvoyée au curseur. */
