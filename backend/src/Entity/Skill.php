@@ -12,7 +12,13 @@ use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: SkillRepository::class)]
-#[UniqueEntity(fields: ['name'], message: "Cette compétence existe déjà.")]
+// entityClass explicite : sans lui, UniqueEntityValidator résout le repository
+// via get_class($value), qui vaut App\ApiResource\SkillApiResource lors d'un
+// POST/PUT via l'API — une classe non mappée Doctrine (seul ce parent l'est).
+// Ça fait échouer TOUTE requête avec un 500 ("Unable to find the object
+// manager..."), pas seulement les doublons — constaté en pratique, même
+// correctif que App\Entity\User (cf. son #[UniqueEntity]).
+#[UniqueEntity(fields: ['name'], message: 'Cette compétence existe déjà.', entityClass: Skill::class)]
 class Skill
 {
     #[ORM\Id]
@@ -22,10 +28,13 @@ class Skill
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Assert\NotBlank(message: "Le nom de la compétence est obligatoire.")]
+    #[Assert\NotBlank(message: 'Le nom de la compétence est obligatoire.')]
     #[Assert\Length(min: 2, max: 255)]
     #[Groups(['api_public', 'api_admin'])]
-    private string $name = '';
+    // protected (pas private) — cf. commentaire identique dans App\Entity\User :
+    // UniqueEntityValidator reflète l'objet réellement validé (SkillApiResource,
+    // une sous-classe), une propriété private du parent y est invisible.
+    protected string $name = '';
 
     /** Nom en anglais — optionnel, retombe sur `name` (FR) côté frontend si vide. */
     #[ORM\Column(length: 255, nullable: true)]
@@ -34,7 +43,7 @@ class Skill
     private ?string $nameEn = null;
 
     #[ORM\Column(type: Types::INTEGER)]
-    #[Assert\NotNull(message: "Le niveau est obligatoire.")]
+    #[Assert\NotNull(message: 'Le niveau est obligatoire.')]
     #[Assert\Range(min: 1, max: 10)]
     #[Groups(['api_public', 'api_admin'])]
     private int $level = 1;
@@ -46,7 +55,7 @@ class Skill
 
     #[ORM\ManyToOne(inversedBy: 'skill')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotNull(message: "La catégorie de compétence est obligatoire.")]
+    #[Assert\NotNull(message: 'La catégorie de compétence est obligatoire.')]
     // Public depuis peu : permet au frontend de grouper les compétences par
     // catégorie (cf. src/lib/api/skills.ts côté frontend). Pas de risque de
     // cycle : SkillCategory::$skill (la collection inverse) reste api_admin.
@@ -71,6 +80,7 @@ class Skill
     public function setName(string $name): static
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -82,6 +92,7 @@ class Skill
     public function setNameEn(?string $nameEn): static
     {
         $this->nameEn = $nameEn;
+
         return $this;
     }
 
@@ -93,6 +104,7 @@ class Skill
     public function setLevel(int $level): static
     {
         $this->level = $level;
+
         return $this;
     }
 
@@ -110,6 +122,7 @@ class Skill
             $this->projects->add($project);
             $project->addSkill($this);
         }
+
         return $this;
     }
 
@@ -118,6 +131,7 @@ class Skill
         if ($this->projects->removeElement($project)) {
             $project->removeSkill($this);
         }
+
         return $this;
     }
 
@@ -129,6 +143,7 @@ class Skill
     public function setSkillCategory(SkillCategory $skillCategory): static
     {
         $this->skillCategory = $skillCategory;
+
         return $this;
     }
 }

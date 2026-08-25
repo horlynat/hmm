@@ -20,7 +20,11 @@ use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
-#[UniqueEntity(fields: ['slug'], message: 'Ce slug est déjà utilisé pour un autre projet.')]
+// entityClass explicite — cf. commentaire identique dans App\Entity\Skill
+// pour le pourquoi (sans lui : 500 sur TOUTE requête POST/PUT via l'API,
+// pas seulement les slugs en doublon — vérifié en pratique, ProjectApiResource
+// n'est pas lui-même mappé Doctrine).
+#[UniqueEntity(fields: ['slug'], message: 'Ce slug est déjà utilisé pour un autre projet.', entityClass: Project::class)]
 #[ORM\HasLifecycleCallbacks]
 class Project
 {
