@@ -25,4 +25,20 @@ class NewsletterSubscriberRepository extends ServiceEntityRepository
             ->getSingleScalarResult()
         ;
     }
+
+    /**
+     * Destinataires d'une notification de nouveau contenu — confirmés
+     * (double opt-in) ET non désinscrits. cf. App\Service\NewsletterNotifier.
+     *
+     * @return NewsletterSubscriber[]
+     */
+    public function findActiveConfirmed(): array
+    {
+        return $this->createQueryBuilder('s')
+            ->andWhere('s.confirmedAt IS NOT NULL')
+            ->andWhere('s.unsubscribedAt IS NULL')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 }

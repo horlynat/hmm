@@ -9,15 +9,15 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Inscription à la newsletter du blog (page /blog, cf. NewsletterForm côté
- * frontend) — jusqu'ici un stub purement visuel, aucune entité ni endpoint
+ * frontend) — à l'origine un stub purement visuel, aucune entité ni endpoint
  * réel derrière le formulaire (un faux succès local, aucune persistance).
  *
- * Volontairement minimal pour l'instant : capture l'inscription elle-même,
- * pas l'envoi réel des e-mails de notification (nouvel article/projet) — une
- * fonctionnalité distincte et bien plus large (file d'attente d'envoi,
- * gestion des rebonds, lien de désinscription fonctionnel...), pas ce qui a
- * été demandé ici. `unsubscribedAt` existe déjà pour ne pas avoir à modifier
- * le schéma quand cet envoi sera construit.
+ * Double opt-in : `confirmedAt` reste null tant que l'abonné n'a pas cliqué
+ * le lien reçu par e-mail à l'inscription (cf. NewsletterSubscriberCreateProcessor
+ * + NewsletterConfirmationController) — seuls les abonnés confirmés ET non
+ * désinscrits reçoivent les notifications de nouveau contenu (cf.
+ * NewsletterSubscriberRepository::findActiveConfirmed(), App\Service\
+ * NewsletterNotifier).
  *
  * PAS de #[UniqueEntity] ici, volontairement : la constraint valide
  * `get_class($value)`, ici App\ApiResource\NewsletterSubscriberApiResource —
@@ -60,6 +60,11 @@ class NewsletterSubscriber
     #[ORM\Column(nullable: true)]
     #[Groups(['api_admin'])]
     private ?\DateTimeImmutable $unsubscribedAt = null;
+
+    /** Renseigné une fois le lien de confirmation cliqué — cf. docblock de classe. */
+    #[ORM\Column(nullable: true)]
+    #[Groups(['api_admin'])]
+    private ?\DateTimeImmutable $confirmedAt = null;
 
     public function __construct()
     {
@@ -116,6 +121,23 @@ class NewsletterSubscriber
     public function resubscribe(): static
     {
         $this->unsubscribedAt = null;
+
+        return $this;
+    }
+
+    public function getConfirmedAt(): ?\DateTimeImmutable
+    {
+        return $this->confirmedAt;
+    }
+
+    public function isConfirmed(): bool
+    {
+        return null !== $this->confirmedAt;
+    }
+
+    public function confirm(): static
+    {
+        $this->confirmedAt = new \DateTimeImmutable();
 
         return $this;
     }

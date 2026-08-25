@@ -7,8 +7,11 @@ use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\NewsletterSubscriberApiResource;
 use App\Entity\NewsletterSubscriber;
 use App\Repository\NewsletterSubscriberRepository;
+use App\Service\EmailManager;
+use App\Service\JWTService;
 use App\Service\PublicSubmissionThrottler;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * NewsletterSubscriberApiResource n'étant pas lui-même mappé Doctrine (seul
@@ -25,6 +28,17 @@ use Doctrine\ORM\EntityManagerInterface;
  * re-soumettre son e-mail est un geste normal (formulaire rouvert, double
  * clic...), pas une faute du visiteur — on confirme simplement l'inscription
  * existante, idempotent.
+ *
+ * Double opt-in : une nouvelle inscription déclenche un e-mail de
+ * confirmation (lien signé JWT, cf. App\Service\JWTService::
+ * generateNewsletterConfirmationToken()) — envoyé en synchrone (sendNow, pas
+ * sendAsync) comme App\Controller\Api\EmailVerificationController::resend()
+ * pour le même type d'e-mail critique côté User : c'est la seule action de
+ * ce flux où le visiteur attend un résultat immédiat ("un e-mail vient de
+ * partir"), pas un envoi qu'on peut se permettre de retarder derrière la
+ * file Messenger. Aucune notification tant que le lien n'est pas cliqué
+ * (cf. NewsletterConfirmationController::confirm(), qui envoie ensuite
+ * l'e-mail de bienvenue).
  */
 final class NewsletterSubscriberCreateProcessor implements ProcessorInterface
 {
@@ -32,6 +46,9 @@ final class NewsletterSubscriberCreateProcessor implements ProcessorInterface
         private readonly EntityManagerInterface $entityManager,
         private readonly NewsletterSubscriberRepository $subscriberRepository,
         private readonly PublicSubmissionThrottler $throttler,
+        private readonly JWTService $jwt,
+        private readonly EmailManager $emailManager,
+        private readonly UrlGeneratorInterface $urlGenerator,
     ) {
     }
 
@@ -59,10 +76,33 @@ final class NewsletterSubscriberCreateProcessor implements ProcessorInterface
 
         $entity = new NewsletterSubscriber();
         $entity->setEmail($email);
-        $entity->setLocale('en' === $data->getLocale() ? 'en' : 'fr');
+        $locale = 'en' === $data->getLocale() ? 'en' : 'fr';
+        $entity->setLocale($locale);
 
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
+
+        $confirmUrl = $this->urlGenerator->generate(
+            'newsletter_confirm',
+            ['token' => $this->jwt->generateNewsletterConfirmationToken((int) $entity->getId())],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
+        $unsubscribeUrl = $this->urlGenerator->generate(
+            'newsletter_unsubscribe',
+            ['token' => $this->jwt->generateNewsletterUnsubscribeToken((int) $entity->getId())],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
+
+        $this->emailManager->sendNow(
+            to: $entity->getEmail(),
+            subject: 'en' === $locale ? 'Confirm your newsletter subscription' : 'Confirmez votre inscription à la newsletter',
+            template: 'newsletter_confirmation',
+            context: [
+                'locale' => $locale,
+                'confirmUrl' => $confirmUrl,
+                'unsubscribeUrl' => $unsubscribeUrl,
+            ],
+        );
 
         return $entity;
     }

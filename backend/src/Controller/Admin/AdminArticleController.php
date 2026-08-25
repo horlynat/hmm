@@ -11,6 +11,7 @@ use App\Repository\TranslationRepository;
 use App\Security\Voter\ArticleVoter;
 use App\Service\AuditLogger;
 use App\Service\MediaUploader;
+use App\Service\NewsletterNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -66,6 +67,7 @@ final class AdminArticleController extends AbstractController
         MediaUploader $uploader,
         AuditLogger $auditLogger,
         TranslationRepository $translationRepository,
+        NewsletterNotifier $newsletterNotifier,
     ): Response {
         $this->denyAccessUnlessGranted(ArticleVoter::CREATE);
 
@@ -95,6 +97,11 @@ final class AdminArticleController extends AbstractController
 
             // Après flush() pour disposer d'un id garanti (article tout juste créé).
             $translationRepository->syncFromEntity($article);
+
+            // Tout article créé est public dès sa création (pas de statut
+            // brouillon sur cette entité, cf. App\Entity\Article) — la
+            // notification part donc systématiquement ici, sans condition.
+            $newsletterNotifier->notifyNewContent($article->getTitle(), 'article', $article->getSlug());
 
             $this->addFlash('success', 'L\'article a été créé avec succès.');
 

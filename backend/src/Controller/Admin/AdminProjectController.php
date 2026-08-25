@@ -25,6 +25,7 @@ use App\Repository\TranslationRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\ProjectVoter;
 use App\Service\MediaUploader;
+use App\Service\NewsletterNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
@@ -417,6 +418,7 @@ final class AdminProjectController extends AbstractController
         SluggerInterface $slugger,
         MediaUploader $mediaUploader,
         TranslationRepository $translationRepository,
+        NewsletterNotifier $newsletterNotifier,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
@@ -450,6 +452,16 @@ final class AdminProjectController extends AbstractController
 
             // Après flush() pour disposer d'un id garanti (projet tout juste créé).
             $translationRepository->syncFromEntity($project);
+
+            // Notification newsletter UNIQUEMENT si ce projet a un contenu
+            // vitrine ($showcase non null, cf. buildProjectInfoFromForm()) :
+            // Project sert aussi à la gestion interne de projets
+            // freelance/client (budget, factures, collaborateurs...), sans
+            // rapport avec le portfolio public — les abonnés ne doivent
+            // jamais être notifiés de la création d'un projet client interne.
+            if (null !== $showcase) {
+                $newsletterNotifier->notifyNewContent($project->getTitle(), 'project', $project->getSlug());
+            }
 
             $this->addFlash('success', 'Le projet a été créé avec succès.');
 
