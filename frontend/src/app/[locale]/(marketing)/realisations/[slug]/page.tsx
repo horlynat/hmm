@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Badge, Breadcrumb, ButtonLink, Card, HeroBackground, Reveal } from "@/components/ui";
 import { ProjectVisual } from "@/components/sections/ProjectVisual";
-import { getProjectBySlug, getProjectSlugs } from "@/lib/api/projects";
+import { NextUpCard } from "@/components/sections/NextUpCard";
+import { getProjectBySlug, getProjects, getProjectSlugs } from "@/lib/api/projects";
 import { getMediaUrl } from "@/lib/media";
 import { jsonLdScript } from "@/lib/json-ld";
 import { siteConfig } from "@/config/site";
@@ -88,8 +89,9 @@ export default async function ProjectDetailPage({
   params: Promise<{ slug: string; locale: string }>;
 }) {
   const { slug, locale } = await params;
-  const [project, t, td, tc] = await Promise.all([
+  const [project, projects, t, td, tc] = await Promise.all([
     getProjectBySlug(slug, locale),
+    getProjects(locale),
     getTranslations({ locale, namespace: "projects" }),
     getTranslations({ locale, namespace: "projects.detail" }),
     getTranslations({ locale, namespace: "common" }),
@@ -101,6 +103,15 @@ export default async function ProjectDetailPage({
 
   const tStatus = await getTranslations({ locale, namespace: "projects.status" });
   const info = project.info;
+
+  // Projet suivant dans la liste (bouclé : le dernier renvoie au premier),
+  // affiché en fin de page plutôt qu'un simple lien retour — cf. NextUpCard.
+  // Masqué s'il n'y a qu'un seul projet publié (n'aurait rien à proposer).
+  const currentIndex = projects.findIndex((p) => p.slug === project.slug);
+  const nextProject = projects.length > 1 ? projects[(currentIndex + 1) % projects.length] : null;
+  const nextProjectImage = nextProject?.info?.coverImage
+    ? getMediaUrl(nextProject.info.coverImage.filePath)
+    : undefined;
   // `project.media ?? []` : robuste si l'API ne renvoie pas encore ce champ
   // (cache de fetch antérieur à son passage en `api_public`, backend plus
   // ancien, etc.) — le frontend et le backend sont déployés séparément.
@@ -212,6 +223,35 @@ export default async function ProjectDetailPage({
           </Card>
         </div>
       </section>
+
+      {/* La preuve d'impact vient tout de suite après la couverture, avant
+          l'architecture/la stack/les défis : on mène par le résultat plutôt
+          que de le faire attendre en bas de page derrière les détails
+          techniques — c'est le contenu le plus "vendeur" de la page. */}
+      {info && info.results.length > 0 && (
+        <section className="border-y border-[var(--border-softer)] bg-bg-card px-6 py-14">
+          <div className="mx-auto max-w-[840px]">
+            <Reveal delay={0}>
+              <h2 className="mb-6 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                {td("resultsLabel")}
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                {info.results.map((result) => (
+                  <div key={result.label} className="soft-card p-5 text-center">
+                    <div
+                      className="mb-1 text-[clamp(1.5rem,3vw,2rem)] font-semibold text-brand-primary"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      {result.value}
+                    </div>
+                    <div className="text-sm opacity-70">{result.label}</div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+        </section>
+      )}
 
       {info?.architectureDiagram && (
         <section className="px-6 py-6">
@@ -330,36 +370,23 @@ export default async function ProjectDetailPage({
         </section>
       )}
 
-      {info && info.results.length > 0 && (
-        <section className="border-y border-[var(--border-softer)] bg-bg-card px-6 py-14">
-          <div className="mx-auto max-w-[840px]">
-            <Reveal delay={0}>
-              <h2 className="mb-6 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
-                {td("resultsLabel")}
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                {info.results.map((result) => (
-                  <div key={result.label} className="soft-card p-5 text-center">
-                    <div
-                      className="mb-1 text-[clamp(1.5rem,3vw,2rem)] font-semibold text-brand-primary"
-                      style={{ fontFamily: "var(--font-heading)" }}
-                    >
-                      {result.value}
-                    </div>
-                    <div className="text-sm opacity-70">{result.label}</div>
-                  </div>
-                ))}
-              </div>
-            </Reveal>
-          </div>
-        </section>
-      )}
-
       <section className="px-6 py-10">
         <div className="mx-auto max-w-[840px] border-t border-[var(--border-softer)] pt-6">
-          <ButtonLink href="/realisations" variant="secondary">
+          <ButtonLink href="/realisations" variant="secondary" className="mb-6">
             {t("eyebrow")} ←
           </ButtonLink>
+          {nextProject && (
+            <Reveal delay={0}>
+              <NextUpCard
+                eyebrow={td("nextProject")}
+                title={nextProject.title}
+                cta={tc("seeDetails")}
+                href={{ pathname: "/realisations/[slug]", params: { slug: nextProject.slug } }}
+                image={nextProjectImage}
+                imageAlt={nextProject.info?.coverImage?.altText ?? nextProject.title}
+              />
+            </Reveal>
+          )}
         </div>
       </section>
     </>

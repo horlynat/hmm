@@ -326,7 +326,8 @@
       "deadlineInDays": "{days, plural, one {In # day} other {In # days}}",
       "deadlineOverdueDays": "{days, plural, one {# day overdue} other {# days overdue}}",
       "invoicesLabel": "Related invoices",
-      "viewAllInvoices": "View all my invoices"
+      "viewAllInvoices": "View all my invoices",
+      "nextProject": "Next project"
     },
     "cta": {
       "title": "Got a project in mind?",
@@ -341,6 +342,8 @@
     "titleAccent": "and lessons learned.",
     "sub": "Thoughts on architecture, technical choices and my view of the craft — between development, cybersecurity and insurance.",
     "empty": "Articles will appear here as soon as they're published.",
+    "readingTime": "{minutes} min read",
+    "nextArticle": "Next article",
     "stats": {
       "articles": "Published articles",
       "topics": "Topics covered"

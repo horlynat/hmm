@@ -927,6 +927,10 @@
     "fr": "-ou7oeu",
     "en": "-2jto3k"
   },
+  "projects.detail.nextProject": {
+    "fr": "-h3pgxw",
+    "en": "yyb1dg"
+  },
   "projects.cta.title": {
     "fr": "-u6dqbw",
     "en": "-ovvtrg"
@@ -962,6 +966,14 @@
   "blog.empty": {
     "fr": "fp1fo1",
     "en": "-q63hap"
+  },
+  "blog.readingTime": {
+    "fr": "-bp62t0",
+    "en": "dzqpth"
+  },
+  "blog.nextArticle": {
+    "fr": "vhihna",
+    "en": "v59h13"
   },
   "blog.stats.articles": {
     "fr": "doyxtr",

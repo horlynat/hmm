@@ -60,3 +60,10 @@ export function getArticleExcerpt(dirty: string, maxLength = 155): string {
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength - 1).trimEnd()}…`;
 }
+
+/** Temps de lecture estimé (minutes, arrondi au supérieur, jamais 0) — ~200 mots/min en lecture silencieuse. */
+export function getReadingTimeMinutes(dirty: string, wordsPerMinute = 200): number {
+  const text = sanitizeHtml(dirty, { allowedTags: [], allowedAttributes: {} }).trim();
+  const wordCount = text.length > 0 ? text.split(/\s+/).length : 0;
+  return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
+}

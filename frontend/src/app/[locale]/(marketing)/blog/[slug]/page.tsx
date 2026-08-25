@@ -3,8 +3,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Badge, Breadcrumb, ButtonLink, Card, HeroBackground, Reveal } from "@/components/ui";
-import { getArticleBySlug } from "@/lib/api/articles";
-import { sanitizeArticleHtml, getArticleExcerpt } from "@/lib/sanitize";
+import { NextUpCard } from "@/components/sections/NextUpCard";
+import { getArticleBySlug, getArticles } from "@/lib/api/articles";
+import { sanitizeArticleHtml, getArticleExcerpt, getReadingTimeMinutes } from "@/lib/sanitize";
 import { getMediaUrl } from "@/lib/media";
 import { jsonLdScript } from "@/lib/json-ld";
 import { siteConfig } from "@/config/site";
@@ -56,16 +57,26 @@ export default async function ArticleDetailPage({
   params: Promise<{ slug: string; locale: string }>;
 }) {
   const { slug, locale } = await params;
-  const [article, t] = await Promise.all([
+  const [article, articles, t, tc] = await Promise.all([
     getArticleBySlug(slug, locale),
+    getArticles(locale),
     getTranslations({ locale, namespace: "blog" }),
+    getTranslations({ locale, namespace: "common" }),
   ]);
 
   if (!article) {
     notFound();
   }
 
+  // Article suivant dans la liste (bouclé : le dernier renvoie au premier),
+  // affiché en fin de page plutôt qu'un simple lien retour — cf. NextUpCard.
+  // Masqué s'il n'y a qu'un seul article publié (n'aurait rien à proposer).
+  const currentIndex = articles.findIndex((a) => a.slug === article.slug);
+  const nextArticle = articles.length > 1 ? articles[(currentIndex + 1) % articles.length] : null;
+  const nextArticleImage = nextArticle?.media[0] ? getMediaUrl(nextArticle.media[0].filePath) : undefined;
+
   const articleImage = article.media[0] ? getMediaUrl(article.media[0].filePath) : undefined;
+  const readingTime = getReadingTimeMinutes(article.content);
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -91,9 +102,10 @@ export default async function ArticleDetailPage({
           <div className="mb-6">
             <Breadcrumb items={[{ label: t("eyebrow"), href: "/blog" }, { label: article.title }]} />
           </div>
-          <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
-            {t("eyebrow")}
-          </Badge>
+          <div className="hero-in mb-4 flex flex-wrap items-center gap-3" style={{ animationDelay: "0s" }}>
+            <Badge variant="accent">{t("eyebrow")}</Badge>
+            <span className="text-sm font-medium opacity-60">{t("readingTime", { minutes: readingTime })}</span>
+          </div>
           {/* Volontairement pas de classe hero-in sur le h1 : candidat LCP le
               plus probable de la page, cf. commentaire dans PageHero.tsx. */}
           <h1 className="mb-4 text-[clamp(2.25rem,4.5vw,3.75rem)] leading-[1.14]">
@@ -141,9 +153,21 @@ export default async function ArticleDetailPage({
             dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(article.content) }}
           />
           <div className="mt-10 border-t border-[var(--border-softer)] pt-6">
-            <ButtonLink href="/blog" variant="secondary">
+            <ButtonLink href="/blog" variant="secondary" className="mb-6">
               {t("eyebrow")} ←
             </ButtonLink>
+            {nextArticle && (
+              <Reveal delay={0}>
+                <NextUpCard
+                  eyebrow={t("nextArticle")}
+                  title={nextArticle.title}
+                  cta={tc("readMore")}
+                  href={{ pathname: "/blog/[slug]", params: { slug: nextArticle.slug } }}
+                  image={nextArticleImage}
+                  imageAlt={nextArticle.media[0]?.altText ?? nextArticle.title}
+                />
+              </Reveal>
+            )}
           </div>
         </div>
       </section>
