@@ -85,6 +85,11 @@ export const supportTicketSchema = z.object({
   message: z.string().min(10).max(5000),
 });
 
+export const newsletterSubscribeSchema = z.object({
+  email,
+  locale: z.enum(["fr", "en"]),
+});
+
 export const supportTicketReplySchema = z.object({
   message: z.string().min(10).max(5000),
 });

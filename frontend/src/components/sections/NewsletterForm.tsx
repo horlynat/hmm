@@ -3,15 +3,28 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { newsletterSchema, type NewsletterValues } from "@/lib/validation/schemas";
 import { FormMessage } from "@/components/ui/form";
+import { subscribeToNewsletter } from "@/actions/newsletter";
 
-/** Stub visuel — aucune entité Newsletter/Subscriber côté backend, cf. plan. */
+type Status = "idle" | "pending" | "success" | "rate_limited" | "error";
+
+/**
+ * Inscription à la newsletter du blog — cf. App\Entity\NewsletterSubscriber
+ * côté backend pour le détail. Longtemps un stub purement visuel (un faux
+ * succès local, `setSuccess(true)` sans aucun appel réseau) avec un
+ * disclaimer honnête ("fonctionnalité à venir") resté visible en prod bien
+ * après que le reste du site ait mûri — repéré par Horlynat lui-même.
+ * Appelle désormais réellement subscribeToNewsletter (Server Action ->
+ * App\ApiResource\NewsletterSubscriberApiResource), même structure que les
+ * autres formulaires publics du site (cf. AppointmentForm, SupportTicketForm).
+ */
 export function NewsletterForm() {
   const t = useTranslations("blog.newsletter");
   const tv = useTranslations("validation");
-  const [success, setSuccess] = useState(false);
+  const locale = useLocale();
+  const [status, setStatus] = useState<Status>("idle");
 
   const {
     register,
@@ -23,9 +36,15 @@ export function NewsletterForm() {
     defaultValues: { email: "" },
   });
 
-  function onSubmit() {
-    setSuccess(true);
-    reset();
+  async function onSubmit(values: NewsletterValues) {
+    setStatus("pending");
+    const result = await subscribeToNewsletter({ email: values.email, locale });
+    if (result.ok) {
+      setStatus("success");
+      reset();
+      return;
+    }
+    setStatus(result.error === "rate_limited" ? "rate_limited" : "error");
   }
 
   return (
@@ -55,7 +74,8 @@ export function NewsletterForm() {
               placeholder={t("placeholder")}
               aria-invalid={errors.email ? true : undefined}
               aria-describedby={errors.email ? "newsletter-email-error" : undefined}
-              className="w-full rounded-[var(--radius-sm)] border border-white/30 bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-white/60"
+              disabled={status === "pending"}
+              className="w-full rounded-[var(--radius-sm)] border border-white/30 bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-white/60 disabled:opacity-60"
               {...register("email")}
             />
             {errors.email && (
@@ -66,14 +86,25 @@ export function NewsletterForm() {
           </div>
           <button
             type="submit"
-            className="rounded-[var(--radius-sm)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-on-brand-light)] transition-opacity hover:opacity-90"
+            disabled={status === "pending"}
+            className="rounded-[var(--radius-sm)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-on-brand-light)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {t("submit")}
           </button>
         </form>
-        {success && (
+        {status === "success" && (
           <FormMessage variant="success" className="text-white">
             {t("success")}
+          </FormMessage>
+        )}
+        {status === "rate_limited" && (
+          <FormMessage variant="error" className="text-white">
+            {tv("rateLimited")}
+          </FormMessage>
+        )}
+        {status === "error" && (
+          <FormMessage variant="error" className="text-white">
+            {tv("genericError")}
           </FormMessage>
         )}
         <p className="mt-3 text-xs opacity-70">{t("note")}</p>
