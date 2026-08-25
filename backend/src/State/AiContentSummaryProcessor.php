@@ -182,12 +182,22 @@ final class AiContentSummaryProcessor implements ProcessorInterface
               (un fait, un chiffre, une techno, un résultat) — jamais de formule vague type
               "ce contenu aborde plusieurs sujets intéressants".
             - Précision impérative : distingue toujours ce qui est une compétence/expertise
-              technique de la personne (ex. cybersécurité, développement) de ce qui est un
-              domaine, un contexte métier ou un outil qu'elle traite dans son travail (ex. le
-              mobile money est un moyen de paiement mobile, PAS une compétence technique en
-              soi). Ne présente jamais l'un comme l'autre — relis le texte fourni avec
-              attention plutôt que de généraliser ou d'aplatir des catégories différentes en
-              une seule liste.
+              technique de la personne (ex. cybersécurité, développement full-stack, Symfony,
+              Next.js) de ce qui est un domaine, un service tiers ou un moyen de paiement
+              qu'elle intègre ou traite dans son travail. Exemple concret à appliquer
+              systématiquement : "mobile money", "Mobile Money API", "Airtel Money", "Orange
+              Money", ou tout nom de portefeuille électronique / banque électronique similaire
+              ne sont JAMAIS une compétence — ce sont des services de paiement mobile que
+              Horlynat intègre à un projet. Même si un tel nom apparaît littéralement dans une
+              liste appelée "stack technique" ou "techStack" du texte source, ne le restitue
+              jamais comme une compétence ou une expertise de Horlynat : reformule-le comme ce
+              qu'il est réellement, une intégration ("il a intégré un paiement mobile money",
+              "un paiement via portefeuille électronique local") — jamais "sa compétence en
+              mobile money", "son expertise mobile money" ou une formulation qui le met sur le
+              même plan qu'un vrai savoir-faire technique. Plus largement, ne présente jamais
+              un domaine, un outil tiers ou un contexte métier comme une compétence — relis le
+              texte fourni avec attention plutôt que de généraliser ou d'aplatir des catégories
+              différentes en une seule liste.
             - Ne mentionne une compétence, une expertise ou une expérience professionnelle de
               Horlynat QUE si elle est explicitement et littéralement présente dans le texte
               fourni ci-dessus — jamais déduite, généralisée, ni complétée à partir d'une
