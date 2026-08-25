@@ -2775,6 +2775,30 @@
     "fr": "vjlm8p",
     "en": "-nkp1mp"
   },
+  "aiAssistant.pageInsight.cta": {
+    "fr": "-sugq2j",
+    "en": "-x34zv2"
+  },
+  "aiAssistant.pageInsight.title": {
+    "fr": "-ujz4ft",
+    "en": "-rjqn8u"
+  },
+  "aiAssistant.pageInsight.disclaimer": {
+    "fr": "-v1gwqk",
+    "en": "-fgw8qh"
+  },
+  "aiAssistant.pageInsight.articleQuestion": {
+    "fr": "6hvrrk",
+    "en": "-ctjq2a"
+  },
+  "aiAssistant.pageInsight.projectQuestion": {
+    "fr": "-cm433g",
+    "en": "-3calty"
+  },
+  "aiAssistant.pageInsight.followUpPlaceholder": {
+    "fr": "-4ucygd",
+    "en": "-ew9noa"
+  },
   "auth.login.eyebrow": {
     "fr": "-ze9gph",
     "en": "hem3kk"

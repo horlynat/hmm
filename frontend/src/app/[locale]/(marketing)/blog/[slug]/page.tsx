@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Badge, Breadcrumb, ButtonLink, Card, HeroBackground, ReadingProgressBar, Reveal } from "@/components/ui";
 import { NextUpCard } from "@/components/sections/NextUpCard";
+import { AiPageInsight } from "@/components/ai-assistant/AiPageInsight";
 import { getArticleBySlug, getArticles } from "@/lib/api/articles";
 import { sanitizeArticleHtml, getArticleExcerpt, getReadingTimeMinutes } from "@/lib/sanitize";
 import { getMediaUrl } from "@/lib/media";
@@ -58,11 +59,12 @@ export default async function ArticleDetailPage({
   params: Promise<{ slug: string; locale: string }>;
 }) {
   const { slug, locale } = await params;
-  const [article, articles, t, tc] = await Promise.all([
+  const [article, articles, t, tc, tai] = await Promise.all([
     getArticleBySlug(slug, locale),
     getArticles(locale),
     getTranslations({ locale, namespace: "blog" }),
     getTranslations({ locale, namespace: "common" }),
+    getTranslations({ locale, namespace: "aiAssistant.pageInsight" }),
   ]);
 
   if (!article) {
@@ -109,8 +111,11 @@ export default async function ArticleDetailPage({
             <span className="text-sm font-medium opacity-60">{t("readingTime", { minutes: readingTime })}</span>
           </div>
           {/* Volontairement pas de classe hero-in sur le h1 : candidat LCP le
-              plus probable de la page, cf. commentaire dans PageHero.tsx. */}
-          <h1 className="mb-4 text-[clamp(2.25rem,4.5vw,3.75rem)] leading-[1.14]">
+              plus probable de la page, cf. commentaire dans PageHero.tsx.
+              Taille alignée sur PageHero.tsx (clamp(1.75rem,3vw,2.75rem)) —
+              la référence utilisée initialement ici était surdimensionnée et
+              cassait la cohérence avec le reste du site. */}
+          <h1 className="mb-4 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
             {article.title}
           </h1>
           {article.tags.length > 0 && (
@@ -157,7 +162,12 @@ export default async function ArticleDetailPage({
             className="article-body opacity-85"
             dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(article.content) }}
           />
+
           <div className="mt-10 border-t border-[var(--border-softer)] pt-6">
+            <AiPageInsight seedQuestion={tai("articleQuestion", { title: article.title })} />
+          </div>
+
+          <div className="mt-6 border-t border-[var(--border-softer)] pt-6">
             <ButtonLink href="/blog" variant="secondary" className="mb-6">
               {t("eyebrow")} ←
             </ButtonLink>

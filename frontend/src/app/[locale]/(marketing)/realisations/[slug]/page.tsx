@@ -5,6 +5,8 @@ import { getTranslations } from "next-intl/server";
 import { AnimatedStatValue, Badge, Breadcrumb, ButtonLink, Card, HeroBackground, ReadingProgressBar, Reveal } from "@/components/ui";
 import { ProjectVisual } from "@/components/sections/ProjectVisual";
 import { NextUpCard } from "@/components/sections/NextUpCard";
+import { ProjectDeviceFrame } from "@/components/sections/ProjectDeviceFrame";
+import { AiPageInsight } from "@/components/ai-assistant/AiPageInsight";
 import { getProjectBySlug, getProjects, getProjectSlugs } from "@/lib/api/projects";
 import { getMediaUrl } from "@/lib/media";
 import { jsonLdScript } from "@/lib/json-ld";
@@ -90,12 +92,13 @@ export default async function ProjectDetailPage({
   params: Promise<{ slug: string; locale: string }>;
 }) {
   const { slug, locale } = await params;
-  const [project, projects, t, td, tc] = await Promise.all([
+  const [project, projects, t, td, tc, tai] = await Promise.all([
     getProjectBySlug(slug, locale),
     getProjects(locale),
     getTranslations({ locale, namespace: "projects" }),
     getTranslations({ locale, namespace: "projects.detail" }),
     getTranslations({ locale, namespace: "common" }),
+    getTranslations({ locale, namespace: "aiAssistant.pageInsight" }),
   ]);
 
   if (!project) {
@@ -153,11 +156,13 @@ export default async function ProjectDetailPage({
             {t("eyebrow")}
           </Badge>
           {/* Volontairement pas de classe hero-in sur le h1 : candidat LCP le
-              plus probable de la page, cf. commentaire dans PageHero.tsx. Et
-              volontairement alignée sur la taille du h1 de l'article (au lieu
-              du clamp(1.25rem,2.5vw,1.75rem) précédent, de la taille d'un
-              sous-titre) : c'est le plus grand titre de la page. */}
-          <h1 className="mb-5 text-[clamp(2.25rem,4.5vw,3.75rem)] leading-[1.14]">
+              plus probable de la page, cf. commentaire dans PageHero.tsx.
+              Taille alignée sur PageHero.tsx (clamp(1.75rem,3vw,2.75rem)) —
+              ni la taille de sous-titre d'origine (clamp(1.25rem,2.5vw,1.75rem))
+              ni la taille surdimensionnée choisie ensuite (calée sur l'ancien
+              h1 de l'article, lui-même trop grand) ne correspondaient au
+              standard déjà établi sur le reste du site. */}
+          <h1 className="mb-5 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
             {project.title}
           </h1>
           {/* Contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
@@ -202,7 +207,7 @@ export default async function ProjectDetailPage({
 
       <section className="px-6 py-6">
         <div className="mx-auto max-w-[840px]">
-          <Card variant="soft" className="overflow-hidden p-0">
+          <ProjectDeviceFrame liveUrl={project.link || undefined} liveLabel={tc("seeProject")}>
             <div
               className={info?.coverImage ? "vt-target relative h-[260px] w-full bg-brand-light sm:h-[320px]" : "relative h-[260px] w-full bg-brand-light sm:h-[320px]"}
               style={info?.coverImage ? { viewTransitionName: projectImageTransitionName(project.id) } : undefined}
@@ -225,7 +230,7 @@ export default async function ProjectDetailPage({
                 {tStatus(project.status)}
               </Badge>
             </div>
-          </Card>
+          </ProjectDeviceFrame>
         </div>
       </section>
 
@@ -377,6 +382,9 @@ export default async function ProjectDetailPage({
 
       <section className="px-6 py-10">
         <div className="mx-auto max-w-[840px] border-t border-[var(--border-softer)] pt-6">
+          <div className="mb-8">
+            <AiPageInsight seedQuestion={tai("projectQuestion", { title: project.title })} />
+          </div>
           <ButtonLink href="/realisations" variant="secondary" className="mb-6">
             {t("eyebrow")} ←
           </ButtonLink>
