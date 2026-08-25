@@ -647,12 +647,38 @@ final class AdminProjectController extends AbstractController
         Project $project,
         EntityManagerInterface $entityManager,
         Request $request,
+        MediaUploader $mediaUploader,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::DELETE, $project);
 
+        // Double sécurité : empêche la suppression des projets terminés ou suspendus
+        // (même garde-fou que pour la modification — cf. update() — un projet clos
+        // dont le budget/les dépenses/le temps sont déjà arrêtés ne doit pas pouvoir
+        // disparaître d'un simple clic).
+        if ($this->isProjectLocked($project)) {
+            $this->addFlash('error', 'Impossible de supprimer ce projet (statut : '.$project->getStatusLabel().').');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
         if ($this->isCsrfTokenValid('admin_project_delete_'.$project->getId(), $request->request->get('_token'))) {
-            // Journaliser la suppression (avant la suppression pour conserver l'accès)
+            // Nettoyage des fichiers physiques des médias liés (même logique que deleteMedia()) :
+            // supprimer le projet ne doit pas laisser de fichiers orphelins dans public/uploads/projects/.
+            foreach ($project->getMedia() as $media) {
+                $mediaUploader->delete(basename($media->getFilePath()), 'projects');
+            }
+
+            // Journaliser la suppression (avant la suppression pour conserver l'accès à
+            // l'entité). Survit à la suppression : ProjectHistory.project_id passe à NULL
+            // au lieu d'être supprimé en cascade, et ProjectHistory::$projectTitle conserve
+            // le nom du projet indépendamment de la relation — cf. ProjectHistory.
+            //
+            // persist() explicite indispensable ici : le cascade "persist" porté par
+            // Project::$histories ne se déclenche PAS pour une entité déjà programmée
+            // pour suppression dans le même flush() — sans cet appel, cette entrée
+            // précise ne serait jamais insérée en base (vérifié en pratique).
             $project->addToHistory('project_deleted', $this->getAuthenticatedUser(), 'Projet supprimé');
+            $entityManager->persist($project->getHistories()->last());
 
             $entityManager->remove($project);
             $entityManager->flush();

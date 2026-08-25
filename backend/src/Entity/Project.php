@@ -105,8 +105,17 @@ class Project
     #[Groups(['api_admin'])]
     private Collection $collaborators;
 
-    /** @var Collection<int, ProjectHistory> */
-    #[ORM\OneToMany(mappedBy: 'project', targetEntity: ProjectHistory::class, cascade: ['persist'], orphanRemoval: true)]
+    /**
+     * Pas d'orphanRemoval : c'est un journal d'audit append-only (removeHistory()
+     * n'est appelé nulle part dans l'app) — avec orphanRemoval, Doctrine supprimait
+     * en cascade TOUT l'historique dès que le projet lui-même était supprimé, y
+     * compris l'entrée "project_deleted" qu'on vient d'y ajouter dans le même flush,
+     * la rendant illisible. Sans cascade ORM, c'est la contrainte SQL du côté
+     * ProjectHistory (onDelete: SET NULL) qui prend le relais et préserve les lignes.
+     *
+     * @var Collection<int, ProjectHistory>
+     */
+    #[ORM\OneToMany(mappedBy: 'project', targetEntity: ProjectHistory::class, cascade: ['persist'])]
     private Collection $histories;
 
     /** @var Collection<int, ProjectJoinRequest> */
@@ -710,6 +719,7 @@ class Project
         $history = new ProjectHistory();
         $history
             ->setProject($this)
+            ->setProjectTitle($this->getTitle())
             ->setAction($action)
             ->setUser($user)
             ->setDetails($details);

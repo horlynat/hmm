@@ -20,9 +20,20 @@ class ProjectHistory
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'histories')]
-    #[ORM\JoinColumn(name: 'project_id', nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(name: 'project_id', nullable: true, onDelete: 'SET NULL')]
     #[Groups(['api_admin'])]
-    private Project $project;
+    private ?Project $project = null;
+
+    /**
+     * Copie figée du titre du projet au moment de l'action, prise indépendamment
+     * de la relation `project`. Nécessaire car la suppression d'un projet met
+     * `project_id` à NULL (onDelete: SET NULL) au lieu de supprimer son historique
+     * en cascade — sans cette copie, l'entrée "project_deleted" perdrait le seul
+     * libellé qui la rend lisible une fois le projet effectivement disparu.
+     */
+    #[ORM\Column(type: 'string', length: 255)]
+    #[Groups(['api_admin'])]
+    private string $projectTitle = '';
 
     #[ORM\Column(type: 'string', length: 50)]
     #[Groups(['api_admin'])]
@@ -52,7 +63,7 @@ class ProjectHistory
         return $this->id;
     }
 
-    public function getProject(): Project
+    public function getProject(): ?Project
     {
         return $this->project;
     }
@@ -60,6 +71,17 @@ class ProjectHistory
     public function setProject(Project $project): self
     {
         $this->project = $project;
+        return $this;
+    }
+
+    public function getProjectTitle(): string
+    {
+        return $this->projectTitle;
+    }
+
+    public function setProjectTitle(string $projectTitle): self
+    {
+        $this->projectTitle = $projectTitle;
         return $this;
     }
 

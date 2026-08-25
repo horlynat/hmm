@@ -218,13 +218,27 @@
 						<ul class="space-y-2 mb-0 max-h-72 overflow-y-auto">
 							{% for history in recentHistory %}
 								<li>
-									<a href="{{ path('admin_project_read', {id: history.project.id}) }}" class="flex items-start gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-										<span class="text-base shrink-0 mt-0.5" aria-hidden="true">{{ history.getActionIcon() }}</span>
-										<span class="min-w-0 flex-1">
-											<span class="block text-xs text-brand-dark truncate"><strong>{{ history.getActionLabel() }}</strong> · {{ history.project.title }}</span>
-											<span class="block text-[11px] text-brand-dark/40">{{ history.user.fullName ?? history.user.email }} — {{ history.createdAt|date('d/m H:i') }}</span>
-										</span>
-									</a>
+									{# history.project est absent si le projet a depuis été supprimé
+									   (project_id passe à NULL — cf. ProjectHistory::$projectTitle,
+									   la copie figée du titre qui reste lisible dans ce cas) : pas de
+									   lien à construire, la fiche projet n'existe plus. #}
+									{% if history.project %}
+										<a href="{{ path('admin_project_read', {id: history.project.id}) }}" class="flex items-start gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+											<span class="text-base shrink-0 mt-0.5" aria-hidden="true">{{ history.getActionIcon() }}</span>
+											<span class="min-w-0 flex-1">
+												<span class="block text-xs text-brand-dark truncate"><strong>{{ history.getActionLabel() }}</strong> · {{ history.projectTitle }}</span>
+												<span class="block text-[11px] text-brand-dark/40">{{ history.user.fullName ?? history.user.email }} — {{ history.createdAt|date('d/m H:i') }}</span>
+											</span>
+										</a>
+									{% else %}
+										<div class="flex items-start gap-2 rounded-lg px-2 py-1.5 opacity-60">
+											<span class="text-base shrink-0 mt-0.5" aria-hidden="true">{{ history.getActionIcon() }}</span>
+											<span class="min-w-0 flex-1">
+												<span class="block text-xs text-brand-dark truncate"><strong>{{ history.getActionLabel() }}</strong> · {{ history.projectTitle }} <em>(supprimé)</em></span>
+												<span class="block text-[11px] text-brand-dark/40">{{ history.user.fullName ?? history.user.email }} — {{ history.createdAt|date('d/m H:i') }}</span>
+											</span>
+										</div>
+									{% endif %}
 								</li>
 							{% endfor %}
 						</ul>
