@@ -353,8 +353,7 @@
       "text": "An occasional email, no spam — only when a new article or project comes out.",
       "placeholder": "you@example.com",
       "submit": "Subscribe",
-      "success": "Subscription confirmed, thank you!",
-      "note": "Your data stays private — never shared or sold."
+      "success": "Almost there! Check your inbox to confirm your subscription."
     }
   },
   "freelances": {
