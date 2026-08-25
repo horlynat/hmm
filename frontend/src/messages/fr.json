@@ -846,8 +846,6 @@
       "cta": "Demander un résumé à l'IA",
       "title": "Résumé par l'IA",
       "disclaimer": "Généré à partir du contenu de cette page.",
-      "articleQuestion": "Résume cet article intitulé « {title} » en 2 ou 3 phrases, et précise à qui il s'adresse.",
-      "projectQuestion": "Explique en 2 ou 3 phrases ce qui rend le projet « {title} » intéressant, et à qui il s'adresse.",
       "followUpPlaceholder": "Une question sur ce contenu ?"
     }
   },

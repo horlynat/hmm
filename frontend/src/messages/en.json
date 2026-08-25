@@ -846,8 +846,6 @@
       "cta": "Ask the AI for a summary",
       "title": "AI summary",
       "disclaimer": "Generated from this page's content.",
-      "articleQuestion": "Summarize this article titled \"{title}\" in 2 or 3 sentences, and say who it's for.",
-      "projectQuestion": "Explain in 2 or 3 sentences what makes the project \"{title}\" interesting, and who it's for.",
       "followUpPlaceholder": "A question about this content?"
     }
   },

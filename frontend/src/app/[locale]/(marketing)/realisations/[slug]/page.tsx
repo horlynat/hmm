@@ -92,13 +92,12 @@ export default async function ProjectDetailPage({
   params: Promise<{ slug: string; locale: string }>;
 }) {
   const { slug, locale } = await params;
-  const [project, projects, t, td, tc, tai] = await Promise.all([
+  const [project, projects, t, td, tc] = await Promise.all([
     getProjectBySlug(slug, locale),
     getProjects(locale),
     getTranslations({ locale, namespace: "projects" }),
     getTranslations({ locale, namespace: "projects.detail" }),
     getTranslations({ locale, namespace: "common" }),
-    getTranslations({ locale, namespace: "aiAssistant.pageInsight" }),
   ]);
 
   if (!project) {
@@ -122,6 +121,21 @@ export default async function ProjectDetailPage({
   const galleryMedia = (project.media ?? []).filter(
     (m) => m.id !== info?.coverImage?.id && m.id !== info?.architectureDiagram?.id,
   );
+
+  // Texte brut pour AiPageInsight — /api/ai-assistant/summarize (endpoint
+  // dédié au résumé) valide `content` à 6000 caractères max côté backend.
+  // Agrège tout ce qui donne une vraie matière (description, rôle,
+  // objectifs, stack, résultats chiffrés) — pas seulement `description`,
+  // souvent trop courte à elle seule pour un résumé convaincant.
+  const projectPlainContent = [
+    getArticleExcerpt(project.description, 2000),
+    info?.role ? `Rôle : ${info.role}.` : "",
+    info?.objectives.length ? `Objectifs : ${info.objectives.join(" ; ")}.` : "",
+    info?.techStack.length ? `Stack technique : ${info.techStack.map((tech) => tech.name).join(", ")}.` : "",
+    info?.results.length ? `Résultats : ${info.results.map((r) => `${r.label} : ${r.value}`).join(" ; ")}.` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const projectImage = info?.coverImage ? getMediaUrl(info.coverImage.filePath) : undefined;
   const projectJsonLd = {
@@ -201,6 +215,11 @@ export default async function ProjectDetailPage({
                 {td("repoLink")} →
               </a>
             )}
+          </div>
+          {/* Dans le hero, pas en fin de page : un visiteur qui ne lit pas
+              jusqu'au bout ne verrait jamais l'offre de résumé sinon. */}
+          <div className="hero-in mt-6" style={{ animationDelay: "0.32s" }}>
+            <AiPageInsight title={project.title} content={projectPlainContent} contentType="project" />
           </div>
         </div>
       </section>
@@ -382,9 +401,6 @@ export default async function ProjectDetailPage({
 
       <section className="px-6 py-10">
         <div className="mx-auto max-w-[840px] border-t border-[var(--border-softer)] pt-6">
-          <div className="mb-8">
-            <AiPageInsight seedQuestion={tai("projectQuestion", { title: project.title })} />
-          </div>
           <ButtonLink href="/realisations" variant="secondary" className="mb-6">
             {t("eyebrow")} ←
           </ButtonLink>
