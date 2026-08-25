@@ -20,6 +20,20 @@ use Symfony\Component\Validator\Constraints as Assert;
  * `content` EST la matière à résumer, pas une donnée à vérifier contre un
  * corpus tiers : système prompt dédié, cf. AiContentSummaryProcessor.
  *
+ * Le client ne fournit QUE `slug` + `contentType` : le titre et le texte à
+ * résumer sont résolus et construits côté serveur (AiContentSummaryProcessor
+ * ::resolveContent()) à partir de l'Article/Project réel en base. Ce n'était
+ * PAS le cas dans une première version, qui acceptait `title`/`content`
+ * directement du client — en pratique injectés tels quels dans le system
+ * prompt et explicitement exemptés du filtre anti-injection (parce que
+ * "censés" venir d'un rendu serveur de confiance). Mais rien ne garantissait
+ * réellement ça côté API : n'importe quel appelant pouvait poster un
+ * `content` arbitraire directement sur cet endpoint public, atterrissant
+ * dans la partie SYSTEM du prompt avec un statut privilégié, sans passer par
+ * AiAssistantInputGuard — pire qu'une injection côté question. Résoudre par
+ * slug ferme complètement cette brèche : ce qui est résumé est toujours,
+ * garanti, le contenu réellement publié.
+ *
  * Mêmes conventions que AiAssistantChatApiResource : ressource RPC pure (pas
  * d'entité Doctrine liée), getId() renvoie une valeur fixe (blank node
  * JSON-LD, jamais utilisée pour re-fetch quoi que ce soit), sécurité
@@ -47,21 +61,16 @@ class AiContentSummaryApiResource
         return 'summarize';
     }
 
-    #[Assert\NotBlank(message: 'Le titre est obligatoire.')]
-    #[Assert\Length(max: 300, maxMessage: 'Le titre ne peut pas dépasser {{ limit }} caractères.')]
-    #[Groups(['summarize_input'])]
-    private string $title = '';
-
     /**
-     * Texte intégral (brut, sans HTML) de l'article/projet à résumer — la
-     * matière du résumé, jamais une instruction (cf. system prompt du
-     * processor). Contenu de confiance (rédigé côté admin), jamais passé au
-     * filtre anti-injection contrairement à `question` ci-dessous.
+     * Slug de l'article ou du projet à résumer — jamais son titre/contenu
+     * directement (cf. docblock de classe). Le processor résout ce slug
+     * contre l'Article/Project réel en base ; un slug inconnu se solde par
+     * un 404, jamais par un résumé construit sur une donnée non vérifiée.
      */
-    #[Assert\NotBlank(message: 'Le contenu est obligatoire.')]
-    #[Assert\Length(max: 6000, maxMessage: 'Le contenu ne peut pas dépasser {{ limit }} caractères.')]
+    #[Assert\NotBlank(message: 'Le slug est obligatoire.')]
+    #[Assert\Length(max: 255, maxMessage: 'Le slug ne peut pas dépasser {{ limit }} caractères.')]
     #[Groups(['summarize_input'])]
-    private string $content = '';
+    private string $slug = '';
 
     #[Assert\Choice(choices: ['article', 'project'], message: 'Type de contenu invalide.')]
     #[Groups(['summarize_input'])]
@@ -97,26 +106,14 @@ class AiContentSummaryApiResource
     #[Groups(['summarize_output'])]
     private array $suggestions = [];
 
-    public function getTitle(): string
+    public function getSlug(): string
     {
-        return $this->title;
+        return $this->slug;
     }
 
-    public function setTitle(string $title): static
+    public function setSlug(string $slug): static
     {
-        $this->title = $title;
-
-        return $this;
-    }
-
-    public function getContent(): string
-    {
-        return $this->content;
-    }
-
-    public function setContent(string $content): static
-    {
-        $this->content = $content;
+        $this->slug = $slug;
 
         return $this;
     }

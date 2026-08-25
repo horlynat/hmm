@@ -7,8 +7,11 @@ use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\AiContentSummaryApiResource;
 use App\Entity\AiAssistantConversationLog;
 use App\Entity\AiAssistantSettings;
+use App\Entity\Project;
 use App\Exception\AiAssistantUnavailableException;
 use App\Repository\AiAssistantSettingsRepository;
+use App\Repository\ArticleRepository;
+use App\Repository\ProjectRepository;
 use App\Service\AiAssistantBudgetGuard;
 use App\Service\AiAssistantInputGuard;
 use App\Service\AiAssistantOutputSanitizer;
@@ -17,6 +20,7 @@ use App\Service\PublicSubmissionThrottler;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Résume un article ou un projet du portfolio de façon captivante, à partir
@@ -53,6 +57,8 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         private readonly EntityManagerInterface $entityManager,
         private readonly RequestStack $requestStack,
         private readonly LoggerInterface $logger,
+        private readonly ArticleRepository $articleRepository,
+        private readonly ProjectRepository $projectRepository,
         private readonly string $appSecret,
     ) {
     }
@@ -82,10 +88,12 @@ final class AiContentSummaryProcessor implements ProcessorInterface
             throw new AiAssistantUnavailableException('Plafond budgétaire mensuel atteint.');
         }
 
-        // Contrairement au chat, `content` n'est JAMAIS passé au filtre
-        // anti-injection : c'est du contenu de confiance (article/projet
-        // publié, rédigé côté admin ROLE_ADMIN), pas une saisie visiteur.
-        // Seule une éventuelle question de suivi (visiteur) l'est.
+        // Contrairement au chat, le contenu résolu ci-dessous n'est JAMAIS
+        // passé au filtre anti-injection : il vient de l'Article/Project
+        // réel en base (rédigé côté admin ROLE_ADMIN), jamais du client — cf.
+        // resolveContent() et le docblock de AiContentSummaryApiResource
+        // pour pourquoi ça doit être résolu ici et non fourni par l'appelant.
+        // Seule une éventuelle question de suivi (visiteur) passe ce filtre.
         if ('' !== $question && $this->inputGuard->isSuspicious($question)) {
             $this->persistBlockedLog($locale, $question, 'input_injection_suspected');
             $data->setAnswer($this->fallbackText($settings, $locale));
@@ -93,11 +101,18 @@ final class AiContentSummaryProcessor implements ProcessorInterface
             return $data;
         }
 
+        $resolved = $this->resolveContent($data->getSlug(), $data->getContentType(), $locale);
+        if (null === $resolved) {
+            $this->persistBlockedLog($locale, $question, 'unknown_content_slug');
+
+            throw new NotFoundHttpException('Contenu introuvable.');
+        }
+
         $startedAt = microtime(true);
         $effectiveQuestion = '' !== $question ? $question : $this->defaultSeedQuestion($locale);
 
         try {
-            $systemPrompt = $this->buildSystemPrompt($data->getTitle(), $data->getContent(), $data->getContentType(), $locale);
+            $systemPrompt = $this->buildSystemPrompt($resolved['title'], $resolved['content'], $data->getContentType(), $locale);
             $result = $this->claudeClient->ask($systemPrompt, $data->getHistory(), $effectiveQuestion, true);
         } catch (\Throwable $e) {
             $this->logger->error('AiContentSummaryProcessor : pipeline en échec.', ['error' => $e->getMessage()]);
@@ -138,6 +153,111 @@ final class AiContentSummaryProcessor implements ProcessorInterface
     private function defaultSeedQuestion(string $locale): string
     {
         return 'en' === $locale ? 'Write the summary.' : 'Rédige le résumé.';
+    }
+
+    /**
+     * Résout `slug`+`contentType` contre l'Article/Project réel en base et
+     * construit le texte à résumer côté serveur — jamais depuis une valeur
+     * fournie par le client (cf. docblock de AiContentSummaryApiResource).
+     * `null` si le slug ne correspond à rien : à l'appelant de refuser
+     * proprement plutôt que d'appeler Claude sur un contenu inexistant.
+     *
+     * @return array{title: string, content: string}|null
+     */
+    private function resolveContent(string $slug, string $contentType, string $locale): ?array
+    {
+        if ('project' === $contentType) {
+            $project = $this->projectRepository->findOneBy(['slug' => $slug]);
+            if (null === $project) {
+                return null;
+            }
+
+            return [
+                'title' => $this->pickLocalized($project->getTitle(), $project->getTitleEn(), $locale),
+                'content' => $this->buildProjectContent($project, $locale),
+            ];
+        }
+
+        $article = $this->articleRepository->findOneBy(['slug' => $slug]);
+        if (null === $article) {
+            return null;
+        }
+
+        return [
+            'title' => $this->pickLocalized($article->getTitle(), $article->getTitleEn(), $locale),
+            // 4000 caractères (~700-800 mots) : couvre largement un article
+            // de blog avec de la marge, sous la limite de 6000 côté Claude
+            // (cf. ancienne limite de AiContentSummaryApiResource::$content).
+            'content' => $this->plainExcerpt($this->pickLocalized($article->getContent(), $article->getContentEn(), $locale), 4000),
+        ];
+    }
+
+    /**
+     * Même agrégation que le frontend construisait auparavant (description +
+     * rôle + objectifs + stack technique + résultats chiffrés) — reproduite
+     * ici pour que ce soit le serveur, jamais le client, qui décide de ce
+     * qui est résumé. `description` seule est souvent trop courte pour un
+     * résumé convaincant, cf. ProjectInfo pour la matière structurée.
+     */
+    private function buildProjectContent(Project $project, string $locale): string
+    {
+        $lines = [$this->plainExcerpt($this->pickLocalized($project->getDescription(), $project->getDescriptionEn(), $locale), 2000)];
+
+        $info = $project->getInfo();
+        if (null !== $info) {
+            $role = $this->pickLocalized($info->getRole() ?? '', $info->getRoleEn(), $locale);
+            if ('' !== $role) {
+                $lines[] = "Rôle : {$role}.";
+            }
+
+            $objectives = $this->pickLocalizedList($info->getObjectives(), $info->getObjectivesEn(), $locale);
+            if ([] !== $objectives) {
+                $lines[] = 'Objectifs : '.implode(' ; ', $objectives).'.';
+            }
+
+            $techStack = $this->pickLocalizedList($info->getTechStack(), $info->getTechStackEn(), $locale);
+            if ([] !== $techStack) {
+                $lines[] = 'Stack technique : '.implode(', ', array_map(static fn (array $tech) => (string) $tech['name'], $techStack)).'.';
+            }
+
+            $results = $this->pickLocalizedList($info->getResults(), $info->getResultsEn(), $locale);
+            if ([] !== $results) {
+                $lines[] = 'Résultats : '.implode(' ; ', array_map(static fn (array $r) => "{$r['label']} : {$r['value']}", $results)).'.';
+            }
+        }
+
+        return implode("\n", array_filter($lines, static fn (string $line) => '' !== $line));
+    }
+
+    private function pickLocalized(string $fr, ?string $en, string $locale): string
+    {
+        return 'en' === $locale && null !== $en && '' !== $en ? $en : $fr;
+    }
+
+    /** @param array<int, mixed> $fr @param array<int, mixed>|null $en @return array<int, mixed> */
+    private function pickLocalizedList(array $fr, ?array $en, string $locale): array
+    {
+        return 'en' === $locale && null !== $en && [] !== $en ? $en : $fr;
+    }
+
+    /**
+     * Texte brut depuis du HTML admin — strip_tags() PUIS décodage des
+     * entités (`&#39;`, `&nbsp;`...) : l'ordre inverse laisserait des
+     * entités échapper un tag factice, et les décoder avant strip_tags()
+     * réintroduirait du HTML actif si le texte contenait une entité comme
+     * `&lt;script&gt;`. `ENT_QUOTES | ENT_HTML5` couvre apostrophes
+     * typographiques et espaces insécables en plus des guillemets standard.
+     */
+    private function plainExcerpt(string $html, int $maxLength): string
+    {
+        $text = html_entity_decode(strip_tags($html), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
+        $text = trim(preg_replace('/\s+/u', ' ', $text) ?? $text);
+
+        if (mb_strlen($text) <= $maxLength) {
+            return $text;
+        }
+
+        return mb_substr($text, 0, $maxLength - 1).'…';
     }
 
     /**
