@@ -26,6 +26,30 @@ class NewsletterSubscriberRepository extends ServiceEntityRepository
         ;
     }
 
+    /** Confirmés (lien de double opt-in cliqué) ET toujours abonnés — pour le badge admin. */
+    public function countConfirmed(): int
+    {
+        return (int) $this->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            ->andWhere('s.confirmedAt IS NOT NULL')
+            ->andWhere('s.unsubscribedAt IS NULL')
+            ->getQuery()
+            ->getSingleScalarResult()
+        ;
+    }
+
+    /** Inscrits mais qui n'ont pas encore cliqué le lien de confirmation — pour le badge admin. */
+    public function countPending(): int
+    {
+        return (int) $this->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            ->andWhere('s.confirmedAt IS NULL')
+            ->andWhere('s.unsubscribedAt IS NULL')
+            ->getQuery()
+            ->getSingleScalarResult()
+        ;
+    }
+
     /**
      * Destinataires d'une notification de nouveau contenu — confirmés
      * (double opt-in) ET non désinscrits. cf. App\Service\NewsletterNotifier.
