@@ -166,6 +166,11 @@ class ProjectVoter extends Voter
      * Règle d'édition.
      * Réservée aux administrateurs. L'édition est verrouillée si le projet
      * est dans un état finalisé ou suspendu, même pour un administrateur.
+     *
+     * Pas une impasse : ProjectStatusEnum::VALID_TRANSITIONS autorise
+     * explicitement COMPLETED -> IN_PROGRESS (CHANGE_STATUS, ROLE_ADMIN) pour
+     * corriger un projet mal présenté après clôture — une fois rouvert, ce
+     * verrou se lève de lui-même puisqu'il ne teste que le statut courant.
      */
     private function canEdit(Project $project, User $user): bool
     {
