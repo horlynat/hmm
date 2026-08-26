@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 
 interface AnimatedStatValueProps {
-  /** Ex. "70% des prises de RDV", "-50%" — seul le nombre en tête est animé, le reste de la chaîne est affiché tel quel. */
-  value: string;
+  /** Ex. "70% des prises de RDV", "-50%" — seul le nombre en tête est animé, le reste de la chaîne est affiché tel quel. `null`/vide tolérés : la saisie admin (label|valeur) n'impose pas une valeur — cf. AdminProjectController::parsePairs — on affiche alors une chaîne vide plutôt que de planter le rendu (et le build statique). */
+  value: string | null | undefined;
   className?: string;
 }
 
@@ -20,9 +20,10 @@ const NUMBER_PREFIX = /^(-?)(\d+(?:[.,]\d+)?)/;
  * chaîne (signe compris) est conservé tel quel autour.
  */
 export function AnimatedStatValue({ value, className }: AnimatedStatValueProps) {
-  const match = useMemo(() => value.match(NUMBER_PREFIX), [value]);
+  const safeValue = value ?? "";
+  const match = useMemo(() => safeValue.match(NUMBER_PREFIX), [safeValue]);
   const ref = useRef<HTMLSpanElement>(null);
-  const [display, setDisplay] = useState(() => (match ? "0" : value));
+  const [display, setDisplay] = useState(() => (match ? "0" : safeValue));
   const reduce = useReducedMotion();
 
   useEffect(() => {
@@ -65,11 +66,11 @@ export function AnimatedStatValue({ value, className }: AnimatedStatValueProps) 
   }, [match, reduce]);
 
   if (!match) {
-    return <span className={className}>{value}</span>;
+    return <span className={className}>{safeValue}</span>;
   }
 
   const [, sign] = match;
-  const suffix = value.slice(match[0].length);
+  const suffix = safeValue.slice(match[0].length);
 
   return (
     <span ref={ref} className={className}>

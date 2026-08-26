@@ -41,7 +41,7 @@ export interface ProjectInfo {
   objectives: string[];
   techStack: { name: string; rationale: string | null }[];
   challenges: { problem: string; solution: string }[];
-  results: { label: string; value: string }[];
+  results: { label: string; value: string | null }[];
   repoUrl: string | null;
   coverImage: Media | null;
   architectureDiagram: Media | null;
