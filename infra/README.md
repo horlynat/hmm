@@ -92,9 +92,10 @@ une variable d'env via `docker-entrypoint.sh`) :
 | `secrets/postfixadmin_db_password` | Mot de passe MySQL de l'utilisateur `postfixadmin` (base dédiée, native sur l'hôte — cf. §10) |
 | `secrets/postfixadmin_setup_password` | Hash bcrypt protégeant `/setup.php` de PostfixAdmin (cf. §10) |
 | `secrets/offsite_s3_endpoint` | URL du endpoint S3-compatible (ex. `https://<account_id>.r2.cloudflarestorage.com` pour Cloudflare R2) — **vide = copie hors-site désactivée**, voir ci-dessous |
-| `secrets/offsite_s3_bucket` | Nom du bucket dédié à la copie hors-site des uploads |
+| `secrets/offsite_s3_bucket` | Nom du bucket dédié à la copie hors-site (uploads ET sauvegardes DB, préfixes séparés) |
 | `secrets/offsite_s3_access_key_id` | Access key ID du provider S3-compatible |
 | `secrets/offsite_s3_secret_access_key` | Secret access key du provider S3-compatible |
+| `secrets/age_recipient` | Clé **publique** age (`age1...`, cf. §8) utilisée pour chiffrer chaque dump avant sa copie hors-site — jamais la clé privée, qui ne doit exister que hors de ce VPS. **Vide = copie hors-site des sauvegardes désactivée**, cf. §8 |
 
 **Copie hors-site des uploads (`App\Service\OffsiteBackupUploader`)** : chaque
 fichier uploadé (`App\Service\MediaUploader` — photo de profil, logo, documents
@@ -118,6 +119,15 @@ echo -n 'hmm-uploads-backup' > infra/secrets/offsite_s3_bucket
 echo -n '<access_key_id>' > infra/secrets/offsite_s3_access_key_id
 echo -n '<secret_access_key>' > infra/secrets/offsite_s3_secret_access_key
 chmod 600 infra/secrets/offsite_s3_*
+```
+
+**Idem pour `secrets/age_recipient`** (nouveau secret requis par le service
+`backend`, cf. §8) : `deploy-remote.sh` bloquera aussi le prochain déploiement
+tant que ce fichier n'existe pas, même vide —
+
+```bash
+# Sans clé pour l'instant (désactive juste la copie hors-site des sauvegardes) :
+touch infra/secrets/age_recipient && chmod 600 infra/secrets/age_recipient
 ```
 
 ```bash
@@ -292,22 +302,58 @@ Cloudflare) — sinon revoir `SYMFONY_TRUSTED_PROXIES` et
 
 ### 8. Sauvegardes
 
+Règle 3-2-1 : 3 copies, 2 supports différents, 1 hors-site — désormais
+tenue par 3 mécanismes distincts qui ne partagent aucun point de défaillance
+commun, détaillés dans `backend/docs/incident-data-loss.md` :
+
+1. **Locale** — `App\Service\DatabaseBackupService` (mysqldump), déclenchée
+   depuis `/admin/backup` ou en CLI (`app:backup:create`), écrite dans
+   `infra/backups/` (bind mount du VPS — cf. `docker-compose.prod.yml`,
+   survit désormais aux déploiements, contrairement à avant que ce bind
+   mount existe).
+2. **Cloud, automatique** — la même commande chiffre (age) et pousse chaque
+   dump vers le bucket S3-compatible (`OFFSITE_S3_*`, préfixe `database/`) :
+   copie 24/7, indépendante du VPS.
+3. **Machine perso** — `scripts/pull-backups.sh`, à exécuter (ou cron/
+   launchd) **depuis ta machine**, pas sur le VPS : tire `infra/backups/` en
+   `rsync` par-dessus SSH. Support physiquement différent du VPS et du
+   provider cloud.
+
+Générer la clé de chiffrement (une seule fois, **jamais sur le VPS** pour la
+partie privée) :
+
 ```bash
-age-keygen -o /root/.age/backup-key.txt   # noter la clé publique affichée
-chmod 600 /root/.age/backup-key.txt
+age-keygen -o backup-key.txt   # depuis TA machine, pas le VPS
+# Copie la clé publique affichée (age1...) dans le secret ci-dessous.
+# Garde backup-key.txt (la clé PRIVÉE) uniquement sur ta machine / un gestionnaire
+# de secrets — c'est la seule façon de déchiffrer une sauvegarde le jour où le
+# VPS n'existe plus.
+echo -n 'age1...' > infra/secrets/age_recipient
+chmod 600 infra/secrets/age_recipient
 ```
+
+Sans ce secret (ou sans les 4 `OFFSITE_S3_*`, cf. §4), la copie hors-site (2)
+se désactive proprement (log, pas d'erreur) — seule la copie locale (1) reste
+active, ce qui ne protège plus d'une perte du VPS lui-même.
 
 Ajouter au crontab root :
 ```
-0 3 * * * DEPLOY_PATH=/opt/hmm AGE_RECIPIENT=age1... /opt/hmm/infra/scripts/backup.sh
+0 3 * * * docker compose -f /opt/hmm/infra/docker-compose.prod.yml exec -T -u www-data backend php bin/console app:backup:create
 # Purge RGPD des logs de conversation de l'assistant IA (> 90 jours, cf. §12)
 0 4 * * * docker compose -f /opt/hmm/infra/docker-compose.prod.yml exec -T -u www-data backend php bin/console app:ai-assistant:purge-logs
 # Purge du journal de connexions (connexions réussies > 365j, tentatives échouées > 90j, cf. SecurityLogRetentionPolicy)
 0 5 * * * docker compose -f /opt/hmm/infra/docker-compose.prod.yml exec -T -u www-data backend php bin/console app:security-log:purge
 ```
 
-Tester une restauration au moins une fois (`scripts/backup.sh --restore <fichier>`)
-avant d'en dépendre.
+Et, **depuis ta machine perso** (pas le VPS) :
+```
+0 7 * * * VPS_HOST=<IP_VPS> /chemin/vers/pull-backups.sh >> ~/hmm-backups/pull.log 2>&1
+```
+
+Tester une restauration au moins une fois avant d'en dépendre — normale
+(base vivante, VPS intact) via `/admin/backup` (SUPER_ADMIN), désastre
+complet (VPS perdu, base à reconstruire depuis la copie cloud ou la machine
+perso) via la procédure pas-à-pas de `backend/docs/incident-data-loss.md`.
 
 ### 9. Monitoring (léger, cohérent avec un VPS solo)
 
@@ -603,7 +649,7 @@ reste, `messenger-worker` ci-dessus) ; conversation temps réel (Claude,
 - [ ] AIDE/rkhunter installés et planifiés
 - [ ] auditd actif avec règles critiques
 - [ ] TLS vérifié (Cloudflare Full Strict + cert Origin sur Traefik)
-- [ ] Sauvegardes automatiques chiffrées + restauration testée
+- [ ] Sauvegardes 3-2-1 en place (locale + hors-site cloud + machine perso, cf. §8) et restauration testée sur les trois
 - [ ] Monitoring (Netdata + Uptime externe) en place
 - [ ] `admin-ipwhitelist` éditée avec la vraie IP avant d'utiliser `mailadmin.horlynat.com` (`dark.horlynat.com` n'en dépend plus, cf. §5)
 - [ ] DNS `db.horlynat.com` + application Cloudflare Access créés avant d'utiliser Adminer (cf. §10.5) — sans Access, `cloudflare-only` seul ne bloque que le hors-Cloudflare, pas un visiteur Cloudflare quelconque

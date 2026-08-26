@@ -136,6 +136,11 @@ services:
       - offsite_s3_bucket
       - offsite_s3_access_key_id
       - offsite_s3_secret_access_key
+      # Clé PUBLIQUE age (App\Service\DatabaseBackupService::shipOffsite) —
+      # seul messenger-worker n'en a pas besoin : la sauvegarde tourne
+      # toujours dans ce conteneur (admin UI ou `exec backend` en cron),
+      # jamais via Messenger.
+      - age_recipient
     extra_hosts:
       # Postfix/Dovecot tournent nativement sur l'hôte, hors Docker
       # (cf. guide hardening portfolio §9) — jamais exposés publiquement,
@@ -161,6 +166,15 @@ services:
       # OffsiteBackupMessageHandler y lit le fichier fraîchement uploadé pour
       # sa copie hors-site asynchrone.
       - uploads_data:/app/public/uploads
+      # Sauvegardes DB (App\Service\DatabaseBackupService, admin UI +
+      # `app:backup:create`) — même bug que uploads_data ci-dessus tant que ce
+      # bind mount n'existait pas : var/backups vivait dans le système de
+      # fichiers éphémère du conteneur, détruit à chaque déploiement. Bind
+      # mount (pas un volume nommé) délibérément : un dossier host normal,
+      # directement `rsync`-able par scripts/pull-backups.sh (exécuté depuis
+      # une machine perso, pas sur le VPS) sans passer par les internes d'un
+      # volume Docker.
+      - ./backups:/app/var/backups
     mem_limit: 3g
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2019/config/"]
@@ -421,3 +435,5 @@ secrets:
     file: ./secrets/offsite_s3_access_key_id
   offsite_s3_secret_access_key:
     file: ./secrets/offsite_s3_secret_access_key
+  age_recipient:
+    file: ./secrets/age_recipient
