@@ -146,6 +146,7 @@ services:
     App\Service\DatabaseBackupService:
         arguments:
             $backupDir: '%app.backup_dir%'
+            $ageRecipient: '%env(AGE_RECIPIENT)%'
 
     # ⚙️ Remplace le "notifier.channel_policy" statique (framework-bundle, config
     #    notifier.yaml) par une version pilotée depuis l'admin (Paramètres > Notifications).

@@ -73,9 +73,39 @@ corriger une fois, pas à chaque incident :
 echo "ssh-ed25519 AAAA... second-porteur@..." >> ~deploy/.ssh/authorized_keys
 ```
 
+## 5. Cloudflare Access — en amont de tout ce qui précède
+
+`dark.horlynat.com` est protégé par `cloudflare-only` (aucun accès direct à
+l'origine hors réseau Cloudflare) **et** Cloudflare Access (Zero Trust, code
+email) — cf. `infra/docker-compose.prod.yml`, routeur `dark`. Si l'un des
+deux casse (compte Cloudflare bloqué, policy Access mal configurée, panne
+Cloudflare), la requête n'atteint même pas `/login` : §1 et §2 ci-dessus ne
+s'appliquent pas, ils supposent qu'on peut déjà atteindre l'application.
+
+Aucun remède applicatif ici — c'est un problème de compte/service tiers, pas
+de code : vérifier le statut Cloudflare (cloudflare-status.com), l'accès au
+compte Cloudflare lui-même (§6 ci-dessous), et la policy Access dans le
+dashboard Zero Trust (Access → Applications → `dark.horlynat.com`).
+
+## 6. Points hors du contrôle applicatif — checklist humaine
+
+Aucun de ces points ne se corrige par un commit ; à vérifier/poser
+soi-même, une fois, pas à chaque incident :
+
+- [ ] **Compte Cloudflare** : 2FA avec codes de secours sauvegardés hors du
+  seul appareil habituel (perdre l'accès à ce compte bloque §5 ci-dessus).
+- [ ] **Compte GitHub** (`horlynat`) : 2FA + codes de secours — sans lui,
+  impossible de déclencher le rollback du §2.
+- [ ] **Domaine `horlynat.com`** : auto-renouvellement actif chez le
+  registrar, coordonnées de contact à jour (email de rappel d'expiration
+  souvent le seul filet avant coupure totale du site).
+- [ ] **Facturation** VPS / Cloudflare (plan payant éventuel) / bucket
+  S3-compatible : moyen de paiement à jour — une suspension pour impayé a le
+  même effet qu'une panne.
+
 ## Ce que ce runbook ne couvre pas
 
-Panne de base de données ou perte du VPS lui-même : voir `infra/README.md`
-§8 (sauvegardes chiffrées) — et **tester une restauration au moins une fois**
-avant d'en dépendre, comme indiqué là-bas. Un plan de secours jamais exécuté
-en conditions réelles n'est qu'une hypothèse.
+Perte de données (VPS détruit, base corrompue) : voir
+`docs/incident-data-loss.md`, qui a son propre runbook (sauvegarde 3-2-1,
+reconstruction complète) — distinct de celui-ci, qui ne couvre que l'accès,
+pas les données elles-mêmes.

@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Enum\NotificationPriorityEnum;
 use Doctrine\DBAL\Connection;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
@@ -16,6 +17,15 @@ use Symfony\Component\Process\Process;
  *
  * Le mot de passe transite par la variable d'environnement MYSQL_PWD (jamais
  * en argument de ligne de commande, pour éviter qu'il n'apparaisse dans `ps`).
+ *
+ * Copie hors-site : var/backups n'est qu'un volume Docker du VPS — perdre le
+ * VPS perd aussi ce dossier. Après chaque dump réussi, create() tente en plus
+ * une copie chiffrée (gzip + age) vers OffsiteBackupUploader (même bucket
+ * S3-compatible que les médias, préfixe "database/"). Best-effort : un échec
+ * de cette étape alerte (AdminAlertNotifier) mais ne fait jamais échouer
+ * create() — la sauvegarde locale, elle, a déjà réussi. Se désactive
+ * proprement (log, pas d'erreur) tant qu'AGE_RECIPIENT ou le provider S3 ne
+ * sont pas configurés.
  */
 final class DatabaseBackupService
 {
@@ -25,6 +35,13 @@ final class DatabaseBackupService
         private readonly Connection $connection,
         private readonly string $backupDir,
         private readonly AdminAlertNotifier $adminAlertNotifier,
+        private readonly OffsiteBackupUploader $offsiteBackupUploader,
+        private readonly LoggerInterface $logger,
+        // Clé publique age (ex: "age1...") — jamais la clé privée, qui ne
+        // doit JAMAIS vivre sur ce serveur (cf. docs/incident-data-loss.md).
+        // Chaîne vide par défaut : même convention que OffsiteBackupUploader,
+        // se désactive proprement tant qu'elle n'est pas configurée.
+        private readonly string $ageRecipient = '',
     ) {
         if (!is_dir($this->backupDir) && !mkdir($this->backupDir, 0775, true) && !is_dir($this->backupDir)) {
             throw new \RuntimeException(sprintf('Impossible de créer le répertoire de sauvegardes "%s".', $this->backupDir));
@@ -66,7 +83,81 @@ final class DatabaseBackupService
             throw new ProcessFailedException($process);
         }
 
+        $this->shipOffsite($filepath, $filename);
+
         return $filename;
+    }
+
+    /**
+     * Copie hors-site best-effort d'un dump qui vient d'être créé avec
+     * succès : gzip + chiffrement age (clé publique seulement) + upload vers
+     * OffsiteBackupUploader. N'importe quel échec ici est journalisé et
+     * remonté par alerte, jamais propagé — create() a déjà rempli son
+     * contrat (le fichier local existe).
+     */
+    private function shipOffsite(string $filepath, string $filename): void
+    {
+        if ('' === $this->ageRecipient || !$this->offsiteBackupUploader->isConfigured()) {
+            $this->logger->info('DatabaseBackupService : copie hors-site ignorée (AGE_RECIPIENT ou provider S3 non configuré).', [
+                'filename' => $filename,
+            ]);
+
+            return;
+        }
+
+        $gzPath = null;
+        $encPath = null;
+
+        try {
+            $gzPath = tempnam(sys_get_temp_dir(), 'db_backup_gz_');
+            $gzOut = gzopen($gzPath, 'wb9');
+            if (false === $gzOut) {
+                throw new \RuntimeException('Impossible de créer le flux gzip temporaire.');
+            }
+            $source = fopen($filepath, 'rb');
+            if (false === $source) {
+                throw new \RuntimeException(sprintf('Impossible de relire le dump "%s" pour compression.', $filepath));
+            }
+            try {
+                while (!feof($source)) {
+                    gzwrite($gzOut, fread($source, 1024 * 1024));
+                }
+            } finally {
+                fclose($source);
+                gzclose($gzOut);
+            }
+
+            $encPath = $gzPath . '.age';
+            $process = new Process(['age', '-r', $this->ageRecipient, '-o', $encPath, $gzPath]);
+            $process->setTimeout(120);
+            $process->run();
+
+            if (!$process->isSuccessful()) {
+                throw new ProcessFailedException($process);
+            }
+
+            $this->offsiteBackupUploader->uploadFile($encPath, 'database/' . $filename . '.gz.age');
+        } catch (\Throwable $e) {
+            $this->logger->error('DatabaseBackupService : échec de la copie hors-site.', [
+                'filename' => $filename,
+                'error' => $e->getMessage(),
+            ]);
+
+            $this->adminAlertNotifier->alert(
+                NotificationPriorityEnum::HIGH,
+                'Échec de la copie hors-site de la sauvegarde',
+                sprintf('La sauvegarde locale "%s" a réussi, mais sa copie hors-site a échoué : %s', $filename, $e->getMessage()),
+            );
+        } finally {
+            // Les deux ne contiennent que des données déjà présentes dans le
+            // dump local ($filepath, lui conservé) — sûr de les effacer.
+            if (null !== $gzPath && is_file($gzPath)) {
+                unlink($gzPath);
+            }
+            if (null !== $encPath && is_file($encPath)) {
+                unlink($encPath);
+            }
+        }
     }
 
     /**
