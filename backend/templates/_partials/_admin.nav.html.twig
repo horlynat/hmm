@@ -8,7 +8,7 @@
    est côté CRM malgré son préfixe de route : c'est une décision de
    recrutement, pas une action de production. admin_project_statistics reste
    côté ERP (c'était déjà son rattachement sous l'ex-groupe Finance). #}
-{% set isCrmActive = currentRoute starts with 'admin_collaborator' or currentRoute starts with 'admin_contact' or currentRoute starts with 'admin_request' or currentRoute starts with 'admin_testimonial' or currentRoute starts with 'admin_users' or currentRoute == 'admin_project_freelance_space' %}
+{% set isCrmActive = currentRoute starts with 'admin_collaborator' or currentRoute starts with 'admin_contact' or currentRoute starts with 'admin_newsletter' or currentRoute starts with 'admin_request' or currentRoute starts with 'admin_testimonial' or currentRoute starts with 'admin_users' or currentRoute == 'admin_project_freelance_space' %}
 {% set isErpActive = currentRoute starts with 'admin_finance' or (currentRoute starts with 'admin_project' and currentRoute != 'admin_project_freelance_space') %}
 {% set isContenuActive = currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_tag' or currentRoute starts with 'admin_article' or currentRoute starts with 'admin_course' or currentRoute starts with 'admin_experience' or currentRoute starts with 'admin_home_content' or currentRoute starts with 'admin_about_content' or currentRoute starts with 'admin_ai_assistant' %}
 {% set isSecuriteActive = currentRoute starts with 'admin_security_' or currentRoute starts with 'admin_admins' %}
@@ -48,12 +48,13 @@
 {% set canViewCollaborators = is_granted('ROLE_ADMIN') %}
 {% set canViewClients = is_granted('ROLE_ADMIN') %}
 {% set canViewContacts = is_granted(constant('App\\Security\\Voter\\ContactVoter::VIEW')) %}
+{% set canViewNewsletter = is_granted(constant('App\\Security\\Voter\\NewsletterVoter::VIEW')) %}
 {% set canViewQuoteRequests = is_granted(constant('App\\Security\\Voter\\QuoteVoter::VIEW')) %}
 {% set canViewTestimonials = is_granted(constant('App\\Security\\Voter\\TestimonialVoter::VIEW')) %}
-{# CRM — tout ce qui précède un projet signé : acquisition (devis, contacts),
-   relation client (clients, témoignages) et recrutement (collaborateurs,
-   candidatures d'auto-association). #}
-{% set canViewCrmSection = canViewQuoteRequests or canViewContacts or canViewCollaborators or canViewClients or canViewTestimonials or canViewProjectFreelanceSpace %}
+{# CRM — tout ce qui précède un projet signé : acquisition (devis, contacts,
+   newsletter), relation client (clients, témoignages) et recrutement
+   (collaborateurs, candidatures d'auto-association). #}
+{% set canViewCrmSection = canViewQuoteRequests or canViewContacts or canViewNewsletter or canViewCollaborators or canViewClients or canViewTestimonials or canViewProjectFreelanceSpace %}
 {# ERP — tout ce qui suit : production (projets) et facturation. #}
 {% set canViewErpSection = canViewProjects or canViewFinanceOverview or canViewFinanceInvoices or canViewFinanceExpenses or canViewFinanceReports or canViewFinanceJournal or canViewFinanceProjects %}
 
@@ -158,6 +159,12 @@
 						<a href="{{ path('admin_contact_index') }}" class="group flex items-center gap-2 py-[6px] px-2.5 rounded-md text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_contact' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
 							<i class="ti ti-mail text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Contacts
+						</a>
+					{% endif %}
+					{% if canViewNewsletter %}
+						<a href="{{ path('admin_newsletter_index') }}" class="group flex items-center gap-2 py-[6px] px-2.5 rounded-md text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_newsletter' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-mail-heart text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
+							Newsletter
 						</a>
 					{% endif %}
 					{% if canViewClients %}
