@@ -16,7 +16,7 @@ export function ArticleCard({ article }: { article: Article }) {
     <Card className="flex flex-col overflow-hidden p-0">
       {image ? (
         <div
-          className="vt-target relative h-[130px] w-full bg-brand-light"
+          className="vt-target relative aspect-[14/5] w-full bg-brand-light"
           style={{ viewTransitionName: articleImageTransitionName(article.id) }}
         >
           <Image

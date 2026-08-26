@@ -40,7 +40,7 @@ export function ProjectCard({
         className="contents"
       >
         <div
-          className={coverImage ? "vt-target relative h-[130px] w-full overflow-hidden bg-brand-light" : "relative h-[130px] w-full overflow-hidden bg-brand-light"}
+          className={coverImage ? "vt-target relative aspect-[14/5] w-full overflow-hidden bg-brand-light" : "relative aspect-[14/5] w-full overflow-hidden bg-brand-light"}
           style={transitionName ? { viewTransitionName: transitionName } : undefined}
         >
           {coverImage ? (
