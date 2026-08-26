@@ -164,14 +164,6 @@ export default async function ProjectDetailPage({
           <h1 className="mb-5 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
             {project.title}
           </h1>
-          {/* Contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
-              serveur en défense en profondeur avant injection — même
-              traitement que le corps d'article, cf. blog/[slug]/page.tsx. */}
-          <div
-            className="article-body hero-in mb-3 max-w-[65ch] text-[1.05rem] opacity-75"
-            style={{ animationDelay: "0.16s" }}
-            dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(project.description) }}
-          />
           {info?.role && (
             <p className="hero-in mb-8 text-sm font-semibold text-brand-primary" style={{ animationDelay: "0.16s" }}>
               {td("roleLabel")} — {info.role}
@@ -235,6 +227,23 @@ export default async function ProjectDetailPage({
               </Badge>
             </div>
           </ProjectDeviceFrame>
+        </div>
+      </section>
+
+      {/* Description du projet — après l'image plutôt que dans le hero
+          (qui se déformait avec un bloc de texte de longueur variable) et
+          sur 100% de la largeur, pas de colonne de lecture réduite : même
+          contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
+          serveur en défense en profondeur avant injection — même traitement
+          que le corps d'article, cf. blog/[slug]/page.tsx. */}
+      <section className="px-6 py-6">
+        <div className="mx-auto max-w-[1120px]">
+          <Reveal delay={0}>
+            <div
+              className="article-body text-[1.05rem] opacity-75"
+              dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(project.description) }}
+            />
+          </Reveal>
         </div>
       </section>
 
