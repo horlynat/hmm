@@ -6,6 +6,7 @@ use App\Entity\AboutContent;
 use App\Entity\User;
 use App\Form\AboutContentType;
 use App\Repository\AboutContentRepository;
+use App\Repository\TranslationRepository;
 use App\Service\AuditLogger;
 use App\Service\MediaUploader;
 use Doctrine\ORM\EntityManagerInterface;
@@ -32,6 +33,7 @@ class AdminAboutContentController extends AbstractController
         EntityManagerInterface $entityManager,
         MediaUploader $uploader,
         AuditLogger $auditLogger,
+        TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
@@ -61,6 +63,11 @@ class AdminAboutContentController extends AbstractController
 
             $auditLogger->log(AboutContent::class, (int) $content->getId(), 'about_content', 'updated');
             $entityManager->flush();
+
+            // Écrit les champs "xxxEn" (transitoires, non mappés Doctrine)
+            // dans la table `translation` — après flush() pour disposer d'un
+            // id garanti même sur une entité tout juste créée.
+            $translationRepository->syncFromEntity($content);
 
             $this->addFlash('success', 'Le contenu de la page "À propos" a été mis à jour avec succès.');
 

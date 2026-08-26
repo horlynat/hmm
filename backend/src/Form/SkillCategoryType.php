@@ -15,6 +15,9 @@ class SkillCategoryType extends AbstractType
         $builder
             ->add('name', TextType::class, [
                 'label' => 'Nom de la catégorie',
+                // SkillCategory::$name est un `string` non nullable — cf.
+                // ArticleType::content pour le pourquoi de cette option.
+                'empty_data' => '',
                 'attr' => [
                     'placeholder' => 'Ex: Développement Web, Design, DevOps...',
                 ],

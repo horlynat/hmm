@@ -2,6 +2,22 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   Mode sombre piloté par la classe .dark, pas par l'OS — Tailwind v4 compile
+   `dark:` en `@media (prefers-color-scheme: dark)` par défaut, ce qui
+   ignore complètement la classe posée par base.html.twig/member/base.html.twig
+   (thème choisi en admin via Réglages > Configuration, ou bascule
+   utilisateur persistée en localStorage, cf. app.js) et le bloc `.dark { }`
+   ci-dessous qui surcharge les tokens @theme. Sans cette ligne, un appareil
+   dont l'OS préfère le sombre active TOUTES les classes utilitaires `dark:`
+   du gabarit (dark:bg-*, dark:text-*...) indépendamment de ce thème — alors
+   que le corps de page (body, .card, tokens @theme) reste en clair puisqu'il
+   suit, lui, la classe .dark. Résultat : mélange clair/sombre illisible
+   (ex. dark:text-gray-200 sur un fond de carte resté blanc). Aligner `dark:`
+   sur la même classe que le reste du système fait disparaître ce mélange.
+───────────────────────────────────────────────────────────────────────────── */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─────────────────────────────────────────────────────────────────────────────
    @theme — Tailwind v4 : Source unique de vérité pour tes tokens de design
    Génère automatiquement les utilitaires ET les variables globales (ex: var(--color-brand-primary))
 ───────────────────────────────────────────────────────────────────────────── */
@@ -32,6 +48,16 @@
     --radius-sm: 6px;
     --radius-md: 12px;
     --radius-lg: 16px;
+
+    /* Dégradé "céleste" fixe pour les bulles admin du fil de conversation
+       (ConversationModal) — volontairement DÉCORRÉLÉ de --color-brand-primary
+       : ce token est personnalisable par tenant (Réglages > Couleur, cf.
+       base.html.twig) ET s'éclaircit en mode sombre (cf. .dark ci-dessous),
+       deux cas où du texte blanc dessus deviendrait illisible. Valeurs fixes
+       garantissant >7:1 de contraste avec du texte blanc, dans tous les cas.
+       Même principe que --cta-gradient-from/to côté frontend Next.js. */
+    --chat-gradient-from: #03045e;
+    --chat-gradient-to:   #0353a4;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -52,7 +78,16 @@
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Configuration de Base
+   @layer base : sans lui, ces règles restent "hors couche" et l'emportent
+   TOUJOURS sur les utilitaires Tailwind (@layer utilities), quelle que soit
+   leur spécificité CSS — c'est le comportement des Cascade Layers, pas un
+   bug de sélecteur. Concrètement : `<body class="bg-brand-dark">` continuait
+   d'afficher `background-color` du `body{}` ci-dessous envers et contre tout.
+   Avec `@layer base`, l'ordre canonique de Tailwind (theme, base,
+   components, utilities — @layer déclaré par `@import "tailwindcss"`)
+   s'applique enfin : les utilitaires reprennent la priorité attendue.
 ───────────────────────────────────────────────────────────────────────────── */
+@layer base {
 /* Alpine.js : masque les éléments x-cloak jusqu'à l'initialisation (anti-flash) */
 [x-cloak] { display: none !important; }
 
@@ -73,10 +108,15 @@ h1, h2, h3, .heading {
     color: var(--color-brand-dark);
     @apply font-bold tracking-tight;
 }
+}
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Composants d'Interface Épurés
+   @layer components : même raison qu'au-dessus — sans elle, .card/.btn/.panel/
+   etc. l'emportaient eux aussi toujours sur les utilitaires Tailwind
+   combinées avec eux dans un même class="", au lieu de se laisser surcharger.
 ───────────────────────────────────────────────────────────────────────────── */
+@layer components {
 
 /* Card Structurelle standard */
 .card {
@@ -382,10 +422,140 @@ summary:focus-visible {
 .dark .badge-danger  { color: #fca5a5; }
 .dark .badge-warning { color: #fcd34d; }
 .dark .badge-info    { color: #7dd3fc; }
+}
+
+/* Éditeur riche (Quill, cf. assets/controllers/rich_text_controller.js) —
+   harmonisé avec .input plutôt que le thème "snow" par défaut. */
+.rich-text-editor {
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(3, 4, 94, 0.15);
+    background-color: var(--color-bg-card);
+    overflow: hidden;
+}
+.rich-text-editor .ql-toolbar.ql-snow {
+    border: none;
+    border-bottom: 1px solid rgba(3, 4, 94, 0.15);
+    font-family: inherit;
+}
+.rich-text-editor .ql-container.ql-snow {
+    border: none;
+    font-family: inherit;
+    font-size: 1rem;
+}
+.rich-text-editor .ql-editor {
+    line-height: 1.6;
+}
+.rich-text-editor .ql-editor.ql-blank::before {
+    color: rgb(156 163 175);
+    font-style: normal;
+}
+.rich-text-editor:focus-within {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-primary) 20%, transparent);
+    border-color: var(--color-brand-primary);
+}
+.dark .rich-text-editor {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+.dark .rich-text-editor .ql-toolbar.ql-snow {
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+.dark .rich-text-editor .ql-snow .ql-stroke {
+    stroke: #d1d5db;
+}
+.dark .rich-text-editor .ql-snow .ql-fill {
+    fill: #d1d5db;
+}
+.dark .rich-text-editor .ql-snow .ql-picker {
+    color: #d1d5db;
+}
+
+/* Aperçu en lecture du contenu HTML des articles/projets (fiches "détails"
+   du back-office) — mêmes règles que .article-body côté frontend public
+   (frontend/src/app/globals.css), pour que ce que voit l'admin ici
+   corresponde à ce que voient les visiteurs. overflow-wrap en plus : un lien
+   ou mot long sans espace (URL...) ne doit jamais faire déborder la carte. */
+.article-body {
+    overflow-wrap: break-word;
+}
+.article-body :where(p) {
+    margin: 0 0 1.1em;
+}
+.article-body :where(h1) {
+    font-family: var(--font-heading);
+    font-size: 1.65rem;
+    margin: 2em 0 0.7em;
+}
+.article-body :where(h2) {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    margin: 1.8em 0 0.6em;
+}
+.article-body :where(h3) {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    margin: 1.4em 0 0.5em;
+}
+.article-body :where(h4) {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    margin: 1.2em 0 0.4em;
+}
+.article-body :where(ul, ol) {
+    margin: 0 0 1.1em;
+    padding-left: 1.4em;
+}
+.article-body :where(a) {
+    color: var(--color-brand-primary);
+    text-decoration: underline;
+}
+.article-body :where(img) {
+    border-radius: var(--radius-md);
+    margin: 1.2em 0;
+    max-width: 100%;
+}
+.article-body :where(blockquote) {
+    margin: 0 0 1.1em;
+    padding-left: 1em;
+    border-left: 3px solid var(--color-brand-primary);
+    opacity: 0.85;
+    font-style: italic;
+}
+.article-body :where(code) {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--color-bg-default);
+    padding: 0.15em 0.4em;
+    border-radius: var(--radius-sm);
+}
+.article-body :where(pre) {
+    margin: 0 0 1.1em;
+    padding: 1em;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-default);
+    overflow-x: auto;
+}
+.article-body :where(pre code) {
+    background: none;
+    padding: 0;
+}
+/* Alignement — classes posées par Quill côté admin (attributor de classe,
+   pas de style inline : cf. rich_text_controller.js,
+   Quill.register(Quill.import('attributors/class/align'), true)). */
+.article-body :where(.ql-align-center) {
+    text-align: center;
+}
+.article-body :where(.ql-align-right) {
+    text-align: right;
+}
+.article-body :where(.ql-align-justify) {
+    text-align: justify;
+}
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Accessibilité & Performance (Respect des préférences système)
 ───────────────────────────────────────────────────────────────────────────── */
+@layer base {
 @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {
         animation-delay: -1ms !important;
@@ -394,4 +564,5 @@ summary:focus-visible {
         transition-duration: 1ms !important;
         scroll-behavior: auto !important;
     }
+}
 }

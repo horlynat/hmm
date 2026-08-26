@@ -1,0 +1,139 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Finance — Vue d'ensemble{% endblock %}
+
+{% block body %}
+	<div>
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="mb-8">
+			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+				<span class="ti ti-report-money text-brand-primary" aria-hidden="true"></span>
+				<span>Finance</span>
+			</h1>
+			<p class="text-sm opacity-60 mt-1">Vue consolidée, tous projets confondus.</p>
+		</div>
+
+		<!-- 📊 CA — trois masses jamais additionnées (voir ProjectStatisticsService::getRevenueBreakdown()) -->
+		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+			<div class="soft-card p-6">
+				<div class="flex items-center justify-between mb-4">
+					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">CA Encaissé</span>
+					<div class="p-2 bg-emerald-50 text-success rounded-xl">
+						<i class="ti ti-coin text-xl"></i>
+					</div>
+				</div>
+				<div class="text-2xl font-bold tracking-tight">{{ revenue.realizedRevenue|default(0)|money(revenue.ledgerCurrency|default('EUR')) }}</div>
+				<p class="text-xs text-success font-medium mt-2">
+					{{ revenue.realizedRevenueCount|default(0) }} facture{{ revenue.realizedRevenueCount > 1 ? 's' : '' }} payée{{ revenue.realizedRevenueCount > 1 ? 's' : '' }}
+				</p>
+			</div>
+
+			<div class="soft-card p-6">
+				<div class="flex items-center justify-between mb-4">
+					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">Facturé, en attente</span>
+					<div class="p-2 bg-blue-50 text-info rounded-xl">
+						<i class="ti ti-file-invoice text-xl"></i>
+					</div>
+				</div>
+				<div class="text-2xl font-bold tracking-tight">{{ revenue.invoicedPending|default(0)|money(revenue.ledgerCurrency|default('EUR')) }}</div>
+				<p class="text-xs text-info font-medium mt-2">
+					{{ revenue.invoicedPendingCount|default(0) }} facture{{ revenue.invoicedPendingCount > 1 ? 's' : '' }} pas encore payée{{ revenue.invoicedPendingCount > 1 ? 's' : '' }} — pas du CA
+				</p>
+			</div>
+
+			<div class="soft-card p-6">
+				<div class="flex items-center justify-between mb-4">
+					<span class="text-xs uppercase text-brand-dark/50 font-bold tracking-wider">Pipeline devis</span>
+					<div class="p-2 bg-amber-50 text-warning rounded-xl">
+						<i class="ti ti-git-pull-request text-xl"></i>
+					</div>
+				</div>
+				<div class="text-2xl font-bold tracking-tight">{{ revenue.pipelineEstimate|default(0)|money(revenue.ledgerCurrency|default('EUR')) }}</div>
+				<p class="text-xs text-brand-dark/60 mt-2">
+					{{ revenue.pipelineQuoteCount|default(0) }} devis actif{{ revenue.pipelineQuoteCount > 1 ? 's' : '' }} — estimation, jamais compté au CA
+				</p>
+			</div>
+		</div>
+
+		<!-- ⚠️ ALERTES -->
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+			<a href="{{ path('admin_finance_invoices', {overdue: 1}) }}" class="soft-card p-5 flex items-center gap-4 hover:shadow-md transition">
+				<div class="p-3 rounded-xl {{ overdueInvoicesCount > 0 ? 'bg-red-50 text-danger' : 'bg-gray-50 text-brand-dark/40' }}">
+					<i class="ti ti-alert-triangle text-xl"></i>
+				</div>
+				<div>
+					<div class="text-xl font-bold tracking-tight">{{ overdueInvoicesCount }}</div>
+					<p class="text-xs text-brand-dark/60">Facture{{ overdueInvoicesCount > 1 ? 's' : '' }} en retard de paiement</p>
+				</div>
+			</a>
+			<a href="{{ path('admin_finance_expenses', {status: 'pending'}) }}" class="soft-card p-5 flex items-center gap-4 hover:shadow-md transition">
+				<div class="p-3 rounded-xl {{ pendingExpensesCount > 0 ? 'bg-amber-50 text-warning' : 'bg-gray-50 text-brand-dark/40' }}">
+					<i class="ti ti-hourglass text-xl"></i>
+				</div>
+				<div>
+					<div class="text-xl font-bold tracking-tight">{{ pendingExpensesCount }}</div>
+					<p class="text-xs text-brand-dark/60">Dépense{{ pendingExpensesCount > 1 ? 's' : '' }} en attente d'approbation</p>
+				</div>
+			</a>
+		</div>
+
+		<!-- 📄 DERNIÈRES FACTURES / DÉPENSES -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+			<div class="soft-card p-6">
+				<div class="flex items-center justify-between mb-4">
+					<h2 class="text-lg font-heading font-bold">Dernières factures</h2>
+					<a href="{{ path('admin_finance_invoices') }}" class="text-sm text-brand-primary font-medium hover:underline">Tout voir</a>
+				</div>
+				<ul class="divide-y divide-gray-100">
+					{% for invoice in recentInvoices %}
+						<li class="py-2.5 flex items-center justify-between text-sm">
+							<div class="min-w-0">
+								<a href="{{ path('admin_project_read', {id: invoice.project.id}) }}" class="font-medium text-brand-dark hover:text-brand-primary truncate block">{{ invoice.number }}</a>
+								<span class="text-xs opacity-60">{{ invoice.project.title }}</span>
+							</div>
+							<div class="flex items-center gap-2 shrink-0">
+								<span class="font-semibold">{{ invoice.amount|money(invoice.currency) }}</span>
+								<twig:Badge :variant="invoice.status.variant" icon="{{ invoice.status.icon }}">{{ invoice.status.label }}</twig:Badge>
+							</div>
+						</li>
+					{% else %}
+						<li class="py-6 text-center text-sm opacity-40">Aucune facture pour l'instant.</li>
+					{% endfor %}
+				</ul>
+			</div>
+
+			<div class="soft-card p-6">
+				<div class="flex items-center justify-between mb-4">
+					<h2 class="text-lg font-heading font-bold">Dernières dépenses</h2>
+					<a href="{{ path('admin_finance_expenses') }}" class="text-sm text-brand-primary font-medium hover:underline">Tout voir</a>
+				</div>
+				<ul class="divide-y divide-gray-100">
+					{% for expense in recentExpenses %}
+						<li class="py-2.5 flex items-center justify-between text-sm">
+							<div class="min-w-0">
+								<a href="{{ path('admin_project_read', {id: expense.project.id}) }}" class="font-medium text-brand-dark hover:text-brand-primary truncate block">{{ expense.category.label }}</a>
+								<span class="text-xs opacity-60">{{ expense.project.title }}</span>
+							</div>
+							<div class="flex items-center gap-2 shrink-0">
+								<span class="font-semibold">{{ expense.amount|money('EUR') }}</span>
+								<twig:Badge :variant="expense.status.variant" icon="{{ expense.status.icon }}">{{ expense.status.label }}</twig:Badge>
+							</div>
+						</li>
+					{% else %}
+						<li class="py-6 text-center text-sm opacity-40">Aucune dépense pour l'instant.</li>
+					{% endfor %}
+				</ul>
+			</div>
+		</div>
+
+		{% if is_granted(constant('App\\Security\\Voter\\SecurityVoter::VIEW_AUDIT')) %}
+			<div class="mt-6 text-center">
+				<a href="{{ path('admin_security_audit_index') }}" class="text-sm text-brand-primary font-medium hover:underline inline-flex items-center gap-1.5">
+					<i class="ti ti-history text-base" aria-hidden="true"></i>
+					Voir le journal d'audit complet (factures, dépenses, et plus)
+				</a>
+			</div>
+		{% endif %}
+	</div>
+{% endblock %}

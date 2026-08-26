@@ -1,5 +1,5 @@
 {# templates/profile/two_factor/recovery_codes.html.twig #}
-{% extends 'base.html.twig' %}
+{% extends layout %}
 
 {% block title %}Codes de récupération 2FA{% endblock %}
 
@@ -12,7 +12,7 @@
 			<div class="panel-body">
 				<div class="flex items-start gap-3 p-4 mb-6 rounded-lg bg-warning/10 border border-warning/30">
 					<span class="ti ti-alert-triangle text-amber-600" aria-hidden="true"></span>
-					<p class="text-sm text-(--brand-dark)">
+					<p class="text-sm text-(--color-brand-dark)">
 						<strong>Conservez ces codes maintenant.</strong> Ils ne s'afficheront plus jamais. Imprimez-les ou rangez-les dans un gestionnaire de mots de passe, à l'abri.
 					</p>
 				</div>

@@ -1,0 +1,57 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block title %}Session déconnectée{% endblock %}
+{% block preheader %}Un administrateur a mis fin à l'une de vos sessions actives.{% endblock %}
+{% block badge_label %}Sécurité{% endblock %}
+{% block badge_color %}#fef3c7{% endblock %}
+{% block badge_text_color %}#92400e{% endblock %}
+
+{% block body %}
+	<h1 style="margin:0 0 16px; font-size:19px; color:#03045e;">🔒 Session déconnectée</h1>
+
+	<p style="margin:0 0 8px;">Bonjour <strong>{{ fullName }}</strong>,</p>
+	<p style="margin:0 0 16px;">
+		Un administrateur{% if revokedByLabel %} ({{ revokedByLabel }}){% endif %} a mis fin de force à l'une de vos sessions actives, à cet endroit :
+	</p>
+
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8fa; border:1px solid #d0d7de; border-radius:8px; margin:0 0 20px;">
+		<tr>
+			<td style="padding:14px 16px; font-size:14px;">
+				<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+					<tr>
+						<td valign="top" width="110" style="padding:0 0 10px; color:#03045e; font-weight:bold;">Date</td>
+						<td valign="top" style="padding:0 0 10px;">{{ date|date('d/m/Y à H:i') }}</td>
+					</tr>
+					<tr>
+						<td valign="top" width="110" style="padding:0 0 10px; color:#03045e; font-weight:bold;">Adresse IP</td>
+						<td valign="top" style="padding:0 0 10px; font-family:'Courier New', monospace;">{{ ip ?? 'Inconnue' }}</td>
+					</tr>
+					<tr>
+						<td valign="top" width="110" style="padding:0 0 10px; color:#03045e; font-weight:bold;">Appareil</td>
+						<td valign="top" style="padding:0 0 10px;">
+							{{ device.type }}{% if device.brand %} — {{ device.brand }}{% endif %}
+							{% if device.browser or device.os %}
+								<span style="color:#57606a;">({{ device.browser }}{% if device.browser and device.os %}, {% endif %}{{ device.os }})</span>
+							{% endif %}
+						</td>
+					</tr>
+					<tr>
+						<td valign="top" width="110" style="padding:0; color:#03045e; font-weight:bold;">Localisation</td>
+						<td valign="top" style="padding:0;">
+							{{ location.city ?? 'Ville inconnue' }}, {{ location.country_name ?? 'Pays inconnu' }}
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef2f2; border:1px solid #fecaca; border-radius:8px;">
+		<tr>
+			<td style="padding:14px 16px; font-size:14px; color:#7f1d1d;">
+				<strong>C'était prévu ?</strong> Rien à faire, cette alerte est purement informative — reconnectez-vous simplement si besoin.<br>
+				<strong>Vous ne comprenez pas cette déconnexion ?</strong> Contactez votre administrateur : ce n'est jamais une action automatique.
+			</td>
+		</tr>
+	</table>
+{% endblock %}

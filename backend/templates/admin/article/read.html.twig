@@ -37,12 +37,12 @@
 				{% if article.media is not empty %}
 					{% set uploadedMedia = article.media|first %}
 					<div class="rounded-md overflow-hidden max-h-96 border border-gray-100">
-						<img src="{{ asset('uploads/articles/' ~ uploadedMedia.filePath) }}" alt="{{ uploadedMedia.altText|default('Couverture') }}" class="w-full object-cover">
+						<img src="{{ asset(uploadedMedia.filePath) }}" alt="{{ uploadedMedia.altText|default('Couverture') }}" class="w-full object-cover">
 					</div>
 				{% endif %}
 
-				<div class="leading-relaxed text-base space-y-4 whitespace-pre-line border-t border-gray-100 pt-6">
-					{{ article.content }}
+				<div class="article-body text-base border-t border-gray-100 pt-6">
+					{{ article.content|raw }}
 				</div>
 			</div>
 
@@ -89,7 +89,7 @@
 							<span>Modifier l'article</span>
 						</a>
 						<div class="w-full [&>div]:w-full [&_.btn]:w-full text-center">
-							<twig:DeleteModal :id="article.id" :action="path('admin_article_delete', {slug: article.slug})" :token="csrf_token('delete' ~ article.id)" :label="article.title" entity="cet article" />
+							<twig:DeleteModal :id="article.id" :action="path('admin_article_delete', {slug: article.slug})" :token="csrf_token('admin_article_delete_' ~ article.id)" :label="article.title" entity="cet article" />
 						</div>
 					</div>
 				</div>

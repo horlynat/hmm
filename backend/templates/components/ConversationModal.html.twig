@@ -1,0 +1,217 @@
+{#
+   Composant : panneau latéral <dialog> de conversation admin <-> candidat,
+   ancré au bord droit de l'écran, pleine hauteur — la page reste visible ET
+   utilisable derrière (backdrop transparent + pointer-events:none),
+   à la demande explicite : ce n'est pas une modale centrée classique.
+   showModal() (pas show()) reste nécessaire malgré tout : un <dialog> non-
+   modal reste dans le flux normal et hérite du containing block du premier
+   ancêtre transform/filter/contain rencontré (ici le layout de la page),
+   ce qui cassait le positionnement "position:fixed; inset-y-0; right-0"
+   (constaté : le panneau apparaissait sous le header au lieu de couvrir tout
+   le viewport). showModal() promeut l'élément dans le top layer natif,
+   toujours positionné/peint relativement au vrai viewport, sans ce piège —
+   son ::backdrop (normalement opaque) est simplement rendu transparent et
+   non cliquable pour ne pas assombrir/bloquer la page (cf. <style> plus bas).
+   Fermeture gérée à la main (clic en dehors du panneau, bouton ×) en plus
+   d'Échap (déjà natif via showModal()), cf. script plus bas.
+   Tout le texte utilise des couleurs dérivées des tokens de thème
+   (--color-brand-dark/--color-brand-primary/--color-bg-card via color-mix)
+   plutôt qu'un gris Tailwind fixe — ces tokens s'inversent en mode sombre
+   (cf. .dark dans app.css), un gris fixe combiné à eux cassait le contraste
+   (texte quasi-blanc sur fond gris clair, cf. bug rapporté).
+
+   Usage : <twig:ConversationModal :user="user" :messages="messages" />
+   Ouverture : document.getElementById('conversation-modal').showModal()
+   Réouverture automatique après un submit si ?conv=1 est présent dans l'URL
+   (cf. AdminCollaboratorController::sendMessage()/read()).
+#}
+{% props user, messages = [] %}
+<dialog id="conversation-modal"
+	class="conversation-modal panel fixed inset-y-0 right-0 left-auto top-0 m-0 w-full h-full max-w-none max-h-none sm:left-auto sm:w-[420px] sm:max-w-[92vw] sm:rounded-l-2xl sm:rounded-r-none p-0 overflow-hidden"
+	aria-labelledby="conversation-modal-title">
+
+	<div class="flex h-full flex-col">
+
+		{# ── En-tête : dégradé céleste, avatar, identité, fermeture ─────────── #}
+		<header class="relative shrink-0 overflow-hidden px-5 py-4 sm:rounded-tl-2xl"
+			style="background: linear-gradient(135deg, var(--chat-gradient-from), var(--chat-gradient-to));">
+			<div class="pointer-events-none absolute inset-0 opacity-40" style="background: radial-gradient(60% 100% at 15% 0%, rgba(255,255,255,0.35), transparent 60%);" aria-hidden="true"></div>
+			<div class="relative flex items-center gap-3">
+				<span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-sm font-bold text-white ring-2 ring-white/30 backdrop-blur-sm">
+					{{ (user.fullName ?? user.email)|slice(0, 2)|upper }}
+				</span>
+				<div class="min-w-0 flex-1">
+					<h2 id="conversation-modal-title" class="truncate text-base font-heading font-bold text-white">
+						{{ user.fullName ?? 'Non spécifié' }}
+					</h2>
+					<p class="truncate text-xs text-white/75">{{ user.email }}</p>
+				</div>
+				<button type="button" data-conversation-close
+					aria-label="Fermer la conversation"
+					class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
+					<span class="ti ti-x text-lg" aria-hidden="true"></span>
+				</button>
+			</div>
+		</header>
+
+		{# ── Fil de messages ─────────────────────────────────────────────────── #}
+		<div id="conversation-modal-thread" class="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-5 sm:px-5" style="background: color-mix(in srgb, var(--color-brand-primary) 3%, var(--color-bg-card));">
+			{% if messages|length > 0 %}
+				{% for message in messages %}
+					<div class="flex {{ message.fromAdmin ? 'justify-end' : 'justify-start' }} animate-fade-in" style="animation-delay: {{ min(loop.index0 * 30, 300) }}ms">
+						<div class="flex max-w-[85%] items-end gap-2 {{ message.fromAdmin ? 'flex-row-reverse' : '' }}">
+							<span class="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+								style="background: {{ message.fromAdmin ? 'linear-gradient(135deg, var(--chat-gradient-from), var(--chat-gradient-to))' : 'color-mix(in srgb, var(--color-brand-primary) 16%, var(--color-bg-card))' }}; color: {{ message.fromAdmin ? '#fff' : 'var(--color-brand-primary)' }};">
+								{{ message.fromAdmin ? 'V' : (user.fullName ?? user.email)|slice(0, 1)|upper }}
+							</span>
+							<div class="rounded-2xl px-4 py-2.5 shadow-sm {{ message.fromAdmin ? 'rounded-br-sm' : 'rounded-bl-sm' }}"
+								style="{{ message.fromAdmin ? 'background: linear-gradient(135deg, var(--chat-gradient-from), var(--chat-gradient-to)); color: #fff;' : 'background: color-mix(in srgb, var(--color-brand-primary) 8%, var(--color-bg-card)); color: var(--color-brand-dark); border: 1px solid color-mix(in srgb, var(--color-brand-primary) 14%, transparent);' }}">
+								<p class="whitespace-pre-line break-words text-sm leading-relaxed">{{ message.body }}</p>
+								<p class="mt-1 text-[11px] {{ message.fromAdmin ? 'text-white/70' : '' }}" {% if not message.fromAdmin %}style="color: color-mix(in srgb, var(--color-brand-dark) 50%, transparent);"{% endif %}>
+									{{ message.createdAt|date('d/m/Y à H:i') }}
+								</p>
+							</div>
+						</div>
+					</div>
+				{% endfor %}
+			{% else %}
+				<div class="flex h-full flex-col items-center justify-center py-10 text-center">
+					<span class="mb-3 flex h-14 w-14 items-center justify-center rounded-full text-2xl" style="background: color-mix(in srgb, var(--color-brand-primary) 12%, transparent); color: var(--color-brand-primary);" aria-hidden="true">
+						<span class="ti ti-messages"></span>
+					</span>
+					<p class="text-sm font-semibold text-(--color-brand-dark)">Aucun message pour l'instant</p>
+					<p class="mt-1 max-w-xs text-xs opacity-60">Envoyez le premier message à {{ user.fullName ?? user.email }} ci-dessous.</p>
+				</div>
+			{% endif %}
+		</div>
+
+		{# ── Réponse ──────────────────────────────────────────────────────────── #}
+		<form method="post" action="{{ path('admin_collaborator_message_send', {'id': user.id}) }}"
+			class="shrink-0 border-t px-4 py-3 sm:px-5" style="border-color: color-mix(in srgb, var(--color-brand-dark) 8%, transparent); background: var(--color-bg-card);">
+			<input type="hidden" name="_token" value="{{ csrf_token('candidate_message_' ~ user.id) }}">
+			<label for="f-conversation-modal-body" class="sr-only">Envoyer un message à {{ user.fullName ?? user.email }}</label>
+			<div class="flex items-end gap-2">
+				<textarea id="f-conversation-modal-body" name="body" rows="1" minlength="10" required
+					class="input flex-1 resize-none"
+					style="max-height: 8rem;"
+					placeholder="Écrivez votre message…"
+					oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,128)+'px';"></textarea>
+				<button type="submit" aria-label="Envoyer le message"
+					class="btn btn-primary btn-icon shrink-0 rounded-full">
+					<span class="ti ti-send text-base" aria-hidden="true"></span>
+				</button>
+			</div>
+		</form>
+
+	</div>
+</dialog>
+
+<style>
+	/* Entrée en glissement depuis le bord droit — piloté par la classe
+	   .is-visible (ajoutée/retirée en JS avec un court setTimeout)
+	   plutôt que par @starting-style : plus verbeux, mais fiable partout,
+	   contrairement à @starting-style qui restait bloqué à mi-transition sur
+	   ce <dialog> (transform figé, panneau à moitié hors écran, constaté). */
+	.conversation-modal {
+		transform: translateX(100%);
+		opacity: 0;
+		transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+		box-shadow: -24px 0 48px -16px rgba(3, 4, 94, 0.22);
+	}
+	.conversation-modal.is-visible {
+		transform: translateX(0);
+		opacity: 1;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.conversation-modal { transition: none; }
+	}
+	/* Backdrop natif de showModal() rendu invisible ET transparent aux clics
+	   — la page reste visible ET cliquable/scrollable derrière le panneau ;
+	   la fermeture au clic "en dehors" est gérée par le script (document
+	   click listener) plutôt que par le backdrop lui-même. */
+	.conversation-modal::backdrop {
+		background: transparent;
+		pointer-events: none;
+	}
+</style>
+
+<script>
+	(function () {
+		var dialog = document.getElementById('conversation-modal');
+		if (!dialog) return;
+		var openTrigger = null;
+
+		function scrollThreadToBottom() {
+			var thread = document.getElementById('conversation-modal-thread');
+			if (thread) thread.scrollTop = thread.scrollHeight;
+		}
+
+		function openPanel(trigger) {
+			openTrigger = trigger || document.activeElement;
+			dialog.showModal();
+			scrollThreadToBottom();
+			// setTimeout (pas requestAnimationFrame, suspendu par le navigateur
+			// tant que l'onglet n'a pas le focus/n'est pas peint — constaté ici) :
+			// laisse le navigateur appliquer l'état fermé (translateX(100%)) au
+			// moins une fois avant de basculer vers .is-visible, sinon les deux
+			// changements sont coalescés dans le même recalc et la transition ne
+			// se joue pas.
+			setTimeout(function () { dialog.classList.add('is-visible'); }, 10);
+			// Focus dans le panneau — showModal() le ferait de toute façon sur le
+			// <dialog> lui-même, on préfère l'amener directement sur le bouton
+			// de fermeture (premier élément interactif utile).
+			var closeBtn = dialog.querySelector('[data-conversation-close]');
+			if (closeBtn) closeBtn.focus();
+		}
+
+		function closePanel() {
+			if (!dialog.open) return;
+			dialog.classList.remove('is-visible');
+			var finalize = function (event) {
+				// Deux propriétés transitionnent (transform + opacity) : n'agir
+				// que sur la plus longue (transform), sinon la fin de la
+				// transition opacity (plus courte) fermerait le dialog en
+				// coupant net le glissement.
+				if (event && event.propertyName !== 'transform') return;
+				dialog.removeEventListener('transitionend', finalize);
+				dialog.close();
+			};
+			dialog.addEventListener('transitionend', finalize);
+			// Filet de sécurité si transitionend ne se déclenche pas (ex :
+			// prefers-reduced-motion, où la transition est coupée en CSS).
+			setTimeout(function () { if (dialog.open) finalize(); }, 320);
+			// Retire ?conv=1 de l'URL sans recharger, pour qu'un refresh manuel
+			// ne rouvre pas le panneau silencieusement.
+			var url = new URL(window.location.href);
+			if (url.searchParams.has('conv')) {
+				url.searchParams.delete('conv');
+				window.history.replaceState({}, '', url);
+			}
+			if (openTrigger && typeof openTrigger.focus === 'function') openTrigger.focus();
+		}
+
+		// Boutons d'ouverture ailleurs sur la page (carte résumé) : passent
+		// par openPanel() (data-attribute plutôt qu'un onclick inline) pour
+		// centraliser la gestion du focus de retour à la fermeture.
+		document.querySelectorAll('[data-open-conversation]').forEach(function (btn) {
+			btn.addEventListener('click', function () { openPanel(btn); });
+		});
+		var closeButton = dialog.querySelector('[data-conversation-close]');
+		if (closeButton) closeButton.addEventListener('click', closePanel);
+
+		// Échap et clic en dehors du panneau = fermeture — <dialog> non-modal
+		// ne le fait pas nativement (pas de backdrop qui intercepte les clics).
+		document.addEventListener('keydown', function (event) {
+			if (event.key === 'Escape' && dialog.open) closePanel();
+		});
+		document.addEventListener('click', function (event) {
+			if (dialog.open && !dialog.contains(event.target) && !event.target.closest('[data-open-conversation]')) {
+				closePanel();
+			}
+		});
+
+		{% if app.request.query.getBoolean('conv') %}
+			openPanel(null);
+		{% endif %}
+	})();
+</script>

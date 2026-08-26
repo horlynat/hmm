@@ -1,20 +1,26 @@
 {#
-   Composant : paire de champs de formulaire FR/EN alignés côte à côte.
+   Composant : paire de champs de formulaire FR/EN alignés côte à côte, avec
+   traduction en direct pendant la frappe (bilingual_field_controller.js) —
+   la colonne non choisie via <twig:LocaleToggle /> est verrouillée en
+   lecture seule (jamais désactivée : un champ `disabled` n'est pas envoyé à
+   la soumission du formulaire, ce qui écraserait la valeur existante en
+   base) et se remplit toute seule quand on écrit dans l'autre.
    Usage : <twig:FieldPair :fr="form.heroTitle" :en="form.heroTitleEn" />
            <twig:FieldPair :fr="form.heroSub" :en="form.heroSubEn" :isTextarea="true" />
 #}
 {% props fr, en, isTextarea = false %}
 {% set widgetClass = isTextarea ? 'input textarea w-full' : 'input w-full' %}
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-controller="bilingual-field">
 	<div class="field">
 		{{ form_label(fr, null, {'label_attr': {'class': 'field-label'}}) }}
-		{{ form_widget(fr, {'attr': {'class': widgetClass}}) }}
+		{% if fr.vars.help is defined and fr.vars.help %}<p class="text-[11px] opacity-40 mb-1">{{ fr.vars.help }}</p>{% endif %}
+		{{ form_widget(fr, {'attr': {'class': widgetClass, 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
 		{{ form_errors(fr, {'attr': {'class': 'field-error'}}) }}
 	</div>
 	<div class="field">
 		{{ form_label(en, null, {'label_attr': {'class': 'field-label opacity-70'}}) }}
 		{% if en.vars.help is defined and en.vars.help %}<p class="text-[11px] opacity-40 mb-1">{{ en.vars.help }}</p>{% endif %}
-		{{ form_widget(en, {'attr': {'class': widgetClass}}) }}
+		{{ form_widget(en, {'attr': {'class': widgetClass, 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
 		{{ form_errors(en, {'attr': {'class': 'field-error'}}) }}
 	</div>
 </div>

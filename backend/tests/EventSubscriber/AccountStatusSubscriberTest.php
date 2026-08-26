@@ -22,11 +22,16 @@ final class AccountStatusSubscriberTest extends TestCase
         return new ControllerEvent($kernel, $controller, Request::create($path), HttpKernelInterface::MAIN_REQUEST);
     }
 
-    private function createUser(bool $active, bool $verified): User
+    private function createUser(bool $active, bool $verified, bool $totpEnabled = false): User
     {
         $user = new User();
         $user->setIsActive($active);
         $user->setIsVerified($verified);
+
+        if ($totpEnabled) {
+            $user->setTotpSecret('JBSWY3DPEHPK3PXP');
+            $user->setIsTwoFactorEnabled(true);
+        }
 
         return $user;
     }
@@ -81,7 +86,9 @@ final class AccountStatusSubscriberTest extends TestCase
     {
         yield 'admin blocked page itself' => ['/admin/compte-bloque'];
         yield 'profile blocked page itself' => ['/profile/compte-bloque'];
-        yield '2fa' => ['/2fa'];
+        yield '2fa login challenge' => ['/2fa'];
+        yield '2fa self-service setup' => ['/profile/2fa/setup'];
+        yield '2fa self-service index' => ['/profile/2fa'];
         yield 'email verification' => ['/verif/some-token'];
         yield 'resend verification' => ['/renvoiverif'];
     }
@@ -163,5 +170,69 @@ final class AccountStatusSubscriberTest extends TestCase
 
         $response = ($event->getController())();
         $this->assertSame('/profile/compte-bloque?reason=unverified', $response->headers->get('Location'));
+    }
+
+    public function testUnverifiedUserOnMesDevisIsRedirected(): void
+    {
+        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator->expects($this->once())
+            ->method('generate')
+            ->with('profile_account_blocked', ['reason' => 'unverified'])
+            ->willReturn('/profile/compte-bloque?reason=unverified');
+
+        $subscriber = new AccountStatusSubscriber($this->createSecurity($this->createUser(true, false), ['ROLE_USER']), $urlGenerator);
+        $event = $this->createEvent('/mes-devis');
+
+        $subscriber->onKernelController($event);
+
+        $response = ($event->getController())();
+        $this->assertSame('/profile/compte-bloque?reason=unverified', $response->headers->get('Location'));
+    }
+
+    public function testActiveVerifiedClientWithout2faIsRedirectedToMandatorySetup(): void
+    {
+        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator->expects($this->once())
+            ->method('generate')
+            ->with('profile_two_factor_setup')
+            ->willReturn('/profile/2fa/setup');
+
+        $subscriber = new AccountStatusSubscriber($this->createSecurity($this->createUser(true, true), ['ROLE_USER']), $urlGenerator);
+        $event = $this->createEvent('/projects/3');
+
+        $subscriber->onKernelController($event);
+
+        $response = ($event->getController())();
+        $this->assertSame('/profile/2fa/setup', $response->headers->get('Location'));
+    }
+
+    public function testActiveVerifiedClientWith2faIsLeftAlone(): void
+    {
+        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator->expects($this->never())->method('generate');
+
+        $subscriber = new AccountStatusSubscriber($this->createSecurity($this->createUser(true, true, totpEnabled: true), ['ROLE_USER']), $urlGenerator);
+        $event = $this->createEvent('/profile/5');
+        $originalController = $event->getController();
+
+        $subscriber->onKernelController($event);
+
+        $this->assertSame($originalController, $event->getController());
+    }
+
+    public function testActiveVerifiedAdminAreaUserWithout2faIsNotForcedIntoClientSetup(): void
+    {
+        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator->expects($this->never())->method('generate');
+
+        // ROLE_EDITOR (back-office) : la 2FA obligatoire ne concerne que
+        // l'espace membre (client/collaborateur), pas le back-office.
+        $subscriber = new AccountStatusSubscriber($this->createSecurity($this->createUser(true, true), ['ROLE_EDITOR']), $urlGenerator);
+        $event = $this->createEvent('/admin/dashboard');
+        $originalController = $event->getController();
+
+        $subscriber->onKernelController($event);
+
+        $this->assertSame($originalController, $event->getController());
     }
 }

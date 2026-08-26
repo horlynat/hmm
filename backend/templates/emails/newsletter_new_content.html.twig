@@ -1,0 +1,35 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% set isEn = 'en' == locale %}
+{% set typeLabel = isProject ? (isEn ? 'project' : 'projet') : (isEn ? 'article' : 'article') %}
+
+{% block title %}{{ contentTitle }}{% endblock %}
+{% block preheader %}{{ contentTitle }}{% endblock %}
+{% block badge_label %}{{ isEn ? 'New ' ~ typeLabel : 'Nouveau ' ~ typeLabel }}{% endblock %}
+{% block badge_color %}#e0e7ff{% endblock %}
+{% block badge_text_color %}#3730a3{% endblock %}
+
+{% block body %}
+	<h1 style="margin:0 0 4px; font-size:19px; color:#03045e;">
+		{{ isEn ? ('New ' ~ typeLabel ~ ' on the portfolio') : ('Nouveau ' ~ typeLabel ~ ' sur le portfolio') }}
+	</h1>
+
+	<p style="margin:16px 0 24px; font-size:16px; font-weight:bold; color:#0b0e14;">
+		{{ contentTitle }}
+	</p>
+
+	<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+		<tr>
+			<td align="center" bgcolor="#0077b6" style="background-color:#0077b6; border-radius:6px;">
+				<a href="{{ contentUrl }}" style="display:inline-block; padding:12px 24px; color:#ffffff; font-size:14px; font-weight:bold; text-decoration:none; font-family:Arial, Helvetica, sans-serif;">
+					{% if isProject %}{{ isEn ? 'View the project' : 'Voir le projet' }}{% else %}{{ isEn ? 'Read the article' : 'Lire l’article' }}{% endif %}
+				</a>
+			</td>
+		</tr>
+	</table>
+
+	<p style="margin:0; font-size:12px; color:#8b949e;">
+		{{ isEn ? 'You are receiving this email because you are subscribed to the blog newsletter — ' : 'Vous recevez cet e-mail parce que vous êtes inscrit à la newsletter du blog — ' }}
+		<a href="{{ unsubscribeUrl }}" style="color:#57606a;">{{ isEn ? 'unsubscribe' : 'se désinscrire' }}</a>.
+	</p>
+{% endblock %}

@@ -2,12 +2,52 @@
 
 {% block title %}Votre compte est activé{% endblock %}
 {% block preheader %}Votre adresse email est confirmée, votre compte est actif.{% endblock %}
+{% block badge_label %}Compte{% endblock %}
+{% block badge_color %}#dbeafe{% endblock %}
+{% block badge_text_color %}#1e40af{% endblock %}
 
 {% block body %}
+	<h1 style="margin:0 0 16px; font-size:20px; color:#03045e;">Compte activé</h1>
+
 	<p style="margin:0 0 16px;">Bonjour <strong>{{ fullName }}</strong>,</p>
 	<p style="margin:0 0 24px;">
-		Votre adresse email a été confirmée avec succès. Votre compte est désormais actif et vous pouvez vous connecter à votre espace.
+		Votre adresse email a été confirmée avec succès. Votre compte est désormais actif et pleinement opérationnel.
 	</p>
+
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8fa; border:1px solid #d0d7de; border-radius:8px; margin:0 0 24px;">
+		<tr>
+			<td style="padding:16px 18px;">
+				<p style="margin:0 0 10px; font-size:12px; font-weight:bold; text-transform:uppercase; letter-spacing:0.04em; color:#57606a;">Depuis votre espace</p>
+				<table role="presentation" cellpadding="0" cellspacing="0">
+					<tr>
+						<td valign="top" style="padding:0 8px 6px 0; color:#0077b6; font-size:14px;">•</td>
+						<td valign="top" style="padding:0 0 6px; font-size:14px;">Suivez l'avancement de vos projets et demandes en cours</td>
+					</tr>
+					<tr>
+						<td valign="top" style="padding:0 8px 6px 0; color:#0077b6; font-size:14px;">•</td>
+						<td valign="top" style="padding:0 0 6px; font-size:14px;">Consultez vos échanges et documents à tout moment</td>
+					</tr>
+					<tr>
+						<td valign="top" style="padding:0 8px 0 0; color:#0077b6; font-size:14px;">•</td>
+						<td valign="top" style="padding:0; font-size:14px;">Mettez à jour votre profil et vos préférences</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+
+	{% if requiresTwoFactor %}
+		<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef3c7; border:1px solid #fde68a; border-radius:8px; margin:0 0 24px;">
+			<tr>
+				<td style="padding:16px 18px;">
+					<p style="margin:0 0 6px; font-size:12px; font-weight:bold; text-transform:uppercase; letter-spacing:0.04em; color:#92400e;">Dernière étape avant l'accès</p>
+					<p style="margin:0; font-size:14px; color:#78350f;">
+						Pour la sécurité de votre compte, la double authentification est obligatoire sur l'espace client. À votre première connexion, il vous sera demandé de l'activer en scannant un QR code avec une application comme Google Authenticator ou Authy — moins d'une minute, une seule fois.
+					</p>
+				</td>
+			</tr>
+		</table>
+	{% endif %}
 
 	<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 8px;">
 		<tr>

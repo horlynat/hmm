@@ -1,5 +1,5 @@
 {# templates/profile/two_factor/setup.html.twig #}
-{% extends 'base.html.twig' %}
+{% extends layout %}
 
 {% block title %}Activer la 2FA{% endblock %}
 
@@ -8,6 +8,15 @@
 		subtitle="Scannez ce QR code avec votre application d'authentification, puis saisissez le code à 6 chiffres qu'elle affiche pour confirmer." />
 
 	<div class="max-w-2xl space-y-4">
+		{% if mandatory %}
+			<div class="panel border-l-4 border-l-warning">
+				<div class="panel-body flex items-start gap-3">
+					<span class="ti ti-alert-triangle text-xl text-warning shrink-0" aria-hidden="true"></span>
+					<p class="field-hint">Cette étape est obligatoire sur votre compte — le reste de votre espace reste inaccessible tant qu'elle n'est pas terminée.</p>
+				</div>
+			</div>
+		{% endif %}
+
 		{% if error %}
 			<div class="field-error">{{ error }}</div>
 		{% endif %}
@@ -22,7 +31,7 @@
 						<code class="text-sm font-mono bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-md tracking-wider select-all">{{ secret|split('')|batch(4)|map(chunk => chunk|join(''))|join(' ') }}</code>
 					</div>
 
-					<a href="{{ path('profile_two_factor_setup', {regenerate: 1}) }}" class="text-xs text-(--brand-primary) hover:underline">
+					<a href="{{ path('profile_two_factor_setup', {regenerate: 1}) }}" class="text-xs text-(--color-brand-primary) hover:underline">
 						Générer une nouvelle clé
 					</a>
 				</div>
@@ -44,7 +53,7 @@
 			</div>
 		</div>
 
-		<a href="{{ path('profile_two_factor_index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-(--brand-dark) transition">
+		<a href="{{ path('profile_two_factor_index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-(--color-brand-dark) transition">
 			<span class="ti ti-arrow-left" aria-hidden="true"></span>
 			Annuler
 		</a>

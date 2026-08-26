@@ -214,6 +214,35 @@ class ProjectRepository extends ServiceEntityRepository
     }
 
     /**
+     * 🚀 Nombre de projets "à venir" auxquels $user pourrait se proposer
+     * (espace /compte/projets-disponibles) — exclut ceux où il est déjà
+     * owner/collaborateur. Utilisé pour le badge de navigation
+     * (App\Controller\Api\MeController::serializeUser()) : une requête COUNT
+     * dédiée plutôt que charger findByStatus() puis filtrer en PHP.
+     *
+     * NOT IN (sous-requête) plutôt qu'un LEFT JOIN + condition sur
+     * collaborators.id : sur une ManyToMany, "c.id != :userId" dans le WHERE
+     * ne fonctionne pas comme exclusion (une ligne matche dès qu'UN AUTRE
+     * collaborateur du projet n'est pas $user, même si $user y est aussi).
+     */
+    public function countAvailableForUser(User $user): int
+    {
+        return (int) $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->andWhere('p.status = :status')
+            ->andWhere('p.owner != :user')
+            ->andWhere('p.id NOT IN (
+                SELECT p2.id FROM App\Entity\Project p2
+                JOIN p2.collaborators c2
+                WHERE c2 = :user
+            )')
+            ->setParameter('status', ProjectStatusEnum::UPCOMING)
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
      * 📌 Compte les projets par statut.
      * Retourne un tableau associatif : [status => count].
      *

@@ -1,6 +1,10 @@
 {# templates/profile/_profile_banner.html.twig
    Bandeau d'identité pleine largeur (avatar, nom, badges, actions, complétion).
-   Remplace l'ancienne colonne "_profile_sidebar" empilée à côté de la nav admin. #}
+   Remplace l'ancienne colonne "_profile_sidebar" empilée à côté de la nav admin.
+   Partagé entre le profil back-office (admin/profile/*) et le profil de
+   l'espace membre (member/profile/*) : `routePrefix` (défini par la page
+   incluante, admin_profile_ ou member_profile_) choisit le bon jeu de routes,
+   le contenu et le gabarit visuel restant identiques dans les deux espaces. #}
 
 <div class="panel">
 	<div class="panel-body flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -15,7 +19,7 @@
 			{% endif %}
 
 			<div class="min-w-0">
-				<h1 class="text-xl font-bold text-(--brand-dark) truncate">{{ user.fullName ?? 'Utilisateur' }}</h1>
+				<h1 class="text-xl font-bold text-(--color-brand-dark) truncate">{{ user.fullName ?? 'Utilisateur' }}</h1>
 				<p class="text-sm text-gray-500 truncate">
 					{{ user.email }}
 					<span class="text-gray-300 dark:text-gray-600">·</span>
@@ -38,10 +42,10 @@
 
 		<div class="flex flex-col items-stretch gap-3 sm:items-end shrink-0">
 			<div class="flex gap-2">
-				<a href="{{ path('profile_update', {'id': user.id}) }}" class="btn btn-primary btn-sm gap-1.5">
+				<a href="{{ path(routePrefix ~ 'update', {'id': user.id}) }}" class="btn btn-primary btn-sm gap-1.5">
 					<span class="ti ti-edit" aria-hidden="true"></span>Modifier
 				</a>
-				<a href="{{ path('profile_change_password', {'id': user.id}) }}" class="btn btn-secondary btn-sm gap-1.5">
+				<a href="{{ path(routePrefix ~ 'change_password', {'id': user.id}) }}" class="btn btn-secondary btn-sm gap-1.5">
 					<span class="ti ti-lock-cog" aria-hidden="true"></span>Mot de passe
 				</a>
 			</div>

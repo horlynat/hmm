@@ -29,7 +29,7 @@
 				<tbody>
 					{% for user in staleUsers %}
 						<tr>
-							<td class="font-medium text-(--brand-dark)">{{ user.fullName ?? user.email }}</td>
+							<td class="font-medium text-(--color-brand-dark)">{{ user.fullName ?? user.email }}</td>
 							<td class="text-sm opacity-70">{{ (user.passwordChangedAt ?? user.createdAt)|date('d/m/Y') }}</td>
 						</tr>
 					{% else %}
@@ -40,7 +40,7 @@
 		</div>
 	</div>
 
-	<div class="panel">
+	<div class="panel mb-6">
 		<div class="panel-header">
 			<h3 class="panel-title">IPs suspectes ({{ suspiciousIps|length }})</h3>
 			<p class="text-xs opacity-50 mt-1">Au moins {{ suspiciousIpMinAttempts }} échecs de connexion sur la dernière {{ suspiciousIpWindowHours }}h.</p>
@@ -48,16 +48,81 @@
 		<div class="table-wrap border-0">
 			<table class="table">
 				<caption class="sr-only">IPs suspectes</caption>
-				<thead><tr><th scope="col">IP</th><th scope="col">Tentatives</th><th scope="col">Dernière tentative</th></tr></thead>
+				<thead><tr><th scope="col">IP</th><th scope="col">Tentatives</th><th scope="col">Dernière tentative</th><th scope="col" class="text-right">Actions</th></tr></thead>
 				<tbody>
 					{% for entry in suspiciousIps %}
 						<tr>
 							<td class="font-mono text-xs">{{ entry.ip }}</td>
 							<td><twig:Badge variant="danger">{{ entry.count }}</twig:Badge></td>
 							<td class="text-sm opacity-70 whitespace-nowrap">{{ entry.lastAttempt|date('d/m/Y H:i') }}</td>
+							<td class="text-right">
+								{% if entry.ip in blockedIps|map(b => b.ip) %}
+									<twig:Badge variant="neutral">Déjà bloquée</twig:Badge>
+								{% elseif is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_IP_BLOCKS')) %}
+									<form method="post" action="{{ path('admin_security_policy_block_ip') }}" onsubmit="return confirm('Bloquer {{ entry.ip }} ? Plus aucune tentative de connexion ne sera acceptée depuis cette IP.');">
+										<input type="hidden" name="_token" value="{{ csrf_token('admin_security_policy_block_ip') }}">
+										<input type="hidden" name="ip" value="{{ entry.ip }}">
+										<input type="hidden" name="reason" value="Rapport IPs suspectes : {{ entry.count }} échecs de connexion sur la dernière {{ suspiciousIpWindowHours }}h.">
+										<button type="submit" class="btn btn-ghost btn-sm text-danger gap-1.5">
+											<span class="ti ti-ban" aria-hidden="true"></span>
+											Bloquer
+										</button>
+									</form>
+								{% endif %}
+							</td>
 						</tr>
 					{% else %}
-						<tr><td colspan="3"><twig:EmptyState text="Aucune IP suspecte détectée." icon="ti-shield-check" /></td></tr>
+						<tr><td colspan="4"><twig:EmptyState text="Aucune IP suspecte détectée." icon="ti-shield-check" /></td></tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header">
+			<h3 class="panel-title">IPs bloquées ({{ blockedIps|length }})</h3>
+			<p class="text-xs opacity-50 mt-1">Toute tentative de connexion (formulaire web et API) depuis ces IPs est refusée.</p>
+		</div>
+		<div class="panel-body border-b border-gray-100 dark:border-gray-700">
+			<form method="post" action="{{ path('admin_security_policy_block_ip') }}" class="flex flex-wrap items-end gap-3">
+				<input type="hidden" name="_token" value="{{ csrf_token('admin_security_policy_block_ip') }}">
+				<div class="flex-1 min-w-[160px]">
+					<label for="block-ip-input" class="label block text-xs">Adresse IP</label>
+					<input id="block-ip-input" type="text" name="ip" placeholder="203.0.113.1" required class="input w-full">
+				</div>
+				<div class="flex-[2] min-w-[220px]">
+					<label for="block-ip-reason" class="label block text-xs">Motif</label>
+					<input id="block-ip-reason" type="text" name="reason" placeholder="Motif du blocage (optionnel)" class="input w-full">
+				</div>
+				<button type="submit" class="btn btn-danger gap-2">
+					<span class="ti ti-ban" aria-hidden="true"></span> Bloquer
+				</button>
+			</form>
+		</div>
+		<div class="table-wrap border-0">
+			<table class="table">
+				<caption class="sr-only">IPs bloquées</caption>
+				<thead><tr><th scope="col">IP</th><th scope="col">Motif</th><th scope="col">Bloquée par</th><th scope="col">Depuis</th><th scope="col" class="text-right">Actions</th></tr></thead>
+				<tbody>
+					{% for blockedIp in blockedIps %}
+						<tr>
+							<td class="font-mono text-xs">{{ blockedIp.ip }}</td>
+							<td class="text-sm opacity-70 max-w-xs truncate" title="{{ blockedIp.reason }}">{{ blockedIp.reason }}</td>
+							<td class="text-sm opacity-70">{{ blockedIp.blockedByLabel ?? '—' }}</td>
+							<td class="text-sm opacity-70 whitespace-nowrap">{{ blockedIp.createdAt|date('d/m/Y H:i') }}</td>
+							<td class="text-right">
+								<form method="post" action="{{ path('admin_security_policy_unblock_ip', {id: blockedIp.id}) }}" onsubmit="return confirm('Débloquer {{ blockedIp.ip }} ?');">
+									<input type="hidden" name="_token" value="{{ csrf_token('admin_security_policy_unblock_ip_' ~ blockedIp.id) }}">
+									<button type="submit" class="btn btn-ghost btn-sm gap-1.5">
+										<span class="ti ti-lock-open" aria-hidden="true"></span>
+										Débloquer
+									</button>
+								</form>
+							</td>
+						</tr>
+					{% else %}
+						<tr><td colspan="5"><twig:EmptyState text="Aucune IP bloquée." icon="ti-shield-check" /></td></tr>
 					{% endfor %}
 				</tbody>
 			</table>

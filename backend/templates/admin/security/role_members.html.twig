@@ -1,0 +1,76 @@
+{# templates/admin/security/role_members.html.twig
+   Comptes portant `role` comme rôle principal — cf.
+   AdminSecurityRoleController::show(). Boucle "voir → agir" : chaque ligne
+   pointe vers la vraie page d'édition du compte (celle qui applique déjà les
+   garde-fous : auto-rétrogradation bloquée, alerte d'élévation, audit — pas
+   dupliqués ici). #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Comptes {{ role }}{% endblock %}
+
+{% block body %}
+	<div class="mb-6">
+		<a href="{{ path('admin_security_role_index') }}" class="btn btn-secondary gap-2 px-3 py-2 text-sm w-fit">
+			<span class="ti ti-arrow-left text-base" aria-hidden="true"></span>
+			<span>Retour à la hiérarchie des rôles</span>
+		</a>
+	</div>
+
+	<twig:PageHeader title="Comptes {{ role }}" subtitle="{{ members|length }} compte(s) ayant {{ role }} comme rôle principal." icon="ti-users-group" />
+
+	<div class="flex flex-wrap items-center gap-2 mb-6">
+		{% for r in roles %}
+			<a href="{{ path('admin_security_role_show', {role: r}) }}" class="badge {{ r == role ? 'badge-primary' : 'badge-info hover:opacity-75 transition' }}">
+				{{ r }} <span class="opacity-60">({{ roleCounts[r] }})</span>
+			</a>
+			{% if not loop.last %}<span class="ti ti-chevron-right text-sm opacity-40" aria-hidden="true"></span>{% endif %}
+		{% endfor %}
+	</div>
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Comptes {{ role }}</caption>
+			<thead>
+				<tr>
+					<th scope="col">Compte</th>
+					<th scope="col">Statut</th>
+					<th scope="col">Dernière connexion</th>
+					<th scope="col" class="w-32 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for member in members %}
+					{% set user = member.user %}
+					<tr>
+						<td>
+							<p class="font-medium text-(--color-brand-dark)">{{ user.fullName ?? 'Non spécifié' }}</p>
+							<p class="text-xs opacity-60">{{ user.email }}</p>
+						</td>
+						<td>
+							{% if not user.isActive %}
+								<twig:Badge variant="danger">Désactivé</twig:Badge>
+							{% elseif not user.isVerified %}
+								<twig:Badge variant="warning">Non vérifié</twig:Badge>
+							{% else %}
+								<twig:Badge variant="success">Actif</twig:Badge>
+							{% endif %}
+						</td>
+						<td class="text-sm opacity-70 whitespace-nowrap">{{ user.lastLoginAt ? user.lastLoginAt|date('d/m/Y H:i') : 'Jamais' }}</td>
+						<td class="text-right">
+							<div class="flex items-center justify-end gap-1">
+								<a href="{{ path(member.readRoute, {id: user.id}) }}" class="btn btn-ghost btn-icon" aria-label="Voir {{ user.email }}" title="Voir le compte">
+									<span class="ti ti-eye text-lg" aria-hidden="true"></span>
+								</a>
+								<a href="{{ path(member.editRoute, {id: user.id}) }}" class="btn btn-ghost btn-icon" aria-label="Modifier {{ user.email }}" title="Modifier (dont le rôle)">
+									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
+								</a>
+							</div>
+						</td>
+					</tr>
+				{% else %}
+					<tr><td colspan="4"><twig:EmptyState text="Aucun compte n'a {{ role }} comme rôle principal." icon="ti-users-group" /></td></tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock %}

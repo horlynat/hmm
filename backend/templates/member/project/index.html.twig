@@ -42,7 +42,7 @@
 							<span class="font-bold text-brand-dark">{{ project.progress }}%</span>
 						</div>
 						<div class="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
-							<div class="h-2 rounded-full bg-(--brand-primary)" style="width: {{ project.progress }}%"></div>
+							<div class="h-2 rounded-full bg-(--color-brand-primary)" style="width: {{ project.progress }}%"></div>
 						</div>
 						{% if project.deadline %}
 							<div class="text-xs text-brand-dark/50 mt-2 flex items-center gap-1"><span class="ti ti-calendar-event" aria-hidden="true"></span> Échéance : {{ project.deadline|date('d/m/Y') }}</div>

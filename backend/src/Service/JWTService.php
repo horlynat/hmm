@@ -2,9 +2,6 @@
 
 namespace App\Service;
 
-use DateTimeImmutable;
-use InvalidArgumentException;
-use JsonException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
@@ -21,7 +18,9 @@ class JWTService
     private const DEFAULT_VALIDITY = 10800; // 3 heures en secondes
     private const AUTH_VALIDITY = 3600; // 1 heure pour les tokens d'authentification
     private const EMAIL_VERIFICATION_VALIDITY = 86400; // 24 heures pour la vérification d'email
+    private const NEWSLETTER_CONFIRMATION_VALIDITY = 604800; // 7 jours — enjeu bien plus faible qu'un compte, un visiteur peut mettre du temps à ouvrir cet e-mail
     private const PASSWORD_RESET_VALIDITY = 3600; // 1 heure pour la réinitialisation de mot de passe
+    private const API_TWO_FACTOR_CHALLENGE_VALIDITY = 300; // 5 min : le temps de saisir un code TOTP, pas plus
 
     // Limite de taille pour éviter les attaques DoS
     private const MAX_PAYLOAD_SIZE = 4096; // 4 Ko
@@ -29,8 +28,9 @@ class JWTService
     public function __construct(
         #[Autowire('%app.jwtsecret%')]
         private string $secret,
-        private ?LoggerInterface $logger = null
-    ) {}
+        private ?LoggerInterface $logger = null,
+    ) {
+    }
 
     // =============================================
     // Méthodes de génération de tokens
@@ -39,15 +39,17 @@ class JWTService
     /**
      * Génère un JWT pour la vérification d'email.
      *
-     * @param int $userId ID de l'utilisateur
+     * @param int $userId   ID de l'utilisateur
      * @param int $validity Durée de validité en secondes (par défaut : 24h)
+     *
      * @return string Token JWT
-     * @throws InvalidArgumentException Si l'ID utilisateur est invalide
+     *
+     * @throws \InvalidArgumentException Si l'ID utilisateur est invalide
      */
     public function generateEmailVerificationToken(int $userId, int $validity = self::EMAIL_VERIFICATION_VALIDITY): string
     {
         if ($userId <= 0) {
-            throw new InvalidArgumentException('L\'ID utilisateur doit être un entier positif.');
+            throw new \InvalidArgumentException('L\'ID utilisateur doit être un entier positif.');
         }
 
         $header = [
@@ -64,6 +66,68 @@ class JWTService
     }
 
     /**
+     * Génère un JWT pour la confirmation d'inscription à la newsletter
+     * (double opt-in — cf. App\Entity\NewsletterSubscriber). Pas de colonne
+     * "token" stockée sur l'entité, comme pour l'authentification et la
+     * réinitialisation de mot de passe : le JWT lui-même, signé et borné
+     * dans le temps, fait office de jeton à usage unique implicite (une
+     * fois `confirmedAt` posé, revalider le même jeton est un no-op géré
+     * par NewsletterConfirmationController, pas par le JWT).
+     *
+     * @param int $subscriberId ID du NewsletterSubscriber
+     *
+     * @throws \InvalidArgumentException Si l'ID est invalide
+     */
+    public function generateNewsletterConfirmationToken(int $subscriberId, int $validity = self::NEWSLETTER_CONFIRMATION_VALIDITY): string
+    {
+        if ($subscriberId <= 0) {
+            throw new \InvalidArgumentException('L\'ID de l\'abonné doit être un entier positif.');
+        }
+
+        $header = [
+            'typ' => 'JWT',
+            'alg' => self::DEFAULT_ALGORITHM,
+        ];
+
+        $payload = [
+            'subscriber_id' => $subscriberId,
+            'purpose' => 'newsletter_confirmation',
+        ];
+
+        return $this->generate($header, $payload, $validity);
+    }
+
+    /**
+     * Génère un JWT pour le lien de désinscription newsletter — inclus dans
+     * CHAQUE e-mail envoyé à un abonné (confirmation, bienvenue, nouveau
+     * contenu), potentiellement cliqué des mois ou années après l'envoi. Une
+     * validité courte comme les autres tokens rendrait un vieux lien de
+     * désinscription inopérant — exactement le scénario où un destinataire a
+     * le plus besoin qu'il fonctionne encore (RGPD : le retrait du
+     * consentement doit rester possible à tout moment). Validité ~10 ans :
+     * en pratique équivalent à "permanent" sans introduire une vraie valeur
+     * infinie dans le payload.
+     */
+    public function generateNewsletterUnsubscribeToken(int $subscriberId): string
+    {
+        if ($subscriberId <= 0) {
+            throw new \InvalidArgumentException('L\'ID de l\'abonné doit être un entier positif.');
+        }
+
+        $header = [
+            'typ' => 'JWT',
+            'alg' => self::DEFAULT_ALGORITHM,
+        ];
+
+        $payload = [
+            'subscriber_id' => $subscriberId,
+            'purpose' => 'newsletter_unsubscribe',
+        ];
+
+        return $this->generate($header, $payload, 315_360_000);
+    }
+
+    /**
      * Génère un JWT pour la réinitialisation de mot de passe.
      *
      * $requestedAt doit correspondre à la valeur stockée sur
@@ -73,16 +137,18 @@ class JWTService
      * autre biais invalide ce lien), sans avoir à faire du JWT un token à
      * état côté serveur.
      *
-     * @param int $userId ID de l'utilisateur
+     * @param int $userId      ID de l'utilisateur
      * @param int $requestedAt Timestamp Unix de la demande (User::getPasswordResetRequestedAt())
-     * @param int $validity Durée de validité en secondes (par défaut : 1h)
+     * @param int $validity    Durée de validité en secondes (par défaut : 1h)
+     *
      * @return string Token JWT
-     * @throws InvalidArgumentException Si l'ID utilisateur est invalide
+     *
+     * @throws \InvalidArgumentException Si l'ID utilisateur est invalide
      */
     public function generatePasswordResetToken(int $userId, int $requestedAt, int $validity = self::PASSWORD_RESET_VALIDITY): string
     {
         if ($userId <= 0) {
-            throw new InvalidArgumentException('L\'ID utilisateur doit être un entier positif.');
+            throw new \InvalidArgumentException('L\'ID utilisateur doit être un entier positif.');
         }
 
         $header = [
@@ -100,23 +166,61 @@ class JWTService
     }
 
     /**
+     * Génère un jeton de défi 2FA pour la connexion API (POST /api/login_check) :
+     * émis par TwoFactorAwareJwtSuccessHandler à la place du vrai JWT d'accès
+     * quand le compte a activé la double authentification, et échangé contre
+     * ce dernier par ApiTwoFactorLoginController une fois le code TOTP (ou un
+     * code de récupération) vérifié.
+     *
+     * Signé avec ce service (secret applicatif, %app.jwtsecret%) et non avec
+     * lexik/jwt-authentication-bundle (clés RSA dédiées à l'émission du vrai
+     * jeton d'accès) : les deux formats ne se recoupent pas, donc ce jeton de
+     * défi est structurellement inutilisable comme jeton Bearer sur le
+     * firewall API stateless (jwt: ~, cf. security.yaml) — aucun garde-fou
+     * supplémentaire n'est nécessaire pour l'empêcher d'accéder à /api/me &
+     * consorts avec le seul mot de passe.
+     *
+     * @throws \InvalidArgumentException Si l'ID utilisateur est invalide
+     */
+    public function generateApiTwoFactorChallengeToken(int $userId): string
+    {
+        if ($userId <= 0) {
+            throw new \InvalidArgumentException('L\'ID utilisateur doit être un entier positif.');
+        }
+
+        $header = [
+            'typ' => 'JWT',
+            'alg' => self::DEFAULT_ALGORITHM,
+        ];
+
+        $payload = [
+            'user_id' => $userId,
+            'purpose' => 'api_2fa_challenge',
+        ];
+
+        return $this->generate($header, $payload, self::API_TWO_FACTOR_CHALLENGE_VALIDITY);
+    }
+
+    /**
      * Génère un JWT pour l'authentification (login).
      *
-     * @param int $userId ID de l'utilisateur
-     * @param array<int, mixed> $roles Rôles de l'utilisateur (validés comme strings à l'exécution)
+     * @param int               $userId ID de l'utilisateur
+     * @param array<int, mixed> $roles  Rôles de l'utilisateur (validés comme strings à l'exécution)
+     *
      * @return string Token JWT
-     * @throws InvalidArgumentException Si les rôles ne sont pas valides
+     *
+     * @throws \InvalidArgumentException Si les rôles ne sont pas valides
      */
     public function generateAuthToken(int $userId, array $roles = []): string
     {
         if ($userId <= 0) {
-            throw new InvalidArgumentException('L\'ID utilisateur doit être un entier positif.');
+            throw new \InvalidArgumentException('L\'ID utilisateur doit être un entier positif.');
         }
 
         // Validation des rôles
         foreach ($roles as $role) {
             if (!is_string($role)) {
-                throw new InvalidArgumentException('Les rôles doivent être des chaînes de caractères.');
+                throw new \InvalidArgumentException('Les rôles doivent être des chaînes de caractères.');
             }
         }
 
@@ -137,12 +241,14 @@ class JWTService
     /**
      * Génère un JWT avec les paramètres donnés.
      *
-     * @param array<string, mixed> $header En-tête du JWT
-     * @param array<string, mixed> $payload Charge utile du JWT
-     * @param int $validity Durée de validité en secondes
+     * @param array<string, mixed> $header   En-tête du JWT
+     * @param array<string, mixed> $payload  Charge utile du JWT
+     * @param int                  $validity Durée de validité en secondes
+     *
      * @return string Token JWT
-     * @throws InvalidArgumentException Si les paramètres sont invalides
-     * @throws JsonException Si l'encodage JSON échoue
+     *
+     * @throws \InvalidArgumentException Si les paramètres sont invalides
+     * @throws \JsonException            Si l'encodage JSON échoue
      */
     public function generate(array $header, array $payload, int $validity = self::DEFAULT_VALIDITY): string
     {
@@ -153,15 +259,11 @@ class JWTService
             }
 
             if (!in_array($header['alg'], self::SUPPORTED_ALGORITHMS, true)) {
-                throw new InvalidArgumentException(sprintf(
-                    'Algorithme non supporté : %s. Algorithmes supportés : %s',
-                    $header['alg'],
-                    implode(', ', self::SUPPORTED_ALGORITHMS)
-                ));
+                throw new \InvalidArgumentException(sprintf('Algorithme non supporté : %s. Algorithmes supportés : %s', $header['alg'], implode(', ', self::SUPPORTED_ALGORITHMS)));
             }
 
             // Ajout des claims standard
-            $now = new DateTimeImmutable();
+            $now = new \DateTimeImmutable();
             $payload['iat'] = $now->getTimestamp();
             $payload['exp'] = $now->getTimestamp() + $validity;
             $payload['jti'] = $this->generateJti(); // Identifiant unique
@@ -171,7 +273,7 @@ class JWTService
             $jsonPayload = json_encode($payload, JSON_THROW_ON_ERROR);
 
             if (strlen($jsonHeader) > self::MAX_PAYLOAD_SIZE || strlen($jsonPayload) > self::MAX_PAYLOAD_SIZE) {
-                throw new InvalidArgumentException('Header ou payload trop grand.');
+                throw new \InvalidArgumentException('Header ou payload trop grand.');
             }
 
             // Encodage
@@ -181,16 +283,16 @@ class JWTService
             // Génération de la signature
             $signature = hash_hmac(
                 'sha256',
-                $base64Header . '.' . $base64Payload,
+                $base64Header.'.'.$base64Payload,
                 $this->secret,
                 true
             );
 
             $base64Signature = $this->base64UrlEncode($signature);
 
-            return $base64Header . '.' . $base64Payload . '.' . $base64Signature;
-        } catch (JsonException $e) {
-            throw new InvalidArgumentException('Échec de l\'encodage JSON du JWT : ' . $e->getMessage());
+            return $base64Header.'.'.$base64Payload.'.'.$base64Signature;
+        } catch (\JsonException $e) {
+            throw new \InvalidArgumentException('Échec de l\'encodage JSON du JWT : '.$e->getMessage());
         }
     }
 
@@ -201,16 +303,18 @@ class JWTService
     /**
      * Vérifie si un token est valide (format, signature, expiration).
      *
-     * @param string $token Token JWT à vérifier
+     * @param string      $token           Token JWT à vérifier
      * @param string|null $expectedPurpose Purpose attendu (ex: 'email_verification' ou 'authentication')
+     *
      * @return bool True si le token est valide
      */
     public function isValid(string $token, ?string $expectedPurpose = null): bool
     {
         try {
             $this->validate($token, $expectedPurpose);
+
             return true;
-        } catch (InvalidArgumentException) {
+        } catch (\InvalidArgumentException) {
             return false;
         }
     }
@@ -218,16 +322,18 @@ class JWTService
     /**
      * Valide un token et retourne son payload.
      *
-     * @param string $token Token JWT à valider
+     * @param string      $token           Token JWT à valider
      * @param string|null $expectedPurpose Purpose attendu (ex: 'email_verification' ou 'authentication')
+     *
      * @return array<string, mixed> Payload du token
-     * @throws InvalidArgumentException Si le token est invalide
+     *
+     * @throws \InvalidArgumentException Si le token est invalide
      */
     public function validate(string $token, ?string $expectedPurpose = null): array
     {
         $parts = explode('.', $token);
-        if (count($parts) !== 3) {
-            throw new InvalidArgumentException('Token JWT mal formé : doit contenir 3 parties.');
+        if (3 !== count($parts)) {
+            throw new \InvalidArgumentException('Token JWT mal formé : doit contenir 3 parties.');
         }
 
         $header = $this->getHeader($token);
@@ -235,18 +341,14 @@ class JWTService
 
         // Vérifier l'algorithme
         if (!in_array($header['alg'] ?? '', self::SUPPORTED_ALGORITHMS, true)) {
-            throw new InvalidArgumentException(sprintf(
-                'Algorithme non supporté : %s. Algorithmes supportés : %s',
-                $header['alg'] ?? 'non défini',
-                implode(', ', self::SUPPORTED_ALGORITHMS)
-            ));
+            throw new \InvalidArgumentException(sprintf('Algorithme non supporté : %s. Algorithmes supportés : %s', $header['alg'] ?? 'non défini', implode(', ', self::SUPPORTED_ALGORITHMS)));
         }
 
         // Vérifier la signature
         $expectedSignature = $this->base64UrlEncode(
             hash_hmac(
                 'sha256',
-                $parts[0] . '.' . $parts[1],
+                $parts[0].'.'.$parts[1],
                 $this->secret,
                 true
             )
@@ -255,21 +357,17 @@ class JWTService
         // hash_equals() : comparaison en temps constant, pour ne pas exposer la
         // signature attendue à une attaque temporelle via un simple !==.
         if (!hash_equals($expectedSignature, $parts[2])) {
-            throw new InvalidArgumentException('Signature JWT invalide.');
+            throw new \InvalidArgumentException('Signature JWT invalide.');
         }
 
         // Vérifier l'expiration
         if (isset($payload['exp']) && $payload['exp'] < time()) {
-            throw new InvalidArgumentException('Token JWT expiré.');
+            throw new \InvalidArgumentException('Token JWT expiré.');
         }
 
         // Vérifier le purpose si spécifié
-        if ($expectedPurpose !== null && ($payload['purpose'] ?? '') !== $expectedPurpose) {
-            throw new InvalidArgumentException(sprintf(
-                'Token invalide : purpose attendu "%s", obtenu "%s".',
-                $expectedPurpose,
-                $payload['purpose'] ?? 'non défini'
-            ));
+        if (null !== $expectedPurpose && ($payload['purpose'] ?? '') !== $expectedPurpose) {
+            throw new \InvalidArgumentException(sprintf('Token invalide : purpose attendu "%s", obtenu "%s".', $expectedPurpose, $payload['purpose'] ?? 'non défini'));
         }
 
         return $payload;
@@ -283,25 +381,28 @@ class JWTService
      * Récupère le payload d'un token (sans validation).
      *
      * @param string $token Token JWT
+     *
      * @return array<string, mixed> Payload décodé
-     * @throws InvalidArgumentException Si le token est mal formé
+     *
+     * @throws \InvalidArgumentException Si le token est mal formé
      */
     public function getPayload(string $token): array
     {
         $parts = explode('.', $token);
-        if (count($parts) !== 3) {
-            throw new InvalidArgumentException('Token JWT mal formé.');
+        if (3 !== count($parts)) {
+            throw new \InvalidArgumentException('Token JWT mal formé.');
         }
 
         try {
             $payload = json_decode($this->base64UrlDecode($parts[1]), true, 512, JSON_THROW_ON_ERROR);
             if (!is_array($payload)) {
-                throw new InvalidArgumentException('Payload JWT invalide.');
+                throw new \InvalidArgumentException('Payload JWT invalide.');
             }
+
             return $payload;
-        } catch (JsonException $e) {
+        } catch (\JsonException $e) {
             $this->logError('Échec du décodage JSON du payload JWT', ['error' => $e->getMessage()]);
-            throw new InvalidArgumentException('Échec du décodage JSON du payload JWT : ' . $e->getMessage());
+            throw new \InvalidArgumentException('Échec du décodage JSON du payload JWT : '.$e->getMessage());
         }
     }
 
@@ -309,25 +410,28 @@ class JWTService
      * Récupère le header d'un token (sans validation).
      *
      * @param string $token Token JWT
+     *
      * @return array<string, mixed> Header décodé
-     * @throws InvalidArgumentException Si le token est mal formé
+     *
+     * @throws \InvalidArgumentException Si le token est mal formé
      */
     public function getHeader(string $token): array
     {
         $parts = explode('.', $token);
-        if (count($parts) !== 3) {
-            throw new InvalidArgumentException('Token JWT mal formé.');
+        if (3 !== count($parts)) {
+            throw new \InvalidArgumentException('Token JWT mal formé.');
         }
 
         try {
             $header = json_decode($this->base64UrlDecode($parts[0]), true, 512, JSON_THROW_ON_ERROR);
             if (!is_array($header)) {
-                throw new InvalidArgumentException('Header JWT invalide.');
+                throw new \InvalidArgumentException('Header JWT invalide.');
             }
+
             return $header;
-        } catch (JsonException $e) {
+        } catch (\JsonException $e) {
             $this->logError('Échec du décodage JSON du header JWT', ['error' => $e->getMessage()]);
-            throw new InvalidArgumentException('Échec du décodage JSON du header JWT : ' . $e->getMessage());
+            throw new \InvalidArgumentException('Échec du décodage JSON du header JWT : '.$e->getMessage());
         }
     }
 
@@ -335,14 +439,16 @@ class JWTService
      * Vérifie si un token a expiré.
      *
      * @param string $token Token JWT
+     *
      * @return bool True si le token a expiré
      */
     public function isExpired(string $token): bool
     {
         try {
             $payload = $this->getPayload($token);
+
             return isset($payload['exp']) && $payload['exp'] < time();
-        } catch (InvalidArgumentException) {
+        } catch (\InvalidArgumentException) {
             return true; // Par défaut, considérer comme expiré en cas d'erreur
         }
     }
@@ -351,14 +457,16 @@ class JWTService
      * Vérifie si un token est un token d'authentification.
      *
      * @param string $token Token JWT
+     *
      * @return bool True si c'est un token d'authentification
      */
     public function isAuthToken(string $token): bool
     {
         try {
             $payload = $this->getPayload($token);
+
             return ($payload['purpose'] ?? '') === 'authentication';
-        } catch (InvalidArgumentException) {
+        } catch (\InvalidArgumentException) {
             return false;
         }
     }
@@ -367,14 +475,16 @@ class JWTService
      * Vérifie si un token est un token de vérification d'email.
      *
      * @param string $token Token JWT
+     *
      * @return bool True si c'est un token de vérification d'email
      */
     public function isEmailVerificationToken(string $token): bool
     {
         try {
             $payload = $this->getPayload($token);
+
             return ($payload['purpose'] ?? '') === 'email_verification';
-        } catch (InvalidArgumentException) {
+        } catch (\InvalidArgumentException) {
             return false;
         }
     }
@@ -397,6 +507,7 @@ class JWTService
      * Encode en Base64URL (sans padding).
      *
      * @param string $data Données à encoder
+     *
      * @return string Données encodées en Base64URL
      */
     private function base64UrlEncode(string $data): string
@@ -408,6 +519,7 @@ class JWTService
      * Décode depuis Base64URL.
      *
      * @param string $data Données à décoder
+     *
      * @return string Données décodées
      */
     private function base64UrlDecode(string $data): string
@@ -418,12 +530,12 @@ class JWTService
     /**
      * Journalise une erreur.
      *
-     * @param string $message Message d'erreur
+     * @param string               $message Message d'erreur
      * @param array<string, mixed> $context Contexte supplémentaire
      */
     private function logError(string $message, array $context = []): void
     {
-        if ($this->logger !== null) {
+        if (null !== $this->logger) {
             $this->logger->error($message, $context);
         }
     }

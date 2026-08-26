@@ -1,0 +1,38 @@
+{# templates/admin/profile/read.html.twig
+   Fiche de profil côté back-office — le compte connecté (admin_profile_read
+   sans id explicite) ou celui d'un autre utilisateur consulté depuis
+   l'administration (UserVoter). Gabarit back-office : base.html.twig. #}
+{% extends 'base.html.twig' %}
+
+{% set routePrefix = 'admin_profile_' %}
+
+{% block title %}Profil{% endblock %}
+
+{% block body %}
+
+	{% include 'profile/_profile_banner.html.twig' %}
+
+	<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
+		{% include 'profile/_profile_info.html.twig' %}
+		{% include 'profile/_profile_security.html.twig' %}
+	</div>
+
+	{% if user === app.user and user.hasSuperAdminEntitlement %}
+		<div class="mt-4">
+			{% include 'profile/_profile_elevation.html.twig' %}
+		</div>
+	{% endif %}
+
+	{% if 'ROLE_EDITOR' in user.roles %}
+		<div class="mt-4">
+			{% include 'profile/_profile_collaborator.html.twig' %}
+		</div>
+	{% endif %}
+
+	<div class="mt-4">
+		{% include 'profile/_profile_activity.html.twig' %}
+	</div>
+
+	{% include 'profile/_profile_sessions.html.twig' %}
+
+{% endblock %}

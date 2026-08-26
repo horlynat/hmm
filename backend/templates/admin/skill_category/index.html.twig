@@ -25,7 +25,7 @@
 				{% for skill_category in skill_categories %}
 					<tr>
 						<td class="font-mono text-xs opacity-50">{{ skill_category.id }}</td>
-						<td class="font-bold text-(--brand-dark)">{{ skill_category.name }}</td>
+						<td class="font-bold text-(--color-brand-dark)">{{ skill_category.name }}</td>
 						<td>
 							<div class="flex items-center justify-end gap-1">
 								<a href="{{ path('admin_skill_category_read', {'id': skill_category.id}) }}" class="btn btn-ghost btn-icon" aria-label="Voir {{ skill_category.name }}">
@@ -34,7 +34,7 @@
 								<a href="{{ path('admin_skill_category_update', {'id': skill_category.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ skill_category.name }}">
 									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
 								</a>
-								<twig:DeleteModal :id="skill_category.id" :action="path('admin_skill_category_delete', {id: skill_category.id})" :token="csrf_token('delete' ~ skill_category.id)" :label="skill_category.name" entity="cette catégorie" />
+								<twig:DeleteModal :id="skill_category.id" :action="path('admin_skill_category_delete', {id: skill_category.id})" :token="csrf_token('admin_skill_category_delete_' ~ skill_category.id)" :label="skill_category.name" entity="cette catégorie" />
 							</div>
 						</td>
 					</tr>

@@ -165,7 +165,7 @@ export default async function ArticleDetailPage({
           {/* Contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
               serveur en défense en profondeur avant injection. */}
           <div
-            className="article-body opacity-85"
+            className="article-body max-w-[65ch] opacity-85"
             dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(article.content) }}
           />
 

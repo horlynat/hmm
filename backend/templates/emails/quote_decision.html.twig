@@ -2,20 +2,45 @@
 
 {% block title %}{{ accepted ? 'Votre demande de devis a été acceptée' : 'Votre demande de devis' }}{% endblock %}
 {% block preheader %}{{ accepted ? 'Bonne nouvelle concernant votre demande de devis.' : 'Réponse à votre demande de devis.' }}{% endblock %}
+{% block badge_label %}Devis{% endblock %}
+{% block badge_color %}#cffafe{% endblock %}
+{% block badge_text_color %}#0e7490{% endblock %}
 
 {% block body %}
-	<p style="margin:0 0 16px;">Bonjour <strong>{{ clientName }}</strong>,</p>
-
 	{% if accepted %}
-		<p style="margin:0 0 24px;">
-			Bonne nouvelle : votre demande de devis{% if category %} concernant « {{ category }} »{% endif %} a été acceptée. Nous allons revenir vers vous très prochainement pour la suite (planning, budget, démarrage).
+		<h1 style="margin:0 0 16px; font-size:20px; color:#03045e;">Votre devis a été accepté</h1>
+
+		<p style="margin:0 0 16px;">Bonjour <strong>{{ clientName }}</strong>,</p>
+		<p style="margin:0 0 20px;">
+			Bonne nouvelle : votre demande{% if category %} concernant « <strong>{{ category }}</strong> »{% endif %} a été acceptée. Nous sommes ravis de démarrer cette collaboration avec vous.
 		</p>
+
+		<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8fa; border:1px solid #d0d7de; border-radius:8px; margin:0 0 24px;">
+			<tr>
+				<td style="padding:16px 18px;">
+					<p style="margin:0 0 10px; font-size:12px; font-weight:bold; text-transform:uppercase; letter-spacing:0.04em; color:#57606a;">Et maintenant ?</p>
+					<table role="presentation" cellpadding="0" cellspacing="0">
+						<tr>
+							<td valign="top" style="padding:0 8px 8px 0; color:#0077b6; font-size:14px;">•</td>
+							<td valign="top" style="padding:0 0 8px; font-size:14px;">Nous revenons vers vous prochainement pour caler ensemble planning et modalités</td>
+						</tr>
+						<tr>
+							<td valign="top" style="padding:0 8px 0 0; color:#0077b6; font-size:14px;">•</td>
+							<td valign="top" style="padding:0; font-size:14px;">Vous pourrez suivre l'avancement de votre projet directement depuis votre espace client</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
 	{% else %}
-		<p style="margin:0 0 24px;">
-			Après étude de votre demande de devis{% if category %} concernant « {{ category }} »{% endif %}, nous ne sommes malheureusement pas en mesure d'y donner suite pour le moment.
+		<h1 style="margin:0 0 16px; font-size:20px; color:#03045e;">Réponse à votre demande de devis</h1>
+
+		<p style="margin:0 0 16px;">Bonjour <strong>{{ clientName }}</strong>,</p>
+		<p style="margin:0 0 16px;">
+			Après étude de votre demande{% if category %} concernant « <strong>{{ category }}</strong> »{% endif %}, nous ne sommes malheureusement pas en mesure d'y donner suite pour le moment.
 		</p>
 		<p style="margin:0 0 24px;">
-			N'hésitez pas à nous recontacter pour toute autre demande ou si votre projet évolue.
+			Cette décision peut tenir à plusieurs facteurs — disponibilité, adéquation avec notre périmètre d'intervention actuel — et ne présume en rien de la qualité de votre projet. N'hésitez pas à nous recontacter pour toute autre demande, ou si le projet évolue.
 		</p>
 	{% endif %}
 

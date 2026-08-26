@@ -20,9 +20,20 @@ class ProjectHistory
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'histories')]
-    #[ORM\JoinColumn(name: 'project_id', nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(name: 'project_id', nullable: true, onDelete: 'SET NULL')]
     #[Groups(['api_admin'])]
-    private Project $project;
+    private ?Project $project = null;
+
+    /**
+     * Copie figée du titre du projet au moment de l'action, prise indépendamment
+     * de la relation `project`. Nécessaire car la suppression d'un projet met
+     * `project_id` à NULL (onDelete: SET NULL) au lieu de supprimer son historique
+     * en cascade — sans cette copie, l'entrée "project_deleted" perdrait le seul
+     * libellé qui la rend lisible une fois le projet effectivement disparu.
+     */
+    #[ORM\Column(type: 'string', length: 255)]
+    #[Groups(['api_admin'])]
+    private string $projectTitle = '';
 
     #[ORM\Column(type: 'string', length: 50)]
     #[Groups(['api_admin'])]
@@ -52,7 +63,7 @@ class ProjectHistory
         return $this->id;
     }
 
-    public function getProject(): Project
+    public function getProject(): ?Project
     {
         return $this->project;
     }
@@ -60,6 +71,17 @@ class ProjectHistory
     public function setProject(Project $project): self
     {
         $this->project = $project;
+        return $this;
+    }
+
+    public function getProjectTitle(): string
+    {
+        return $this->projectTitle;
+    }
+
+    public function setProjectTitle(string $projectTitle): self
+    {
+        $this->projectTitle = $projectTitle;
         return $this;
     }
 
@@ -117,6 +139,9 @@ class ProjectHistory
             'expense_added' => 'Ajout d\'une dépense',
             'expense_removed' => 'Suppression d\'une dépense',
             'collaborator_added' => 'Ajout d\'un collaborateur',
+            'collaborator_join_requested' => 'Demande d\'auto-association (espace freelance)',
+            'collaborator_join_approved' => 'Demande d\'auto-association validée',
+            'collaborator_join_rejected' => 'Demande d\'auto-association refusée',
             'collaborator_removed' => 'Retrait d\'un collaborateur',
             'client_assigned' => 'Client assigné',
             'media_removed' => 'Suppression d\'un média',
@@ -134,6 +159,9 @@ class ProjectHistory
             'expense_added' => '💰',
             'expense_removed' => '💸',
             'collaborator_added' => '👥',
+            'collaborator_join_requested' => '🙋',
+            'collaborator_join_approved' => '✅',
+            'collaborator_join_rejected' => '⛔',
             'collaborator_removed' => '👤',
             'client_assigned' => '🤝',
             'media_removed' => '🖼️',
@@ -151,6 +179,9 @@ class ProjectHistory
             'expense_added' => 'bg-red-500 text-white',
             'expense_removed' => 'bg-red-700 text-white',
             'collaborator_added', 'collaborator_removed' => 'bg-yellow-500 text-black',
+            'collaborator_join_requested' => 'bg-amber-400 text-black',
+            'collaborator_join_approved' => 'bg-green-500 text-white',
+            'collaborator_join_rejected' => 'bg-red-500 text-white',
             'client_assigned' => 'bg-indigo-500 text-white',
             'media_removed' => 'bg-orange-500 text-white',
             'project_deleted' => 'bg-gray-900 text-white',

@@ -117,6 +117,10 @@ services:
       - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-sonnet-5}
       - CLAUDE_MODEL_FALLBACK=${CLAUDE_MODEL_FALLBACK:-claude-haiku-4-5-20251001}
       - ASSISTANT_MONTHLY_BUDGET_USD=${ASSISTANT_MONTHLY_BUDGET_USD:-20}
+      # Seuil intermédiaire : alerte email informative, le chat reste actif
+      # (cf. App\Service\AiAssistantBudgetGuard::maybeWarn — seul le plafond
+      # ci-dessus coupe réellement le chat).
+      - ASSISTANT_BUDGET_ALERT_THRESHOLD_USD=${ASSISTANT_BUDGET_ALERT_THRESHOLD_USD:-0}
     secrets:
       - app_secret
       - jwt_passphrase
@@ -218,11 +222,21 @@ services:
       # service backend ci-dessus).
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.5-flash-lite}
       - GEMINI_EMBEDDING_MODEL=${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
+      # RevalidateFrontendMessageHandler (App\Service\FrontendRevalidator)
+      # tourne ici — même variable que le service backend (cf. commentaire
+      # là-bas) : sans elle, %app.frontend_url% retombe sur le défaut .env
+      # http://localhost:3000, qui ne pointe vers rien dans ce conteneur.
+      - FRONTEND_URL=${NEXT_PUBLIC_SITE_URL}
     secrets:
       - app_secret
       - database_url
       - mailer_dsn
       - gemini_api_key
+      # RevalidateFrontendMessageHandler (App\Service\FrontendRevalidator) —
+      # sans ce secret, FrontendRevalidator::isConfigured() reste faux dans
+      # ce conteneur et la revalidation frontend est silencieusement ignorée
+      # (log info, aucune erreur) malgré un webhook fonctionnel côté cible.
+      - revalidate_secret
       - ntfy_dsn
       - offsite_s3_endpoint
       - offsite_s3_bucket
@@ -276,6 +290,52 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  adminer:
+    # Interface web de gestion de la base applicative (MySQL du service
+    # `database` ci-dessus) — accès demandé explicitement, pas un outil de
+    # dev qui traîne. Identifiants NULLE PART ici : Adminer présente son
+    # propre écran de connexion (serveur pré-rempli via ADMINER_DEFAULT_
+    # SERVER, mais utilisateur/mot de passe saisis à chaque session, jamais
+    # stockés côté conteneur) — on se connecte avec le même compte `app` que
+    # le backend (cf. secrets/database_password), aucun secret supplémentaire
+    # à provisionner.
+    image: adminer:latest
+    restart: unless-stopped
+    environment:
+      - ADMINER_DEFAULT_SERVER=database
+    networks:
+      # edge-net : routable par Traefik (comme backend). data-net : seul
+      # moyen d'atteindre `database`, dont le réseau est `internal: true`
+      # (aucune route sortante directe) — mêmes deux réseaux que backend,
+      # même raison.
+      - edge-net
+      - data-net
+    depends_on:
+      database:
+        condition: service_healthy
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=edge-net
+      # Copie exacte de la protection de dark.horlynat.com (guide §3) :
+      # cloudflare-only interdit tout accès qui ne transite pas par
+      # Cloudflare, Cloudflare Access (à configurer dans le dashboard —
+      # Zero Trust -> Access -> Applications -- hors périmètre de ce fichier)
+      # fait le vrai contrôle d'identité en amont, ratelimit-strict limite le
+      # bruteforce. Pas de admin-ipwhitelist@file (cf. commentaire sur
+      # dark.horlynat.com ci-dessus : IP non stable, ça bloquerait plus
+      # souvent qu'autre chose) — Access joue déjà ce rôle.
+      - traefik.http.routers.dbadmin.rule=Host(`db.horlynat.com`)
+      - traefik.http.routers.dbadmin.entrypoints=websecure
+      - traefik.http.routers.dbadmin.tls=true
+      - traefik.http.routers.dbadmin.middlewares=cloudflare-only@file,security-headers@file,ratelimit-strict@file
+      - traefik.http.services.dbadmin.loadbalancer.server.port=8080
 
   postfixadmin:
     # Panneau de gestion des comptes mail (Postfix/Dovecot natifs sur l'hôte,

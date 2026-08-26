@@ -11,7 +11,10 @@ use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: SkillCategoryRepository::class)]
-#[UniqueEntity(fields: ['name'], message: "Cette catégorie existe déjà.")]
+// entityClass explicite — cf. commentaire identique dans App\Entity\Skill
+// pour le pourquoi (sans lui : 500 sur TOUTE requête POST/PUT via l'API,
+// pas seulement les doublons).
+#[UniqueEntity(fields: ['name'], message: 'Cette catégorie existe déjà.', entityClass: SkillCategory::class)]
 class SkillCategory
 {
     #[ORM\Id]
@@ -21,10 +24,14 @@ class SkillCategory
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
-    #[Assert\NotBlank(message: "Le nom de la catégorie est obligatoire.")]
+    #[Assert\NotBlank(message: 'Le nom de la catégorie est obligatoire.')]
     #[Assert\Length(min: 3, max: 100)]
     #[Groups(['api_public', 'api_admin'])]
-    private string $name = '';
+    // protected (pas private) — cf. commentaire identique dans App\Entity\User :
+    // UniqueEntityValidator reflète l'objet réellement validé
+    // (SkillCategoryApiResource, une sous-classe), une propriété private du
+    // parent y est invisible.
+    protected string $name = '';
 
     /** Nom en anglais — optionnel, retombe sur `name` (FR) côté frontend si vide. */
     #[ORM\Column(length: 100, nullable: true)]

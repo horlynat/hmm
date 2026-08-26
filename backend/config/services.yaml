@@ -36,6 +36,29 @@ services:
         arguments:
             $targetDirectory: '%app.upload_dir%'
 
+    # Instance dédiée au logo (branding) : seul endroit de l'app où SVG/WEBP
+    # doivent être acceptés — SystemSettingType::logoFile les autorise déjà
+    # côté formulaire, mais l'instance par défaut de MediaUploader (jpeg/png/pdf
+    # uniquement) rejetait silencieusement ces deux formats à l'upload réel.
+    # Le service par défaut ci-dessus reste inchangé pour tous les autres
+    # usages (articles, projets, justificatifs de dépense, témoignages).
+    app.media_uploader.branding:
+        class: App\Service\MediaUploader
+        arguments:
+            $targetDirectory: '%app.upload_dir%'
+            $allowedMimeTypes: ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp']
+
+    # Instance dédiée aux images insérées DANS le corps d'un article/projet
+    # (cf. App\Controller\Admin\AdminRichTextController, rich_text_controller.js)
+    # — pas de PDF (n'a pas de sens comme <img src>) ni de SVG (contenu
+    # potentiellement scripté, acceptable pour un logo choisi par l'admin
+    # lui-même en amont, pas pour un flux d'upload générique dans un texte).
+    app.media_uploader.content:
+        class: App\Service\MediaUploader
+        arguments:
+            $targetDirectory: '%app.upload_dir%'
+            $allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+
     App\Service\JWTService:
         arguments:
             $secret: '%env(APP_JWTSECRET)%'
@@ -48,6 +71,11 @@ services:
             $appSecret: '%kernel.secret%'
 
     App\Service\GeminiIngestionClient:
+        arguments:
+            $apiKey: '%env(GEMINI_API_KEY)%'
+            $model: '%env(GEMINI_MODEL)%'
+
+    App\Service\GeminiTranslator:
         arguments:
             $apiKey: '%env(GEMINI_API_KEY)%'
             $model: '%env(GEMINI_MODEL)%'
@@ -66,11 +94,21 @@ services:
             $accessKeyId: '%env(OFFSITE_S3_ACCESS_KEY_ID)%'
             $secretAccessKey: '%env(OFFSITE_S3_SECRET_ACCESS_KEY)%'
 
+    App\Service\FrontendRevalidator:
+        arguments:
+            $frontendUrl: '%app.frontend_url%'
+            $secret: '%env(REVALIDATE_SECRET)%'
+
     App\Service\AiAssistantBudgetGuard:
         arguments:
             $monthlyBudgetUsd: '%env(float:ASSISTANT_MONTHLY_BUDGET_USD)%'
+            $alertThresholdUsd: '%env(float:ASSISTANT_BUDGET_ALERT_THRESHOLD_USD)%'
 
     App\State\AiAssistantChatProcessor:
+        arguments:
+            $appSecret: '%kernel.secret%'
+
+    App\State\AiContentSummaryProcessor:
         arguments:
             $appSecret: '%kernel.secret%'
 
@@ -90,6 +128,21 @@ services:
             - { name: doctrine.event_listener, event: postUpdate }
             - { name: doctrine.event_listener, event: postFlush }
 
+    App\EventSubscriber\FrontendRevalidationSubscriber:
+        tags:
+            - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: postUpdate }
+            - { name: doctrine.event_listener, event: postRemove }
+            - { name: doctrine.event_listener, event: postFlush }
+
+    App\EventSubscriber\TotpSecretEncryptionListener:
+        tags:
+            - { name: doctrine.event_listener, event: postLoad }
+
+    App\EventSubscriber\TranslationHydrationListener:
+        tags:
+            - { name: doctrine.event_listener, event: postLoad }
+
     App\Service\DatabaseBackupService:
         arguments:
             $backupDir: '%app.backup_dir%'
@@ -101,17 +154,12 @@ services:
         arguments:
             $fallbackPolicy: '%app.notifier.fallback_policy%'
 
-    # ✅ Sessions stockées en base (voir admin/security/sessions) : PdoSessionHandler a
-    #    besoin d'un PDO natif, on le récupère depuis la connexion Doctrine existante.
-    app.pdo_native_connection:
-        class: PDO
-        factory: ['@doctrine.dbal.default_connection', 'getNativeConnection']
-
-    Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler:
-        arguments:
-            - '@app.pdo_native_connection'
-            # lock_mode LOCK_ADVISORY (1) : la connexion PDO est partagée avec l'ORM,
-            # le mode par défaut LOCK_TRANSACTIONAL ouvre une transaction PDO qui entre
-            # en conflit avec celles de Doctrine ("There is already an active
-            # transaction"). LOCK_ADVISORY verrouille sans transaction.
-            - lock_mode: 1
+    # ✅ Sessions stockées en base (voir admin/security/sessions) : voir
+    #    App\Session\ReconnectingPdoSessionHandler pour pourquoi ce n'est PAS
+    #    un simple partage du PDO natif de Doctrine via un factory ('app.
+    #    pdo_native_connection', retiré — un factory Symfony n'est appelé
+    #    qu'une fois et son résultat figé rend PdoSessionHandler aveugle à
+    #    toute reconnexion Doctrine survenant après coup dans la vie d'un
+    #    worker FrankenPHP). config/packages/framework.yaml pointe
+    #    `session.handler_id` vers cette classe (autowirée automatiquement,
+    #    aucune déclaration explicite nécessaire ici).

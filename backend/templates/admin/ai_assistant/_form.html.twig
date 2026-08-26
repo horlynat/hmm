@@ -1,47 +1,14 @@
 {# templates/admin/ai_assistant/_form.html.twig #}
+<twig:LocaleToggle />
+
 {{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
 
 <div class="card max-w-3xl space-y-5">
-	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-		<div>
-			{{ form_label(form.chipLabel, null, {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
-			{{ form_widget(form.chipLabel, {'attr': {'class': 'input w-full'}}) }}
-			{{ form_errors(form.chipLabel, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-		</div>
-		<div>
-			{{ form_label(form.chipLabelEn, null, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-			{{ form_widget(form.chipLabelEn, {'attr': {'class': 'input w-full'}}) }}
-			{{ form_errors(form.chipLabelEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-		</div>
-	</div>
+	<twig:FieldPair :fr="form.chipLabel" :en="form.chipLabelEn" />
 
-	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-		<div>
-			{{ form_label(form.keywords, null, {'label_attr': {'class': 'block text-sm font-bold mb-1 text-brand-dark'}}) }}
-			<p class="text-[11px] opacity-40 mb-2">{{ form.keywords.vars.help }}</p>
-			{{ form_widget(form.keywords, {'attr': {'class': 'input textarea w-full'}}) }}
-			{{ form_errors(form.keywords, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-		</div>
-		<div>
-			{{ form_label(form.keywordsEn, null, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-			<p class="text-[11px] opacity-40 mb-2">{{ form.keywordsEn.vars.help }}</p>
-			{{ form_widget(form.keywordsEn, {'attr': {'class': 'input textarea w-full'}}) }}
-			{{ form_errors(form.keywordsEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-		</div>
-	</div>
+	<twig:FieldPair :fr="form.keywords" :en="form.keywordsEn" :isTextarea="true" />
 
-	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-		<div>
-			{{ form_label(form.answer, null, {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
-			{{ form_widget(form.answer, {'attr': {'class': 'input textarea w-full'}}) }}
-			{{ form_errors(form.answer, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-		</div>
-		<div>
-			{{ form_label(form.answerEn, null, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-			{{ form_widget(form.answerEn, {'attr': {'class': 'input textarea w-full'}}) }}
-			{{ form_errors(form.answerEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-		</div>
-	</div>
+	<twig:FieldPair :fr="form.answer" :en="form.answerEn" :isTextarea="true" />
 
 	<div class="max-w-[160px]">
 		{{ form_label(form.sortOrder, null, {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}

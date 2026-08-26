@@ -7,9 +7,11 @@ use App\Entity\Media;
 use App\Entity\Tag;
 use App\Form\ArticleType;
 use App\Repository\ArticleRepository;
+use App\Repository\TranslationRepository;
 use App\Security\Voter\ArticleVoter;
 use App\Service\AuditLogger;
 use App\Service\MediaUploader;
+use App\Service\NewsletterNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -63,7 +65,9 @@ final class AdminArticleController extends AbstractController
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
         MediaUploader $uploader,
-        AuditLogger $auditLogger
+        AuditLogger $auditLogger,
+        TranslationRepository $translationRepository,
+        NewsletterNotifier $newsletterNotifier,
     ): Response {
         $this->denyAccessUnlessGranted(ArticleVoter::CREATE);
 
@@ -72,7 +76,7 @@ final class AdminArticleController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $article->setSlug($slugger->slug($article->getTitle())->lower());
+            $article->setSlug($this->uniqueArticleSlug($slugger, $entityManager, $article->getTitle()));
 
             // Extraction et traitement de l'image via la méthode optimisée
             $this->handleImageUpload($form, $article, $uploader, $entityManager);
@@ -91,14 +95,23 @@ final class AdminArticleController extends AbstractController
             $auditLogger->log(Article::class, $article->getId(), $article->getTitle(), 'created');
             $entityManager->flush();
 
+            // Après flush() pour disposer d'un id garanti (article tout juste créé).
+            $translationRepository->syncFromEntity($article);
+
+            // Tout article créé est public dès sa création (pas de statut
+            // brouillon sur cette entité, cf. App\Entity\Article) — la
+            // notification part donc systématiquement ici, sans condition.
+            $newsletterNotifier->notifyNewContent($article->getTitle(), 'article', $article->getSlug());
+
             $this->addFlash('success', 'L\'article a été créé avec succès.');
+
             return $this->redirectToRoute('admin_article_index');
         }
 
         return $this->render('admin/article/create.html.twig', [
-            'form'         => $form->createView(),
-            'article'      => $article,
-            'action'       => $this->generateUrl('admin_article_create'),
+            'form' => $form->createView(),
+            'article' => $article,
+            'action' => $this->generateUrl('admin_article_create'),
             'button_label' => 'Enregistrer l\'article',
         ]);
     }
@@ -128,7 +141,8 @@ final class AdminArticleController extends AbstractController
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
         MediaUploader $uploader,
-        AuditLogger $auditLogger
+        AuditLogger $auditLogger,
+        TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted(ArticleVoter::EDIT, $article);
 
@@ -136,7 +150,7 @@ final class AdminArticleController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $article->setSlug($slugger->slug($article->getTitle())->lower());
+            $article->setSlug($this->uniqueArticleSlug($slugger, $entityManager, $article->getTitle(), $article->getId()));
 
             // Traitement de l'image (réutilisable sans duplication !)
             $this->handleImageUpload($form, $article, $uploader, $entityManager);
@@ -144,14 +158,17 @@ final class AdminArticleController extends AbstractController
             $auditLogger->log(Article::class, $article->getId(), $article->getTitle(), 'updated');
             $entityManager->flush();
 
+            $translationRepository->syncFromEntity($article);
+
             $this->addFlash('success', 'L\'article a été mis à jour avec succès.');
+
             return $this->redirectToRoute('admin_article_index');
         }
 
         return $this->render('admin/article/update.html.twig', [
-            'form'         => $form->createView(),
-            'article'      => $article,
-            'action'       => $this->generateUrl('admin_article_update', ['slug' => $article->getSlug()]), 
+            'form' => $form->createView(),
+            'article' => $article,
+            'action' => $this->generateUrl('admin_article_update', ['slug' => $article->getSlug()]),
             'button_label' => 'Mettre à jour l\'article',
         ]);
     }
@@ -165,15 +182,15 @@ final class AdminArticleController extends AbstractController
         Request $request,
         #[MapEntity(mapping: ['slug' => 'slug'])] Article $article,
         EntityManagerInterface $entityManager,
-        AuditLogger $auditLogger
+        AuditLogger $auditLogger,
     ): Response {
         $this->denyAccessUnlessGranted(ArticleVoter::DELETE, $article);
 
-        if ($this->isCsrfTokenValid('admin_article_delete_' . $article->getId(), $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('admin_article_delete_'.$article->getId(), $request->request->get('_token'))) {
             $auditLogger->log(Article::class, $article->getId(), $article->getTitle(), 'deleted');
             $entityManager->remove($article);
             $entityManager->flush();
-            
+
             $this->addFlash('success', 'L\'article a été supprimé avec succès.');
         } else {
             $this->addFlash('error', 'Token CSRF invalide. Action de suppression annulée.');
@@ -190,14 +207,30 @@ final class AdminArticleController extends AbstractController
      * Gère l'extraction, le téléversement et l'association d'un fichier média à un article.
      */
     private function handleImageUpload(
-        FormInterface $form, 
-        Article $article, 
-        MediaUploader $uploader, 
-        EntityManagerInterface $entityManager
+        FormInterface $form,
+        Article $article,
+        MediaUploader $uploader,
+        EntityManagerInterface $entityManager,
     ): void {
         $imageFile = $form->has('media') ? $form->get('media')->getData() : null;
 
         if ($imageFile instanceof UploadedFile) {
+            // Un seul emplacement média par article ("Image | PDF de l'article",
+            // champ singulier dans ArticleType) — un nouvel envoi REMPLACE
+            // l'existant plutôt que de s'y ajouter, comme documenté sur
+            // Article::$media ("Remplacement d'un media : removeMedia + addMedia").
+            // Jusqu'ici manquant : chaque mise à jour empilait un Media de plus
+            // sans jamais retirer l'ancien — remplacer l'image n'avait donc
+            // aucun effet visible (le frontend affiche toujours media[0], le
+            // tout premier envoyé) et laissait les anciens fichiers orphelins
+            // sur le disque. Sans effet pour create() : l'article y est neuf,
+            // sa collection de médias est toujours vide.
+            foreach ($article->getMedia()->toArray() as $existingMedia) {
+                $uploader->delete(basename($existingMedia->getFilePath()), 'articles');
+                $article->removeMedia($existingMedia);
+                $entityManager->remove($existingMedia);
+            }
+
             $result = $uploader->upload($imageFile, 'articles');
 
             $media = new Media();
@@ -210,5 +243,34 @@ final class AdminArticleController extends AbstractController
             $entityManager->persist($media);
             $article->addMedia($media);
         }
+    }
+
+    /**
+     * Génère un slug garanti unique pour un titre donné — ajoute un suffixe
+     * numérique ("-2", "-3", ...) si le slug de base est déjà pris par un
+     * autre article.
+     *
+     * Fait explicitement ici plutôt que via #[UniqueEntity(fields: ['slug'])]
+     * sur l'entité : Symfony valide l'entité PENDANT handleRequest() (l'écouteur
+     * POST_SUBMIT de l'extension Validator), avant que ce contrôleur n'ait la
+     * main pour fixer le slug — la contrainte ne voit donc jamais la bonne
+     * valeur et ne peut jamais détecter de collision, laissant l'INSERT/UPDATE
+     * planter en 500 (UniqueConstraintViolationException) à la place.
+     *
+     * $excludeId : id de l'article en cours d'édition (update()) — pour ne
+     * pas le confondre avec un "autre article" alors qu'il s'agit de
+     * lui-même resauvegardé avec le même titre.
+     */
+    private function uniqueArticleSlug(SluggerInterface $slugger, EntityManagerInterface $entityManager, string $title, ?int $excludeId = null): string
+    {
+        $base = (string) $slugger->slug($title)->lower();
+        $repository = $entityManager->getRepository(Article::class);
+
+        $slug = $base;
+        for ($suffix = 2; null !== ($existing = $repository->findOneBy(['slug' => $slug])) && $existing->getId() !== $excludeId; ++$suffix) {
+            $slug = $base.'-'.$suffix;
+        }
+
+        return $slug;
     }
 }

@@ -20,43 +20,43 @@
 		<script src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.x.x/dist/cdn.min.js" defer></script>
 		{% block javascripts %}{{ vite_entry_script_tags('app') }}{% endblock %}
 	</head>
-	<body class="flex h-screen bg-(--bg-default) text-(--brand-dark) overflow-hidden relative" x-data="{ mobileSidebarOpen: false }">
+	<body class="flex h-screen bg-(--color-bg-default) text-(--color-brand-dark) overflow-hidden relative" x-data="{ mobileSidebarOpen: false }">
 		<a href="#contenu" class="skip-link">Aller au contenu principal</a>
 
 		<div x-show="mobileSidebarOpen" @click="mobileSidebarOpen = false" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/40 z-40 md:hidden backdrop-blur-sm"></div>
 
 		<!-- 🧭 SIDEBAR ESPACE MEMBRE -->
-		<aside class="fixed inset-y-0 left-0 z-50 w-64 h-full bg-(--bg-default) border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out
+		<aside class="fixed inset-y-0 left-0 z-50 w-64 h-full bg-(--color-bg-default) border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300 ease-in-out
 					       md:translate-x-0 md:static md:h-screen shadow-xl md:shadow-none" :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'" aria-label="Navigation de l'espace membre">
 			<div class="p-6 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3 justify-between shrink-0">
 				<a href="{{ path('member_project_index') }}" class="flex items-center gap-3 min-w-0">
-					<span class="ti ti-briefcase text-2xl text-(--brand-primary) shrink-0" aria-hidden="true"></span>
+					<span class="ti ti-briefcase text-2xl text-(--color-brand-primary) shrink-0" aria-hidden="true"></span>
 					<div class="min-w-0">
-						<h1 class="text-lg font-heading font-bold text-(--brand-dark) truncate">{{ settings.siteName }}</h1>
-						<p class="text-xs text-(--brand-dark)/60 truncate">Espace membre</p>
+						<h1 class="text-lg font-heading font-bold text-(--color-brand-dark) truncate">{{ settings.siteName }}</h1>
+						<p class="text-xs text-(--color-brand-dark)/60 truncate">Espace membre</p>
 					</div>
 				</a>
-				<button type="button" @click="mobileSidebarOpen = false" class="md:hidden p-1 rounded-lg text-(--brand-dark) hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Fermer le menu">
+				<button type="button" @click="mobileSidebarOpen = false" class="md:hidden p-1 rounded-lg text-(--color-brand-dark) hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Fermer le menu">
 					<span class="ti ti-x text-xl" aria-hidden="true"></span>
 				</button>
 			</div>
 
 			<nav class="flex-1 p-4 space-y-1 overflow-y-auto text-sm">
-				<a href="{{ path('member_project_index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-(--brand-dark) hover:bg-brand-light/20 hover:text-(--brand-primary) transition {% if currentRoute starts with 'member_project' %}bg-brand-light/30 text-(--brand-primary) font-semibold{% endif %}">
+				<a href="{{ path('member_project_index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-(--color-brand-dark) hover:bg-brand-light/20 hover:text-(--color-brand-primary) transition {% if currentRoute starts with 'member_project' %}bg-brand-light/30 text-(--color-brand-primary) font-semibold{% endif %}">
 					<span class="ti ti-layout-dashboard text-lg" aria-hidden="true"></span>
 					Tableau de bord
 				</a>
-				<a href="{{ path('member_quote_index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-(--brand-dark) hover:bg-brand-light/20 hover:text-(--brand-primary) transition {% if currentRoute starts with 'member_quote' %}bg-brand-light/30 text-(--brand-primary) font-semibold{% endif %}">
+				<a href="{{ path('member_quote_index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-(--color-brand-dark) hover:bg-brand-light/20 hover:text-(--color-brand-primary) transition {% if currentRoute starts with 'member_quote' %}bg-brand-light/30 text-(--color-brand-primary) font-semibold{% endif %}">
 					<span class="ti ti-file-invoice text-lg" aria-hidden="true"></span>
 					Mes devis
 				</a>
 
-				<p class="text-[10px] uppercase text-(--brand-dark)/50 font-bold mt-5 mb-1.5 ml-3 tracking-wider">Mon compte</p>
-				<a href="{{ path('profile_read', {'id': app.user.id}) }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-(--brand-dark) hover:bg-brand-light/20 hover:text-(--brand-primary) transition {% if currentRoute starts with 'profile_read' or currentRoute starts with 'profile_update' %}bg-brand-light/30 text-(--brand-primary) font-semibold{% endif %}">
+				<p class="text-[10px] uppercase text-(--color-brand-dark)/50 font-bold mt-5 mb-1.5 ml-3 tracking-wider">Mon compte</p>
+				<a href="{{ path('member_profile_read') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-(--color-brand-dark) hover:bg-brand-light/20 hover:text-(--color-brand-primary) transition {% if currentRoute starts with 'member_profile_read' or currentRoute starts with 'member_profile_update' %}bg-brand-light/30 text-(--color-brand-primary) font-semibold{% endif %}">
 					<span class="ti ti-user-circle text-lg" aria-hidden="true"></span>
 					Mon profil
 				</a>
-				<a href="{{ path('profile_two_factor_index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-(--brand-dark) hover:bg-brand-light/20 hover:text-(--brand-primary) transition {% if currentRoute starts with 'profile_two_factor' %}bg-brand-light/30 text-(--brand-primary) font-semibold{% endif %}">
+				<a href="{{ path('profile_two_factor_index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-(--color-brand-dark) hover:bg-brand-light/20 hover:text-(--color-brand-primary) transition {% if currentRoute starts with 'profile_two_factor' %}bg-brand-light/30 text-(--color-brand-primary) font-semibold{% endif %}">
 					<span class="ti ti-shield-lock text-lg" aria-hidden="true"></span>
 					Sécurité &amp; 2FA
 				</a>
@@ -68,7 +68,7 @@
 						{{ (app.user.fullName ?? app.user.email)|slice(0, 1)|upper }}
 					</span>
 					<div class="min-w-0">
-						<p class="text-xs font-bold text-(--brand-dark) truncate">{{ app.user.fullName ?? app.user.email }}</p>
+						<p class="text-xs font-bold text-(--color-brand-dark) truncate">{{ app.user.fullName ?? app.user.email }}</p>
 						<p class="text-[11px] text-gray-400 truncate">{{ app.user.email }}</p>
 					</div>
 				</div>
@@ -87,7 +87,7 @@
 						aria-label="Ouvrir le menu de navigation">
 					<span class="ti ti-menu-2 text-2xl" aria-hidden="true"></span>
 				</button>
-				<span class="font-bold text-(--brand-dark)">{{ settings.siteName }} · Espace membre</span>
+				<span class="font-bold text-(--color-brand-dark)">{{ settings.siteName }} · Espace membre</span>
 			</header>
 
 			<div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">

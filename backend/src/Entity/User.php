@@ -48,6 +48,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     #[Groups(["api_admin"])]
     private array $roles = [];
 
+    /**
+     * PAM (Privileged Access Management) : ROLE_SUPER_ADMIN reste "dormant"
+     * même si présent dans `$roles` (l'entitlement — le compte a le droit d'y
+     * accéder) tant que ce champ est null ou dépassé. getRoles() (source
+     * unique consultée par Symfony Security) ne restitue le rôle que pendant
+     * cette fenêtre — cf. PrivilegeElevationController pour l'activation en
+     * libre-service, avec re-saisie du mot de passe et journal d'audit.
+     * Objectif : jamais de Super Admin permanent actif par défaut, comme
+     * recommandé pour toute gestion IAM sérieuse.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $superAdminElevatedUntil = null;
+
     // Stocke le hash, jamais le mot de passe en clair : la complexité (longueur,
     // regex) se valide sur le champ de saisie non mappé "plainPassword" de chaque
     // formulaire (RegistrationFormType, ProfileType, UserType), pas ici — un hash
@@ -72,6 +85,39 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     #[ORM\Column(type: 'boolean')]
     #[Groups(["api_admin"])]
     private bool $isActive = true;
+
+    /**
+     * Verrouillage temporaire — distinct de isActive (désactivation
+     * délibérée par un admin) : celui-ci peut être posé automatiquement
+     * (cf. LoginListener::onLoginFailure(), trop d'échecs de connexion sur
+     * un même email) ou manuellement. Expire de lui-même : nul besoin de le
+     * déverrouiller explicitement, il suffit d'attendre l'échéance.
+     */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(["api_admin"])]
+    private ?\DateTimeImmutable $lockedUntil = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(["api_admin"])]
+    private ?string $lockedReason = null;
+
+    /** Compte à durée limitée (ex. contractuel, stagiaire) — nul = jamais d'expiration. */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(["api_admin"])]
+    private ?\DateTimeImmutable $accountExpiresAt = null;
+
+    /**
+     * Compte technique (intégration/automatisation), pas une personne — créé
+     * exclusivement via App\Command\CreateServiceAccountCommand (jamais de
+     * formulaire web). Porte le rôle ROLE_SERVICE, volontairement absent de
+     * role_hierarchy (security.yaml) : aucun accès par défaut au-delà de ce
+     * qui sera explicitement accordé, ressource par ressource. Exclu des
+     * emails de bienvenue et des listes d'utilisateurs humains (cf.
+     * AccountWelcomeNotifier, UserRepository::clientsQueryBuilder()).
+     */
+    #[ORM\Column(type: 'boolean')]
+    #[Groups(["api_admin"])]
+    private bool $isSystemAccount = false;
 
     #[ORM\Column(length: 45, nullable: true)]
     private ?string $lastIp = null;
@@ -243,18 +289,61 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
         return $this->email;
     }
 
-    /** @return array<int, string> */
+    /**
+     * Rôles effectivement actifs — source unique consultée par Symfony
+     * Security (Voters, RoleHierarchy, IS_GRANTED). ROLE_SUPER_ADMIN en est
+     * retiré tant qu'il n'est pas activement élevé (cf. docblock de
+     * $superAdminElevatedUntil) : un compte qui A le droit d'être Super Admin
+     * (hasSuperAdminEntitlement()) ne l'EST pas tant qu'il ne l'a pas
+     * explicitement activé pour cette session.
+     *
+     * @return array<int, string>
+     */
     public function getRoles(): array
     {
         $roles = $this->roles;
+        if (\in_array('ROLE_SUPER_ADMIN', $roles, true) && !$this->isSuperAdminElevated()) {
+            $roles = array_values(array_diff($roles, ['ROLE_SUPER_ADMIN']));
+        }
         $roles[] = 'ROLE_USER';
         return array_unique($roles);
+    }
+
+    /** Le compte a-t-il le droit de devenir Super Admin (indépendamment de savoir s'il l'est actuellement) ? */
+    public function hasSuperAdminEntitlement(): bool
+    {
+        return \in_array('ROLE_SUPER_ADMIN', $this->roles, true);
+    }
+
+    public function isSuperAdminElevated(): bool
+    {
+        return null !== $this->superAdminElevatedUntil && $this->superAdminElevatedUntil > new \DateTimeImmutable();
+    }
+
+    public function getSuperAdminElevatedUntil(): ?\DateTimeImmutable
+    {
+        return $this->superAdminElevatedUntil;
+    }
+
+    public function setSuperAdminElevatedUntil(?\DateTimeImmutable $superAdminElevatedUntil): self
+    {
+        $this->superAdminElevatedUntil = $superAdminElevatedUntil;
+
+        return $this;
     }
 
     /**
      * Rôle le plus élevé, pour l'affichage (un seul badge au lieu de lister
      * toute la chaîne héritée). Ordre calqué sur role_hierarchy dans
      * config/packages/security.yaml — à garder synchronisé si celle-ci change.
+     */
+    /**
+     * Rôle le plus élevé, pour l'affichage (un seul badge au lieu de lister
+     * toute la chaîne héritée) et le routage administratif (AccountLinkResolver,
+     * AdminSecurityRoleController). Se base sur l'entitlement brut ($this->roles),
+     * PAS sur getRoles() : un Super Admin dormant (cf. isSuperAdminElevated())
+     * doit rester classé/routé comme Super Admin dans l'administration — seules
+     * les décisions d'autorisation Symfony Security passent par getRoles().
      */
     public function getPrimaryRole(): string
     {
@@ -267,7 +356,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
             'ROLE_SUPER_ADMIN',
         ];
 
-        $roles = $this->getRoles();
+        $roles = $this->roles;
+        $roles[] = 'ROLE_USER';
         foreach (array_reverse($hierarchyLowToHigh) as $role) {
             if (in_array($role, $roles, true)) {
                 return $role;
@@ -341,6 +431,60 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     public function setIsActive(bool $isActive): self
     {
         $this->isActive = $isActive;
+        return $this;
+    }
+
+    public function getLockedUntil(): ?\DateTimeImmutable
+    {
+        return $this->lockedUntil;
+    }
+
+    public function setLockedUntil(?\DateTimeImmutable $lockedUntil): self
+    {
+        $this->lockedUntil = $lockedUntil;
+        return $this;
+    }
+
+    public function getLockedReason(): ?string
+    {
+        return $this->lockedReason;
+    }
+
+    public function setLockedReason(?string $lockedReason): self
+    {
+        $this->lockedReason = $lockedReason;
+        return $this;
+    }
+
+    public function isLocked(): bool
+    {
+        return null !== $this->lockedUntil && $this->lockedUntil > new \DateTimeImmutable();
+    }
+
+    public function getAccountExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->accountExpiresAt;
+    }
+
+    public function setAccountExpiresAt(?\DateTimeImmutable $accountExpiresAt): self
+    {
+        $this->accountExpiresAt = $accountExpiresAt;
+        return $this;
+    }
+
+    public function isExpired(): bool
+    {
+        return null !== $this->accountExpiresAt && $this->accountExpiresAt < new \DateTimeImmutable();
+    }
+
+    public function isSystemAccount(): bool
+    {
+        return $this->isSystemAccount;
+    }
+
+    public function setIsSystemAccount(bool $isSystemAccount): self
+    {
+        $this->isSystemAccount = $isSystemAccount;
         return $this;
     }
 

@@ -15,10 +15,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class RegistrationController extends AbstractController
@@ -29,6 +31,7 @@ class RegistrationController extends AbstractController
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
         private AccountLinkResolver $accountLinkResolver,
+        private RoleHierarchyInterface $roleHierarchy,
     ) {
     }
 
@@ -39,7 +42,7 @@ class RegistrationController extends AbstractController
      * ApiResource d'inscription (CollaboratorRegistration / ClientRegistration).
      */
     #[Route('/register', name: 'register')]
-    #[IsGranted('ROLE_ADMIN', message: "Seul un administrateur peut créer un compte depuis cette page.")]
+    #[IsGranted('ROLE_ADMIN', message: 'Seul un administrateur peut créer un compte depuis cette page.')]
     public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, AdminAlertNotifier $adminAlertNotifier, PublicSubmissionThrottler $throttler): Response
     {
         $user = new User();
@@ -111,11 +114,24 @@ class RegistrationController extends AbstractController
             if ($user->isVerified()) {
                 $this->addFlash('warning', 'Votre compte est déjà activé.');
 
-                return $this->redirectToRoute('profile_read');
+                return $this->profileRedirect($user);
             }
 
             $user->setIsVerified(true);
             $this->entityManager->flush();
+
+            // Même frontière que AccountStatusSubscriber/TwoFactorController : 2FA
+            // obligatoire pour l'espace membre (client/collaborateur), jamais pour
+            // le back-office. getReachableRoleNames() applique la hiérarchie
+            // (role_hierarchy, security.yaml) sur les rôles bruts de $user — on ne
+            // peut pas passer par isGranted() ici, la session courante n'est pas
+            // forcément celle du compte qu'on vérifie. Pas de lien dédié vers
+            // l'étape 2FA : AccountLinkResolver renvoie un chemin frontend
+            // (Next.js) pour ce profil d'utilisateur, et /profile/2fa/setup n'a
+            // pas d'équivalent connu côté frontend — le bouton "Accéder à mon
+            // espace" (déjà résolu correctement) suffit, AccountStatusSubscriber
+            // redirige automatiquement vers l'activation dès la 1ère page visitée.
+            $requiresTwoFactor = !\in_array('ROLE_EDITOR', $this->roleHierarchy->getReachableRoleNames($user->getRoles()), true);
 
             // ✅ sendAsync() — non-critique, pas de token expirant
             $this->emailManager->sendAsync(
@@ -125,13 +141,14 @@ class RegistrationController extends AbstractController
                 context: [
                     'fullName' => $user->getFullName(),
                     'user' => $user, // ✅ Passez l'objet user complet au template
-                    'accountUrl' => $this->accountLinkResolver->resolve($user, 'profile_read', ['id' => $user->getId()], '/connexion'),
+                    'accountUrl' => $this->accountLinkResolver->resolve($user, 'admin_profile_read', ['id' => $user->getId()], '/connexion'),
+                    'requiresTwoFactor' => $requiresTwoFactor,
                 ]
             );
 
             $this->addFlash('success', 'Votre compte a été activé !');
 
-            return $this->redirectToRoute('profile_read');
+            return $this->profileRedirect($user);
         } catch (\InvalidArgumentException $e) {
             // JWTService::validate() ne lève que InvalidArgumentException (jamais les
             // classes typées JWTExpiredException/JWTInvalidSignatureException/
@@ -158,7 +175,7 @@ class RegistrationController extends AbstractController
         if ($user->isVerified()) {
             $this->addFlash('warning', 'Votre compte est déjà activé.');
 
-            return $this->redirectToRoute('profile_read');
+            return $this->profileRedirect($user);
         }
 
         $token = $this->jwt->generateEmailVerificationToken($user->getId());
@@ -182,6 +199,21 @@ class RegistrationController extends AbstractController
 
         $this->addFlash('success', 'Un nouveau lien de vérification vous a été envoyé.');
 
-        return $this->redirectToRoute('profile_read');
+        return $this->profileRedirect($user);
+    }
+
+    /**
+     * Route de profil correcte selon le rôle de $user : admin_profile_read
+     * (back-office, id requis) ou member_profile_read (espace membre,
+     * self-service, jamais d'id — cf. AccountLinkResolver::isBackOfficeUser()).
+     * Centralise ce choix : redirectToRoute('profile_read') sans id, tel
+     * qu'utilisé ici auparavant, levait MissingMandatoryParametersException
+     * dès qu'un de ces 4 embranchements était réellement atteint.
+     */
+    private function profileRedirect(User $user): RedirectResponse
+    {
+        return $this->accountLinkResolver->isBackOfficeUser($user)
+            ? $this->redirectToRoute('admin_profile_read', ['id' => $user->getId()])
+            : $this->redirectToRoute('member_profile_read');
     }
 }

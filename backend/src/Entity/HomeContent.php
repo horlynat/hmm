@@ -33,16 +33,14 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $heroEyebrow = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $heroEyebrowEn = null;
 
     #[ORM\Column(length: 255)]
-    #[Assert\NotBlank(message: "Le titre du hero est obligatoire.")]
+    #[Assert\NotBlank(message: 'Le titre du hero est obligatoire.')]
     #[Groups(['api_public', 'api_admin'])]
     private string $heroTitle = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $heroTitleEn = null;
 
@@ -51,16 +49,14 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $heroTitleAccent = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $heroTitleAccentEn = null;
 
     #[ORM\Column(type: Types::TEXT)]
-    #[Assert\NotBlank(message: "Le sous-titre du hero est obligatoire.")]
+    #[Assert\NotBlank(message: 'Le sous-titre du hero est obligatoire.')]
     #[Groups(['api_public', 'api_admin'])]
     private string $heroSub = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $heroSubEn = null;
 
@@ -74,7 +70,6 @@ class HomeContent
     private array $heroRoles = [];
 
     /** @var string[]|null */
-    #[ORM\Column(type: Types::JSON, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?array $heroRolesEn = null;
 
@@ -82,7 +77,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $founderBadge = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $founderBadgeEn = null;
 
@@ -90,7 +84,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $diagramCaption = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $diagramCaptionEn = null;
 
@@ -100,7 +93,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $aboutTitle = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $aboutTitleEn = null;
 
@@ -108,7 +100,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $aboutP1 = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $aboutP1En = null;
 
@@ -116,7 +107,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $aboutP2 = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $aboutP2En = null;
 
@@ -124,7 +114,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $aboutHighlightTitle = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $aboutHighlightTitleEn = null;
 
@@ -132,7 +121,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $aboutHighlightDesc = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $aboutHighlightDescEn = null;
 
@@ -140,7 +128,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $aboutVisionText = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $aboutVisionTextEn = null;
 
@@ -148,7 +135,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $aboutMissionText = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $aboutMissionTextEn = null;
 
@@ -158,7 +144,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $freelanceTitle = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $freelanceTitleEn = null;
 
@@ -166,7 +151,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $freelanceLede = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $freelanceLedeEn = null;
 
@@ -174,7 +158,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $freelancePoint1 = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $freelancePoint1En = null;
 
@@ -182,7 +165,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $freelancePoint2 = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $freelancePoint2En = null;
 
@@ -190,7 +172,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $freelancePoint3 = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $freelancePoint3En = null;
 
@@ -198,7 +179,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $freelanceCardDesc = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $freelanceCardDescEn = null;
 
@@ -208,7 +188,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $contactCtaTitle = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $contactCtaTitleEn = null;
 
@@ -216,7 +195,6 @@ class HomeContent
     #[Groups(['api_public', 'api_admin'])]
     private string $contactCtaSub = '';
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $contactCtaSubEn = null;
 

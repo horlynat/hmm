@@ -1,12 +1,17 @@
 {% extends 'emails/base_email.html.twig' %}
 
 {% block title %}Confirmez votre adresse email{% endblock %}
-{% block preheader %}Confirmez votre adresse email pour activer votre compte.{% endblock %}
+{% block preheader %}Un dernier clic pour activer votre compte.{% endblock %}
+{% block badge_label %}Compte{% endblock %}
+{% block badge_color %}#dbeafe{% endblock %}
+{% block badge_text_color %}#1e40af{% endblock %}
 
 {% block body %}
+	<h1 style="margin:0 0 16px; font-size:20px; color:#03045e;">Confirmez votre adresse email</h1>
+
 	<p style="margin:0 0 16px;">Bonjour <strong>{{ fullName }}</strong>,</p>
 	<p style="margin:0 0 24px;">
-		Merci de vous être inscrit sur Horlynat | Portail Digital. Pour activer votre compte et accéder à votre espace, veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous :
+		Merci de vous être inscrit sur Horlynat | Portail Digital. Il ne reste qu'une étape avant d'accéder à votre espace : confirmer que cette adresse email vous appartient bien.
 	</p>
 
 	<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
@@ -19,10 +24,12 @@
 		</tr>
 	</table>
 
-	<p style="margin:0 0 8px; font-size:13px; color:#57606a;">
-		Ce lien est personnel et expire dans 24 heures. Ne le partagez avec personne.
-	</p>
-	<p style="margin:0; font-size:13px; color:#57606a;">
-		Si vous n'êtes pas à l'origine de cette inscription, ignorez simplement cet email.
-	</p>
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8fa; border:1px solid #d0d7de; border-radius:8px; margin:0 0 4px;">
+		<tr>
+			<td style="padding:14px 16px; font-size:13px; color:#57606a; line-height:1.6;">
+				<strong style="color:#03045e;">⏳ Ce lien expire dans 24 heures</strong><br>
+				Il est personnel : ne le transférez à personne. Si vous n'êtes pas à l'origine de cette inscription, ignorez simplement cet email — aucun compte ne sera activé sans cette confirmation.
+			</td>
+		</tr>
+	</table>
 {% endblock %}

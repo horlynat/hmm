@@ -16,7 +16,7 @@ framework:
         cookie_secure: auto
         cookie_samesite: strict
         cookie_httponly: true
-        handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
+        handler_id: App\Session\ReconnectingPdoSessionHandler
         # Filet de sécurité côté serveur : le timeout d'inactivité de 10 min
         # (assets/js/idle-timeout.js) est désactivable en coupant JavaScript.
         # Au-delà de 30 min sans la moindre requête, la session expire aussi
@@ -41,11 +41,28 @@ framework:
             policy: fixed_window
             limit: 5
             interval: '1 minute'
+        # Anti-bruteforce de la re-saisie du mot de passe pour l'élévation PAM
+        # temporaire de ROLE_SUPER_ADMIN (App\Controller\PrivilegeElevationController)
+        # — l'appelant est déjà authentifié, mais un mot de passe compromis
+        # sans 2FA active ne doit pas suffire à élever indéfiniment par essais.
+        privilege_elevation:
+            policy: fixed_window
+            limit: 5
+            interval: '1 minute'
         # Anti-bruteforce du code TOTP à la connexion (/2fa_check). Scheb ne
         # limite pas nativement les tentatives ; sans ce garde-fou, un code à
         # 6 chiffres (1 000 000 de combinaisons, fenêtre TOTP ~30-90s) resterait
         # théoriquement attaquable. Clé = identifiant utilisateur.
         two_factor_attempt:
+            policy: fixed_window
+            limit: 5
+            interval: '15 minutes'
+        # Même anti-bruteforce que two_factor_attempt ci-dessus, mais pour le
+        # second temps de la connexion API (ApiTwoFactorLoginController) —
+        # limiteur dédié plutôt que réutiliser two_factor_attempt : deux flux de
+        # connexion distincts (web vs API), qui ne doivent pas partager leur
+        # compteur au risque de bloquer l'un à cause de tentatives sur l'autre.
+        api_login_2fa:
             policy: fixed_window
             limit: 5
             interval: '15 minutes'
@@ -85,6 +102,15 @@ framework:
             policy: fixed_window
             limit: 1
             interval: '1 day'
+        # Même anti-spam pour l'alerte de seuil intermédiaire (informative,
+        # ne coupe pas le chat) — limiter distinct de ai_assistant_budget_alert
+        # ci-dessus pour que les deux alertes restent dédupliquées indépendamment
+        # l'une de l'autre (le seuil peut être franchi un jour, le plafond un
+        # autre jour du même mois).
+        ai_assistant_budget_warning:
+            policy: fixed_window
+            limit: 1
+            interval: '1 day'
         # Génération des questions de qualification dynamiques du wizard de
         # devis (POST /api/quote/qualify) — App\Service\PublicSubmissionThrottler
         # ::assertQuoteQualifyAllowed(). Même profil que ai_assistant_chat :
@@ -102,6 +128,23 @@ framework:
             policy: sliding_window
             limit: 30
             interval: '1 hour'
+        # Traduction en direct pendant la frappe dans un formulaire bilingue du
+        # back-office (fr <-> en, POST /admin/translate) — App\Controller\Admin\
+        # AdminTranslateController, déjà derrière ROLE_ADMIN. Garde-fou contre
+        # un débounce cassé côté client ou un usage anormal, pas une vraie
+        # limite fonctionnelle : l'usage normal reste quelques appels par
+        # minute, jamais des dizaines.
+        admin_translate:
+            policy: sliding_window
+            limit: 60
+            interval: '1 minute'
+
+        # Upload d'image dans l'éditeur riche (cf. AdminRichTextController) —
+        # plus coûteux qu'une traduction (écriture disque), plafond plus bas.
+        admin_upload_image:
+            policy: sliding_window
+            limit: 20
+            interval: '1 minute'
 
     # HTTP cache et fragments (désactivés par défaut)
     # esi: true

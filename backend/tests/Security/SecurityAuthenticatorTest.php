@@ -13,6 +13,10 @@ use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+use Symfony\Component\Security\Core\Exception\UserNotFoundException;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 
 final class SecurityAuthenticatorTest extends TestCase
 {
@@ -24,15 +28,6 @@ final class SecurityAuthenticatorTest extends TestCase
         );
 
         return new SecurityAuthenticator($urlGenerator, $this->createStub(UserRepository::class), $limiter);
-    }
-
-    private function createUserWithId(int $id): User
-    {
-        $user = new User();
-        $property = new \ReflectionProperty(User::class, 'id');
-        $property->setValue($user, $id);
-
-        return $user;
     }
 
     public function testStartRedirectsToLoginAndSetsReturnCookieForProtectedPath(): void
@@ -83,10 +78,10 @@ final class SecurityAuthenticatorTest extends TestCase
     }
 
     #[DataProvider('unsafeReturnPathProvider')]
-    public function testOnAuthenticationSuccessRejectsUnsafeCookieAndFallsBackToAdminDashboard(string $unsafePath): void
+    public function testOnAuthenticationSuccessRejectsUnsafeCookieAndFallsBackToHome(string $unsafePath): void
     {
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $urlGenerator->expects($this->once())->method('generate')->with('admin_dashboard_index')->willReturn('/admin/dashboard');
+        $urlGenerator->expects($this->once())->method('generate')->with('home_index')->willReturn('/');
 
         $authenticator = $this->createAuthenticator($urlGenerator);
         $request = Request::create('/login');
@@ -97,24 +92,86 @@ final class SecurityAuthenticatorTest extends TestCase
 
         $response = $authenticator->onAuthenticationSuccess($request, $token, 'main');
 
-        $this->assertSame('/admin/dashboard', $response->headers->get('Location'));
+        $this->assertSame('/', $response->headers->get('Location'));
     }
 
-    public function testOnAuthenticationSuccessFallsBackToProfileReadForNonAdmin(): void
+    /**
+     * @return iterable<string, array{0: array<string>}>
+     */
+    public static function roleProvider(): iterable
+    {
+        yield 'admin' => [['ROLE_ADMIN']];
+        yield 'super admin' => [['ROLE_SUPER_ADMIN']];
+        yield 'editor' => [['ROLE_EDITOR']];
+        yield 'plain user' => [['ROLE_USER']];
+    }
+
+    /**
+     * Sans cookie de retour valide, tout le monde atterrit sur la page
+     * d'accueil (home_index) après connexion, quel que soit son rôle —
+     * plus de bifurcation admin_dashboard_index / member_profile_read.
+     *
+     * @param array<string> $roles
+     */
+    #[DataProvider('roleProvider')]
+    public function testOnAuthenticationSuccessFallsBackToHomeRegardlessOfRole(array $roles): void
     {
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
-        $urlGenerator->expects($this->once())->method('generate')->with('profile_read', ['id' => 42])->willReturn('/profile/42');
+        $urlGenerator->expects($this->once())->method('generate')->with('home_index')->willReturn('/');
 
         $authenticator = $this->createAuthenticator($urlGenerator);
         $request = Request::create('/login');
 
         $token = $this->createStub(TokenInterface::class);
-        $token->method('getRoleNames')->willReturn(['ROLE_USER']);
-        $token->method('getUser')->willReturn($this->createUserWithId(42));
+        $token->method('getRoleNames')->willReturn($roles);
 
         $response = $authenticator->onAuthenticationSuccess($request, $token, 'main');
 
-        $this->assertSame('/profile/42', $response->headers->get('Location'));
+        $this->assertSame('/', $response->headers->get('Location'));
+    }
+
+    public function testAuthenticateRejectsServiceAccountAsIfUnknown(): void
+    {
+        // User::getRoles() ajoute ROLE_USER à TOUT compte, y compris un
+        // compte de service — sans ce garde-fou dans le loader du UserBadge,
+        // un compte ROLE_SERVICE pourrait obtenir une session web ici.
+        $serviceAccount = (new User())->setEmail('svc@internal.local')->setIsSystemAccount(true);
+
+        $userRepository = $this->createStub(UserRepository::class);
+        $userRepository->method('findOneBy')->willReturn($serviceAccount);
+
+        $limiter = new RateLimiterFactory(
+            ['id' => 'login', 'policy' => 'fixed_window', 'limit' => 5, 'interval' => '1 minute'],
+            new InMemoryStorage(),
+        );
+        $authenticator = new SecurityAuthenticator($this->createStub(UrlGeneratorInterface::class), $userRepository, $limiter);
+
+        $request = Request::create('/login', 'POST', ['email' => 'svc@internal.local', 'password' => 'whatever']);
+        $request->setSession(new Session(new MockArraySessionStorage()));
+        $passport = $authenticator->authenticate($request);
+
+        $this->expectException(UserNotFoundException::class);
+        $passport->getBadge(UserBadge::class)->getUser();
+    }
+
+    public function testAuthenticateResolvesRegularUserNormally(): void
+    {
+        $regularUser = (new User())->setEmail('human@example.com');
+
+        $userRepository = $this->createStub(UserRepository::class);
+        $userRepository->method('findOneBy')->willReturn($regularUser);
+
+        $limiter = new RateLimiterFactory(
+            ['id' => 'login', 'policy' => 'fixed_window', 'limit' => 5, 'interval' => '1 minute'],
+            new InMemoryStorage(),
+        );
+        $authenticator = new SecurityAuthenticator($this->createStub(UrlGeneratorInterface::class), $userRepository, $limiter);
+
+        $request = Request::create('/login', 'POST', ['email' => 'human@example.com', 'password' => 'whatever']);
+        $request->setSession(new Session(new MockArraySessionStorage()));
+        $passport = $authenticator->authenticate($request);
+
+        $this->assertSame($regularUser, $passport->getBadge(UserBadge::class)->getUser());
     }
 
     private function findCookie(Response $response, string $name): ?\Symfony\Component\HttpFoundation\Cookie

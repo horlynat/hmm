@@ -41,12 +41,33 @@ class AdminSecurityAuditController extends AbstractController
         'expense_removed' => 'Dépense retirée',
         'collaborator_added' => 'Collaborateur ajouté',
         'collaborator_removed' => 'Collaborateur retiré',
+        'marked_paid' => 'Marquée payée',
+        'marked_unpaid' => 'Remise en attente',
+        'suspended' => 'Suspension',
+        'resumed' => 'Reprise',
+        'created_from_quote' => 'Créé depuis un devis',
+        'replied' => 'Réponse envoyée',
+        'resolved' => 'Résolution',
+        'force_logout' => 'Déconnexion forcée',
+        'force_logout_all' => 'Déconnexion forcée (toutes les sessions)',
+        'force_logout_everywhere' => 'Déconnexion forcée (partout)',
+        'ip_blocked' => 'IP bloquée',
+        'ip_unblocked' => 'IP débloquée',
+        'security_log_purged' => 'Purge du journal de connexions',
+        'permission_role_changed' => 'Rôle de permission modifié',
+        'permission_role_reset' => 'Rôle de permission réinitialisé',
+        'marked_paid_by_creator' => 'Marquée payée par son propre créateur (SoD)',
+        'super_admin_elevated' => 'Élévation Super Admin activée',
+        'super_admin_deelevated' => 'Élévation Super Admin désactivée',
+        'project_deleted' => 'Suppression du projet',
+        'media_removed' => 'Suppression d\'un média',
     ];
 
     /** Types d'entités trackées, dans l'ordre d'affichage du filtre. */
     private const TYPES = [
-        'Project', 'Article', 'Skill', 'SkillCategory', 'Tag', 'Course', 'Experience',
-        'Testimonial', 'ContactMessage', 'QuoteRequest', 'User',
+        'Project', 'Invoice', 'Article', 'Skill', 'SkillCategory', 'Tag', 'Course', 'Experience',
+        'Testimonial', 'ContactMessage', 'QuoteRequest', 'User', 'BlockedIp', 'LoginHistory', 'FailedLoginAttempt',
+        'PermissionDefinition',
     ];
 
     #[Route('/', name: 'index', methods: ['GET'])]
@@ -77,7 +98,10 @@ class AdminSecurityAuditController extends AbstractController
         foreach ($projectHistoryRepository->findRecent(self::FETCH_POOL) as $history) {
             $entries[] = [
                 'date' => $history->getCreatedAt(),
-                'label' => sprintf('Projet « %s »', $history->getProject()->getTitle()),
+                // Copie figée du titre (ProjectHistory::$projectTitle) : reste correct même
+                // si le projet a depuis été supprimé (project_id passe à NULL, pas de cascade) —
+                // sans quoi l'entrée "project_deleted" elle-même serait illisible ici.
+                'label' => sprintf('Projet « %s »', $history->getProjectTitle()),
                 'actionCode' => $history->getAction(),
                 'actionLabel' => $this->actionLabel($history->getAction()),
                 'user' => $history->getUser(),

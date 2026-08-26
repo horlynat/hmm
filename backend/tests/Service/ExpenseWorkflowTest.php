@@ -103,6 +103,38 @@ final class ExpenseWorkflowTest extends TestCase
         $wf->approve($second, $this->user());
     }
 
+    public function testApprovingOwnSubmissionIsAllowedButTrackedDistinctly(): void
+    {
+        $wf = $this->workflow();
+        $project = $this->project('100.00');
+        $submitter = $this->user('sole-operator@example.com');
+        $expense = $this->expense('60.00');
+
+        $wf->submit($project, $expense, $submitter);
+        $wf->approve($expense, $submitter);
+
+        self::assertSame(ExpenseStatusEnum::APPROVED, $expense->getStatus(), 'La SoD ne bloque jamais — seulement tracée.');
+        self::assertTrue($expense->wasSubmittedAndApprovedBySamePerson());
+
+        $lastHistory = $project->getHistories()->last();
+        self::assertSame('expense_approved_by_submitter', $lastHistory->getAction());
+    }
+
+    public function testApprovingSomeoneElsesSubmissionUsesTheRegularAction(): void
+    {
+        $wf = $this->workflow();
+        $project = $this->project('100.00');
+        $expense = $this->expense('60.00');
+
+        $wf->submit($project, $expense, $this->user('submitter@example.com'));
+        $wf->approve($expense, $this->user('approver@example.com'));
+
+        self::assertFalse($expense->wasSubmittedAndApprovedBySamePerson());
+
+        $lastHistory = $project->getHistories()->last();
+        self::assertSame('expense_approved', $lastHistory->getAction());
+    }
+
     public function testRejectingAnApprovedExpenseFreesTheBudget(): void
     {
         $wf = $this->workflow();

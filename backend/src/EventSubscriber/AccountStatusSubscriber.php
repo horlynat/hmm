@@ -12,7 +12,9 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Revérifie, à chaque requête sur une zone authentifiée, qu'un utilisateur
- * déjà connecté n'a pas été désactivé ou dévérifié entre-temps.
+ * déjà connecté n'a pas été désactivé ou dévérifié entre-temps — et impose
+ * la double authentification (TOTP) sur l'espace membre (clients et
+ * collaborateurs, tout compte sous ROLE_USER sans ROLE_EDITOR).
  *
  * SecurityAuthenticator ne vérifie isActive()/isVerified() qu'au moment du
  * login (dans le UserBadge de authenticate()) : ContextListener recharge
@@ -20,6 +22,15 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * champs sur l'objet rechargé — un compte désactivé en cours de session
  * gardait donc l'accès jusqu'à sa prochaine reconnexion. C'est ce que ce
  * subscriber comble.
+ *
+ * La 2FA obligatoire suit le même principe plutôt qu'une étape ajoutée au
+ * formulaire d'inscription (géré côté frontend Next.js, hors de ce dépôt) :
+ * dès la première page de son espace, tout compte client/collaborateur non
+ * encore équipé est redirigé vers l'activation (TwoFactorController::setup,
+ * toujours en libre-service) et ne peut rien faire d'autre tant que ce n'est
+ * pas fait — ce qui en fait de facto un passage obligé de l'inscription,
+ * sans dépendre du frontend pour l'appliquer. Ne concerne pas les comptes
+ * ROLE_EDITOR et plus (back-office), hors périmètre de cette demande.
  *
  * Écoute kernel.controller (pas kernel.request) : à ce stade, le routage et
  * l'AccessListener d'access_control (security.yaml) ont déjà tranché, donc
@@ -33,15 +44,18 @@ final class AccountStatusSubscriber implements EventSubscriberInterface
      * reste accessible même à un compte bloqué avec un cookie de session
      * résiduel.
      */
-    private const IN_SCOPE_PATTERN = '#^/(admin|profile|projects)(/|$)#';
+    private const IN_SCOPE_PATTERN = '#^/(admin|profile|projects|mes-devis)(/|$)#';
 
     /**
      * Chemins toujours exemptés, même sous une zone ci-dessus : les deux
      * pages de blocage elles-mêmes (anti-boucle), l'authentification, le 2FA
-     * et le parcours de vérification d'email (qui doit rester atteignable
-     * par un compte justement non vérifié).
+     * (challenge de connexion ET écran de configuration en libre-service —
+     * sans "profile/2fa" ici, un compte redirigé vers l'activation obligatoire
+     * ne pourrait jamais atteindre l'écran qui la lui fait justement activer)
+     * et le parcours de vérification d'email (qui doit rester atteignable par
+     * un compte justement non vérifié).
      */
-    private const SKIP_PATTERN = '#^/(admin/compte-bloque|profile/compte-bloque|login|logout|2fa|verif/|renvoiverif)#';
+    private const SKIP_PATTERN = '#^/(admin/compte-bloque|profile/compte-bloque|profile/2fa|login|logout|2fa|verif/|renvoiverif)#';
 
     public function __construct(
         private readonly Security $security,
@@ -92,6 +106,32 @@ final class AccountStatusSubscriber implements EventSubscriberInterface
                 $isAdminArea ? 'admin_account_blocked' : 'profile_account_blocked',
                 ['reason' => 'unverified'],
             )));
+
+            return;
+        }
+
+        if ($user->isLocked()) {
+            $event->setController(fn () => new RedirectResponse($this->urlGenerator->generate(
+                $isAdminArea ? 'admin_account_blocked' : 'profile_account_blocked',
+                ['reason' => 'locked'],
+            )));
+
+            return;
+        }
+
+        if ($user->isExpired()) {
+            $event->setController(fn () => new RedirectResponse($this->urlGenerator->generate(
+                $isAdminArea ? 'admin_account_blocked' : 'profile_account_blocked',
+                ['reason' => 'expired'],
+            )));
+
+            return;
+        }
+
+        // 2FA obligatoire sur l'espace membre (client/collaborateur) uniquement —
+        // le back-office (ROLE_EDITOR+) a sa propre gestion, hors périmètre ici.
+        if (!$isAdminArea && !$user->isTotpAuthenticationEnabled()) {
+            $event->setController(fn () => new RedirectResponse($this->urlGenerator->generate('profile_two_factor_setup')));
         }
     }
 }

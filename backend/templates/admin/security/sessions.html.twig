@@ -2,25 +2,131 @@
 
 {% block title %}Sessions actives{% endblock %}
 
+{% macro sortLink(label, column, sort, direction, search, status) %}
+	{% set nextDirection = (sort == column and direction == 'asc') ? 'desc' : 'asc' %}
+	<a href="{{ path('admin_security_session_index', {sort: column, direction: nextDirection, search: search, status: status}) }}" class="inline-flex items-center gap-1 hover:text-(--color-brand-primary)">
+		{{ label }}
+		{% if sort == column %}
+			<span class="ti {{ direction == 'asc' ? 'ti-chevron-up' : 'ti-chevron-down' }} text-xs" aria-hidden="true"></span>
+		{% endif %}
+	</a>
+{% endmacro %}
+{% import _self as sessions_macros %}
+
 {% block body %}
-	<twig:PageHeader title="Sessions actives" subtitle="Sessions ouvertes depuis la dernière connexion de chaque compte." icon="ti-devices" />
+	<twig:PageHeader title="Sessions actives" subtitle="Sessions ouvertes depuis la dernière connexion de chaque compte." icon="ti-devices">
+		<a href="{{ path('admin_security_session_export', {search: search, status: status}) }}" class="btn btn-secondary gap-2">
+			<span class="ti ti-download" aria-hidden="true"></span> Exporter (CSV)
+		</a>
+		<form method="post" action="{{ path('admin_security_session_purge_ended') }}" onsubmit="return confirm('Purger toutes les sessions terminées ({{ statusCounts.ended }}) ? Ce sont des lignes d\'historique déjà mortes, aucun accès actif n\'est affecté.');">
+			<input type="hidden" name="_token" value="{{ csrf_token('admin_security_session_purge_ended') }}">
+			<button type="submit" class="btn btn-secondary gap-2">
+				<span class="ti ti-eraser" aria-hidden="true"></span> Purger les terminées
+			</button>
+		</form>
+		<form method="post" action="{{ path('admin_security_session_revoke_all') }}" onsubmit="return confirm('Déconnecter de force TOUTES les autres sessions actives ou expirées ? Chaque utilisateur concerné (vous y compris, sur vos autres appareils) devra se reconnecter et recevra un email. Seule cette session-ci restera active.');">
+			<input type="hidden" name="_token" value="{{ csrf_token('admin_security_session_revoke_all') }}">
+			<button type="submit" class="btn btn-danger gap-2">
+				<span class="ti ti-logout" aria-hidden="true"></span> Déconnecter tout le reste
+			</button>
+		</form>
+	</twig:PageHeader>
+
+	<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-devices" aria-hidden="true"></span></div>
+			<div>
+				<div class="stat-tile__value">{{ totalSessionsCount }}</div>
+				<div class="stat-tile__label">Sessions enregistrées</div>
+			</div>
+		</div>
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-circle-check" aria-hidden="true"></span></div>
+			<div>
+				<div class="stat-tile__value">{{ statusCounts.active }}</div>
+				<div class="stat-tile__label">Actives · {{ activeUsersCount }} utilisateur{{ activeUsersCount > 1 ? 's' : '' }}</div>
+			</div>
+		</div>
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-clock-pause" aria-hidden="true"></span></div>
+			<div>
+				<div class="stat-tile__value {{ statusCounts.expired > 0 ? 'text-warning' : '' }}">{{ statusCounts.expired }}</div>
+				<div class="stat-tile__label">Expirées, pas encore nettoyées</div>
+			</div>
+		</div>
+		<div class="stat-tile">
+			<div class="stat-tile__icon"><span class="ti ti-user-off" aria-hidden="true"></span></div>
+			<div>
+				<div class="stat-tile__value">{{ inactiveUsers|length }}</div>
+				<div class="stat-tile__label">Comptes inactifs ({{ inactiveAccountDays }}j+)</div>
+			</div>
+		</div>
+	</div>
+
+	{% if flaggedSessionIds|length > 0 %}
+		<div class="mb-6 border border-red-200 bg-red-50/50 rounded-2xl p-4 flex items-start gap-4">
+			<div class="p-3 bg-danger text-white rounded-xl shadow-sm shrink-0">
+				<i class="ti ti-alert-triangle text-xl" aria-hidden="true"></i>
+			</div>
+			<div>
+				<h3 class="font-heading font-bold text-red-900 text-base">Voyage impossible détecté</h3>
+				<p class="text-sm text-red-700/90 mt-0.5">
+					Des sessions actives d'un même compte (marquées <span class="ti ti-alert-triangle text-danger" aria-hidden="true"></span> ci-dessous) impliquent un déplacement physiquement impossible entre deux localisations. Vérifiez qu'il ne s'agit pas d'identifiants partagés ou compromis.
+				</p>
+			</div>
+		</div>
+	{% endif %}
+
+	<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+		<div class="flex items-center gap-2">
+			<a href="{{ path('admin_security_session_index', {status: 'all', search: search}) }}" class="btn btn-sm {{ status == 'all' ? 'btn-primary' : 'btn-secondary' }}">Toutes</a>
+			<a href="{{ path('admin_security_session_index', {status: 'active', search: search}) }}" class="btn btn-sm {{ status == 'active' ? 'btn-primary' : 'btn-secondary' }}">Actives</a>
+			<a href="{{ path('admin_security_session_index', {status: 'expired', search: search}) }}" class="btn btn-sm {{ status == 'expired' ? 'btn-primary' : 'btn-secondary' }}">Expirées</a>
+			<a href="{{ path('admin_security_session_index', {status: 'ended', search: search}) }}" class="btn btn-sm {{ status == 'ended' ? 'btn-primary' : 'btn-secondary' }}">Terminées</a>
+		</div>
+
+		<form method="get" role="search" class="flex gap-2">
+			<input type="hidden" name="status" value="{{ status }}">
+			<label for="session-search" class="sr-only">Rechercher par compte ou IP</label>
+			<input id="session-search" type="search" name="search" value="{{ search }}" placeholder="Rechercher par compte ou IP…" class="input w-full max-w-xs">
+			<button type="submit" class="btn btn-secondary gap-2"><span class="ti ti-filter" aria-hidden="true"></span> Filtrer</button>
+		</form>
+	</div>
 
 	<div class="table-wrap">
 		<table class="table">
 			<caption class="sr-only">Sessions actives</caption>
 			<thead>
 				<tr>
-					<th scope="col">Compte</th><th scope="col">IP</th><th scope="col">Appareil</th>
-					<th scope="col">Ouverte le</th><th scope="col">Statut</th><th scope="col" class="w-32 text-right">Actions</th>
+					<th scope="col">{{ sessions_macros.sortLink('Compte', 'user', sort, direction, search, status) }}</th>
+					<th scope="col">{{ sessions_macros.sortLink('IP', 'ip', sort, direction, search, status) }}</th>
+					<th scope="col">Appareil</th>
+					<th scope="col">Localisation</th>
+					<th scope="col">{{ sessions_macros.sortLink('Dernière activité', 'lastActivityAt', sort, direction, search, status) }}</th>
+					<th scope="col">{{ sessions_macros.sortLink('Ouverte le', 'createdAt', sort, direction, search, status) }}</th>
+					<th scope="col">Statut</th>
+					<th scope="col" class="w-32 text-right">Actions</th>
 				</tr>
 			</thead>
 			<tbody>
 				{% for entry in sessions %}
 					{% set userSession = entry.session %}
 					<tr>
-						<td class="font-medium text-(--brand-dark)">{{ userSession.user.fullName ?? userSession.user.email }}</td>
+						<td class="font-medium text-(--color-brand-dark)">
+							{{ userSession.user.fullName ?? userSession.user.email }}
+							{% if flaggedSessionIds[userSession.sessionId] is defined %}
+								<span class="ti ti-alert-triangle text-danger ml-1" aria-hidden="true" title="Voyage impossible détecté avec une autre session active de ce compte"></span>
+							{% endif %}
+						</td>
 						<td class="font-mono text-xs">{{ userSession.ip ?? '—' }}</td>
-						<td class="text-sm opacity-70 truncate max-w-xs">{{ userSession.userAgent ?? '—' }}</td>
+						<td class="text-sm opacity-70 truncate max-w-xs" title="{{ userSession.userAgent ?? '' }}">
+							{% if entry.device.isBot %}
+								<span class="ti ti-robot opacity-60" aria-hidden="true"></span>
+							{% endif %}
+							{{ entry.device.label }}
+						</td>
+						<td class="text-sm opacity-70 whitespace-nowrap">{{ entry.location ?? '—' }}</td>
+						<td class="text-sm opacity-70 whitespace-nowrap">{{ entry.lastActivityAt ? entry.lastActivityAt|date('d/m/Y H:i') : '—' }}</td>
 						<td class="text-sm opacity-70 whitespace-nowrap">{{ userSession.createdAt|date('d/m/Y H:i') }}</td>
 						<td>
 							{% if userSession.sessionId == currentSessionId %}
@@ -35,7 +141,7 @@
 						</td>
 						<td class="text-right">
 							{% if entry.state in ['active', 'expired'] and userSession.sessionId != currentSessionId %}
-								<form method="post" action="{{ path('admin_security_session_revoke', {id: userSession.id}) }}" onsubmit="return confirm('Forcer la déconnexion de {{ userSession.user.email }} ?');">
+								<form method="post" action="{{ path('admin_security_session_revoke', {id: userSession.id}) }}" onsubmit="return confirm('Forcer la déconnexion de {{ userSession.user.email }} ? Un email l\'en informera.');">
 									<input type="hidden" name="_token" value="{{ csrf_token('admin_security_session_revoke_' ~ userSession.id) }}">
 									<button type="submit" class="btn btn-ghost btn-icon text-danger" aria-label="Forcer la déconnexion de {{ userSession.user.email }}">
 										<span class="ti ti-logout text-lg" aria-hidden="true"></span>
@@ -45,13 +151,19 @@
 						</td>
 					</tr>
 				{% else %}
-					<tr><td colspan="6"><twig:EmptyState text="Aucune session enregistrée." icon="ti-devices" /></td></tr>
+					<tr><td colspan="8"><twig:EmptyState text="Aucune session ne correspond à ces critères." icon="ti-devices" /></td></tr>
 				{% endfor %}
 			</tbody>
 		</table>
 	</div>
 
-	<div class="panel mt-6">
+	{% if totalPages > 1 %}
+		<div class="flex justify-center mt-6">
+			<twig:Pagination :currentPage="page" :totalPages="totalPages" route="admin_security_session_index" :params="{status: status, search: search, sort: sort, direction: direction}" />
+		</div>
+	{% endif %}
+
+	<div class="panel mt-8">
 		<div class="panel-header">
 			<h2 class="panel-title">Comptes qui ne se connectent plus ({{ inactiveUsers|length }})</h2>
 			<p class="text-xs opacity-50 mt-1">Aucune connexion depuis plus de {{ inactiveAccountDays }} jours (ou jamais).</p>
@@ -63,7 +175,7 @@
 				<tbody>
 					{% for user in inactiveUsers %}
 						<tr>
-							<td class="font-medium text-(--brand-dark)">{{ user.fullName ?? user.email }}</td>
+							<td class="font-medium text-(--color-brand-dark)">{{ user.fullName ?? user.email }}</td>
 							<td class="text-sm opacity-70">{{ user.lastLoginAt ? user.lastLoginAt|date('d/m/Y H:i') : 'Jamais connecté' }}</td>
 						</tr>
 					{% else %}

@@ -3,17 +3,19 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\EventSubscriber\SpaceTrackerSubscriber;
 use App\Security\TwoFactor\BackupCodeManager;
+use App\Security\TwoFactor\PendingTotpUser;
+use App\Service\AccountLinkResolver;
+use App\Service\SecretEncryptor;
 use Doctrine\ORM\EntityManagerInterface;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
-use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
-use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
-use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface as TotpTwoFactorInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
@@ -38,11 +40,19 @@ class TwoFactorController extends AbstractController
     /** Codes de récupération en clair, stockés en session le temps d'un seul affichage. */
     private const RECOVERY_CODES_SESSION_KEY = 'two_factor_recovery_codes_once';
 
+    public function __construct(
+        private readonly AccountLinkResolver $accountLinkResolver,
+        private readonly RequestStack $requestStack,
+    ) {
+    }
+
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(): Response
     {
         return $this->render('profile/two_factor/index.html.twig', [
             'user' => $this->getCurrentUser(),
+            'mandatory' => $this->isTwoFactorMandatoryForCurrentUser(),
+            'layout' => $this->layout(),
         ]);
     }
 
@@ -52,6 +62,7 @@ class TwoFactorController extends AbstractController
         TotpAuthenticatorInterface $totpAuthenticator,
         EntityManagerInterface $entityManager,
         BackupCodeManager $backupCodeManager,
+        SecretEncryptor $secretEncryptor,
         #[Autowire(service: 'limiter.two_factor_setup')]
         RateLimiterFactory $twoFactorSetupLimiter,
     ): Response {
@@ -71,7 +82,7 @@ class TwoFactorController extends AbstractController
             $session->set(self::SESSION_KEY, $secret);
         }
 
-        $pendingTotpUser = $this->createPendingTotpUser($user, $secret);
+        $pendingTotpUser = new PendingTotpUser($user->getTotpAuthenticationUsername(), $secret);
         $error = null;
 
         if ($request->isMethod('POST')) {
@@ -88,7 +99,7 @@ class TwoFactorController extends AbstractController
                 $code = (string) $request->request->get('code', '');
 
                 if ($totpAuthenticator->checkCode($pendingTotpUser, $code)) {
-                    $user->setTotpSecret($secret);
+                    $user->setTotpSecret($secretEncryptor->encrypt($secret));
                     $user->setIsTwoFactorEnabled(true);
                     // Génère les codes de récupération dès l'activation : c'est le
                     // seul moment où ils seront affichés en clair.
@@ -118,6 +129,8 @@ class TwoFactorController extends AbstractController
             'secret' => $secret,
             'qrCodeDataUri' => $qrCode->getDataUri(),
             'error' => $error,
+            'mandatory' => $this->isTwoFactorMandatoryForCurrentUser(),
+            'layout' => $this->layout(),
         ]);
     }
 
@@ -130,6 +143,18 @@ class TwoFactorController extends AbstractController
         $user = $this->getCurrentUser();
 
         if (!$user->isTotpAuthenticationEnabled()) {
+            return $this->redirectToRoute('profile_two_factor_index');
+        }
+
+        // La 2FA est obligatoire sur l'espace membre (cf. AccountStatusSubscriber,
+        // qui redirige tout compte client/collaborateur non équipé vers l'activation)
+        // — la désactiver soi-même viderait cette obligation de son sens. Seul un
+        // admin peut la désactiver de force en cas de perte d'accès
+        // (AdminSecurityTwoFactorController::disable(), procédure de secours
+        // documentée là-bas).
+        if ($this->isTwoFactorMandatoryForCurrentUser()) {
+            $this->addFlash('error', "La double authentification est obligatoire sur votre compte et ne peut pas être désactivée depuis cette page. Si vous avez perdu l'accès à votre application d'authentification, contactez le support.");
+
             return $this->redirectToRoute('profile_two_factor_index');
         }
 
@@ -161,6 +186,7 @@ class TwoFactorController extends AbstractController
 
         return $this->render('profile/two_factor/disable.html.twig', [
             'error' => $error,
+            'layout' => $this->layout(),
         ]);
     }
 
@@ -189,6 +215,7 @@ class TwoFactorController extends AbstractController
         return $this->render('profile/two_factor/recovery_codes.html.twig', [
             'codes' => $codes,
             'remaining' => $backupCodeManager->countRemaining($user),
+            'layout' => $this->layout(),
         ]);
     }
 
@@ -231,6 +258,45 @@ class TwoFactorController extends AbstractController
         return $this->redirectToRoute('profile_two_factor_recovery_codes');
     }
 
+    /**
+     * Même frontière que AccountStatusSubscriber : la 2FA est obligatoire pour
+     * tout compte de l'espace membre (client/collaborateur, ROLE_USER sans
+     * ROLE_EDITOR), jamais pour le back-office.
+     */
+    private function isTwoFactorMandatoryForCurrentUser(): bool
+    {
+        return !$this->isGranted('ROLE_EDITOR');
+    }
+
+    /**
+     * Contrôleur unique et partagé (la logique 2FA ne diffère jamais selon le
+     * rôle), mais le gabarit doit suivre le même partage que les profils
+     * (AdminProfileController / MemberProfileController) : jamais l'aside
+     * admin pour un compte de l'espace membre.
+     *
+     * Priorité au dernier espace effectivement parcouru dans cette session
+     * (SpaceTrackerSubscriber) : un compte back-office qui vient de l'espace
+     * membre (ex. /projects, pour tester le parcours collaborateur) doit y
+     * rester en cliquant "Sécurité & 2FA" depuis ce menu-là, plutôt que de se
+     * faire renvoyer l'aside admin au milieu de sa navigation. Sans espace
+     * encore mémorisé (premier accès de la session, lien direct...), on
+     * retombe sur le rôle du compte — comportement d'origine, et seul
+     * comportement possible pour un vrai compte membre (jamais côté
+     * back-office).
+     */
+    private function layout(): string
+    {
+        $space = $this->requestStack->getSession()->get(SpaceTrackerSubscriber::SESSION_KEY);
+
+        $isBackOffice = match ($space) {
+            SpaceTrackerSubscriber::SPACE_ADMIN => true,
+            SpaceTrackerSubscriber::SPACE_MEMBER => false,
+            default => $this->accountLinkResolver->isBackOfficeUser($this->getCurrentUser()),
+        };
+
+        return $isBackOffice ? 'base.html.twig' : 'member/base.html.twig';
+    }
+
     private function getCurrentUser(): User
     {
         $user = $this->getUser();
@@ -239,35 +305,5 @@ class TwoFactorController extends AbstractController
         }
 
         return $user;
-    }
-
-    /**
-     * Utilisateur "fantôme" au secret en attente, uniquement pour générer/vérifier
-     * le QR code — évite de muter l'entité Doctrine réelle avant confirmation.
-     */
-    private function createPendingTotpUser(User $user, string $secret): TotpTwoFactorInterface
-    {
-        return new class($user->getTotpAuthenticationUsername(), $secret) implements TotpTwoFactorInterface {
-            public function __construct(
-                private readonly ?string $username,
-                private readonly string $secret,
-            ) {
-            }
-
-            public function isTotpAuthenticationEnabled(): bool
-            {
-                return true;
-            }
-
-            public function getTotpAuthenticationUsername(): ?string
-            {
-                return $this->username;
-            }
-
-            public function getTotpAuthenticationConfiguration(): TotpConfigurationInterface
-            {
-                return new TotpConfiguration($this->secret, TotpConfiguration::ALGORITHM_SHA1, 30, 6);
-            }
-        };
     }
 }

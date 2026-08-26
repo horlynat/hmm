@@ -6,6 +6,7 @@ use App\Entity\HomeContent;
 use App\Entity\User;
 use App\Form\HomeContentType;
 use App\Repository\HomeContentRepository;
+use App\Repository\TranslationRepository;
 use App\Service\AuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -28,6 +29,7 @@ class AdminHomeContentController extends AbstractController
         HomeContentRepository $homeContentRepository,
         EntityManagerInterface $entityManager,
         AuditLogger $auditLogger,
+        TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
@@ -47,6 +49,11 @@ class AdminHomeContentController extends AbstractController
 
             $auditLogger->log(HomeContent::class, (int) $content->getId(), 'home_content', 'updated');
             $entityManager->flush();
+
+            // Écrit les champs "xxxEn" (transitoires, non mappés Doctrine)
+            // dans la table `translation` — après flush() pour disposer d'un
+            // id garanti même sur une entité tout juste créée.
+            $translationRepository->syncFromEntity($content);
 
             $this->addFlash('success', 'Le contenu de la page d\'accueil a été mis à jour avec succès.');
 

@@ -49,7 +49,7 @@
 								<a href="{{ path('admin_article_update', {'slug': article.slug}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ article.title }}">
 									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
 								</a>
-								<twig:DeleteModal :id="article.id" :action="path('admin_article_delete', {slug: article.slug})" :token="csrf_token('delete' ~ article.id)" :label="article.title" entity="cet article" />
+								<twig:DeleteModal :id="article.id" :action="path('admin_article_delete', {slug: article.slug})" :token="csrf_token('admin_article_delete_' ~ article.id)" :label="article.title" entity="cet article" />
 							</div>
 						</td>
 					</tr>

@@ -120,6 +120,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     private function clientsQueryBuilder(): QueryBuilder
     {
         return $this->createQueryBuilder('u')
+            ->andWhere('u.isSystemAccount = false')
             ->andWhere('u.roles NOT LIKE :roleAdmin')
             ->andWhere('u.roles NOT LIKE :roleSuperAdmin')
             ->andWhere('u.roles NOT LIKE :roleEditor')

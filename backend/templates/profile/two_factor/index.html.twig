@@ -1,5 +1,5 @@
 {# templates/profile/two_factor/index.html.twig #}
-{% extends 'base.html.twig' %}
+{% extends layout %}
 
 {% block title %}Double authentification{% endblock %}
 
@@ -8,6 +8,18 @@
 		subtitle="Sécurisez votre compte avec un code à usage unique généré par une application d'authentification (Google Authenticator, Authy, etc.)." />
 
 	<div class="max-w-2xl space-y-6">
+		{% if mandatory and not user.isTotpAuthenticationEnabled %}
+			<div class="panel border-l-4 border-l-warning">
+				<div class="panel-body flex items-start gap-3">
+					<span class="ti ti-alert-triangle text-xl text-warning shrink-0" aria-hidden="true"></span>
+					<div>
+						<p class="font-semibold text-(--color-brand-dark) mb-1">Étape obligatoire de votre inscription</p>
+						<p class="field-hint">La double authentification est obligatoire sur les comptes de l'espace client. Tant qu'elle n'est pas activée, l'accès à votre profil et à vos projets reste bloqué — comptez une minute avec votre téléphone.</p>
+					</div>
+				</div>
+			</div>
+		{% endif %}
+
 		<div class="panel">
 			<div class="panel-body flex items-center justify-between gap-4">
 				<div>
@@ -20,9 +32,11 @@
 				</div>
 
 				{% if user.isTotpAuthenticationEnabled %}
-					<a href="{{ path('profile_two_factor_disable') }}" class="btn btn-secondary gap-1.5">
-						<span class="ti ti-lock-open" aria-hidden="true"></span>Désactiver
-					</a>
+					{% if not mandatory %}
+						<a href="{{ path('profile_two_factor_disable') }}" class="btn btn-secondary gap-1.5">
+							<span class="ti ti-lock-open" aria-hidden="true"></span>Désactiver
+						</a>
+					{% endif %}
 				{% else %}
 					<a href="{{ path('profile_two_factor_setup') }}" class="btn btn-primary gap-1.5">
 						<span class="ti ti-qrcode" aria-hidden="true"></span>Activer la 2FA
@@ -32,7 +46,8 @@
 
 			{% if user.isTotpAuthenticationEnabled %}
 				<div class="px-5 pb-5 pt-3 border-t border-gray-100 dark:border-gray-700">
-					<p class="field-hint">Un code sera demandé à chaque connexion, en plus de votre mot de passe.</p>
+					<p class="field-hint">Un code sera demandé à chaque connexion, en plus de votre mot de passe.
+						{% if mandatory %}Obligatoire sur votre compte, elle ne peut pas être désactivée depuis cette page — contactez le support en cas de perte d'accès à votre application d'authentification.{% endif %}</p>
 				</div>
 			{% endif %}
 		</div>

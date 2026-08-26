@@ -98,10 +98,18 @@ class UserVoter extends Voter
      * Un compte Super Administrateur ne peut être modifié que par un autre
      * Super Administrateur, pour empêcher un administrateur "simple" de
      * dégrader ou détourner le compte le plus privilégié.
+     *
+     * Cible protégée sur son DROIT ACQUIS (hasSuperAdminEntitlement()), pas
+     * sur son élévation momentanée (cf. User::isSuperAdminElevated()) : un
+     * Super Admin "dormant" (le mode par défaut sous PAM, cf. docblock du
+     * champ) doit rester protégé même quand il n'est pas actuellement élevé —
+     * sinon la protection disparaîtrait la majorité du temps. L'acteur, lui,
+     * doit être actuellement élevé (isSuperAdmin() via getRoles()) : détenir
+     * le droit ne suffit pas, il faut l'exercer.
      */
     private function canEdit(User $target, User $current): bool
     {
-        if ($this->isSuperAdmin($target) && !$this->isSuperAdmin($current)) {
+        if ($target->hasSuperAdminEntitlement() && !$this->isSuperAdmin($current)) {
             return false;
         }
 
@@ -119,13 +127,14 @@ class UserVoter extends Voter
             return false;
         }
 
-        if ($this->isSuperAdmin($target) && !$this->isSuperAdmin($current)) {
+        if ($target->hasSuperAdminEntitlement() && !$this->isSuperAdmin($current)) {
             return false;
         }
 
         return true;
     }
 
+    /** Élévation actuellement active (getRoles(), pas le seul droit acquis) — cf. docblocks de canEdit()/canDelete(). */
     private function isSuperAdmin(User $user): bool
     {
         return in_array('ROLE_SUPER_ADMIN', $user->getRoles(), true);

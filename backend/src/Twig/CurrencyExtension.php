@@ -48,7 +48,7 @@ final class CurrencyExtension extends AbstractExtension
             return $cookie;
         }
 
-        return $this->systemSettingRepository->getSettings()->getDefaultCurrency();
+        return $this->systemSettingRepository->getSettings()->getDefaultCurrency()->value;
     }
 
     public function money(mixed $amount, string $fromCurrency): string

@@ -22,6 +22,9 @@ class ExperienceType extends AbstractType
             ])
             ->add('role', TextType::class, [
                 'label' => 'Poste occupé',
+                // Experience::$role est un `string` non nullable — cf.
+                // ArticleType::content pour le pourquoi de cette option.
+                'empty_data' => '',
             ])
             ->add('roleEn', TextType::class, [
                 'label' => 'Poste occupé (anglais)',
@@ -38,6 +41,7 @@ class ExperienceType extends AbstractType
             ])
             ->add('description', TextareaType::class, [
                 'label' => 'Description',
+                'empty_data' => '',
                 'attr' => ['rows' => 6],
             ])
             ->add('descriptionEn', TextareaType::class, [

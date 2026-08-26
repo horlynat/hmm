@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+{% set settings = systemSettingRepository.getSettings() %}
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>{{ settings.siteName }} — Accueil</title>
+
+		{% if settings.logoPath %}
+			<link rel="icon" href="{{ settings.logoPath }}">
+		{% else %}
+			<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+		{% endif %}
+
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+		{% include '_partials/_vite_fouc_guard.html.twig' %}
+
+		{% block stylesheets %}
+			{{ vite_entry_link_tags('home') }}
+		{% endblock %}
+
+		{% block javascripts %}
+			{{ vite_entry_script_tags('home') }}
+		{% endblock %}
+	</head>
+	<body class="min-h-screen relative overflow-x-hidden bg-brand-dark text-white">
+
+		{% set hour = "now"|date("G") %}
+		{% set greeting = hour < 12 ? 'Bonjour' : (hour < 18 ? 'Bon après-midi' : 'Bonsoir') %}
+		{% set roleLabels = {
+			'ROLE_USER': 'Client',
+			'ROLE_EDITOR': 'Collaborateur',
+			'ROLE_MODERATOR': 'Modérateur',
+			'ROLE_MANAGER': 'Manager',
+			'ROLE_ADMIN': 'Administrateur',
+			'ROLE_SUPER_ADMIN': 'Super Administrateur',
+		} %}
+
+		{# 🔒 Cette page accueille TOUT LE MONDE (ROLE_USER et plus, admin ou
+		   non) avant le choix d'un espace — elle ne doit donc jamais exposer
+		   que des DOMAINES de premier niveau (mêmes portes que la répartition
+		   /admin vs /projects de l'application), jamais le détail des modules
+		   internes de l'un d'eux. La structure interne de l'administration
+		   (ses ~20 espaces de gestion) est du ressort d'une page à l'intérieur
+		   de /admin, jamais de celle-ci : un client ou un collaborateur qui
+		   ne verra jamais /admin n'a aucune raison de savoir qu'un module
+		   "Finance" ou "Sécurité" y existe, même grisé. #}
+		{% set canViewDashboard = is_granted(constant('App\\Security\\Voter\\DashboardVoter::VIEW')) %}
+
+		{# `exists` distingue "l'espace existe mais votre rôle n'y donne pas
+		   accès" (Administration) de "l'espace n'est pas encore construit"
+		   (les 7 autres, pour l'instant) — seule cette distinction pilote le
+		   texte de l'info-bulle des cartes désactivées, jamais le libellé. #}
+		{% set spaces = [
+			{ label: 'Administration', icon: 'ti-building', href: canViewDashboard ? path('admin_dashboard_index') : null, exists: true },
+			{ label: 'Espace Projets', icon: 'ti-briefcase', href: path('member_project_index'), exists: true },
+			{ label: 'Hébergement', icon: 'ti-server', href: null, exists: false },
+			{ label: 'Marketing', icon: 'ti-speakerphone', href: null, exists: false },
+			{ label: 'Gestion des risques', icon: 'ti-alert-triangle', href: null, exists: false },
+			{ label: 'Cybersécurité', icon: 'ti-shield-lock', href: null, exists: false },
+			{ label: 'Formations', icon: 'ti-school', href: null, exists: false },
+			{ label: 'Référencement SEO', icon: 'ti-search', href: null, exists: false },
+			{ label: 'Partenaires', icon: 'ti-users-group', href: null, exists: false },
+		] %}
+
+		{# 🌌 FOND — décor neutre (réseau de nœuds), commun à toute
+		   l'application, jamais spécifique à l'un des espaces qu'elle relie. #}
+		<svg class="pointer-events-none fixed inset-0 h-full w-full opacity-[0.25] animate-pulse z-0" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+			<g stroke="#ffffff" stroke-width="1" opacity="0.4">
+				<line x1="90" y1="100" x2="210" y2="60"/><line x1="210" y1="60" x2="340" y2="110"/><line x1="340" y1="110" x2="490" y2="70"/><line x1="490" y1="70" x2="620" y2="130"/>
+				<line x1="90" y1="100" x2="60" y2="260"/><line x1="210" y1="60" x2="230" y2="230"/><line x1="340" y1="110" x2="400" y2="270"/><line x1="490" y1="70" x2="580" y2="280"/><line x1="620" y1="130" x2="700" y2="250"/>
+				<line x1="60" y1="260" x2="230" y2="230"/><line x1="230" y1="230" x2="400" y2="270"/><line x1="400" y1="270" x2="580" y2="280"/><line x1="580" y1="280" x2="700" y2="250"/>
+				<line x1="60" y1="260" x2="110" y2="430"/><line x1="230" y1="230" x2="270" y2="410"/><line x1="400" y1="270" x2="430" y2="440"/><line x1="580" y1="280" x2="600" y2="450"/>
+				<line x1="110" y1="430" x2="270" y2="410"/><line x1="270" y1="410" x2="430" y2="440"/><line x1="430" y1="440" x2="600" y2="450"/>
+				<line x1="110" y1="430" x2="90" y2="600"/><line x1="270" y1="410" x2="240" y2="590"/><line x1="430" y1="440" x2="400" y2="610"/><line x1="600" y1="450" x2="620" y2="620"/>
+				<line x1="90" y1="600" x2="240" y2="590"/><line x1="240" y1="590" x2="400" y2="610"/><line x1="400" y1="610" x2="620" y2="620"/>
+				<line x1="240" y1="590" x2="210" y2="740"/><line x1="400" y1="610" x2="420" y2="750"/>
+			</g>
+			<g fill="#ffffff">
+				<circle cx="90" cy="100" r="3.5"/><circle cx="210" cy="60" r="3.5"/><circle cx="340" cy="110" r="3.5"/><circle cx="490" cy="70" r="3.5"/><circle cx="620" cy="130" r="3.5"/>
+				<circle cx="60" cy="260" r="3.5"/><circle cx="230" cy="230" r="3.5"/><circle cx="400" cy="270" r="3.5"/><circle cx="580" cy="280" r="3.5"/><circle cx="700" cy="250" r="3.5"/>
+				<circle cx="110" cy="430" r="3.5"/><circle cx="270" cy="410" r="3.5"/><circle cx="430" cy="440" r="3.5"/><circle cx="600" cy="450" r="3.5"/>
+				<circle cx="90" cy="600" r="3.5"/><circle cx="240" cy="590" r="3.5"/><circle cx="400" cy="610" r="3.5"/><circle cx="620" cy="620" r="3.5"/>
+				<circle cx="210" cy="740" r="3.5"/><circle cx="420" cy="750" r="3.5"/>
+			</g>
+		</svg>
+
+		{# 🪟 EN-TÊTE FLOTTANT #}
+		<header class="relative z-20 flex items-center justify-between gap-4 px-6 py-4 md:px-10 animate-fade-in">
+			<div class="flex items-center gap-2.5">
+				{% if settings.logoPath %}
+					<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-7 w-7 object-contain">
+				{% endif %}
+				<span class="font-heading font-bold text-sm tracking-tight">{{ settings.siteName }}</span>
+			</div>
+			<div class="flex items-center gap-3 text-right">
+				<span class="hidden sm:block text-sm text-white/70">{{ greeting }}, {{ app.user.fullName ?? app.user.userIdentifier }}</span>
+				{% if app.user.primaryRole is defined and roleLabels[app.user.primaryRole] is defined %}
+					<span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-wide uppercase ring-1 ring-white/15 backdrop-blur-sm">
+						{{ roleLabels[app.user.primaryRole] }}
+					</span>
+				{% endif %}
+			</div>
+		</header>
+
+		{# 🪐 CARTE PRINCIPALE — contient l'intitulé "Vos espaces de travail"
+		   et la carte circulaire (l'anneau) qui porte les 9 espaces de
+		   premier niveau de l'entreprise, jamais les modules internes de
+		   l'un d'eux. Accessible et existant -> carte active ; sinon ->
+		   désactivée, illustrative, jamais cliquable. #}
+		<main class="relative z-10 flex flex-col items-center px-4 pt-2 pb-16">
+			<div class="main-card flex flex-col items-center rounded-[2.5rem] bg-white/[0.04] backdrop-blur-md px-6 py-10 md:px-14 md:py-12">
+				{# Flux lumineux multicolores qui font le tour du RECTANGLE (coins
+				   compris) — un conic-gradient centré ne suit pas correctement un
+				   rectangle (les coins, plus loin du centre que le milieu des
+				   côtés, déforment la rotation en "faisceau balayant" plutôt
+				   qu'un tracé régulier). Le tracé SVG suit le vrai contour :
+				   4 comètes de couleur, même chemin (pathLength=100 normalise le
+				   périmètre, indépendant de la taille réelle de la carte),
+				   décalées de 25% du cycle chacune pour rester régulièrement
+				   espacées tout au long de la rotation. rx doit rester aligné sur
+				   rounded-[2.5rem] (40px) ci-dessus. #}
+				<svg class="main-card-flow" aria-hidden="true" focusable="false">
+					<rect class="flow-rect flow-rect-1" x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="40" pathLength="100" />
+					<rect class="flow-rect flow-rect-2" x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="40" pathLength="100" />
+					<rect class="flow-rect flow-rect-3" x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="40" pathLength="100" />
+					<rect class="flow-rect flow-rect-4" x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="40" pathLength="100" />
+				</svg>
+
+				<p class="text-center text-white/50 text-xs font-heading font-bold tracking-[0.3em] uppercase mb-6">
+					<span class="inline-block h-px w-6 bg-white/30 align-middle mr-2"></span>
+					Vos espaces de travail
+					<span class="inline-block h-px w-6 bg-white/30 align-middle ml-2"></span>
+				</p>
+
+				<div class="orbit-ring my-8">
+					{% for space in spaces %}
+					<div class="orbit-item" style="--angle: {{ (loop.index0 * 40) - 90 }}deg;">
+						<div class="orbit-card-wrap" style="--counter-angle: {{ 90 - (loop.index0 * 40) }}deg;">
+							{% if space.href %}
+								<a href="{{ space.href }}" class="group flex flex-col items-center gap-2 w-20 md:w-24 text-center">
+									<span class="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl text-2xl bg-white text-brand-primary shadow-xl ring-1 ring-white/40 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
+										<i class="ti {{ space.icon }}" aria-hidden="true"></i>
+									</span>
+									<span class="text-xs md:text-sm font-heading font-semibold text-white">{{ space.label }}</span>
+								</a>
+							{% else %}
+								<div class="flex flex-col items-center gap-2 w-20 md:w-24 text-center cursor-not-allowed" title="{{ space.exists ? 'Non accessible à votre rôle' : 'Espace à venir' }}">
+									<span class="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl text-2xl bg-white/5 text-white/30 border border-dashed border-white/15">
+										<i class="ti {{ space.icon }}" aria-hidden="true"></i>
+									</span>
+									<span class="text-xs md:text-sm font-heading font-semibold text-white/30">{{ space.label }}</span>
+								</div>
+							{% endif %}
+						</div>
+					</div>
+				{% endfor %}
+				</div>
+			</div>
+		</main>
+	</body>
+</html>

@@ -23,6 +23,7 @@ qui suit est à exécuter par toi sur le VPS.
 | API | https://api.horlynat.com | — |
 | Back-office app (projets, contenu, utilisateurs...) | https://dark.horlynat.com | Cloudflare Access (code email) puis compte `ROLE_SUPER_ADMIN` — cf. §6.5 |
 | Gestion des comptes mail | https://mailadmin.horlynat.com | Compte super-admin PostfixAdmin créé via `/setup.php` — cf. §10 |
+| Base applicative (Adminer) | https://db.horlynat.com | Cloudflare Access (code email) puis compte MySQL `app` (`secrets/database_password`) — cf. §10.5 |
 | Webmail / client mail (IMAP 993, SMTP 587) | `vps122840.serveur-vps.net` (pas `mail.horlynat.com`, cf. §3) | Comptes créés dans PostfixAdmin |
 
 Identifiants eux-mêmes non stockés ici (gestionnaire de mots de passe) —
@@ -301,6 +302,8 @@ Ajouter au crontab root :
 0 3 * * * DEPLOY_PATH=/opt/hmm AGE_RECIPIENT=age1... /opt/hmm/infra/scripts/backup.sh
 # Purge RGPD des logs de conversation de l'assistant IA (> 90 jours, cf. §12)
 0 4 * * * docker compose -f /opt/hmm/infra/docker-compose.prod.yml exec -T -u www-data backend php bin/console app:ai-assistant:purge-logs
+# Purge du journal de connexions (connexions réussies > 365j, tentatives échouées > 90j, cf. SecurityLogRetentionPolicy)
+0 5 * * * docker compose -f /opt/hmm/infra/docker-compose.prod.yml exec -T -u www-data backend php bin/console app:security-log:purge
 ```
 
 Tester une restauration au moins une fois (`scripts/backup.sh --restore <fichier>`)
@@ -394,6 +397,36 @@ d'un domaine (`abuse@`, `postmaster@`, `hostmaster@`, `webmaster@`)
 pointent vers un placeholder cassé (`...@change-this-to-your.domain.tld`)
 — à corriger manuellement (UPDATE SQL ou UI) vers une vraie boîte après
 création du domaine.
+
+### 10.5. Adminer — gestion de la base applicative
+
+Interface web (`db.horlynat.com`) pour consulter/éditer la base MySQL du
+service `database` sans repasser par un `docker compose exec` + SQL manuel.
+Ajouté sur demande explicite, pas un outil de dev laissé traîner en prod.
+
+**Protection** : copie exacte du modèle `dark.horlynat.com` (cf. §3/§5), pas
+celui de `mailadmin.horlynat.com` — `cloudflare-only` + Cloudflare Access en
+amont, pas de `admin-ipwhitelist` (même raison qu'expliquée en §5 : IP non
+stable, ça bloquerait plus souvent qu'autre chose).
+
+**Deux étapes manuelles, côté dashboard Cloudflare, avant que ce soit
+utilisable** (rien de tout ça n'est dans ce repo) :
+
+1. **DNS** : enregistrement `db` → IP du VPS, proxied (nuage orange), comme
+   `dark`/`api`/`www`.
+2. **Access** : Zero Trust → Access → Applications → nouvelle application
+   couvrant `db.horlynat.com`, même politique (code email) que celle déjà en
+   place sur `dark.horlynat.com` — la dupliquer plutôt que la réutiliser
+   (une politique par sous-domaine).
+
+**Connexion** : sur l'écran de connexion Adminer, le champ Serveur est déjà
+pré-rempli (`database`) — Système = MySQL, Utilisateur = `app`, Mot de passe
+= contenu de `secrets/database_password`, Base = `app`. Identifiants jamais
+stockés côté conteneur, ressaisis à chaque session — aucun secret
+supplémentaire à provisionner, c'est le même compte que celui du backend.
+
+⚠️ Accès en lecture **et écriture** sur les données réelles de l'application
+(comptes, factures, devis...) — pas un accès en lecture seule.
 
 ### 11. Déploiement continu (GitHub Actions)
 
@@ -573,4 +606,5 @@ reste, `messenger-worker` ci-dessus) ; conversation temps réel (Claude,
 - [ ] Sauvegardes automatiques chiffrées + restauration testée
 - [ ] Monitoring (Netdata + Uptime externe) en place
 - [ ] `admin-ipwhitelist` éditée avec la vraie IP avant d'utiliser `mailadmin.horlynat.com` (`dark.horlynat.com` n'en dépend plus, cf. §5)
+- [ ] DNS `db.horlynat.com` + application Cloudflare Access créés avant d'utiliser Adminer (cf. §10.5) — sans Access, `cloudflare-only` seul ne bloque que le hors-Cloudflare, pas un visiteur Cloudflare quelconque
 - [ ] `security.yaml` `/api` corrigé côté backend (sinon l'API reste 401 partout)

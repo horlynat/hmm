@@ -10,34 +10,14 @@
 		</a>
 	</twig:PageHeader>
 
+	<twig:LocaleToggle />
+
 	{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
 
 	<div class="panel">
 		<div class="panel-body space-y-4">
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<div class="field">
-					{{ form_label(form.greeting, null, {'label_attr': {'class': 'field-label'}}) }}
-					{{ form_widget(form.greeting, {'attr': {'class': 'input textarea w-full'}}) }}
-					{{ form_errors(form.greeting, {'attr': {'class': 'field-error'}}) }}
-				</div>
-				<div class="field">
-					{{ form_label(form.greetingEn, null, {'label_attr': {'class': 'field-label opacity-70'}}) }}
-					{{ form_widget(form.greetingEn, {'attr': {'class': 'input textarea w-full'}}) }}
-					{{ form_errors(form.greetingEn, {'attr': {'class': 'field-error'}}) }}
-				</div>
-			</div>
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<div class="field">
-					{{ form_label(form.fallback, null, {'label_attr': {'class': 'field-label'}}) }}
-					{{ form_widget(form.fallback, {'attr': {'class': 'input textarea w-full'}}) }}
-					{{ form_errors(form.fallback, {'attr': {'class': 'field-error'}}) }}
-				</div>
-				<div class="field">
-					{{ form_label(form.fallbackEn, null, {'label_attr': {'class': 'field-label opacity-70'}}) }}
-					{{ form_widget(form.fallbackEn, {'attr': {'class': 'input textarea w-full'}}) }}
-					{{ form_errors(form.fallbackEn, {'attr': {'class': 'field-error'}}) }}
-				</div>
-			</div>
+			<twig:FieldPair :fr="form.greeting" :en="form.greetingEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.fallback" :en="form.fallbackEn" :isTextarea="true" />
 		</div>
 	</div>
 

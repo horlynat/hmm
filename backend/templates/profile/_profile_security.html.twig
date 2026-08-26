@@ -1,4 +1,7 @@
-{# templates/profile/_profile_security.html.twig #}
+{# templates/profile/_profile_security.html.twig
+   Partagé entre admin/profile/* et member/profile/* — voir routePrefix dans
+   _profile_banner.html.twig. profile_two_factor_index reste une route unique,
+   commune aux deux espaces (TwoFactorController), hors de ce découpage. #}
 
 <div class="panel">
 	<div class="panel-header">
@@ -24,13 +27,13 @@
 
 		<div>
 			<p class="text-sm text-gray-500 mb-1">Dernier changement de mot de passe</p>
-			<p class="text-sm font-medium text-(--brand-dark)">
+			<p class="text-sm font-medium text-(--color-brand-dark)">
 				{{ user.passwordChangedAt ? user.passwordChangedAt|date('d/m/Y à H:i') : 'Jamais' }}
 			</p>
 		</div>
 
 		<div class="pt-2 border-t border-gray-100 dark:border-gray-700 flex flex-wrap gap-2">
-			<a href="{{ path('profile_change_password', {'id': user.id}) }}" class="btn btn-secondary btn-sm gap-1.5">
+			<a href="{{ path(routePrefix ~ 'change_password', {'id': user.id}) }}" class="btn btn-secondary btn-sm gap-1.5">
 				<span class="ti ti-lock-cog" aria-hidden="true"></span>
 				Changer le mot de passe
 			</a>

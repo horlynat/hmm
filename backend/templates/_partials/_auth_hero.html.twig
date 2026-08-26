@@ -1,0 +1,36 @@
+{# Bandeau de marque éditorial, partagé par les 5 pages d'auth (login,
+   register, forgot/reset password, 2FA) — identité visuelle constante
+   pendant tout le parcours d'authentification, seul le formulaire change
+   d'une page à l'autre. Attend `settings` en scope
+   (systemSettingRepository.getSettings(), défini par chaque template
+   appelant). Redevient un simple bloc en tête de page sous 768px (cf.
+   .auth-hero dans login.css) : aucune hauteur forcée, donc aucun contenu
+   ne peut y être tronqué. #}
+<div class="auth-hero">
+	<canvas class="auth-hero-canvas" aria-hidden="true"></canvas>
+
+	<div>
+		<div class="lockup flex items-center gap-2.5">
+			{% if settings.logoPath %}
+				<img src="{{ settings.logoPath }}" alt="{{ settings.siteName }}" class="h-8 w-8 object-contain rounded-lg bg-white/10 p-1">
+			{% else %}
+				<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15 border border-white/25">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+						<path d="M8 12.5l2.6 2.6L16.5 9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+				</span>
+			{% endif %}
+			<span class="brand-name">{{ settings.siteName|default('Espace admin') }}</span>
+		</div>
+
+		<p class="eyebrow mt-10 mb-4">ADMIN // ACCÈS RESTREINT</p>
+		<h2>Construit pour<br>l'équipe qui <em>livre</em>.</h2>
+	</div>
+
+	<div class="foot">
+		<span><i class="dot" aria-hidden="true"></i>PROJETS</span>
+		<span><i class="dot" aria-hidden="true"></i>FINANCES</span>
+		<span><i class="dot" aria-hidden="true"></i>ÉQUIPE</span>
+		<span><i class="dot" aria-hidden="true"></i>SUPPORT</span>
+	</div>
+</div>

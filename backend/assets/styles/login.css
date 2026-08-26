@@ -1,16 +1,192 @@
 @import "./app.css";
 
-/* Container principal */
-.login-container {
-    @apply grid grid-cols-1 md:grid-cols-2 h-screen max-w-7xl mx-auto shadow-2xl rounded-md overflow-hidden my-5;
+/* Garde-fou anti effondrement de marge : sans lui, un enfant qui porterait
+   sa propre marge verticale peut la voir "s'échapper" à travers <body>
+   (aucune bordure/padding ici) et provoquer un scroll vers une zone vide en
+   bas de page — bug déjà rencontré sur l'ancienne mise en page. La mise en
+   page ci-dessous n'a plus besoin de marge sur son conteneur racine, mais
+   on garde ce filet par prudence. */
+body {
+    display: flow-root;
 }
 
-/* Colonne gauche */
-.login-left {
-    @apply flex items-center justify-center bg-linear-to-br from-brand-dark via-brand-primary to-brand-accent relative overflow-hidden;
+/* Mise en page éditoriale des pages d'auth (login/register/forgot/reset/2fa) :
+   bandeau de marque (biseauté à partir de md) + formulaire.
+   Sur mobile le bandeau redevient un bloc normal en tête de page — hauteur
+   libre, pas de biseau — jamais de hauteur forcée qui pourrait tronquer du
+   contenu (cf. .auth-hero plus bas). */
+.auth-editorial {
+    @apply grid grid-cols-1 md:grid-cols-[3fr_2fr] min-h-screen;
 }
 
-/* Carte de connexion */
-.login-card {
-    @apply w-full max-w-md bg-bg-card/90 backdrop-blur-xl shadow-2xl rounded-2xl p-10 border border-gray-200;
+/* ─────────────────────────────────────────────────────────────────────────
+   Bandeau de marque : plusieurs couches pour une vraie profondeur (pas un
+   aplat) + un champ de particules animé en canvas pour une énergie réelle
+   (cf. .auth-hero-canvas et la logique dans login.js) — pas juste un fondu
+   discret. Une seule touche chaude (corail/ambre, hors palette froide
+   existante) est mêlée aux particules cyan/bleu : l'étincelle au milieu du
+   bleu, plutôt qu'un dégradé uniformément froid. */
+.auth-hero {
+    @apply relative flex flex-col justify-between overflow-hidden px-6 py-10 sm:px-10 sm:py-12 md:py-14 text-white;
+    background:
+        radial-gradient(60% 50% at 12% -5%, color-mix(in srgb, var(--color-brand-accent) 60%, transparent), transparent 60%),
+        radial-gradient(55% 55% at 100% 105%, color-mix(in srgb, var(--color-brand-primary) 65%, transparent), transparent 65%),
+        radial-gradient(38% 32% at 88% 18%, color-mix(in srgb, #ff9466 40%, transparent), transparent 70%),
+        linear-gradient(160deg, #01012f 0%, var(--color-brand-dark) 45%, #071c72 100%);
+}
+@media (min-width: 768px) {
+    .auth-hero {
+        clip-path: polygon(0 0, 100% 0, 92% 100%, 0% 100%);
+    }
+}
+
+/* Grain fin — casse l'aplat numérique des dégradés, donne une texture
+   presque photographique plutôt que vectorielle. Statique (pas d'animation
+   : le grain qui bouge devient vite fatigant à l'œil). */
+.auth-hero::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Vignette douce : concentre l'œil vers le titre plutôt que de laisser le
+   regard filer jusqu'aux bords du panneau. */
+.auth-hero::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    pointer-events: none;
+    box-shadow: inset 0 0 140px 40px rgba(1, 1, 25, 0.45);
+}
+
+.auth-hero > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Spécificité volontairement plus élevée que ".auth-hero > *" ci-dessus
+   (qui matche aussi ce canvas en tant qu'enfant direct) : sans ça, le canvas
+   hérite de position:relative au lieu d'absolute, sort du survol décoratif
+   et prend sa propre hauteur DANS le flux flex — 800px de trop ajoutés à la
+   page (bug constaté et corrigé). */
+.auth-hero .auth-hero-canvas {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    pointer-events: none;
+}
+.auth-hero .lockup {
+    animation: fade-in 0.6s ease-out both;
+}
+.auth-hero .brand-name {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+.auth-hero .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    color: var(--color-brand-accent);
+    animation: fade-in 0.6s ease-out 0.15s both;
+}
+.auth-hero h2 {
+    /* h1/h2/h3 reçoivent color: var(--color-brand-dark) depuis app.css
+       (@layer base) — sans cette redéclaration, le titre serait navy sur
+       fond navy, donc invisible. */
+    color: inherit;
+    font-size: clamp(1.9rem, 1.1rem + 3vw, 3.1rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    max-width: 14ch;
+    text-wrap: balance;
+    text-shadow: 0 2px 40px rgba(0, 0, 0, 0.35);
+    filter: blur(6px);
+    animation: auth-title-reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.22s both;
+}
+.auth-hero h2 em {
+    font-style: normal;
+    background: linear-gradient(100deg, var(--color-brand-accent), #ff9466 130%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    /* Le seul endroit où la page "respire" activement en continu — tout le
+       reste du panneau reste calme autour de ce battement discret. */
+    animation: auth-glow-pulse 3.4s ease-in-out infinite;
+}
+.auth-hero .foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 2rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    color: color-mix(in srgb, #fff 65%, transparent);
+    padding-top: 1.25rem;
+    margin-top: 2.5rem;
+    border-top: 1px solid color-mix(in srgb, #fff 18%, transparent);
+    animation: fade-in 0.6s ease-out 0.5s both;
+}
+.auth-hero .foot span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.auth-hero .foot .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--color-brand-accent);
+    box-shadow: 0 0 6px 1px var(--color-brand-accent);
+    animation: auth-dot-pulse 2.6s ease-in-out infinite;
+}
+.auth-hero .foot span:nth-child(2) .dot { animation-delay: 0.4s; }
+.auth-hero .foot span:nth-child(3) .dot { animation-delay: 0.9s; }
+.auth-hero .foot span:nth-child(4) .dot { animation-delay: 1.3s; }
+
+.auth-form-side {
+    @apply flex items-center justify-center px-6 py-12 sm:px-10;
+    background: var(--color-bg-card);
+}
+/* Le formulaire arrive après que le bandeau ait fini de se présenter —
+   effet de rideau qui se lève plutôt que tout qui apparaît d'un bloc. */
+.auth-form-side .animate-fade-in {
+    animation-delay: 0.6s;
+}
+
+@keyframes auth-title-reveal {
+    from { opacity: 0; filter: blur(6px); transform: translateY(10px); }
+    to   { opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+@keyframes auth-glow-pulse {
+    0%, 100% { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-brand-accent) 45%, transparent)); }
+    50%      { filter: drop-shadow(0 0 16px color-mix(in srgb, #ff9466 60%, transparent)); }
+}
+@keyframes auth-dot-pulse {
+    0%, 100% { opacity: 0.45; transform: scale(0.85); }
+    50%      { opacity: 1; transform: scale(1.25); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-hero .lockup,
+    .auth-hero .eyebrow,
+    .auth-hero h2,
+    .auth-hero h2 em,
+    .auth-hero .foot,
+    .auth-hero .foot .dot,
+    .auth-form-side .animate-fade-in {
+        animation: none;
+    }
+    .auth-hero h2 {
+        opacity: 1;
+        filter: none;
+        transform: none;
+    }
 }

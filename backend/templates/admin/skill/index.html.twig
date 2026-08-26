@@ -26,7 +26,7 @@
 				{% for skill in skills %}
 					<tr>
 						<td class="font-mono text-xs opacity-50">{{ skill.id }}</td>
-						<td class="font-bold text-(--brand-dark)">{{ skill.name }}</td>
+						<td class="font-bold text-(--color-brand-dark)">{{ skill.name }}</td>
 						<td><twig:Badge variant="info">{{ skill.level }}</twig:Badge></td>
 						<td>
 							<div class="flex items-center justify-end gap-1">
@@ -36,7 +36,7 @@
 								<a href="{{ path('admin_skill_update', {'id': skill.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ skill.name }}">
 									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
 								</a>
-								<twig:DeleteModal :id="skill.id" :action="path('admin_skill_delete', {id: skill.id})" :token="csrf_token('delete' ~ skill.id)" :label="skill.name" entity="cette compétence" />
+								<twig:DeleteModal :id="skill.id" :action="path('admin_skill_delete', {id: skill.id})" :token="csrf_token('admin_skill_delete_' ~ skill.id)" :label="skill.name" entity="cette compétence" />
 							</div>
 						</td>
 					</tr>

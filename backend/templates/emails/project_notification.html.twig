@@ -2,9 +2,15 @@
 
 {% block title %}{{ heading }}{% endblock %}
 {% block preheader %}{{ heading }} — {{ projectTitle }}{% endblock %}
+{% block badge_label %}Projet{% endblock %}
+{% block badge_color %}#e0e7ff{% endblock %}
+{% block badge_text_color %}#3730a3{% endblock %}
 
 {% block body %}
-	<h1 style="margin:0 0 16px; font-size:19px; color:#03045e;">{{ heading }}</h1>
+	<h1 style="margin:0 0 4px; font-size:19px; color:#03045e;">{{ heading }}</h1>
+	<p style="margin:0 0 20px; font-size:13px; color:#8b949e;">
+		Projet : <span style="color:#3730a3; font-weight:bold;">{{ projectTitle }}</span>
+	</p>
 
 	<p style="margin:0 0 12px;">Bonjour <strong>{{ recipientName }}</strong>,</p>
 
@@ -23,6 +29,4 @@
 			</tr>
 		</table>
 	{% endif %}
-
-	<p style="margin:20px 0 0; font-size:12px; color:#8b949e;">Projet : {{ projectTitle }}</p>
 {% endblock %}

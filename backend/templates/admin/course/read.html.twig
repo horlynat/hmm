@@ -68,7 +68,7 @@
 							<span>Modifier la formation</span>
 						</a>
 						<div class="w-full [&>form]:w-full text-center">
-							<twig:DeleteModal :id="course.id" :action="path('admin_course_delete', {id: course.id})" :token="csrf_token('delete' ~ course.id)" :label="course.title" entity="cette formation" />
+							<twig:DeleteModal :id="course.id" :action="path('admin_course_delete', {id: course.id})" :token="csrf_token('admin_course_delete_' ~ course.id)" :label="course.title" entity="cette formation" />
 						</div>
 					</div>
 				</div>

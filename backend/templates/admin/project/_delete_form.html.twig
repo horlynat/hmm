@@ -22,7 +22,9 @@
 			<p class="text-sm text-brand-dark/60 mt-2 px-2">
 				Êtes-vous sûr de vouloir supprimer définitivement le projet
 				<span class="font-semibold text-brand-dark">"{{ project.title }}"</span>
-				? Cette action est irréversible et effacera tous les médias et historiques associés.
+				? Cette action est irréversible et supprimera tous les médias associés. L'historique
+				de ce projet est conservé à des fins de traçabilité, mais ne sera plus rattaché à
+				une fiche projet.
 			</p>
 
 			<!-- Actions du Modal -->
@@ -30,7 +32,7 @@
 				class="mt-6 flex flex-col sm:flex-row-reverse gap-3">
 				<!-- Formulaire Réel de Soumission -->
 				<form method="post" action="{{ path('admin_project_delete', {'id': project.id}) }}" class="w-full sm:w-auto flex-1">
-					<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ project.id) }}">
+					<input type="hidden" name="_token" value="{{ csrf_token('admin_project_delete_' ~ project.id) }}">
 					<button type="submit" onclick="this.disabled=true; this.form.submit();" class="w-full inline-flex justify-center items-center px-4 py-2.5 bg-danger hover:bg-red-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-all cursor-pointer">
 						Confirmer la suppression
 					</button>

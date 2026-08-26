@@ -68,7 +68,18 @@ class SecurityAuthenticator extends AbstractLoginFormAuthenticator
             // pour ne pas permettre d'énumérer les comptes. Les contrôles de
             // statut (vérifié / actif) sont faits par App\Security\UserChecker
             // APRÈS validation du mot de passe.
-            new UserBadge($email, fn (string $userIdentifier): ?User => $this->userRepository->findOneBy(['email' => $userIdentifier])),
+            //
+            // Un compte de service (isSystemAccount) est traité comme
+            // introuvable ici : User::getRoles() ajoute ROLE_USER à TOUT
+            // compte (y compris ROLE_SERVICE), donc sans ce garde-fou un
+            // compte de service pourrait obtenir une session web via ce
+            // formulaire — il ne doit s'authentifier que via /api/login_check
+            // (firewall api_login, cf. CreateServiceAccountCommand).
+            new UserBadge($email, function (string $userIdentifier): ?User {
+                $user = $this->userRepository->findOneBy(['email' => $userIdentifier]);
+
+                return $user?->isSystemAccount() ? null : $user;
+            }),
             new PasswordCredentials($password),
             [
                 new CsrfTokenBadge('authenticate', $request->getPayload()->getString('_csrf_token')),
@@ -87,14 +98,14 @@ class SecurityAuthenticator extends AbstractLoginFormAuthenticator
             return $response;
         }
 
-        if (in_array('ROLE_ADMIN', $token->getRoleNames(), true)) {
-            return new RedirectResponse($this->urlGenerator->generate('admin_dashboard_index'));
-        }
-
-        /** @var User $user */
-        $user = $token->getUser();
-
-        return new RedirectResponse($this->urlGenerator->generate('profile_read', ['id' => $user->getId()]));
+        // Point d'entrée unique après connexion, quel que soit le rôle
+        // (cf. HomeController) : la page d'accueil laisse ensuite
+        // l'utilisateur choisir entre back-office (/admin) et espace
+        // projets (/projects), ou y accède directement si un seul des deux
+        // lui est ouvert. Avant, ROLE_ADMIN atterrissait directement sur le
+        // dashboard admin et tous les autres rôles sur leur profil membre —
+        // ce n'est plus le cas.
+        return new RedirectResponse($this->urlGenerator->generate('home_index'));
     }
 
     /**

@@ -1,0 +1,33 @@
+{# templates/member/profile/read.html.twig
+   Fiche de profil de l'espace membre — toujours le compte connecté
+   (member_profile_read, self-service uniquement, pas d'id). Gabarit espace
+   membre : member/base.html.twig (aside collaborateur/freelance/client),
+   jamais l'en-tête ni l'aside admin. #}
+{% extends 'member/base.html.twig' %}
+
+{% set routePrefix = 'member_profile_' %}
+
+{% block title %}Mon profil{% endblock %}
+
+{% block body %}
+
+	{% include 'profile/_profile_banner.html.twig' %}
+
+	<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
+		{% include 'profile/_profile_info.html.twig' %}
+		{% include 'profile/_profile_security.html.twig' %}
+	</div>
+
+	{% if 'ROLE_EDITOR' in user.roles %}
+		<div class="mt-4">
+			{% include 'profile/_profile_collaborator.html.twig' %}
+		</div>
+	{% endif %}
+
+	<div class="mt-4">
+		{% include 'profile/_profile_activity.html.twig' %}
+	</div>
+
+	{% include 'profile/_profile_sessions.html.twig' %}
+
+{% endblock %}

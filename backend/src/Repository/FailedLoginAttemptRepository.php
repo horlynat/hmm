@@ -52,6 +52,20 @@ class FailedLoginAttemptRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    public function countRecentByEmail(string $email, \DateInterval $window): int
+    {
+        $since = (new \DateTimeImmutable())->sub($window);
+
+        return (int) $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->andWhere('f.email = :email')
+            ->andWhere('f.createdAt >= :since')
+            ->setParameter('email', $email)
+            ->setParameter('since', $since)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /**
      * IPs ayant échoué plusieurs fois récemment, groupées et comptées.
      *
@@ -81,5 +95,90 @@ class FailedLoginAttemptRepository extends ServiceEntityRepository
             ],
             $rows
         );
+    }
+
+    /**
+     * @return FailedLoginAttempt[]
+     */
+    public function findRecentByIp(string $ip, int $limit = 10, ?int $excludeId = null): array
+    {
+        $queryBuilder = $this->createQueryBuilder('f')
+            ->andWhere('f.ip = :ip')
+            ->setParameter('ip', $ip)
+            ->orderBy('f.createdAt', 'DESC')
+            ->setMaxResults($limit);
+
+        if (null !== $excludeId) {
+            $queryBuilder->andWhere('f.id != :excludeId')->setParameter('excludeId', $excludeId);
+        }
+
+        return $queryBuilder->getQuery()->getResult();
+    }
+
+    /**
+     * @return FailedLoginAttempt[]
+     */
+    public function findRecentByEmail(string $email, int $limit = 10, ?int $excludeId = null): array
+    {
+        $queryBuilder = $this->createQueryBuilder('f')
+            ->andWhere('f.email = :email')
+            ->setParameter('email', $email)
+            ->orderBy('f.createdAt', 'DESC')
+            ->setMaxResults($limit);
+
+        if (null !== $excludeId) {
+            $queryBuilder->andWhere('f.id != :excludeId')->setParameter('excludeId', $excludeId);
+        }
+
+        return $queryBuilder->getQuery()->getResult();
+    }
+
+    /**
+     * Nombre de lignes purgeables (sans les supprimer) — affiché sur le
+     * bouton de purge manuelle pour que l'admin sache ce qu'il s'apprête à
+     * faire avant de confirmer.
+     */
+    public function countOlderThan(\DateTimeImmutable $threshold): int
+    {
+        return (int) $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->where('f.createdAt < :threshold')
+            ->setParameter('threshold', $threshold)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Purge RGPD/volumétrie — cf. SecurityLogRetentionPolicy pour la durée de
+     * rétention retenue et sa justification. Bulk DELETE (DQL), pas de flush
+     * requis côté appelant.
+     */
+    public function deleteOlderThan(\DateTimeImmutable $threshold): int
+    {
+        return $this->createQueryBuilder('f')
+            ->delete()
+            ->where('f.createdAt < :threshold')
+            ->setParameter('threshold', $threshold)
+            ->getQuery()
+            ->execute();
+    }
+
+    public function countAll(): int
+    {
+        return (int) $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Purge totale, sans condition de rétention — cf. LoginHistoryRepository::deleteAll().
+     */
+    public function deleteAll(): int
+    {
+        return $this->createQueryBuilder('f')
+            ->delete()
+            ->getQuery()
+            ->execute();
     }
 }

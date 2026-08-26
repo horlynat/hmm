@@ -6,6 +6,7 @@ use App\Enum\InvoiceStatusEnum;
 use App\Repository\InvoiceRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -18,6 +19,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: 'invoice')]
 #[ORM\Index(columns: ['project_id'], name: 'idx_invoice_project')]
 #[ORM\HasLifecycleCallbacks]
+#[UniqueEntity(fields: ['number'], message: 'Ce numéro de facture existe déjà.')]
 class Invoice
 {
     #[ORM\Id]
@@ -31,21 +33,21 @@ class Invoice
     #[Groups(['api_admin'])]
     private Project $project;
 
-    #[ORM\Column(length: 50)]
-    #[Assert\NotBlank(message: "Le numéro de facture est obligatoire.")]
+    #[ORM\Column(length: 50, unique: true)]
+    #[Assert\NotBlank(message: 'Le numéro de facture est obligatoire.')]
     #[Assert\Length(max: 50)]
     #[Groups(['api_admin'])]
     private string $number = '';
 
     #[ORM\Column(length: 255)]
-    #[Assert\NotBlank(message: "Le libellé est obligatoire.")]
+    #[Assert\NotBlank(message: 'Le libellé est obligatoire.')]
     #[Assert\Length(max: 255)]
     #[Groups(['api_admin'])]
     private string $label = '';
 
     #[ORM\Column(type: Types::DECIMAL, precision: 12, scale: 2)]
-    #[Assert\NotBlank(message: "Le montant est obligatoire.")]
-    #[Assert\Positive(message: "Le montant doit être strictement positif.")]
+    #[Assert\NotBlank(message: 'Le montant est obligatoire.')]
+    #[Assert\Positive(message: 'Le montant doit être strictement positif.')]
     #[Groups(['api_admin'])]
     private string $amount = '0.00';
 
@@ -78,6 +80,25 @@ class Invoice
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $reminderSentAt = null;
 
+    /**
+     * Séparation des tâches (SoD) : traçabilité de qui a créé la facture et
+     * qui l'a marquée payée — nullable (comptes supprimés, factures
+     * antérieures à ce champ). Ne bloque jamais l'action même si c'est le
+     * même compte (cf. AdminInvoiceController::markPaid()) : une petite
+     * structure peut n'avoir qu'un seul opérateur habilité, un blocage
+     * strict la rendrait inutilisable. Seulement tracé et visible (badge +
+     * audit), pour permettre une revue humaine a posteriori.
+     */
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'created_by_id', nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['api_admin'])]
+    private ?User $createdBy = null;
+
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'marked_paid_by_id', nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['api_admin'])]
+    private ?User $markedPaidBy = null;
+
     public function __construct()
     {
         $this->issuedAt = new \DateTimeImmutable();
@@ -96,6 +117,7 @@ class Invoice
     public function setProject(Project $project): static
     {
         $this->project = $project;
+
         return $this;
     }
 
@@ -107,6 +129,7 @@ class Invoice
     public function setNumber(string $number): static
     {
         $this->number = $number;
+
         return $this;
     }
 
@@ -118,6 +141,7 @@ class Invoice
     public function setLabel(string $label): static
     {
         $this->label = $label;
+
         return $this;
     }
 
@@ -129,6 +153,7 @@ class Invoice
     public function setAmount(string $amount): static
     {
         $this->amount = $amount;
+
         return $this;
     }
 
@@ -140,6 +165,7 @@ class Invoice
     public function setCurrency(string $currency): static
     {
         $this->currency = $currency;
+
         return $this;
     }
 
@@ -151,6 +177,7 @@ class Invoice
     public function setStatus(InvoiceStatusEnum $status): static
     {
         $this->status = $status;
+
         return $this;
     }
 
@@ -162,6 +189,7 @@ class Invoice
     public function setIssuedAt(\DateTimeImmutable $issuedAt): static
     {
         $this->issuedAt = $issuedAt;
+
         return $this;
     }
 
@@ -173,6 +201,7 @@ class Invoice
     public function setDueDate(?\DateTimeImmutable $dueDate): static
     {
         $this->dueDate = $dueDate;
+
         return $this;
     }
 
@@ -184,6 +213,7 @@ class Invoice
     public function setPaidAt(?\DateTimeImmutable $paidAt): static
     {
         $this->paidAt = $paidAt;
+
         return $this;
     }
 
@@ -191,6 +221,7 @@ class Invoice
     {
         $this->status = InvoiceStatusEnum::PAID;
         $this->paidAt = new \DateTimeImmutable();
+
         return $this;
     }
 
@@ -198,6 +229,7 @@ class Invoice
     {
         $this->status = InvoiceStatusEnum::PENDING;
         $this->paidAt = null;
+
         return $this;
     }
 
@@ -215,6 +247,7 @@ class Invoice
     public function markValidated(): static
     {
         $this->validatedAt = new \DateTimeImmutable();
+
         return $this;
     }
 
@@ -223,6 +256,7 @@ class Invoice
     {
         $this->status = InvoiceStatusEnum::REVISION_REQUESTED;
         $this->validatedAt = null;
+
         return $this;
     }
 
@@ -247,7 +281,51 @@ class Invoice
     public function markReminderSent(): static
     {
         $this->reminderSentAt = new \DateTimeImmutable();
+
         return $this;
+    }
+
+    public function getCreatedBy(): ?User
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?User $createdBy): static
+    {
+        $this->createdBy = $createdBy;
+
+        return $this;
+    }
+
+    public function getMarkedPaidBy(): ?User
+    {
+        return $this->markedPaidBy;
+    }
+
+    public function setMarkedPaidBy(?User $markedPaidBy): static
+    {
+        $this->markedPaidBy = $markedPaidBy;
+
+        return $this;
+    }
+
+    /**
+     * Séparation des tâches non respectée : le même compte a créé la facture
+     * ET l'a marquée payée. Faux si l'un des deux acteurs est inconnu (champ
+     * introduit après coup, ou compte depuis supprimé) — on ne signale que ce
+     * qu'on peut affirmer avec certitude.
+     */
+    public function wasCreatedAndMarkedPaidBySamePerson(): bool
+    {
+        // Comparaison d'identité d'objet, pas d'ID : deux User fraîchement
+        // instanciés (non persistés) ont tous les deux un ID null, ce qui
+        // donnerait un faux positif "même personne" en comparant les ID.
+        // Une entité chargée deux fois dans la même requête reste le même
+        // objet PHP grâce à l'identity map de Doctrine — cette comparaison
+        // est donc fiable pour les deux User réellement persistés.
+        return null !== $this->createdBy
+            && null !== $this->markedPaidBy
+            && $this->createdBy === $this->markedPaidBy;
     }
 
     public function getFormattedAmount(): string
@@ -259,6 +337,6 @@ class Invoice
             default => $this->currency,
         };
 
-        return number_format((float) $this->amount, 2, ',', ' ') . ' ' . $symbol;
+        return number_format((float) $this->amount, 2, ',', ' ').' '.$symbol;
     }
 }

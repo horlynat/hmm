@@ -5,8 +5,6 @@ namespace App\Tests\Security;
 use App\Entity\User;
 use App\Security\UserChecker;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAccountStatusException;
 use Symfony\Component\Security\Core\User\InMemoryUser;
 
@@ -21,13 +19,9 @@ final class UserCheckerTest extends TestCase
         return $user;
     }
 
-    /** Requête factice sur une route neutre (ni /api/login_check, ni /login). */
     private function createChecker(): UserChecker
     {
-        $requestStack = new RequestStack();
-        $requestStack->push(Request::create('/'));
-
-        return new UserChecker($requestStack);
+        return new UserChecker();
     }
 
     public function testPreAuthNeverThrows(): void
@@ -60,11 +54,66 @@ final class UserCheckerTest extends TestCase
         $this->createChecker()->checkPostAuth($this->createUser(false, true));
     }
 
+    public function testLockedUserIsRejectedPostAuth(): void
+    {
+        $user = $this->createUser(true, true);
+        $user->setLockedUntil(new \DateTimeImmutable('+15 minutes'));
+
+        $this->expectException(CustomUserMessageAccountStatusException::class);
+        $this->expectExceptionMessageMatches('/verrouillé/');
+
+        $this->createChecker()->checkPostAuth($user);
+    }
+
+    public function testUserWithExpiredLockPassesPostAuth(): void
+    {
+        $user = $this->createUser(true, true);
+        $user->setLockedUntil(new \DateTimeImmutable('-1 minute'));
+
+        $this->createChecker()->checkPostAuth($user);
+        $this->addToAssertionCount(1);
+    }
+
+    public function testExpiredAccountIsRejectedPostAuth(): void
+    {
+        $user = $this->createUser(true, true);
+        $user->setAccountExpiresAt(new \DateTimeImmutable('-1 day'));
+
+        $this->expectException(CustomUserMessageAccountStatusException::class);
+        $this->expectExceptionMessageMatches('/expiré/');
+
+        $this->createChecker()->checkPostAuth($user);
+    }
+
+    public function testAccountWithFutureExpirationPassesPostAuth(): void
+    {
+        $user = $this->createUser(true, true);
+        $user->setAccountExpiresAt(new \DateTimeImmutable('+1 year'));
+
+        $this->createChecker()->checkPostAuth($user);
+        $this->addToAssertionCount(1);
+    }
+
     public function testNonAppUserIsIgnored(): void
     {
         // Un UserInterface qui n'est pas notre entité (improbable, mais la
         // signature l'autorise) ne doit pas faire planter le checker.
         $this->createChecker()->checkPostAuth(new InMemoryUser('x', 'y'));
+        $this->addToAssertionCount(1);
+    }
+
+    public function testActiveVerifiedTwoFactorUserPassesPostAuth(): void
+    {
+        // Régression : ce checker bloquait autrefois purement et simplement un
+        // compte 2FA sur /api/login_check (aucun vrai second facteur n'existait
+        // côté API). C'est maintenant TwoFactorAwareJwtSuccessHandler qui prend
+        // le relais après ce checker — celui-ci ne doit plus rien savoir de la
+        // 2FA ni de la route courante.
+        $user = $this->createUser(true, true);
+        $user->setTotpSecret('JBSWY3DPEHPK3PXP');
+        $user->setIsTwoFactorEnabled(true);
+
+        $this->createChecker()->checkPostAuth($user);
         $this->addToAssertionCount(1);
     }
 }

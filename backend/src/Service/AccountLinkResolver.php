@@ -11,10 +11,11 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  *
  * Depuis la refonte Next.js de l'espace client/freelance, un utilisateur
  * ROLE_USER/ROLE_EDITOR ne travaille plus jamais dans les pages Symfony
- * historiques (profile_read, member_project_read, verify_user...) — elles
- * restent d'anciennes routes fonctionnelles mais qui ne correspondent plus à
- * ce qu'il voit réellement. Seul un compte ROLE_ADMIN (minimum) vit encore
- * dans le back-office Symfony et doit y être renvoyé directement.
+ * historiques (member_project_read, verify_user...) — elles restent
+ * d'anciennes routes fonctionnelles mais qui ne correspondent plus à ce
+ * qu'il voit réellement. Seul un compte ROLE_ADMIN (minimum) vit encore dans
+ * le back-office Symfony (admin_profile_read...) et doit y être renvoyé
+ * directement.
  */
 final class AccountLinkResolver
 {

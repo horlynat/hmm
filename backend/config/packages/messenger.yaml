@@ -19,10 +19,26 @@ framework:
                 dsn: 'doctrine://default?queue_name=failed'
 
         routing:
-            # C'est ici que se trouve l'erreur
             'App\Message\LoginNotification': async
             'App\Message\SendEmail': async
             'App\Message\AiAssistantIngestMessage': async
             'App\Message\OffsiteBackupMessage': async
+            'App\Message\RevalidateFrontendMessage': async
+            # Absents de cette liste jusqu'ici malgré leur docblock ("jamais sur
+            # le chemin critique d'une connexion") : sans entrée de routage, le
+            # SendMessageMiddleware ne trouve aucun transport et Messenger les
+            # exécute en synchrone, dans la même requête HTTP que le login —
+            # exactement ce que leur conception voulait éviter (appel HTTP
+            # externe ipapi.co/ip-api.com bloquant la réponse de connexion).
+            # Constaté en prod le 20/08/2026 : aucune trace de ces deux classes
+            # dans messenger_messages, alors que LoginHistory::location était
+            # bien peuplé — la preuve qu'elles tournaient en synchrone.
+            'App\Message\EnrichLoginLocationMessage': async
+            'App\Message\CheckSessionAnomaliesMessage': async
+            # Même oubli, même symptôme (SessionRevokedNotificationHandler
+            # appelle aussi GeolocationService pour l'email de révocation) :
+            # sans cette entrée, un clic admin "déconnecter" attendait
+            # silencieusement un appel HTTP externe avant de répondre.
+            'App\Message\SessionRevokedNotification': async
 
         failure_transport: failed

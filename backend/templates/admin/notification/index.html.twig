@@ -5,7 +5,7 @@
 {% block body %}
 	<twig:PageHeader title="Notifications" subtitle="Canaux activés par niveau d'importance des envois du back-office." icon="ti-bell" />
 
-	<div class="text-xs opacity-90 bg-brand-light/30 p-3 rounded-lg flex items-center gap-2 text-(--brand-dark) border border-brand-light mb-6">
+	<div class="text-xs opacity-90 bg-brand-light/30 p-3 rounded-lg flex items-center gap-2 text-(--color-brand-dark) border border-brand-light mb-6">
 		<span class="ti ti-info-circle text-base shrink-0" aria-hidden="true"></span>
 		<span>Canal push via <a href="https://ntfy.sh" target="_blank" rel="noopener noreferrer" class="underline font-bold">ntfy</a> — abonnez-vous au topic défini par <code class="font-mono">NTFY_DSN</code> (fichier .env) pour recevoir les alertes.</span>
 	</div>
@@ -24,7 +24,7 @@
 			<tbody>
 				{% for priority, preference in preferences %}
 					<tr>
-						<td class="font-medium text-(--brand-dark)">{{ preference.priority.label }}</td>
+						<td class="font-medium text-(--color-brand-dark)">{{ preference.priority.label }}</td>
 						<td class="text-center">
 							{% if preference.emailEnabled %}<twig:Badge variant="success">Activé</twig:Badge>{% else %}<twig:Badge variant="neutral">Désactivé</twig:Badge>{% endif %}
 						</td>

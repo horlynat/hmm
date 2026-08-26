@@ -1,0 +1,12 @@
+{# templates/admin/profile/update.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% set routePrefix = 'admin_profile_' %}
+
+{% block title %}Modifier le profil{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Modifier le profil" icon="ti-edit" />
+
+	{% include 'profile/_form.html.twig' %}
+{% endblock %}

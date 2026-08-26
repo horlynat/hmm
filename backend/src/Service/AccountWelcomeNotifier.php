@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\User;
+use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 
 /**
  * Notifie un utilisateur dont le compte vient d'être créé directement par un
@@ -19,11 +20,16 @@ final class AccountWelcomeNotifier
     public function __construct(
         private readonly EmailManager $emailManager,
         private readonly AccountLinkResolver $accountLinkResolver,
+        private readonly RoleHierarchyInterface $roleHierarchy,
     ) {
     }
 
     public function accountCreated(User $user, string $roleLabel): void
     {
+        if ($user->isSystemAccount()) {
+            return;
+        }
+
         $email = $user->getEmail();
         if ('' === $email) {
             return;
@@ -39,6 +45,11 @@ final class AccountWelcomeNotifier
                 'fullName' => $user->getFullName() ?: $email,
                 'roleLabel' => $roleLabel,
                 'loginUrl' => $loginUrl,
+                // Même frontière que AccountStatusSubscriber : 2FA obligatoire sur
+                // l'espace membre (client/collaborateur), jamais sur le back-office
+                // (ex : un compte "collaborateur" créé ici obtient ROLE_EDITOR, pas
+                // ROLE_USER — cf. AdminCollaboratorController — donc exempté).
+                'requiresTwoFactor' => !\in_array('ROLE_EDITOR', $this->roleHierarchy->getReachableRoleNames($user->getRoles()), true),
             ],
         );
     }

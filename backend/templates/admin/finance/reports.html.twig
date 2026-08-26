@@ -1,0 +1,147 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Finance — Rapports{% endblock %}
+
+{% block body %}
+	<div>
+
+		<!-- 📑 EN-TÊTE -->
+		<div class="mb-8">
+			<h1 class="text-3xl font-heading font-bold flex items-center gap-2 text-brand-dark">
+				<span class="ti ti-chart-infographic text-brand-primary" aria-hidden="true"></span>
+				<span>Rapports</span>
+			</h1>
+			<p class="text-sm opacity-60 mt-1">Rentabilité, évolution du CA et prévisionnel — tous les montants sont convertis en {{ ledgerCurrency }}.</p>
+		</div>
+
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+			<!-- 💹 RENTABILITÉ PAR PROJET -->
+			<div class="soft-card p-6 overflow-hidden">
+				<h2 class="text-lg font-heading font-bold mb-1">Rentabilité par projet</h2>
+				<p class="text-xs opacity-60 mb-4">Factures payées − dépenses approuvées. Un projet sans aucune activité financière n'apparaît pas.</p>
+				<div class="overflow-x-auto">
+					<table class="table text-sm">
+						<thead>
+							<tr>
+								<th>Projet</th>
+								<th>CA</th>
+								<th>Coûts</th>
+								<th>Marge</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for row in profitabilityByProject %}
+								<tr>
+									<td class="font-medium text-brand-dark">{{ row.project.title }}</td>
+									<td>{{ row.revenue|money(ledgerCurrency) }}</td>
+									<td class="opacity-70">{{ row.cost|money(ledgerCurrency) }}</td>
+									<td class="font-semibold {{ row.margin >= 0 ? 'text-success' : 'text-danger' }}">
+										{{ row.margin|money(ledgerCurrency) }}
+										{% if row.marginPercent is not null %}
+											<span class="text-xs opacity-60">({{ row.marginPercent }}%)</span>
+										{% endif %}
+									</td>
+								</tr>
+							{% else %}
+								<tr>
+									<td colspan="4" class="text-center py-8 opacity-40">Aucune activité financière pour l'instant.</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<!-- 👤 RENTABILITÉ PAR CLIENT -->
+			<div class="soft-card p-6 overflow-hidden">
+				<h2 class="text-lg font-heading font-bold mb-1">Rentabilité par client</h2>
+				<p class="text-xs opacity-60 mb-4">Projets sans client rattaché regroupés sous "Sans client".</p>
+				<div class="overflow-x-auto">
+					<table class="table text-sm">
+						<thead>
+							<tr>
+								<th>Client</th>
+								<th>CA</th>
+								<th>Coûts</th>
+								<th>Marge</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for row in profitabilityByClient %}
+								<tr>
+									<td class="font-medium text-brand-dark">{{ row.client ? (row.client.fullName ?? row.client.email) : 'Sans client' }}</td>
+									<td>{{ row.revenue|money(ledgerCurrency) }}</td>
+									<td class="opacity-70">{{ row.cost|money(ledgerCurrency) }}</td>
+									<td class="font-semibold {{ row.margin >= 0 ? 'text-success' : 'text-danger' }}">{{ row.margin|money(ledgerCurrency) }}</td>
+								</tr>
+							{% else %}
+								<tr>
+									<td colspan="4" class="text-center py-8 opacity-40">Aucune activité financière pour l'instant.</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+			<!-- 📈 CA PAR MOIS -->
+			<div class="soft-card p-6">
+				<h2 class="text-lg font-heading font-bold mb-1">CA encaissé — 6 derniers mois</h2>
+				<p class="text-xs opacity-60 mb-4">Basé sur la date de paiement des factures.</p>
+				{% set maxRevenue = max(revenueByMonth) %}
+				<div class="space-y-2.5">
+					{% for month, total in revenueByMonth %}
+						<div class="flex items-center gap-3">
+							<span class="text-xs w-14 shrink-0 opacity-60">{{ month }}</span>
+							<div class="flex-1 bg-gray-100 rounded-full h-3">
+								<div class="bg-success h-3 rounded-full" style="width: {{ maxRevenue > 0 ? (total / maxRevenue * 100) : 0 }}%;"></div>
+							</div>
+							<span class="text-xs font-semibold w-20 text-right shrink-0">{{ total|money(ledgerCurrency) }}</span>
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+
+			<!-- 💰 PRÉVISIONNEL DE TRÉSORERIE -->
+			<div class="soft-card p-6">
+				<h2 class="text-lg font-heading font-bold mb-1">Prévisionnel de trésorerie</h2>
+				<p class="text-xs opacity-60 mb-4">Factures en attente, par mois d'échéance à venir — pas un modèle prédictif, juste ce qui est déjà dû.</p>
+				{% set maxForecast = max(cashFlowForecast) %}
+				<div class="space-y-2.5">
+					{% for month, total in cashFlowForecast %}
+						<div class="flex items-center gap-3">
+							<span class="text-xs w-14 shrink-0 opacity-60">{{ month }}</span>
+							<div class="flex-1 bg-gray-100 rounded-full h-3">
+								<div class="bg-info h-3 rounded-full" style="width: {{ maxForecast > 0 ? (total / maxForecast * 100) : 0 }}%;"></div>
+							</div>
+							<span class="text-xs font-semibold w-20 text-right shrink-0">{{ total|money(ledgerCurrency) }}</span>
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+
+		<!-- 💱 TAUX DE CHANGE -->
+		<div class="soft-card p-6">
+			<h2 class="text-lg font-heading font-bold mb-1">Taux de change actuels</h2>
+			<p class="text-xs opacity-60 mb-4">Base EUR — fournisseur externe, rafraîchi au plus toutes les 6h.</p>
+			{% if exchangeRates %}
+				<div class="flex flex-wrap gap-4">
+					{% for currency, rate in exchangeRates %}
+						{% if currency in currency_choices()|map(c => c.value) %}
+							<div class="px-4 py-2 bg-gray-50 rounded-xl text-sm">
+								<span class="font-semibold text-brand-dark">1 EUR</span> = {{ rate|number_format(4) }} {{ currency }}
+							</div>
+						{% endif %}
+					{% endfor %}
+				</div>
+			{% else %}
+				<p class="text-sm opacity-40">Fournisseur de taux indisponible pour le moment.</p>
+			{% endif %}
+		</div>
+	</div>
+{% endblock %}

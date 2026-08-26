@@ -12,27 +12,29 @@ use App\Entity\Tag;
 use App\Entity\TimeEntry;
 use App\Entity\User;
 use App\Enum\BillingTypeEnum;
-use App\Enum\TaskStatusEnum;
 use App\Enum\BudgetStatusEnum;
 use App\Enum\ProjectPriorityEnum;
 use App\Enum\ProjectStatusEnum;
+use App\Enum\TaskStatusEnum;
 use App\Form\ProjectExpenseType;
 use App\Form\ProjectType;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use App\Repository\ProjectHistoryRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\TagRepository;
+use App\Repository\TranslationRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\ProjectVoter;
 use App\Service\MediaUploader;
+use App\Service\NewsletterNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
@@ -362,6 +364,50 @@ final class AdminProjectController extends AbstractController
     }
 
     // =========================================================================
+    // 📌 ESPACE FREELANCE — vue d'ensemble du pool en libre-service
+    // =========================================================================
+
+    /**
+     * Pendant admin de l'espace « Projets disponibles » du frontend freelance
+     * (MeController::readAvailableProjects/joinProject) : contrairement au
+     * badge/bannière posés sur chaque fiche projet, cette page est LE point
+     * d'entrée dédié — un projet "à venir" reste malgré tout visible ici même
+     * quand aucun freelance n'a encore rien rejoint, et la page reste
+     * consultable même quand le pool est totalement vide (l'admin doit
+     * pouvoir constater "il n'y a rien à voir", pas seulement deviner
+     * l'existence de la fonctionnalité en tombant sur un projet qui l'a).
+     */
+    #[Route('/espace-freelance', name: 'freelance_space', methods: ['GET'])]
+    public function freelanceSpace(
+        ProjectRepository $projectRepository,
+        UserRepository $userRepository,
+        \App\Repository\ProjectJoinRequestRepository $joinRequestRepository,
+    ): Response {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        $projects = $projectRepository->findByStatus(ProjectStatusEnum::UPCOMING);
+
+        $eligibleFreelances = array_values(array_filter(
+            $userRepository->findCollaborators(),
+            static fn (User $user): bool => $user->isFreelanceProfileComplete(),
+        ));
+
+        $totalAssociations = array_sum(array_map(
+            static fn (Project $project): int => $project->getCollaborators()->count(),
+            $projects,
+        ));
+
+        $pendingRequests = $joinRequestRepository->findAllPending();
+
+        return $this->render('admin/project/freelance_space.html.twig', [
+            'projects' => $projects,
+            'eligibleFreelances' => $eligibleFreelances,
+            'totalAssociations' => $totalAssociations,
+            'pendingRequests' => $pendingRequests,
+        ]);
+    }
+
+    // =========================================================================
     // 📌 CRÉATION D'UN PROJET
     // =========================================================================
 
@@ -371,6 +417,8 @@ final class AdminProjectController extends AbstractController
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
         MediaUploader $mediaUploader,
+        TranslationRepository $translationRepository,
+        NewsletterNotifier $newsletterNotifier,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
@@ -384,9 +432,7 @@ final class AdminProjectController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Générer le slug
-            $slug = $slugger->slug($project->getTitle())->lower();
-            $project->setSlug($slug);
+            $project->setSlug($this->uniqueProjectSlug($slugger, $entityManager, $project->getTitle()));
 
             // Upload des médias
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
@@ -394,7 +440,7 @@ final class AdminProjectController extends AbstractController
             // Contenu vitrine (étape 2 de l'assistant) — ProjectInfo n'est créé
             // que si l'admin a réellement renseigné au moins un champ.
             $showcase = $this->buildProjectInfoFromForm($form);
-            if ($showcase !== null) {
+            if (null !== $showcase) {
                 $project->setInfo($showcase);
             }
 
@@ -403,6 +449,19 @@ final class AdminProjectController extends AbstractController
 
             $entityManager->persist($project);
             $entityManager->flush();
+
+            // Après flush() pour disposer d'un id garanti (projet tout juste créé).
+            $translationRepository->syncFromEntity($project);
+
+            // Notification newsletter UNIQUEMENT si ce projet a un contenu
+            // vitrine ($showcase non null, cf. buildProjectInfoFromForm()) :
+            // Project sert aussi à la gestion interne de projets
+            // freelance/client (budget, factures, collaborateurs...), sans
+            // rapport avec le portfolio public — les abonnés ne doivent
+            // jamais être notifiés de la création d'un projet client interne.
+            if (null !== $showcase) {
+                $newsletterNotifier->notifyNewContent($project->getTitle(), 'project', $project->getSlug());
+            }
 
             $this->addFlash('success', 'Le projet a été créé avec succès.');
 
@@ -430,7 +489,7 @@ final class AdminProjectController extends AbstractController
         $challenges = $this->parsePairs((string) $form->get('challenges')->getData(), 'problem', 'solution');
         $results = $this->parsePairs((string) $form->get('results')->getData(), 'label', 'value');
 
-        if ($role === '' && $repoUrl === '' && !$objectives && !$techStack && !$challenges && !$results) {
+        if ('' === $role && '' === $repoUrl && !$objectives && !$techStack && !$challenges && !$results) {
             return null;
         }
 
@@ -442,13 +501,13 @@ final class AdminProjectController extends AbstractController
         $resultsEn = $this->parsePairs((string) $form->get('resultsEn')->getData(), 'label', 'value');
 
         $info = new ProjectInfo();
-        $info->setRole($role !== '' ? $role : null);
-        $info->setRepoUrl($repoUrl !== '' ? $repoUrl : null);
+        $info->setRole('' !== $role ? $role : null);
+        $info->setRepoUrl('' !== $repoUrl ? $repoUrl : null);
         $info->setObjectives($objectives);
         $info->setTechStack($techStack);
         $info->setChallenges($challenges);
         $info->setResults($results);
-        $info->setRoleEn($roleEn !== '' ? $roleEn : null);
+        $info->setRoleEn('' !== $roleEn ? $roleEn : null);
         $info->setObjectivesEn($objectivesEn ?: null);
         $info->setTechStackEn($techStackEn ?: null);
         $info->setChallengesEn($challengesEn ?: null);
@@ -469,16 +528,16 @@ final class AdminProjectController extends AbstractController
         $items = [];
         foreach (preg_split('/\r?\n/', $raw) ?: [] as $line) {
             $line = trim($line);
-            if ($line === '') {
+            if ('' === $line) {
                 continue;
             }
             [$a, $b] = array_pad(explode('|', $line, 2), 2, null);
             $a = trim((string) $a);
-            if ($a === '') {
+            if ('' === $a) {
                 continue;
             }
-            $b = $b !== null ? trim($b) : '';
-            $items[] = [$keyA => $a, $keyB => $b !== '' ? $b : null];
+            $b = null !== $b ? trim($b) : '';
+            $items[] = [$keyA => $a, $keyB => '' !== $b ? $b : null];
         }
 
         return $items;
@@ -513,6 +572,7 @@ final class AdminProjectController extends AbstractController
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
         MediaUploader $mediaUploader,
+        TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
 
@@ -532,9 +592,7 @@ final class AdminProjectController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // Mettre à jour le slug
-            $slug = $slugger->slug($project->getTitle())->lower();
-            $project->setSlug($slug);
+            $project->setSlug($this->uniqueProjectSlug($slugger, $entityManager, $project->getTitle(), $project->getId()));
 
             // Upload des nouveaux médias
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
@@ -543,6 +601,9 @@ final class AdminProjectController extends AbstractController
             $this->logProjectChanges($project, $oldStatus, $oldBudget, $oldSpent);
 
             $entityManager->flush();
+
+            $translationRepository->syncFromEntity($project);
+
             $this->addFlash('success', 'Le projet a été mis à jour avec succès.');
 
             return $this->redirectToRoute('admin_project_index');
@@ -598,12 +659,38 @@ final class AdminProjectController extends AbstractController
         Project $project,
         EntityManagerInterface $entityManager,
         Request $request,
+        MediaUploader $mediaUploader,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::DELETE, $project);
 
+        // Double sécurité : empêche la suppression des projets terminés ou suspendus
+        // (même garde-fou que pour la modification — cf. update() — un projet clos
+        // dont le budget/les dépenses/le temps sont déjà arrêtés ne doit pas pouvoir
+        // disparaître d'un simple clic).
+        if ($this->isProjectLocked($project)) {
+            $this->addFlash('error', 'Impossible de supprimer ce projet (statut : '.$project->getStatusLabel().').');
+
+            return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+        }
+
         if ($this->isCsrfTokenValid('admin_project_delete_'.$project->getId(), $request->request->get('_token'))) {
-            // Journaliser la suppression (avant la suppression pour conserver l'accès)
+            // Nettoyage des fichiers physiques des médias liés (même logique que deleteMedia()) :
+            // supprimer le projet ne doit pas laisser de fichiers orphelins dans public/uploads/projects/.
+            foreach ($project->getMedia() as $media) {
+                $mediaUploader->delete(basename($media->getFilePath()), 'projects');
+            }
+
+            // Journaliser la suppression (avant la suppression pour conserver l'accès à
+            // l'entité). Survit à la suppression : ProjectHistory.project_id passe à NULL
+            // au lieu d'être supprimé en cascade, et ProjectHistory::$projectTitle conserve
+            // le nom du projet indépendamment de la relation — cf. ProjectHistory.
+            //
+            // persist() explicite indispensable ici : le cascade "persist" porté par
+            // Project::$histories ne se déclenche PAS pour une entité déjà programmée
+            // pour suppression dans le même flush() — sans cet appel, cette entrée
+            // précise ne serait jamais insérée en base (vérifié en pratique).
             $project->addToHistory('project_deleted', $this->getAuthenticatedUser(), 'Projet supprimé');
+            $entityManager->persist($project->getHistories()->last());
 
             $entityManager->remove($project);
             $entityManager->flush();
@@ -1411,6 +1498,85 @@ final class AdminProjectController extends AbstractController
     }
 
     // =========================================================================
+    // 📌 DEMANDES D'AUTO-ASSOCIATION (ESPACE FREELANCE)
+    // =========================================================================
+
+    /**
+     * Valide une demande d'auto-association (App\Entity\ProjectJoinRequest) :
+     * c'est le SEUL moment où le freelance obtient réellement accès au
+     * projet (User::addCollaboratingProject()) — la demande elle-même
+     * (MeController::joinProject) ne donnait aucun accès. Notifie le
+     * freelance ET le client (ProjectNotifier::joinRequestApproved).
+     */
+    #[Route('/{id}/join-requests/{requestId}/approve', name: 'approve_join_request', methods: ['POST'], requirements: ['id' => '\d+', 'requestId' => '\d+'])]
+    public function approveJoinRequest(
+        Project $project,
+        #[MapEntity(id: 'requestId')] \App\Entity\ProjectJoinRequest $joinRequest,
+        EntityManagerInterface $entityManager,
+        Request $request,
+        \App\Service\ProjectNotifier $projectNotifier,
+    ): Response {
+        $this->denyAccessUnlessGranted(ProjectVoter::ADD_COLLABORATOR, $project);
+
+        if ($joinRequest->getProject() !== $project || \App\Enum\ProjectJoinRequestStatusEnum::PENDING !== $joinRequest->getStatus()) {
+            throw $this->createNotFoundException('Demande introuvable ou déjà traitée.');
+        }
+
+        if (!$this->isCsrfTokenValid('join_request_'.$joinRequest->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+
+            return $this->redirectToRoute('admin_project_freelance_space');
+        }
+
+        $collaborator = $joinRequest->getUser();
+        $admin = $this->getAuthenticatedUser();
+
+        $joinRequest->approve($admin);
+        $project->addCollaborator($collaborator);
+        $project->logCollaboratorJoinApproved($admin, $collaborator);
+        $entityManager->flush();
+
+        $projectNotifier->joinRequestApproved($project, $collaborator);
+        $this->addFlash('success', \sprintf('%s a été ajouté au projet « %s » et le client a été notifié.', $collaborator->getFullName() ?? $collaborator->getEmail(), $project->getTitle()));
+
+        return $this->redirectToRoute('admin_project_freelance_space');
+    }
+
+    /** Refuse une demande d'auto-association — le freelance reste hors du projet, il en est informé. */
+    #[Route('/{id}/join-requests/{requestId}/reject', name: 'reject_join_request', methods: ['POST'], requirements: ['id' => '\d+', 'requestId' => '\d+'])]
+    public function rejectJoinRequest(
+        Project $project,
+        #[MapEntity(id: 'requestId')] \App\Entity\ProjectJoinRequest $joinRequest,
+        EntityManagerInterface $entityManager,
+        Request $request,
+        \App\Service\ProjectNotifier $projectNotifier,
+    ): Response {
+        $this->denyAccessUnlessGranted(ProjectVoter::ADD_COLLABORATOR, $project);
+
+        if ($joinRequest->getProject() !== $project || \App\Enum\ProjectJoinRequestStatusEnum::PENDING !== $joinRequest->getStatus()) {
+            throw $this->createNotFoundException('Demande introuvable ou déjà traitée.');
+        }
+
+        if (!$this->isCsrfTokenValid('join_request_'.$joinRequest->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+
+            return $this->redirectToRoute('admin_project_freelance_space');
+        }
+
+        $requester = $joinRequest->getUser();
+        $admin = $this->getAuthenticatedUser();
+
+        $joinRequest->reject($admin);
+        $project->logCollaboratorJoinRejected($admin, $requester);
+        $entityManager->flush();
+
+        $projectNotifier->joinRequestRejected($project, $requester);
+        $this->addFlash('info', \sprintf('Demande de %s refusée.', $requester->getFullName() ?? $requester->getEmail()));
+
+        return $this->redirectToRoute('admin_project_freelance_space');
+    }
+
+    // =========================================================================
     // 🔧 MÉTHODES UTILITAIRES PRIVÉES
     // =========================================================================
 
@@ -1512,5 +1678,35 @@ final class AdminProjectController extends AbstractController
         if (!empty($changes)) {
             $project->logUpdate($this->getAuthenticatedUser(), $changes);
         }
+    }
+
+    /**
+     * Génère un slug garanti unique pour un titre donné — ajoute un suffixe
+     * numérique ("-2", "-3", ...) si le slug de base est déjà pris par un
+     * autre projet.
+     *
+     * Fait explicitement ici plutôt que de compter sur
+     * #[UniqueEntity(fields: ['slug'])] (déclaré sur Project) : Symfony
+     * valide l'entité PENDANT handleRequest() (l'écouteur POST_SUBMIT de
+     * l'extension Validator), avant que ce contrôleur n'ait la main pour
+     * fixer le slug — la contrainte ne voit donc jamais la bonne valeur et
+     * ne peut jamais détecter de collision, laissant l'INSERT/UPDATE planter
+     * en 500 (UniqueConstraintViolationException) à la place.
+     *
+     * $excludeId : id du projet en cours d'édition (update()) — pour ne pas
+     * le confondre avec un "autre projet" alors qu'il s'agit de lui-même
+     * resauvegardé avec le même titre.
+     */
+    private function uniqueProjectSlug(SluggerInterface $slugger, EntityManagerInterface $entityManager, string $title, ?int $excludeId = null): string
+    {
+        $base = (string) $slugger->slug($title)->lower();
+        $repository = $entityManager->getRepository(Project::class);
+
+        $slug = $base;
+        for ($suffix = 2; null !== ($existing = $repository->findOneBy(['slug' => $slug])) && $existing->getId() !== $excludeId; ++$suffix) {
+            $slug = $base.'-'.$suffix;
+        }
+
+        return $slug;
     }
 }
