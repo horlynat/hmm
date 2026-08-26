@@ -215,6 +215,22 @@ final class AdminArticleController extends AbstractController
         $imageFile = $form->has('media') ? $form->get('media')->getData() : null;
 
         if ($imageFile instanceof UploadedFile) {
+            // Un seul emplacement média par article ("Image | PDF de l'article",
+            // champ singulier dans ArticleType) — un nouvel envoi REMPLACE
+            // l'existant plutôt que de s'y ajouter, comme documenté sur
+            // Article::$media ("Remplacement d'un media : removeMedia + addMedia").
+            // Jusqu'ici manquant : chaque mise à jour empilait un Media de plus
+            // sans jamais retirer l'ancien — remplacer l'image n'avait donc
+            // aucun effet visible (le frontend affiche toujours media[0], le
+            // tout premier envoyé) et laissait les anciens fichiers orphelins
+            // sur le disque. Sans effet pour create() : l'article y est neuf,
+            // sa collection de médias est toujours vide.
+            foreach ($article->getMedia()->toArray() as $existingMedia) {
+                $uploader->delete(basename($existingMedia->getFilePath()), 'articles');
+                $article->removeMedia($existingMedia);
+                $entityManager->remove($existingMedia);
+            }
+
             $result = $uploader->upload($imageFile, 'articles');
 
             $media = new Media();
