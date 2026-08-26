@@ -102,7 +102,7 @@ export default async function ArticleDetailPage({
           des pages de détail, qui tranchaient à plat sur le reste du site. */}
       <section className="relative overflow-hidden px-6 pt-14 pb-8">
         <HeroBackground />
-        <div className="relative mx-auto max-w-[760px]">
+        <div className="relative mx-auto max-w-[1120px]">
           <div className="mb-6">
             <Breadcrumb items={[{ label: t("eyebrow"), href: "/blog" }, { label: article.title }]} />
           </div>
@@ -138,7 +138,7 @@ export default async function ArticleDetailPage({
 
       {articleImage && (
         <section className="px-6 pb-6">
-          <div className="mx-auto max-w-[760px]">
+          <div className="mx-auto max-w-[1120px]">
             <Reveal delay={0}>
               <Card variant="soft" className="overflow-hidden p-0">
                 <div
@@ -149,7 +149,7 @@ export default async function ArticleDetailPage({
                     src={articleImage}
                     alt={article.media[0]?.altText ?? article.title}
                     fill
-                    sizes="760px"
+                    sizes="1120px"
                     className="object-cover"
                     priority
                   />
@@ -161,11 +161,11 @@ export default async function ArticleDetailPage({
       )}
 
       <section className="article-detail px-6 pt-2 pb-16">
-        <div className="mx-auto max-w-[760px]">
+        <div className="mx-auto max-w-[1120px]">
           {/* Contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
               serveur en défense en profondeur avant injection. */}
           <div
-            className="article-body opacity-85"
+            className="article-body max-w-[65ch] opacity-85"
             dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(article.content) }}
           />
 

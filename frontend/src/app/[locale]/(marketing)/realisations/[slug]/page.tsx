@@ -147,7 +147,7 @@ export default async function ProjectDetailPage({
           (h1 notamment réduit à une taille de sous-titre). */}
       <section className="relative overflow-hidden px-6 pt-14 pb-8">
         <HeroBackground />
-        <div className="relative mx-auto max-w-[840px]">
+        <div className="relative mx-auto max-w-[1120px]">
           <div className="mb-6">
             <Breadcrumb items={[{ label: t("eyebrow"), href: "/realisations" }, { label: project.title }]} />
           </div>
@@ -210,7 +210,7 @@ export default async function ProjectDetailPage({
       </section>
 
       <section className="px-6 py-6">
-        <div className="mx-auto max-w-[840px]">
+        <div className="mx-auto max-w-[1120px]">
           <ProjectDeviceFrame liveUrl={project.link || undefined} liveLabel={tc("seeProject")}>
             <div
               className={info?.coverImage ? "vt-target relative h-[260px] w-full bg-brand-light sm:h-[320px]" : "relative h-[260px] w-full bg-brand-light sm:h-[320px]"}
@@ -221,7 +221,7 @@ export default async function ProjectDetailPage({
                   src={getMediaUrl(info.coverImage.filePath)}
                   alt={info.coverImage.altText ?? project.title}
                   fill
-                  sizes="840px"
+                  sizes="1120px"
                   className="object-cover"
                   priority
                 />
@@ -244,7 +244,7 @@ export default async function ProjectDetailPage({
           techniques — c'est le contenu le plus "vendeur" de la page. */}
       {info && info.results.length > 0 && (
         <section className="border-y border-[var(--border-softer)] bg-bg-card px-6 py-14">
-          <div className="mx-auto max-w-[840px]">
+          <div className="mx-auto max-w-[1120px]">
             <Reveal delay={0}>
               <h2 className="mb-6 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
                 {td("resultsLabel")}
@@ -269,7 +269,7 @@ export default async function ProjectDetailPage({
 
       {info?.architectureDiagram && (
         <section className="px-6 py-6">
-          <div className="mx-auto max-w-[840px]">
+          <div className="mx-auto max-w-[1120px]">
             <Reveal delay={0}>
               <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
                 {td("architectureLabel")}
@@ -280,7 +280,7 @@ export default async function ProjectDetailPage({
                     src={getMediaUrl(info.architectureDiagram.filePath)}
                     alt={info.architectureDiagram.altText ?? td("architectureLabel")}
                     fill
-                    sizes="840px"
+                    sizes="1120px"
                     className="object-contain"
                   />
                 </div>
@@ -292,7 +292,7 @@ export default async function ProjectDetailPage({
 
       {galleryMedia.length > 0 && (
         <section className="px-6 py-6">
-          <div className="mx-auto max-w-[840px]">
+          <div className="mx-auto max-w-[1120px]">
             <Reveal delay={0}>
               <h2 className="mb-3 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
                 {td("galleryLabel")}
@@ -304,7 +304,7 @@ export default async function ProjectDetailPage({
                       src={getMediaUrl(media.filePath)}
                       alt={media.altText ?? project.title}
                       fill
-                      sizes="(min-width: 640px) 280px, 50vw"
+                      sizes="(min-width: 640px) 360px, 50vw"
                       className="object-cover"
                     />
                   </div>
@@ -317,7 +317,7 @@ export default async function ProjectDetailPage({
 
       {info && (info.objectives.length > 0 || info.techStack.length > 0) && (
         <section className="border-y border-[var(--border-softer)] bg-bg-card px-6 py-14">
-          <div className="mx-auto grid max-w-[840px] gap-10 md:grid-cols-2">
+          <div className="mx-auto grid max-w-[1120px] gap-10 md:grid-cols-2">
             {info.objectives.length > 0 && (
               <Reveal delay={0}>
                 <h2 className="mb-4 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
@@ -356,7 +356,7 @@ export default async function ProjectDetailPage({
 
       {info && info.challenges.length > 0 && (
         <section className="px-6 py-14">
-          <div className="mx-auto max-w-[840px]">
+          <div className="mx-auto max-w-[1120px]">
             <Reveal delay={0}>
               <h2 className="mb-6 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
                 {td("challengesLabel")}
@@ -385,7 +385,7 @@ export default async function ProjectDetailPage({
       )}
 
       <section className="px-6 py-10">
-        <div className="mx-auto max-w-[840px] border-t border-[var(--border-softer)] pt-6">
+        <div className="mx-auto max-w-[1120px] border-t border-[var(--border-softer)] pt-6">
           <ButtonLink href="/realisations" variant="secondary" className="mb-6">
             {t("eyebrow")} ←
           </ButtonLink>
