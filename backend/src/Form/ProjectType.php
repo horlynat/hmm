@@ -8,6 +8,7 @@ use App\Enum\BillingTypeEnum;
 use App\Enum\ProjectPriorityEnum;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
@@ -85,8 +86,13 @@ class ProjectType extends AbstractType
                         constraints: [
                             new File(
                                 maxSize: '5M', // Taille max 5 Mo
-                                mimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
-                                mimeTypesMessage: 'Formats autorisés : JPG, PNG, PDF.'
+                                // SVG accepté ici : upload réservé à ROLE_ADMIN
+                                // (ProjectVoter::EDIT), même niveau de confiance
+                                // que app.media_uploader.branding — cf. son
+                                // commentaire dans services.yaml pour le risque
+                                // résiduel assumé.
+                                mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'application/pdf'],
+                                mimeTypesMessage: 'Formats autorisés : JPG, PNG, WebP, SVG, PDF.'
                             )
                         ]
                     )
@@ -160,6 +166,29 @@ class ProjectType extends AbstractType
                     'mapped' => false,
                     'required' => false,
                     'label' => 'Dépôt de code public (optionnel)',
+                ])
+                // Image de couverture réelle de la fiche vitrine (ProjectInfo::coverImage) —
+                // distincte de `media` (galerie générique) : c'est cette image précise qui
+                // sert de hero visuel sur /realisations/{slug}. Non mappée : gérée à part
+                // en contrôleur, comme le reste du contenu vitrine, pour créer/mettre à
+                // jour le Media associé (cf. syncProjectInfoFromForm()).
+                ->add('coverImage', FileType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Image de couverture',
+                    'help' => "L'image mise en avant en haut de la fiche publique du projet.",
+                    'constraints' => [
+                        new File(
+                            maxSize: '5M',
+                            mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
+                            mimeTypesMessage: 'Formats autorisés : JPG, PNG, WebP, SVG.'
+                        ),
+                    ],
+                ])
+                ->add('removeCoverImage', CheckboxType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => "Retirer l'image de couverture actuelle",
                 ]);
         }
 

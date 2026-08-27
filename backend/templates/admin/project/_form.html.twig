@@ -1,105 +1,193 @@
-{# templates/admin/project/_form.html.twig #}
-<twig:LocaleToggle />
+{# templates/admin/project/_form.html.twig — formulaire projet unifié
+   (création ET édition), en onglets plutôt qu'un assistant linéaire :
+   contrairement à un wizard forcé pas-à-pas, on peut ici aller corriger
+   directement l'onglet "Vitrine portfolio" sans re-traverser tout le
+   formulaire — important en édition, où on ne touche souvent qu'une
+   section précise. Réutilise le mécanisme d'onglets déjà en place sur
+   read.html.twig (assets/js/project.js, [data-project-tabs]), déjà chargé
+   globalement (importé dans app.js) : aucun JS supplémentaire nécessaire. #}
+{% set tabBtn = 'group inline-flex items-center gap-2 px-4 py-2.5 -mb-px border-b-2 border-transparent text-sm font-semibold text-brand-dark/60 hover:text-brand-dark whitespace-nowrap cursor-pointer transition-colors aria-selected:border-(--color-brand-primary) aria-selected:text-(--color-brand-primary)' %}
+{% set hasPlanning = form.priority is defined %}
+{% set currentCover = project.info.coverImage ?? null %}
 
-{{ form_start(form, {
-    'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'},
-    'enctype': 'multipart/form-data'
-}) }}
+{{ form_start(form, {'attr': {'novalidate': 'novalidate'}, 'enctype': 'multipart/form-data'}) }}
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-
-	<!-- 📄 COLONNE PRINCIPALE : ÉCRITURE -->
-	<div class="lg:col-span-2 space-y-6 card">
-		{# Utilisation de ta classe .card #}
-
-		<!-- Champ Titre -->
-		<twig:FieldPair :fr="form.title" :en="form.titleEn" />
-
-		<!-- Champ Description — wiring bilingue manuel (FieldPair ne gère que
-		     les champs texte simples, pas l'éditeur riche Quill par-dessus) -->
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-controller="bilingual-field">
-			<div>
-				{{ form_label(form.description, 'Description complète', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
-				<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Décrivez les objectifs, les livrables et le contexte..." data-rich-text-min-height-value="420px">
-					{{ form_widget(form.description, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source', 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
-					<div data-rich-text-target="editor"></div>
-				</div>
-				{{ form_errors(form.description, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-			</div>
-
-			<div>
-				{{ form_label(form.descriptionEn, form.descriptionEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
-				<p class="text-[11px] opacity-40 mb-2">{{ form.descriptionEn.vars.help }}</p>
-				<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Describe the goals, deliverables and context..." data-rich-text-min-height-value="300px">
-					{{ form_widget(form.descriptionEn, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source', 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
-					<div data-rich-text-target="editor"></div>
-				</div>
-				{{ form_errors(form.descriptionEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-			</div>
+<div data-project-tabs class="space-y-4">
+	<div class="card !p-0 overflow-x-auto">
+		<div role="tablist" class="flex border-b border-gray-100 dark:border-gray-800 px-2 min-w-max">
+			<button type="button" role="tab" data-tab="infos" aria-selected="true" class="{{ tabBtn }}">
+				<span class="ti ti-info-circle" aria-hidden="true"></span> Informations
+			</button>
+			<button type="button" role="tab" data-tab="showcase" aria-selected="false" class="{{ tabBtn }}">
+				<span class="ti ti-presentation" aria-hidden="true"></span> Vitrine portfolio
+			</button>
+			{% if hasPlanning %}
+				<button type="button" role="tab" data-tab="planning" aria-selected="false" class="{{ tabBtn }}">
+					<span class="ti ti-calendar-stats" aria-hidden="true"></span> Planification
+				</button>
+			{% endif %}
+			<button type="button" role="tab" data-tab="media" aria-selected="false" class="{{ tabBtn }}">
+				<span class="ti ti-photo" aria-hidden="true"></span> Médias &amp; couverture
+			</button>
 		</div>
 	</div>
 
-	<!-- ⚙️ COLONNE LATÉRALE : CONFIGURATION -->
-		<div
-		class="space-y-6"> <!-- Bloc Actions, Statut & Sauvegarde -->
+	{# ============================== INFORMATIONS ============================== #}
+	<section data-tab-panel="infos" role="tabpanel" class="space-y-4">
 		<div class="card space-y-4">
-			<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 flex items-center gap-2">
-				<span class="ti ti-bolt text-sm" aria-hidden="true"></span>
-				Statut & Sauvegarde
-			</h3>
+			<twig:FieldPair :fr="form.title" :en="form.titleEn" />
 
-			<div class="text-xs opacity-60 bg-brand-light/20 p-2.5 rounded-sm flex items-center gap-2">
-				<span class="inline-block w-2 h-2 bg-warning rounded-full animate-pulse"></span>
-				<span>Modifications locales prêtes</span>
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-4" data-controller="bilingual-field">
+				<div>
+					{{ form_label(form.description, 'Description', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+					<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Contexte en une phrase ou deux : pour qui, pourquoi, dans quel cadre." data-rich-text-min-height-value="160px">
+						{{ form_widget(form.description, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source', 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
+						<div data-rich-text-target="editor"></div>
+					</div>
+					{{ form_errors(form.description, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+
+				<div>
+					{{ form_label(form.descriptionEn, form.descriptionEn.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-1 opacity-70'}}) }}
+					<p class="text-[11px] opacity-40 mb-2">{{ form.descriptionEn.vars.help }}</p>
+					<div class="rich-text-editor" data-controller="rich-text" data-rich-text-placeholder-value="Context in a sentence or two: for whom, why, in what setting." data-rich-text-min-height-value="120px">
+						{{ form_widget(form.descriptionEn, {'attr': {'class': 'hidden', 'data-rich-text-target': 'source', 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
+						<div data-rich-text-target="editor"></div>
+					</div>
+					{{ form_errors(form.descriptionEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
 			</div>
 
-			{# Statut du projet (si configuré dans le formulaire projet) #}
-			{% if form.status is defined %}
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 				<div>
-					{{ form_label(form.status, 'Statut de départ', {'label_attr': {'class': 'block text-xs font-bold uppercase mb-2'}}) }}
-					{{ form_widget(form.status, {'attr': {'class': 'input w-full text-xs'}}) }}
-					{{ form_errors(form.status, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+					{{ form_label(form.link, 'Lien du projet (site en ligne, démo...)', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+					{{ form_widget(form.link, {'attr': {'class': 'input w-full text-sm', 'placeholder': 'https://monprojet.com'}}) }}
+					{{ form_errors(form.link, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
 				</div>
-			{% endif %}
 
-			<div class="pt-2 flex flex-col gap-2">
-				<button type="submit" class="btn btn-primary w-full gap-2 cursor-pointer group">
-					<span class="ti ti-device-floppy text-sm transition-transform group-hover:scale-110" aria-hidden="true"></span>
-					<span>{{ button_label|default('Enregistrer le projet') }}</span>
-				</button>
-				{% if cancel_path is defined %}
-					<a href="{{ cancel_path }}" class="w-full inline-flex justify-center items-center px-4 py-2.5 bg-white border border-gray-200 text-brand-dark/70 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-all cursor-pointer">
-						Annuler
-					</a>
-				{% endif %}
+				<div>
+					{{ form_label(form.skills, 'Technologies utilisées', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+					{{ form_widget(form.skills, {'attr': {'class': 'input w-full text-sm'}}) }}
+					<p class="text-[11px] opacity-40 mt-2">Maintenez <kbd class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-[10px]">Ctrl</kbd> pour sélectionner plusieurs technologies.</p>
+					{{ form_errors(form.skills, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+			</div>
+
+			{# form.budget est TOUJOURS présent (ajouté sans condition dans
+			   ProjectType, contrairement à priority/billingType/startedAt/deadline
+			   qui eux dépendent de include_planning) — rendu ici, en dehors de
+			   l'onglet Planification ci-dessous, pour rester atteignable en
+			   édition aussi. L'oublier ici le fait réapparaître tout seul, sans
+			   style, à la toute fin du formulaire via le rendu de secours de
+			   form_end() — constaté en pratique. #}
+			<div class="lg:max-w-[calc(50%-0.5rem)]">
+				{{ form_label(form.budget, 'Budget alloué (€)', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+				{{ form_widget(form.budget, {'attr': {'class': 'input w-full text-sm', 'placeholder': '0.00'}}) }}
+				<p class="text-[11px] opacity-40 mt-2">Requis (&gt; 0) pour pouvoir enregistrer des dépenses sur le projet.</p>
+				{{ form_errors(form.budget, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
 			</div>
 		</div>
+	</section>
 
-		<!-- Bloc Budget -->
-		<div class="card">
-			{{ form_label(form.budget, 'Budget alloué (€)', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
-			{{ form_widget(form.budget, {'attr': {'class': 'input w-full text-sm', 'placeholder': '0.00'}}) }}
-			<p class="text-[11px] opacity-40 mt-2 leading-normal">Requis (&gt; 0) pour enregistrer des dépenses sur le projet.</p>
-			{{ form_errors(form.budget, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+	{# ============================== VITRINE PORTFOLIO ============================== #}
+	<section data-tab-panel="showcase" role="tabpanel" class="space-y-4" hidden>
+		<div class="card space-y-4">
+			<div class="border-b border-gray-100 dark:border-gray-800 pb-3">
+				<p class="text-sm opacity-60 mb-0">Ce contenu alimente la fiche publique du projet et les réponses de l'assistant IA aux visiteurs. Tous les champs sont optionnels, mais plus ils sont précis, plus la fiche est convaincante — et modifiable à tout moment, y compris après création.</p>
+			</div>
+
+			<twig:FieldPair :fr="form.role" :en="form.roleEn" />
+
+			{# Objectifs/techStack/challenges/results portent un exemple concret en
+			   plus de l'aide standard (syntaxe "un par ligne" ou "clé | valeur"
+			   peu commune) — wiring bilingue manuel pour le conserver plutôt que
+			   de passer par <twig:FieldPair />, qui ne rend que le help brut du
+			   champ. #}
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-4" data-controller="bilingual-field">
+				<div class="field">
+					{{ form_label(form.objectives, form.objectives.vars.label, {'label_attr': {'class': 'field-label'}}) }}
+					<p class="text-[11px] opacity-40 mb-1">{{ form.objectives.vars.help }} — Exemple : Réduire le temps de paiement de 40%</p>
+					{{ form_widget(form.objectives, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Simplifier le parcours d'achat sur mobile\nIntégrer un paiement fiable", 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
+					{{ form_errors(form.objectives, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+				<div class="field">
+					{{ form_label(form.objectivesEn, form.objectivesEn.vars.label, {'label_attr': {'class': 'field-label opacity-70'}}) }}
+					<p class="text-[11px] opacity-40 mb-1">{{ form.objectivesEn.vars.help }}</p>
+					{{ form_widget(form.objectivesEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Simplify the mobile purchase journey\nIntegrate reliable payment", 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
+					{{ form_errors(form.objectivesEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+			</div>
+
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-4" data-controller="bilingual-field">
+				<div class="field">
+					{{ form_label(form.techStack, form.techStack.vars.label, {'label_attr': {'class': 'field-label'}}) }}
+					<p class="text-[11px] opacity-40 mb-1">{{ form.techStack.vars.help }} — Exemple : Next.js | Rendu rapide et bon référencement</p>
+					{{ form_widget(form.techStack, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Next.js | Rendu rapide et bon référencement\nSymfony / API Platform | API robuste et typée", 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
+					{{ form_errors(form.techStack, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+				<div class="field">
+					{{ form_label(form.techStackEn, form.techStackEn.vars.label, {'label_attr': {'class': 'field-label opacity-70'}}) }}
+					<p class="text-[11px] opacity-40 mb-1">{{ form.techStackEn.vars.help }}</p>
+					{{ form_widget(form.techStackEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Next.js | Fast rendering and good SEO\nSymfony / API Platform | Robust, typed API", 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
+					{{ form_errors(form.techStackEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+			</div>
+
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-4" data-controller="bilingual-field">
+				<div class="field">
+					{{ form_label(form.challenges, form.challenges.vars.label, {'label_attr': {'class': 'field-label'}}) }}
+					<p class="text-[11px] opacity-40 mb-1">{{ form.challenges.vars.help }} — c'est souvent le point le plus convaincant pour un recruteur.</p>
+					{{ form_widget(form.challenges, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Éviter la survente lors des pics de commandes | Verrouillage optimiste du stock en base", 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
+					{{ form_errors(form.challenges, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+				<div class="field">
+					{{ form_label(form.challengesEn, form.challengesEn.vars.label, {'label_attr': {'class': 'field-label opacity-70'}}) }}
+					<p class="text-[11px] opacity-40 mb-1">{{ form.challengesEn.vars.help }}</p>
+					{{ form_widget(form.challengesEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Avoiding overselling during order spikes | Optimistic stock locking at the database level", 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
+					{{ form_errors(form.challengesEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+			</div>
+
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-4" data-controller="bilingual-field">
+				<div class="field">
+					{{ form_label(form.results, form.results.vars.label, {'label_attr': {'class': 'field-label'}}) }}
+					<p class="text-[11px] opacity-40 mb-1">{{ form.results.vars.help }} — Exemple : Temps de paiement | -40%</p>
+					{{ form_widget(form.results, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Temps de paiement | -40%\nTaux d'abandon panier | -25%", 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
+					{{ form_errors(form.results, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+				<div class="field">
+					{{ form_label(form.resultsEn, form.resultsEn.vars.label, {'label_attr': {'class': 'field-label opacity-70'}}) }}
+					<p class="text-[11px] opacity-40 mb-1">{{ form.resultsEn.vars.help }}</p>
+					{{ form_widget(form.resultsEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Payment time | -40%\nCart abandonment rate | -25%", 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
+					{{ form_errors(form.resultsEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+			</div>
+
+			<div class="lg:max-w-[calc(50%-0.5rem)]">
+				{{ form_label(form.repoUrl, form.repoUrl.vars.label, {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+				{{ form_widget(form.repoUrl, {'attr': {'class': 'input w-full text-sm', 'placeholder': 'https://github.com/...'}}) }}
+				{{ form_errors(form.repoUrl, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
 		</div>
+	</section>
 
-		{# Bloc Paramètres & planning (présent uniquement à la création) #}
-		{% if form.priority is defined %}
-			<div class="card space-y-3">
-				<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 flex items-center gap-2">
-					<span class="ti ti-adjustments text-sm" aria-hidden="true"></span> Paramètres &amp; planning
-				</h3>
-				<div>
-					{{ form_label(form.priority, 'Priorité', {'label_attr': {'class': 'block text-sm font-bold mb-1'}}) }}
-					{{ form_widget(form.priority, {'attr': {'class': 'input input-select w-full text-sm'}}) }}
-					{{ form_errors(form.priority, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-				</div>
-				<div>
-					{{ form_label(form.billingType, 'Type de facturation', {'label_attr': {'class': 'block text-sm font-bold mb-1'}}) }}
-					{{ form_widget(form.billingType, {'attr': {'class': 'input input-select w-full text-sm'}}) }}
-					{{ form_errors(form.billingType, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-				</div>
-				<div class="grid grid-cols-2 gap-2">
+	{# ============================== PLANIFICATION (création uniquement) ============================== #}
+	{% if hasPlanning %}
+		<section data-tab-panel="planning" role="tabpanel" class="space-y-4" hidden>
+			<div class="card space-y-4">
+				<p class="text-sm opacity-60 mb-0">Données internes de suivi — jamais affichées publiquement. Modifiables ensuite depuis la fiche du projet (onglet Vue d'ensemble). Le budget se règle dans l'onglet Informations.</p>
+
+				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+					<div>
+						{{ form_label(form.priority, 'Priorité', {'label_attr': {'class': 'block text-sm font-bold mb-1'}}) }}
+						{{ form_widget(form.priority, {'attr': {'class': 'input input-select w-full text-sm'}}) }}
+						{{ form_errors(form.priority, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+					</div>
+					<div>
+						{{ form_label(form.billingType, 'Type de facturation', {'label_attr': {'class': 'block text-sm font-bold mb-1'}}) }}
+						{{ form_widget(form.billingType, {'attr': {'class': 'input input-select w-full text-sm'}}) }}
+						{{ form_errors(form.billingType, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+					</div>
 					<div>
 						{{ form_label(form.startedAt, 'Démarrage', {'label_attr': {'class': 'block text-sm font-bold mb-1'}}) }}
 						{{ form_widget(form.startedAt, {'attr': {'class': 'input w-full text-sm'}}) }}
@@ -112,47 +200,85 @@
 					</div>
 				</div>
 			</div>
-		{% endif %}
+		</section>
+	{% endif %}
 
-		<!-- Bloc Technologies / Skills -->
-		<div class="card">
-			<div class="flex items-center justify-between mb-2">
-				{{ form_label(form.skills, 'Technologies utilisées', {'label_attr': {'class': 'block text-sm font-bold'}}) }}
+	{# ============================== MÉDIAS & COUVERTURE ============================== #}
+	<section data-tab-panel="media" role="tabpanel" class="space-y-4" hidden>
+		<div class="card space-y-4">
+			<div>
+				{{ form_label(form.coverImage, null, {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+				<p class="text-[11px] opacity-40 mb-2">{{ form.coverImage.vars.help }} — JPG, PNG, WebP ou SVG, 5 Mo max.</p>
+
+				<div class="flex flex-col sm:flex-row items-start gap-4">
+					{% if currentCover %}
+						<div class="shrink-0">
+							<img src="{{ currentCover.filePath }}" alt="{{ currentCover.altText }}" class="w-40 h-28 object-cover rounded-lg border border-gray-200 dark:border-gray-800">
+							<label class="mt-2 flex items-center gap-2 text-xs text-danger cursor-pointer">
+								{{ form_widget(form.removeCoverImage, {'attr': {'class': 'cursor-pointer'}}) }}
+								Retirer l'image actuelle
+							</label>
+						</div>
+					{% else %}
+						{# Toujours rendre le champ (même sans rien à retirer) : sans ça,
+						   form_end() ci-dessous le considère "non affiché" et l'ajoute tout
+						   seul, sans style, en bas du formulaire — constaté sur la page de
+						   création (aucune image existante → cette branche jamais prise). #}
+						{{ form_widget(form.removeCoverImage, {'attr': {'hidden': 'hidden'}}) }}
+					{% endif %}
+					<div class="flex-1 min-w-0">
+						{{ form_widget(form.coverImage, {'attr': {'class': 'w-full text-xs opacity-70 file:mr-3 file:py-2 file:px-3 file:rounded-sm file:border-0 file:text-xs file:font-bold file:bg-brand-light file:text-brand-primary hover:file:opacity-80 cursor-pointer'}}) }}
+						<p class="text-[11px] opacity-40 mt-2">{{ currentCover ? 'Envoyer un fichier remplace automatiquement l\'image actuelle.' : 'Mise en avant en haut de la fiche publique du projet.' }}</p>
+						{{ form_errors(form.coverImage, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+					</div>
+				</div>
 			</div>
 
-			{{ form_widget(form.skills, {'attr': {'class': 'input w-full text-sm'}}) }}
-			<p class="text-[11px] opacity-40 mt-2 leading-normal">Maintenez
-				<kbd class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-[10px]">Ctrl</kbd>
-				pour faire plusieurs choix.</p>
-			{{ form_errors(form.skills, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-		</div>
+			<div class="border-t border-gray-100 dark:border-gray-800 pt-4">
+				{{ form_label(form.media, 'Images et documents (galerie)', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+				{{ form_widget(form.media, {'attr': {'class': 'w-full text-xs opacity-70 file:mr-3 file:py-2 file:px-3 file:rounded-sm file:border-0 file:text-xs file:font-bold file:bg-brand-light file:text-brand-primary hover:file:opacity-80 cursor-pointer'}}) }}
+				<p class="text-[11px] opacity-40 mt-2">Formats : JPG, PNG, WebP, SVG, PDF (Max : 5 Mo). Consultables ensuite depuis l'onglet Médias de la fiche projet.</p>
+				{{ form_errors(form.media, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
 
-		<!-- Bloc Lien Externe (URL Démo/Prod) -->
-		<div class="card">
-			{{ form_label(form.link, 'Lien du projet', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
-			{{ form_widget(form.link, {'attr': {'class': 'input w-full text-sm', 'placeholder': 'https://monprojet.com'}}) }}
-			{{ form_errors(form.link, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
-		</div>
-
-		<!-- Bloc Couverture / Média -->
-		<div class="card">
-			{{ form_label(form.media, 'Image de couverture', {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
-
-			{% if project is defined and project.media is not empty %}
-				{% set uploadedMedia = project.media|first %}
-				<div class="mb-3 rounded-md overflow-hidden border border-gray-100 max-h-36 flex items-center justify-center group relative">
-					{# Media::$filePath contient déjà le chemin complet depuis la
-					   racine web ("/uploads/projects/xxx.png", cf. MediaUploader::upload()
-					   -> 'path' => '/uploads/'.$relativePath) — ne pas le repréfixer. #}
-					<img src="{{ asset(uploadedMedia.filePath) }}" alt="{{ uploadedMedia.altText|default('Couverture') }}" class="object-cover h-full w-full transition group-hover:scale-105">
+			{# Promouvoir une photo déjà en galerie au rang de couverture — sans
+			   ré-upload (cf. AdminProjectController::setCoverImage()). N'a de
+			   sens qu'en édition : à la création, la galerie est encore vide,
+			   rien à choisir avant le premier enregistrement. #}
+			{% if project.id and project.media|length > 0 %}
+				<div class="border-t border-gray-100 dark:border-gray-800 pt-4">
+					<p class="block text-sm font-bold mb-2">Ou choisir la couverture parmi la galerie</p>
+					<div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+						{% for media in project.media %}
+							{% if 'image' in media.mimeType %}
+								<div class="relative group rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800">
+									<img src="{{ media.filePath }}" alt="{{ media.altText }}" class="aspect-square w-full object-cover">
+									{% if currentCover and currentCover.id == media.id %}
+										<span class="absolute inset-x-0 bottom-0 bg-(--color-brand-primary) text-white text-[10px] font-bold text-center py-1">Couverture actuelle</span>
+									{% else %}
+										<form method="POST" action="{{ path('admin_project_set_cover_image', {id: project.id, mediaId: media.id}) }}" class="absolute inset-x-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity">
+											<input type="hidden" name="_token" value="{{ csrf_token('admin_project_set_cover_' ~ media.id) }}">
+											<button type="submit" class="w-full bg-black/70 text-white text-[10px] font-semibold text-center py-1.5 border-0 cursor-pointer hover:bg-black/85">
+												Définir comme couverture
+											</button>
+										</form>
+									{% endif %}
+								</div>
+							{% endif %}
+						{% endfor %}
+					</div>
 				</div>
 			{% endif %}
-
-			{{ form_widget(form.media, {'attr': {'class': 'w-full text-xs opacity-70 file:mr-3 file:py-2 file:px-3 file:rounded-sm file:border-0 file:text-xs file:font-bold file:bg-brand-light file:text-brand-primary hover:file:opacity-80 cursor-pointer'}}) }}
-			<p class="text-[11px] opacity-40 mt-2">Formats : JPG, PNG, PDF (Max : 5 Mo).</p>
-			{{ form_errors(form.media, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
 		</div>
-
-	</div>
+	</section>
 </div>
+
+<div class="card flex items-center justify-end gap-3 sticky bottom-4">
+	<a href="{{ project.id ? path('admin_project_read', {id: project.id}) : path('admin_project_index') }}" class="btn btn-secondary">Annuler</a>
+	<button type="submit" class="btn btn-primary gap-2 group">
+		<span class="ti ti-device-floppy text-sm transition-transform group-hover:scale-110" aria-hidden="true"></span>
+		<span>{{ button_label|default('Enregistrer') }}</span>
+	</button>
+</div>
+
 {{ form_end(form) }}
