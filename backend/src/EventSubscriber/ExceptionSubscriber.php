@@ -74,6 +74,13 @@ final class ExceptionSubscriber implements EventSubscriberInterface
         if ($throwable instanceof AppException) {
             $context['business_context'] = $throwable->getContext();
         }
+        // Requis par le filtre fail2ban symfony-security (01-base-hardening.sh),
+        // qui matche sur `"ip":"<HOST>"` dans le JSON — sans ce champ, la jail
+        // ne pouvait bannir personne même une fois le fichier de log en place
+        // (cf. security_errors_file ci-dessous dans monolog.yaml).
+        if ($throwable instanceof AuthenticationException) {
+            $context['ip'] = $event->getRequest()->getClientIp();
+        }
 
         $logger->log($level, $throwable->getMessage(), $context);
 

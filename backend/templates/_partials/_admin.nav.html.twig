@@ -11,7 +11,7 @@
 {% set isCrmActive = currentRoute starts with 'admin_collaborator' or currentRoute starts with 'admin_contact' or currentRoute starts with 'admin_newsletter' or currentRoute starts with 'admin_request' or currentRoute starts with 'admin_testimonial' or currentRoute starts with 'admin_users' or currentRoute == 'admin_project_freelance_space' %}
 {% set isErpActive = currentRoute starts with 'admin_finance' or (currentRoute starts with 'admin_project' and currentRoute != 'admin_project_freelance_space') %}
 {% set isContenuActive = currentRoute starts with 'admin_skill' or currentRoute starts with 'admin_tag' or currentRoute starts with 'admin_article' or currentRoute starts with 'admin_course' or currentRoute starts with 'admin_experience' or currentRoute starts with 'admin_home_content' or currentRoute starts with 'admin_about_content' or currentRoute starts with 'admin_ai_assistant' %}
-{% set isSecuriteActive = currentRoute starts with 'admin_security_' or currentRoute starts with 'admin_admins' %}
+{% set isSecuriteActive = currentRoute starts with 'admin_security_' or currentRoute starts with 'admin_admins' or currentRoute starts with 'admin_incident' %}
 {% set isParametresActive = currentRoute starts with 'admin_config' or currentRoute starts with 'admin_notification' or currentRoute starts with 'admin_integration' or currentRoute starts with 'admin_backup' %}
 {% set isSupportActive = currentRoute starts with 'admin_support' %}
 
@@ -65,7 +65,8 @@
 {% set canViewSecurity2fa = is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_2FA')) %}
 {% set canViewSecurityPolicies = is_granted(constant('App\\Security\\Voter\\SecurityVoter::VIEW_POLICIES')) %}
 {% set canManagePermissions = is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_PERMISSIONS')) %}
-{% set canViewSecuriteSection = canViewSecurityLogs or canViewSecuritySessions or canViewSecurityRoles or canViewSecurityAudit or canViewSecurity2fa or canViewSecurityPolicies or canManagePermissions or canViewAdmins %}
+{% set canViewIncidents = is_granted(constant('App\\Security\\Voter\\IncidentVoter::VIEW')) %}
+{% set canViewSecuriteSection = canViewSecurityLogs or canViewSecuritySessions or canViewSecurityRoles or canViewSecurityAudit or canViewSecurity2fa or canViewSecurityPolicies or canManagePermissions or canViewAdmins or canViewIncidents %}
 
 {% set canViewConfig = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_CONFIG')) %}
 {% set canViewNotifications = is_granted(constant('App\\Security\\Voter\\SettingsVoter::VIEW_NOTIFICATIONS')) %}
@@ -377,6 +378,12 @@
 						<a href="{{ path('admin_security_audit_index') }}" class="group flex items-center gap-2 py-[6px] px-2.5 rounded-md text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_security_audit' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
 							<i class="ti ti-eye text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Audit & Monitor
+						</a>
+					{% endif %}
+					{% if canViewIncidents %}
+						<a href="{{ path('admin_incident_index') }}" class="group flex items-center gap-2 py-[6px] px-2.5 rounded-md text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_incident' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-alert-triangle text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
+							Incidents
 						</a>
 					{% endif %}
 					{% if canViewSecurity2fa %}

@@ -84,6 +84,21 @@ when@prod:
                 channels: [security_errors]
                 path: php://stderr
                 formatter: monolog.formatter.json
+            # Duplique security_errors vers un vrai fichier (en plus de
+            # stderr ci-dessus, jamais à la place) : la jail fail2ban
+            # `symfony-security` (01-base-hardening.sh) lit
+            # infra/logs/backend/prod.log sur le VPS — un chemin que rien
+            # n'alimentait jusqu'ici puisque tout partait vers stderr.
+            # Constaté en prod : la jail tournait à l'aveugle depuis le
+            # début (cf. docs/incident-auth.md §6). Le champ "ip" requis par
+            # le filtre (`"ip":"<HOST>"`) est ajouté au contexte par
+            # ExceptionSubscriber pour les AuthenticationException.
+            security_errors_file:
+                type: stream
+                channels: [security_errors]
+                path: "%kernel.logs_dir%/%kernel.environment%.log"
+                level: warning
+                formatter: monolog.formatter.json
             business_errors:
                 type: stream
                 channels: [business_errors]
