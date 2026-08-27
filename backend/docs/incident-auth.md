@@ -62,15 +62,30 @@ publique (`/register`) exige déjà `ROLE_ADMIN`. Procédure de bootstrap
 
 ## 4. Prérequis commun aux §1 et §2 : l'accès SSH lui-même
 
-Les deux remèdes ci-dessus supposent un accès SSH au VPS. `01-base-hardening.sh`
-n'installe qu'une seule clé (`ADMIN_PUBKEY`) au moment du durcissement initial
-— si cette clé est perdue, ou si la seule personne qui la détient est
-indisponible, ni §1 ni §2 ne sont exécutables. Point de défaillance unique à
-corriger une fois, pas à chaque incident :
+~~Point de défaillance unique~~ : corrigé le 27/08/2026. Une deuxième paire de
+clés (`hmm_admin_backup`, ed25519, générée dédiée — pas une clé déjà utilisée
+ailleurs) a été installée sur le VPS, en plus de `id_ed25519` :
+
+```
+ubuntu@VPS:~/.ssh/authorized_keys   → id_ed25519 (perso) + hmm_admin_backup
+deploy@VPS:~/.ssh/authorized_keys   → github-actions (CI) + hmm_admin_backup
+```
+
+Vérifié en conditions réelles (connexion effective aux deux comptes avec
+`hmm_admin_backup` uniquement, `id_ed25519` absent du trousseau ssh-agent au
+moment du test). Le fichier privé `hmm_admin_backup` réside pour l'instant sur
+la même machine perso que `id_ed25519` — ce n'est qu'une **étape
+intermédiaire** : tant qu'une copie n'a pas été déplacée vers un support
+distinct (gestionnaire de mots de passe, second appareil, coffre physique),
+la redondance n'est qu'à moitié réelle (les deux clés meurent avec le même
+disque). Ce déplacement reste une action humaine, cf. §6.
+
+Pour ajouter un troisième porteur de confiance plus tard :
 
 ```bash
-# Sur le VPS, ajouter une deuxième clé de confiance à côté de la première :
-echo "ssh-ed25519 AAAA... second-porteur@..." >> ~deploy/.ssh/authorized_keys
+# Sur le VPS, ajouter une clé de confiance supplémentaire :
+echo "ssh-ed25519 AAAA... nouveau-porteur@..." >> ~deploy/.ssh/authorized_keys
+echo "ssh-ed25519 AAAA... nouveau-porteur@..." >> ~ubuntu/.ssh/authorized_keys
 ```
 
 ## 5. Cloudflare Access — en amont de tout ce qui précède
@@ -89,19 +104,39 @@ dashboard Zero Trust (Access → Applications → `dark.horlynat.com`).
 
 ## 6. Points hors du contrôle applicatif — checklist humaine
 
-Aucun de ces points ne se corrige par un commit ; à vérifier/poser
+Aucun de ces points ne se corrige par un commit — ni par moi (identifiants,
+téléphone/app d'authentification et moyens de paiement du compte
+appartiennent exclusivement à l'humain qui les détient). À vérifier/poser
 soi-même, une fois, pas à chaque incident :
 
-- [ ] **Compte Cloudflare** : 2FA avec codes de secours sauvegardés hors du
+- [ ] **Clé `age` de secours** (`~/backup-key.txt` sur cette machine, seule
+  copie existante — déchiffre toutes les sauvegardes DB) : en mettre une
+  deuxième copie dans un gestionnaire de mots de passe (1Password/Bitwarden…)
+  ou un coffre physique. Le contenu du fichier ne doit jamais transiter par
+  un canal non chiffré (mail, Slack…) — copier/coller directement dans le
+  champ du gestionnaire, en local.
+- [ ] **Clé privée `hmm_admin_backup`** (`~/.ssh/hmm_admin_backup` sur cette
+  machine, cf. §4) : même chose — une deuxième copie hors de cette machine
+  avant qu'elle ne soit utile en cas de perte de la machine elle-même.
+- [ ] **Compte Cloudflare** : 2FA + codes de secours sauvegardés hors du
   seul appareil habituel (perdre l'accès à ce compte bloque §5 ci-dessus).
+  → dash.cloudflare.com → icône profil → *My Profile* → *Authentication*.
 - [ ] **Compte GitHub** (`horlynat`) : 2FA + codes de secours — sans lui,
   impossible de déclencher le rollback du §2.
+  → github.com/settings/security → *Two-factor authentication*
+  (télécharger/imprimer les *recovery codes* à cette étape, pas après).
 - [ ] **Domaine `horlynat.com`** : auto-renouvellement actif chez le
   registrar, coordonnées de contact à jour (email de rappel d'expiration
   souvent le seul filet avant coupure totale du site).
 - [ ] **Facturation** VPS / Cloudflare (plan payant éventuel) / bucket
   S3-compatible : moyen de paiement à jour — une suspension pour impayé a le
   même effet qu'une panne.
+
+Aucune de ces cases ne peut être cochée par un assistant : la 2FA exige
+l'app d'authentification sur le téléphone du titulaire du compte, et la
+facturation un moyen de paiement personnel. Les deux premières (clés à
+dupliquer) sont de simples copier/coller locaux, à faire une fois, quand
+vous avez cinq minutes.
 
 ## Ce que ce runbook ne couvre pas
 
