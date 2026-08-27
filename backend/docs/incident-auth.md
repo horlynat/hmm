@@ -73,12 +73,9 @@ deploy@VPS:~/.ssh/authorized_keys   → github-actions (CI) + hmm_admin_backup
 
 Vérifié en conditions réelles (connexion effective aux deux comptes avec
 `hmm_admin_backup` uniquement, `id_ed25519` absent du trousseau ssh-agent au
-moment du test). Le fichier privé `hmm_admin_backup` réside pour l'instant sur
-la même machine perso que `id_ed25519` — ce n'est qu'une **étape
-intermédiaire** : tant qu'une copie n'a pas été déplacée vers un support
-distinct (gestionnaire de mots de passe, second appareil, coffre physique),
-la redondance n'est qu'à moitié réelle (les deux clés meurent avec le même
-disque). Ce déplacement reste une action humaine, cf. §6.
+moment du test). Une deuxième copie du fichier privé `hmm_admin_backup` a été
+déplacée hors de cette machine (27/08/2026, cf. §6) — la redondance est donc
+réelle : les deux clés ne meurent plus avec le même disque.
 
 Pour ajouter un troisième porteur de confiance plus tard :
 
@@ -109,15 +106,10 @@ téléphone/app d'authentification et moyens de paiement du compte
 appartiennent exclusivement à l'humain qui les détient). À vérifier/poser
 soi-même, une fois, pas à chaque incident :
 
-- [ ] **Clé `age` de secours** (`~/backup-key.txt` sur cette machine, seule
-  copie existante — déchiffre toutes les sauvegardes DB) : en mettre une
-  deuxième copie dans un gestionnaire de mots de passe (1Password/Bitwarden…)
-  ou un coffre physique. Le contenu du fichier ne doit jamais transiter par
-  un canal non chiffré (mail, Slack…) — copier/coller directement dans le
-  champ du gestionnaire, en local.
-- [ ] **Clé privée `hmm_admin_backup`** (`~/.ssh/hmm_admin_backup` sur cette
-  machine, cf. §4) : même chose — une deuxième copie hors de cette machine
-  avant qu'elle ne soit utile en cas de perte de la machine elle-même.
+- [x] **Clé `age` de secours** (`~/backup-key.txt`) : deuxième copie mise en
+  place hors de cette machine — 27/08/2026.
+- [x] **Clé privée `hmm_admin_backup`** (`~/.ssh/hmm_admin_backup`, cf. §4) :
+  deuxième copie mise en place hors de cette machine — 27/08/2026.
 - [ ] **Compte Cloudflare** : 2FA + codes de secours sauvegardés hors du
   seul appareil habituel (perdre l'accès à ce compte bloque §5 ci-dessus).
   → dash.cloudflare.com → icône profil → *My Profile* → *Authentication*.
