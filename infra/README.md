@@ -310,7 +310,11 @@ commun, détaillés dans `backend/docs/incident-data-loss.md` :
    depuis `/admin/backup` ou en CLI (`app:backup:create`), écrite dans
    `infra/backups/` (bind mount du VPS — cf. `docker-compose.prod.yml`,
    survit désormais aux déploiements, contrairement à avant que ce bind
-   mount existe).
+   mount existe). Propriétaire du dossier corrigé automatiquement à chaque
+   déploiement (`deploy-remote.sh`, `ensure_www_data_writable`) : sans ça,
+   Docker le crée owned par root au premier `up`, et www-data (le process
+   applicatif) ne peut pas y écrire — constaté en prod ("Permission
+   denied"), pareil pour `infra/logs/backend`.
 2. **Cloud, automatique** — la même commande chiffre (age) et pousse chaque
    dump vers le bucket S3-compatible (`OFFSITE_S3_*`, préfixe `database/`) :
    copie 24/7, indépendante du VPS.

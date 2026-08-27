@@ -71,6 +71,25 @@ up_with_retry() {
 
 echo "==> Backend (${BACKEND_IMAGE_TAG}) : pull + traefik/database à jour"
 "${COMPOSE[@]}" pull backend
+
+# Bind mounts écrits par www-data (UID/GID 82 dans l'image Alpine du
+# backend, cf. Dockerfile) : logs applicatifs et sauvegardes DB. Docker les
+# crée automatiquement au tout premier `up` s'ils n'existent pas, mais
+# toujours owned par root -- jamais par www-data. Constaté en prod :
+# sauvegardes en échec "Permission denied" (App\Service\DatabaseBackupService)
+# et logs/backend jamais écrit (fail2ban lit un fichier qui n'existe pas,
+# échec silencieux). `deploy` n'a pas de sudo (cf. README §11) pour un chown
+# direct sur le host -- on passe par un conteneur éphémère (root par défaut)
+# qui chown le bind mount depuis l'intérieur, même principe que
+# l'appartenance au groupe docker déjà documentée là-bas. Idempotent, sans
+# effet une fois la permission déjà correcte.
+ensure_www_data_writable() {
+  mkdir -p "$1"
+  docker run --rm --entrypoint chown -v "$1:/target" "ghcr.io/horlynat/hmm-backend:${BACKEND_IMAGE_TAG}" -R 82:82 /target
+}
+ensure_www_data_writable /opt/hmm/infra/logs/backend
+ensure_www_data_writable /opt/hmm/infra/backups
+
 up_with_retry traefik database backend
 
 echo "==> Migrations (toujours avant le worker -- cf. README §6)"
