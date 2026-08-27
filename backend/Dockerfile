@@ -64,7 +64,13 @@ RUN install-php-extensions \
     # age : chiffrement des dumps avant copie hors-site (cf.
     # App\Service\DatabaseBackupService::shipOffsite) — clé publique
     # seulement embarquée ici via AGE_RECIPIENT, jamais la clé privée.
-    && apk add --no-cache su-exec age
+    # mariadb-client : fournit les binaires `mysqldump`/`mysql` que
+    # DatabaseBackupService shelle out — l'extension PHP pdo_mysql
+    # ci-dessus ne fournit QUE le driver PDO, pas ces outils CLI. Absent
+    # jusqu'ici : app:backup:create échouait en prod avec "mysqldump: not
+    # found" (exit 127), jamais remarqué faute d'avoir testé la
+    # fonctionnalité de bout en bout après déploiement.
+    && apk add --no-cache su-exec age mariadb-client
 
 ENV APP_ENV=prod \
     APP_DEBUG=0 \
