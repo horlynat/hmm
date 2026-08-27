@@ -44,6 +44,12 @@ sudo ./scripts/01-base-hardening.sh --lock-ssh
 ⚠️ Ne saute pas l'étape de test intermédiaire — `--lock-ssh` désactive le mot
 de passe root et le port 22. Si le test échoue, tu perds l'accès au serveur.
 
+⚠️ `ADMIN_PUBKEY` accepte plusieurs clés (une par ligne, valeur multi-lignes
+du shell) — sur une reconstruction complète (§3 de `backend/docs/incident-
+auth.md`), passe-en au moins deux dès cette étape plutôt que d'ajouter la
+deuxième après coup : une seule clé installée ici est un point de
+défaillance unique tant que la reconstruction n'est pas terminée.
+
 ### 2. Docker (`scripts/02-docker-install.sh`)
 
 ```bash
