@@ -642,10 +642,15 @@ reste, `messenger-worker` ci-dessus) ; conversation temps réel (Claude,
 - **Wazuh/SIEM, Prometheus+Grafana** : mentionnés par le guide pour des
   besoins plus lourds qu'un VPS solo — AIDE/rkhunter/auditd + Netdata
   suffisent ici. Note laissée si le besoin grandit.
-- **Channel Monolog dédié `security_errors` → fichier** : la jail fail2ban
-  `symfony-security` (dans `01-base-hardening.sh`) lit `var/log/prod.log`
-  en attendant ce channel dédié (déjà prévu dans `_config.backend.md`), qui
-  donnerait un signal plus propre pour le ban.
+- ~~Channel Monolog dédié `security_errors` → fichier~~ : implémenté
+  (`security_errors_file` dans `config/packages/monolog.yaml` +
+  `App\EventSubscriber\LoginFailureLoggerSubscriber` côté backend, cf.
+  `backend/docs/incident-auth.md` §5). Vérifié en conditions réelles avec
+  une tentative de connexion échouée depuis une IP externe : `fail2ban
+  status symfony-security` compte bien la tentative. A nécessité aussi
+  `backend = polling` sur ce jail (cf. `01-base-hardening.sh`) — `auto`
+  résolvait vers le backend systemd sur ce serveur, qui ignorait
+  totalement `logpath`.
 
 ## Checklist finale (guide hardening serveur §14)
 

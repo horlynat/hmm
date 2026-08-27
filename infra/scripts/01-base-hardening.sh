@@ -164,11 +164,20 @@ maxretry = 3
 bantime = 3600
 findtime = 600
 
-# Tentatives de login échouées sur dark.horlynat.com (back-office Symfony).
-# Lit var/log/backend/prod.log (bind-mount du conteneur, cf. compose) — un
-# channel Monolog "security_errors" dédié (cf. _config.backend.md) donnerait
-# un signal plus propre, à faire évoluer côté backend le cas échéant.
+# Tentatives de login échouées sur dark.horlynat.com (back-office Symfony) —
+# canal Monolog "security_errors_file" dédié (config/packages/monolog.yaml,
+# alimenté par App\EventSubscriber\LoginFailureLoggerSubscriber côté backend).
+#
+# backend = polling impératif : "auto" (le défaut) a résolu sur ce serveur
+# vers le backend systemd (probablement pyinotify absent), qui ignore
+# totalement `logpath` pour ne surveiller que le journal — logpath pointe
+# vers un simple fichier applicatif, jamais présent dans le journal systemd.
+# Constaté en prod : le jail tournait sans une seule ligne lue depuis sa
+# création, silencieusement, jusqu'à confirmation explicite via
+# `fail2ban-client status symfony-security` ("uses systemd" au lieu de
+# "File list: ...").
 [symfony-security]
+backend = polling
 enabled = true
 port = http,https
 filter = symfony-security
