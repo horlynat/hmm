@@ -315,7 +315,14 @@ avant d'en dépendre.
   (hors Docker — surveille aussi l'hôte lui-même, pas seulement les
   conteneurs). Pas scripté ici (interactif, à valider toi-même).
 - **UptimeRobot / Better Stack** : moniteur externe HTTPS sur les 3 domaines,
-  à créer manuellement (compte tiers, hors scope infra).
+  à créer manuellement (compte tiers, hors scope infra). Ajouter un moniteur
+  **dédié à `https://dark.horlynat.com/login`** en plus de la racine des
+  domaines — un moniteur sur `dark.horlynat.com` seul ne détecte pas
+  forcément une panne localisée au firewall `main` (ex. incident OIDC déjà
+  survenu en prod, cf. `backend/docs/incident-auth.md` §2, qui ne cassait que
+  `/login/*`). En cas d'alerte sur ce moniteur précis : suivre
+  `backend/docs/incident-auth.md`, pas `app:admin:recover` seul (qui ne
+  répare qu'un compte, pas le code).
 
 ### 10. PostfixAdmin — gestion des comptes mail
 
