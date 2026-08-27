@@ -70,7 +70,12 @@ RUN install-php-extensions \
     # jusqu'ici : app:backup:create échouait en prod avec "mysqldump: not
     # found" (exit 127), jamais remarqué faute d'avoir testé la
     # fonctionnalité de bout en bout après déploiement.
-    && apk add --no-cache su-exec age mariadb-client
+    # mariadb-connector-c : mariadb-client seul ne fournit AUCUN plugin
+    # d'authentification (dossier /usr/lib/mariadb/plugin/ vide) — sans ce
+    # paquet, mysqldump échoue contre MySQL 8 ("Plugin caching_sha2_password
+    # could not be loaded"), l'authentification par défaut de MySQL 8 (cf.
+    # infra/README.md §4). Constaté en testant contre la vraie base de prod.
+    && apk add --no-cache su-exec age mariadb-client mariadb-connector-c
 
 ENV APP_ENV=prod \
     APP_DEBUG=0 \
