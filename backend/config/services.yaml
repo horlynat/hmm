@@ -59,6 +59,20 @@ services:
             $targetDirectory: '%app.upload_dir%'
             $allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
+    # Instance dédiée aux médias d'un projet (image de couverture + galerie,
+    # cf. AdminProjectController) : SVG autorisé, même raisonnement que pour
+    # la branding — upload réservé à ROLE_ADMIN (ProjectVoter::EDIT), pas un
+    # flux ouvert à un rôle moins élevé ni au public, donc le même niveau de
+    # confiance. Risque résiduel assumé (identique à branding) : un SVG
+    # uploadé reste exécutable si sa page est ouverte DIRECTEMENT par son URL
+    # (contourne le rendu <img>, qui lui neutralise tout script embarqué) —
+    # acceptable ici pour la même raison que pour le logo.
+    app.media_uploader.project:
+        class: App\Service\MediaUploader
+        arguments:
+            $targetDirectory: '%app.upload_dir%'
+            $allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'application/pdf']
+
     App\Service\JWTService:
         arguments:
             $secret: '%env(APP_JWTSECRET)%'
