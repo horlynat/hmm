@@ -5,6 +5,14 @@
 
 {% block body %}
 	{% set canEdit = is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
+	{# Volontairement distinct de canEdit : PROJECT_EDIT est refusé sur un projet
+	   COMPLETED/SUSPENDED par construction (cf. ProjectVoter::canEdit) — si le
+	   menu "Changer le statut" restait derrière canEdit, un projet terminé ne
+	   pourrait plus jamais être rouvert depuis l'interface (CHANGE_STATUS est
+	   justement le seul moyen de lever ce verrou). Bug constaté en prod : le
+	   correctif PROJECT_CHANGE_STATUS + ProjectStatusEnum::VALID_TRANSITIONS
+	   existait déjà côté backend, mais ce menu restait invisible. #}
+	{% set canChangeStatus = is_granted(constant('App\\Security\\Voter\\ProjectVoter::CHANGE_STATUS'), project) %}
 	{% set canManageTasks = is_granted(constant('App\\Security\\Voter\\ProjectVoter::MANAGE_TASK'), project) %}
 	{% set canManageInvoice = is_granted(constant('App\\Security\\Voter\\ProjectVoter::MANAGE_INVOICE'), project) %}
 	{% set isAdmin = is_granted('ROLE_ADMIN') %}
@@ -65,7 +73,7 @@
 					</span>
 				{% endif %}
 
-				{% if canEdit %}
+				{% if canChangeStatus %}
 					<div class="relative" x-data="{ open: false }">
 						<button type="button" @click="open = !open" :aria-expanded="open" aria-haspopup="menu"
 								class="inline-flex items-center gap-1 text-sm text-(--color-brand-primary) font-medium bg-transparent border-0 cursor-pointer hover:underline">
