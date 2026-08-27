@@ -32,6 +32,7 @@ use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -416,7 +417,7 @@ final class AdminProjectController extends AbstractController
         Request $request,
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
-        MediaUploader $mediaUploader,
+        #[Autowire(service: 'app.media_uploader.project')] MediaUploader $mediaUploader,
         TranslationRepository $translationRepository,
         NewsletterNotifier $newsletterNotifier,
     ): Response {
@@ -437,12 +438,10 @@ final class AdminProjectController extends AbstractController
             // Upload des médias
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
 
-            // Contenu vitrine (étape 2 de l'assistant) — ProjectInfo n'est créé
-            // que si l'admin a réellement renseigné au moins un champ.
-            $showcase = $this->buildProjectInfoFromForm($form);
-            if (null !== $showcase) {
-                $project->setInfo($showcase);
-            }
+            // Contenu vitrine — ProjectInfo n'est créé que si l'admin a réellement
+            // renseigné au moins un champ (cf. syncProjectInfoFromForm()).
+            $this->syncProjectInfoFromForm($form, $project, $entityManager, $mediaUploader);
+            $hasShowcase = null !== $project->getInfo();
 
             // Journaliser la création
             $project->logCreation($this->getAuthenticatedUser());
@@ -454,12 +453,11 @@ final class AdminProjectController extends AbstractController
             $translationRepository->syncFromEntity($project);
 
             // Notification newsletter UNIQUEMENT si ce projet a un contenu
-            // vitrine ($showcase non null, cf. buildProjectInfoFromForm()) :
-            // Project sert aussi à la gestion interne de projets
+            // vitrine : Project sert aussi à la gestion interne de projets
             // freelance/client (budget, factures, collaborateurs...), sans
             // rapport avec le portfolio public — les abonnés ne doivent
             // jamais être notifiés de la création d'un projet client interne.
-            if (null !== $showcase) {
+            if ($hasShowcase) {
                 $newsletterNotifier->notifyNewContent($project->getTitle(), 'project', $project->getSlug());
             }
 
@@ -475,13 +473,30 @@ final class AdminProjectController extends AbstractController
     }
 
     /**
-     * Construit le ProjectInfo (contenu vitrine public) à partir des champs non
-     * mappés de l'étape 2 de l'assistant de création. Les textareas utilisent un
-     * mini-format "un par ligne" (et "clé | valeur" pour les listes à deux
-     * colonnes) plutôt que des CollectionType JS, pour rester simple à remplir.
+     * Construit ou met à jour le ProjectInfo (contenu vitrine public) à partir
+     * des champs non mappés de l'onglet "Vitrine portfolio" du formulaire —
+     * partagé par create() et update(). Les textareas utilisent un mini-format
+     * "un par ligne" (et "clé | valeur" pour les listes à deux colonnes) plutôt
+     * que des CollectionType JS, pour rester simple à remplir.
+     *
+     * Ne crée un ProjectInfo que s'il n'existait pas encore ET qu'au moins un
+     * champ vitrine est renseigné (un projet de gestion interne, sans vocation
+     * portfolio, n'a pas besoin de ProjectInfo). Si un ProjectInfo existe déjà
+     * (édition), il est mis à jour en place — y compris vidé si l'admin a
+     * volontairement effacé tout le contenu, plutôt que de le figer.
      */
-    private function buildProjectInfoFromForm(FormInterface $form): ?ProjectInfo
-    {
+    private function syncProjectInfoFromForm(
+        FormInterface $form,
+        Project $project,
+        EntityManagerInterface $entityManager,
+        MediaUploader $mediaUploader,
+    ): void {
+        if (!$form->has('role')) {
+            // Formulaire construit sans include_showcase (aucun contexte actuel,
+            // mais garde-fou si un appelant futur oublie l'option) : rien à faire.
+            return;
+        }
+
         $role = trim((string) $form->get('role')->getData());
         $repoUrl = trim((string) $form->get('repoUrl')->getData());
         $objectives = $this->parseLines((string) $form->get('objectives')->getData());
@@ -489,18 +504,25 @@ final class AdminProjectController extends AbstractController
         $challenges = $this->parsePairs((string) $form->get('challenges')->getData(), 'problem', 'solution');
         $results = $this->parsePairs((string) $form->get('results')->getData(), 'label', 'value');
 
-        if ('' === $role && '' === $repoUrl && !$objectives && !$techStack && !$challenges && !$results) {
-            return null;
+        /** @var \Symfony\Component\HttpFoundation\File\UploadedFile|null $coverFile */
+        $coverFile = $form->get('coverImage')->getData();
+        $removeCoverImage = (bool) $form->get('removeCoverImage')->getData();
+
+        $hasTextContent = '' !== $role || '' !== $repoUrl || $objectives || $techStack || $challenges || $results;
+        $existing = $project->getInfo();
+
+        if (!$hasTextContent && null === $coverFile && !$removeCoverImage && null === $existing) {
+            return; // Rien à créer : aucun champ vitrine renseigné, jamais eu de ProjectInfo.
         }
 
-        // Champs anglais — optionnels, mêmes mini-formats que leurs pendants FR.
+        $info = $existing ?? new ProjectInfo();
+
         $roleEn = trim((string) $form->get('roleEn')->getData());
         $objectivesEn = $this->parseLines((string) $form->get('objectivesEn')->getData());
         $techStackEn = $this->parsePairs((string) $form->get('techStackEn')->getData(), 'name', 'rationale');
         $challengesEn = $this->parsePairs((string) $form->get('challengesEn')->getData(), 'problem', 'solution');
         $resultsEn = $this->parsePairs((string) $form->get('resultsEn')->getData(), 'label', 'value');
 
-        $info = new ProjectInfo();
         $info->setRole('' !== $role ? $role : null);
         $info->setRepoUrl('' !== $repoUrl ? $repoUrl : null);
         $info->setObjectives($objectives);
@@ -513,7 +535,30 @@ final class AdminProjectController extends AbstractController
         $info->setChallengesEn($challengesEn ?: null);
         $info->setResultsEn($resultsEn ?: null);
 
-        return $info;
+        // Image de couverture : un nouvel envoi remplace l'actuelle (l'ancien
+        // Media reste en base, potentiellement référencé ailleurs — pas de
+        // suppression physique automatique, cohérent avec deleteMedia() qui
+        // reste le seul point de suppression explicite d'un fichier). La case
+        // "retirer" ne s'applique que si aucun nouveau fichier n'est envoyé.
+        if (null !== $coverFile) {
+            $result = $mediaUploader->upload($coverFile, 'projects');
+            $media = new Media();
+            $media
+                ->setFilePath($result['path'])
+                ->setAltText($project->getTitle())
+                ->setMimeType($result['mimeType'])
+                ->setSize($result['size'])
+                ->setType($result['type'])
+                ->setUploadedAt($result['uploadedAt']);
+            $entityManager->persist($media);
+            $info->setCoverImage($media);
+        } elseif ($removeCoverImage) {
+            $info->setCoverImage(null);
+        }
+
+        if (null === $existing) {
+            $project->setInfo($info);
+        }
     }
 
     /** @return string[] */
@@ -541,6 +586,38 @@ final class AdminProjectController extends AbstractController
         }
 
         return $items;
+    }
+
+    /**
+     * Inverse de parseLines() : reconstruit le texte "une valeur par ligne" à
+     * partir du tableau stocké, pour pré-remplir le formulaire en édition.
+     *
+     * @param string[] $items
+     */
+    private function formatLines(array $items): string
+    {
+        return implode("\n", $items);
+    }
+
+    /**
+     * Inverse de parsePairs() : reconstruit le texte "clé | valeur" par ligne,
+     * pour pré-remplir le formulaire en édition. Accepte aussi bien les clés
+     * numériques ([0 => .., 1 => ..]) que nommées (['problem' => .., 'solution' => ..])
+     * selon la forme réellement stockée en base (les deux existent : PHPStan
+     * documente les deux dans le retour de parsePairs()).
+     *
+     * @param array<int, array<int|string, string|null>> $items
+     */
+    private function formatPairs(array $items, string $keyA, string $keyB): string
+    {
+        $lines = [];
+        foreach ($items as $item) {
+            $a = $item[$keyA] ?? $item[0] ?? '';
+            $b = $item[$keyB] ?? $item[1] ?? null;
+            $lines[] = null !== $b && '' !== $b ? $a.' | '.$b : (string) $a;
+        }
+
+        return implode("\n", $lines);
     }
 
     // =========================================================================
@@ -571,7 +648,7 @@ final class AdminProjectController extends AbstractController
         Request $request,
         EntityManagerInterface $entityManager,
         SluggerInterface $slugger,
-        MediaUploader $mediaUploader,
+        #[Autowire(service: 'app.media_uploader.project')] MediaUploader $mediaUploader,
         TranslationRepository $translationRepository,
     ): Response {
         $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
@@ -588,7 +665,29 @@ final class AdminProjectController extends AbstractController
         $oldBudget = $project->getBudget();
         $oldSpent = $project->getSpent();
 
-        $form = $this->createForm(ProjectType::class, $project);
+        // include_showcase : contrairement à la scission create/update d'origine
+        // (contenu vitrine figé à la création, cf. historique de ProjectType),
+        // l'onglet "Vitrine portfolio" reste modifiable après coup — un défi/une
+        // solution mal formulés ne doivent pas nécessiter une réédition SQL.
+        $form = $this->createForm(ProjectType::class, $project, ['include_showcase' => true]);
+
+        // Pré-remplissage des champs non mappés depuis le ProjectInfo existant
+        // (mapped: false — Symfony ne le fait pas automatiquement, cf.
+        // syncProjectInfoFromForm() pour le sens inverse à la soumission).
+        if ($info = $project->getInfo()) {
+            $form->get('role')->setData($info->getRole() ?? '');
+            $form->get('roleEn')->setData($info->getRoleEn() ?? '');
+            $form->get('repoUrl')->setData($info->getRepoUrl() ?? '');
+            $form->get('objectives')->setData($this->formatLines($info->getObjectives()));
+            $form->get('objectivesEn')->setData($this->formatLines($info->getObjectivesEn() ?? []));
+            $form->get('techStack')->setData($this->formatPairs($info->getTechStack(), 'name', 'rationale'));
+            $form->get('techStackEn')->setData($this->formatPairs($info->getTechStackEn() ?? [], 'name', 'rationale'));
+            $form->get('challenges')->setData($this->formatPairs($info->getChallenges(), 'problem', 'solution'));
+            $form->get('challengesEn')->setData($this->formatPairs($info->getChallengesEn() ?? [], 'problem', 'solution'));
+            $form->get('results')->setData($this->formatPairs($info->getResults(), 'label', 'value'));
+            $form->get('resultsEn')->setData($this->formatPairs($info->getResultsEn() ?? [], 'label', 'value'));
+        }
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -596,6 +695,9 @@ final class AdminProjectController extends AbstractController
 
             // Upload des nouveaux médias
             $this->handleMediaUpload($project, $form, $entityManager, $mediaUploader);
+
+            // Contenu vitrine — cf. syncProjectInfoFromForm(), partagé avec create().
+            $this->syncProjectInfoFromForm($form, $project, $entityManager, $mediaUploader);
 
             // Journaliser les modifications
             $this->logProjectChanges($project, $oldStatus, $oldBudget, $oldSpent);
@@ -648,6 +750,45 @@ final class AdminProjectController extends AbstractController
         }
 
         return $this->redirectToRoute('admin_project_read', ['id' => $project->getId()]);
+    }
+
+    // =========================================================================
+    // 📌 DÉFINIR UNE COUVERTURE DEPUIS LA GALERIE
+    // =========================================================================
+
+    /**
+     * Promeut une photo déjà présente dans la galerie (Project::$media) au rang
+     * d'image de couverture (ProjectInfo::coverImage), sans ré-upload — évite
+     * d'avoir deux flux d'envoi distincts pour la même image en édition, cf.
+     * l'onglet "Médias & couverture" du formulaire.
+     */
+    #[Route('/{id}/media/{mediaId}/set-cover', name: 'set_cover_image', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function setCoverImage(
+        Project $project,
+        #[MapEntity(id: 'mediaId')] Media $media,
+        EntityManagerInterface $entityManager,
+        Request $request,
+    ): Response {
+        $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
+
+        if (!$this->isCsrfTokenValid('admin_project_set_cover_'.$media->getId(), $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide. Veuillez réessayer.');
+
+            return $this->redirectToRoute('admin_project_update', ['id' => $project->getId()]);
+        }
+
+        $info = $project->getInfo();
+        if (null === $info) {
+            $info = new ProjectInfo();
+            $project->setInfo($info);
+        }
+
+        $info->setCoverImage($media);
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Image de couverture mise à jour.');
+
+        return $this->redirectToRoute('admin_project_update', ['id' => $project->getId()]);
     }
 
     // =========================================================================
