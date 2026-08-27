@@ -31,6 +31,15 @@ final class DatabaseBackupService
 {
     private const FILENAME_REGEX = '/^backup_\d{8}_\d{6}\.sql$/';
 
+    // Conserver plusieurs générations, pas juste la dernière : une sauvegarde
+    // corrompue ou empoisonnée (attaquant ayant altéré la base avant le dump,
+    // ransomware, erreur applicative) doit pouvoir être contournée en
+    // remontant d'un ou plusieurs crans, pas seulement détectée après coup
+    // sans recours. Local ET hors-site (cf. shipOffsite) — un seul des deux
+    // qui purge tout à la première génération ne protégerait pas contre une
+    // corruption découverte après plusieurs jours.
+    private const KEEP_COUNT = 5;
+
     public function __construct(
         private readonly Connection $connection,
         private readonly string $backupDir,
@@ -84,8 +93,28 @@ final class DatabaseBackupService
         }
 
         $this->shipOffsite($filepath, $filename);
+        $this->pruneLocalBackups();
 
         return $filename;
+    }
+
+    /**
+     * Purge les sauvegardes locales au-delà de KEEP_COUNT générations. Best-
+     * effort au même titre que shipOffsite() : un échec ici ne doit jamais
+     * remettre en cause le dump qui vient de réussir.
+     */
+    private function pruneLocalBackups(): void
+    {
+        try {
+            $backups = $this->list();
+            foreach (\array_slice($backups, self::KEEP_COUNT) as $backup) {
+                $this->delete($backup['filename']);
+            }
+        } catch (\Throwable $e) {
+            $this->logger->error('DatabaseBackupService : échec de la purge des sauvegardes locales.', [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -137,6 +166,7 @@ final class DatabaseBackupService
             }
 
             $this->offsiteBackupUploader->uploadFile($encPath, 'database/' . $filename . '.gz.age');
+            $this->offsiteBackupUploader->pruneOldObjects('database/', self::KEEP_COUNT);
         } catch (\Throwable $e) {
             $this->logger->error('DatabaseBackupService : échec de la copie hors-site.', [
                 'filename' => $filename,
