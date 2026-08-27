@@ -53,6 +53,17 @@ final class OffsiteBackupUploaderTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
+    public function testPruneOldObjectsNoOpsWithoutNetworkCallWhenNotConfigured(): void
+    {
+        // Même garde que uploadFile()/upload() : pas de S3Client construit
+        // tant que le provider n'est pas configuré.
+        $uploader = new OffsiteBackupUploader(new NullLogger(), sys_get_temp_dir());
+
+        $uploader->pruneOldObjects('database/', 5);
+
+        $this->addToAssertionCount(1);
+    }
+
     public function testUploadDelegatesToUploadFileWithJoinedPath(): void
     {
         // upload() doit rester le raccourci "relatif à uploadDir" existant :

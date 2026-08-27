@@ -61,6 +61,12 @@ class PermissionCatalogSeedCommand extends Command
         'FINANCE_VIEW' => ['label' => 'Voir le module Finance', 'category' => 'Finance', 'defaultRole' => 'ROLE_MANAGER'],
         'FINANCE_EXPORT' => ['label' => 'Exporter les données financières', 'category' => 'Finance', 'defaultRole' => 'ROLE_MANAGER'],
 
+        // Incidents (IncidentVoter)
+        'INCIDENT_VIEW' => ['label' => "Voir le journal d'incidents", 'category' => 'Incidents', 'defaultRole' => 'ROLE_ADMIN'],
+        'INCIDENT_CREATE' => ['label' => 'Déclarer un incident', 'category' => 'Incidents', 'defaultRole' => 'ROLE_ADMIN'],
+        'INCIDENT_EDIT' => ['label' => 'Modifier un incident', 'category' => 'Incidents', 'defaultRole' => 'ROLE_ADMIN'],
+        'INCIDENT_DELETE' => ['label' => 'Supprimer un incident', 'category' => 'Incidents', 'defaultRole' => 'ROLE_SUPER_ADMIN'],
+
         // Devis (QuoteVoter)
         'QUOTE_VIEW' => ['label' => 'Voir les demandes de devis', 'category' => 'Devis', 'defaultRole' => 'ROLE_MANAGER'],
         'QUOTE_EDIT' => ['label' => 'Modifier une demande de devis', 'category' => 'Devis', 'defaultRole' => 'ROLE_MANAGER'],

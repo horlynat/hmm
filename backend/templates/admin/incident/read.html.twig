@@ -1,0 +1,120 @@
+{# templates/admin/incident/read.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Incident : {{ incident.title }}{% endblock %}
+
+{% block body %}
+	<div>
+		<div class="mb-6">
+			<a href="{{ path('admin_incident_index') }}" class="btn btn-secondary gap-2 px-3 py-2 text-sm w-fit">
+				<span class="ti ti-arrow-left text-base" aria-hidden="true"></span>
+				<span>Retour à la liste</span>
+			</a>
+		</div>
+
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+			<!-- 📖 CONTENU (70%) -->
+			<div class="lg:col-span-2 space-y-6">
+				<div class="card space-y-4">
+					<div class="flex flex-wrap items-center gap-2">
+						<span class="badge bg-brand-light text-brand-primary">ID : #{{ incident.id }}</span>
+						<span class="badge {{ incident.category.badgeClass }}">{{ incident.category.label }}</span>
+						<span class="badge {{ incident.severity.badgeClass }}">{{ incident.severity.label }}</span>
+						<span class="badge {{ incident.status.badgeClass }}">{{ incident.status.label }}</span>
+					</div>
+					<h1 class="text-3xl font-heading font-bold tracking-tight text-brand-dark">
+						{{ incident.title }}
+					</h1>
+				</div>
+
+				<div class="card space-y-3">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">
+						Ce qui s'est passé
+					</h3>
+					<div class="leading-relaxed text-base whitespace-pre-line">
+						{{ incident.description }}
+					</div>
+				</div>
+
+				<div class="card space-y-3">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">
+						Cause racine
+					</h3>
+					<div class="leading-relaxed text-base whitespace-pre-line">
+						{% if incident.rootCause %}
+							{{ incident.rootCause }}
+						{% else %}
+							<em class="opacity-40">Analyse pas encore faite.</em>
+						{% endif %}
+					</div>
+				</div>
+
+				<div class="card space-y-3">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">
+						Remédiation
+					</h3>
+					<div class="leading-relaxed text-base whitespace-pre-line">
+						{% if incident.remediation %}
+							{{ incident.remediation }}
+						{% else %}
+							<em class="opacity-40">Rien de renseigné pour l'instant.</em>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+
+			<!-- ⚙️ INFOS LATÉRALES (30%) -->
+			<div class="space-y-6">
+				<div class="card space-y-4">
+					<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">
+						Chronologie & Détails
+					</h3>
+
+					<div class="space-y-3 text-sm">
+						<div class="flex justify-between items-center">
+							<span class="opacity-60">Détecté le :</span>
+							<span class="font-bold">{{ incident.detectedAt ? incident.detectedAt|date('d/m/Y H:i') : '—' }}</span>
+						</div>
+						<div class="flex justify-between items-center">
+							<span class="opacity-60">Résolu le :</span>
+							<span class="font-bold">{{ incident.resolvedAt ? incident.resolvedAt|date('d/m/Y H:i') : '—' }}</span>
+						</div>
+						<div class="flex justify-between items-center">
+							<span class="opacity-60">Signalé par :</span>
+							<span class="font-bold">{{ incident.reportedBy ? incident.reportedBy.email : '—' }}</span>
+						</div>
+						{% if incident.relatedReference %}
+							<div class="flex justify-between items-center">
+								<span class="opacity-60">Référence :</span>
+								<span class="font-bold font-mono text-xs">{{ incident.relatedReference }}</span>
+							</div>
+						{% endif %}
+						<div class="flex justify-between items-center pt-2 border-t border-gray-100">
+							<span class="opacity-60">Créé le :</span>
+							<span class="opacity-80">{{ incident.createdAt|date('d/m/Y H:i') }}</span>
+						</div>
+						{% if incident.updatedAt %}
+							<div class="flex justify-between items-center">
+								<span class="opacity-60">Modifié le :</span>
+								<span class="opacity-80">{{ incident.updatedAt|date('d/m/Y H:i') }}</span>
+							</div>
+						{% endif %}
+					</div>
+
+					<div class="pt-4 border-t border-gray-100 flex flex-col gap-3">
+						<a href="{{ path('admin_incident_update', {'id': incident.id}) }}" class="btn btn-primary w-full text-sm gap-2">
+							<span class="ti ti-edit text-sm" aria-hidden="true"></span>
+							<span>Modifier</span>
+						</a>
+						{% if is_granted(constant('App\\Security\\Voter\\IncidentVoter::DELETE'), incident) %}
+							<div class="w-full [&>form]:w-full text-center">
+								<twig:DeleteModal :id="incident.id" :action="path('admin_incident_delete', {id: incident.id})" :token="csrf_token('admin_incident_delete_' ~ incident.id)" :label="incident.title" entity="cet incident" />
+							</div>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

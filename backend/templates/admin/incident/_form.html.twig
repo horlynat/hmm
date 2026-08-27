@@ -1,0 +1,85 @@
+{# templates/admin/incident/_form.html.twig #}
+{{ form_start(form, {
+    'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}
+}) }}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+	<!-- 📄 COLONNE PRINCIPALE (70%) -->
+	<div class="lg:col-span-2 space-y-6 card">
+		<div>
+			{{ form_label(form.title, null, {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+			{{ form_widget(form.title, {'attr': {'class': 'input w-full'}}) }}
+			{{ form_errors(form.title, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+		</div>
+
+		<div>
+			{{ form_label(form.description, null, {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+			{{ form_widget(form.description, {'attr': {'class': 'input w-full'}}) }}
+			{{ form_errors(form.description, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+		</div>
+
+		<div>
+			{{ form_label(form.rootCause, null, {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+			<p class="text-[11px] opacity-40 mb-2">{{ form.rootCause.vars.help }}</p>
+			{{ form_widget(form.rootCause, {'attr': {'class': 'input w-full'}}) }}
+			{{ form_errors(form.rootCause, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+		</div>
+
+		<div>
+			{{ form_label(form.remediation, null, {'label_attr': {'class': 'block text-sm font-bold mb-2 text-brand-dark'}}) }}
+			{{ form_widget(form.remediation, {'attr': {'class': 'input w-full'}}) }}
+			{{ form_errors(form.remediation, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+		</div>
+	</div>
+
+	<!-- ⚙️ COLONNE LATÉRALE (30%) -->
+	<div class="space-y-6">
+		<div class="card space-y-4">
+			<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 flex items-center gap-2">
+				<span class="ti ti-settings text-sm" aria-hidden="true"></span>
+				Classification
+			</h3>
+
+			<div class="mb-4">
+				{{ form_label(form.category, null, {'label_attr': {'class': 'block text-xs font-bold mb-1 opacity-70'}}) }}
+				<p class="text-[11px] opacity-40 mb-2">{{ form.category.vars.help }}</p>
+				{{ form_widget(form.category, {'attr': {'class': 'input input-select w-full text-sm'}}) }}
+				{{ form_errors(form.category, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<div class="mb-4">
+				{{ form_label(form.severity, null, {'label_attr': {'class': 'block text-xs font-bold mb-1 opacity-70'}}) }}
+				{{ form_widget(form.severity, {'attr': {'class': 'input input-select w-full text-sm'}}) }}
+				{{ form_errors(form.severity, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<div class="mb-4">
+				{{ form_label(form.status, null, {'label_attr': {'class': 'block text-xs font-bold mb-1 opacity-70'}}) }}
+				{{ form_widget(form.status, {'attr': {'class': 'input input-select w-full text-sm'}}) }}
+				{{ form_errors(form.status, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<div class="mb-4">
+				{{ form_label(form.detectedAt, null, {'label_attr': {'class': 'block text-xs font-bold mb-1 opacity-70'}}) }}
+				{{ form_widget(form.detectedAt, {'attr': {'class': 'input w-full text-sm'}}) }}
+				{{ form_errors(form.detectedAt, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<div class="mb-4">
+				{{ form_label(form.relatedReference, null, {'label_attr': {'class': 'block text-xs font-bold mb-1 opacity-70'}}) }}
+				<p class="text-[11px] opacity-40 mb-2">{{ form.relatedReference.vars.help }}</p>
+				{{ form_widget(form.relatedReference, {'attr': {'class': 'input w-full text-sm'}}) }}
+				{{ form_errors(form.relatedReference, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+			</div>
+
+			<div class="pt-2">
+				<button type="submit" class="btn btn-primary w-full gap-2">
+					<span class="ti ti-device-floppy text-sm" aria-hidden="true"></span>
+					<span>{{ button_label|default('Enregistrer') }}</span>
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+{{ form_end(form) }}
