@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use AsyncAws\S3\Input\DeleteObjectRequest;
+use AsyncAws\S3\Input\ListObjectsV2Request;
 use AsyncAws\S3\Input\PutObjectRequest;
 use AsyncAws\S3\S3Client;
 use Psr\Log\LoggerInterface;
@@ -76,16 +78,7 @@ final class OffsiteBackupUploader
             return;
         }
 
-        $client = new S3Client([
-            'endpoint' => $this->endpoint,
-            'region' => $this->region,
-            'accessKeyId' => $this->accessKeyId,
-            'accessKeySecret' => $this->secretAccessKey,
-            // Les providers S3-compatible (R2, B2, OVH...) exigent le style
-            // "path" (bucket.example.com/key est réservé au vrai AWS S3 avec
-            // DNS wildcard) — sans ça, la requête part vers un host inexistant.
-            'pathStyleEndpoint' => 'true',
-        ]);
+        $client = $this->makeClient();
 
         try {
             $client->putObject(new PutObjectRequest([
@@ -109,5 +102,61 @@ final class OffsiteBackupUploader
 
             throw $e;
         }
+    }
+
+    /**
+     * Purge les objets d'un préfixe au-delà de $keep générations — même
+     * logique que DatabaseBackupService::pruneLocalBackups() côté hors-site.
+     * Tri lexicographique des clés : suffisant tant que le format de nom
+     * inclut un horodatage triable tel quel (ex: "database/backup_20260827_
+     * 065029.sql.gz.age"), sans avoir besoin de parser les dates.
+     *
+     * @throws \Throwable si le listing/la suppression échoue — laissé à
+     *                     l'appelant (DatabaseBackupService::shipOffsite est
+     *                     déjà dans un try/catch englobant, best-effort).
+     */
+    public function pruneOldObjects(string $prefix, int $keep): void
+    {
+        if (!$this->isConfigured()) {
+            return;
+        }
+
+        $client = $this->makeClient();
+
+        $keys = [];
+        foreach ($client->listObjectsV2(new ListObjectsV2Request([
+            'Bucket' => $this->bucket,
+            'Prefix' => $prefix,
+        ]))->getContents() as $object) {
+            $key = $object->getKey();
+            if (null !== $key) {
+                $keys[] = $key;
+            }
+        }
+
+        rsort($keys);
+
+        foreach (\array_slice($keys, $keep) as $staleKey) {
+            $client->deleteObject(new DeleteObjectRequest([
+                'Bucket' => $this->bucket,
+                'Key' => $staleKey,
+            ]));
+
+            $this->logger->info('OffsiteBackupUploader : ancien objet purgé.', ['path' => $staleKey]);
+        }
+    }
+
+    private function makeClient(): S3Client
+    {
+        return new S3Client([
+            'endpoint' => $this->endpoint,
+            'region' => $this->region,
+            'accessKeyId' => $this->accessKeyId,
+            'accessKeySecret' => $this->secretAccessKey,
+            // Les providers S3-compatible (R2, B2, OVH...) exigent le style
+            // "path" (bucket.example.com/key est réservé au vrai AWS S3 avec
+            // DNS wildcard) — sans ça, la requête part vers un host inexistant.
+            'pathStyleEndpoint' => 'true',
+        ]);
     }
 }
