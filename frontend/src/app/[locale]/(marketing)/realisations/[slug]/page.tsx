@@ -142,91 +142,94 @@ export default async function ProjectDetailPage({
       />
       <ReadingProgressBar />
       {/* Même habillage (fond dégradé + grille de points) que le hero de
-          toutes les autres pages publiques, cf. PageHero — jusqu'ici absent
-          des pages de détail, qui tranchaient à plat sur le reste du site
-          (h1 notamment réduit à une taille de sous-titre). */}
-      <section className="relative overflow-hidden px-6 pt-14 pb-8">
+          toutes les autres pages publiques, cf. PageHero. La couverture vit
+          désormais DANS le hero (colonne droite dès `lg`, empilée sous le
+          texte en dessous) plutôt que dans une section séparée qu'il fallait
+          faire défiler pour atteindre — la fiche projet est le contenu le
+          plus "vendeur" du site, elle ne doit pas commencer par un bloc de
+          texte à moitié vide avant la première preuve visuelle. */}
+      <section className="relative overflow-hidden px-6 pt-14 pb-14">
         <HeroBackground />
-        <div className="relative mx-auto max-w-[1120px]">
-          <div className="mb-6">
-            <Breadcrumb items={[{ label: t("eyebrow"), href: "/realisations" }, { label: project.title }]} />
-          </div>
-          <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
-            {t("eyebrow")}
-          </Badge>
-          {/* Volontairement pas de classe hero-in sur le h1 : candidat LCP le
-              plus probable de la page, cf. commentaire dans PageHero.tsx.
-              Taille alignée sur PageHero.tsx (clamp(1.75rem,3vw,2.75rem)) —
-              ni la taille de sous-titre d'origine (clamp(1.25rem,2.5vw,1.75rem))
-              ni la taille surdimensionnée choisie ensuite (calée sur l'ancien
-              h1 de l'article, lui-même trop grand) ne correspondaient au
-              standard déjà établi sur le reste du site. */}
-          <h1 className="mb-5 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
-            {project.title}
-          </h1>
-          {info?.role && (
-            <p className="hero-in mb-8 text-sm font-semibold text-brand-primary" style={{ animationDelay: "0.16s" }}>
-              {td("roleLabel")} — {info.role}
-            </p>
-          )}
-          <div className="hero-in flex flex-wrap gap-3.5" style={{ animationDelay: "0.24s" }}>
-            {project.link ? (
-              <>
-                <a href={project.link} target="_blank" rel="noopener" className="btn-primary">
-                  {tc("seeProject")} →
-                </a>
-                <ButtonLink href="/contact" variant="secondary">
-                  {tc("ctaConfierProjet")}
-                </ButtonLink>
-              </>
-            ) : (
-              <ButtonLink href="/contact">{tc("ctaConfierProjet")}</ButtonLink>
-            )}
-            {info?.repoUrl && (
-              <a
-                href={info.repoUrl}
-                target="_blank"
-                rel="noopener"
-                className="text-sm font-semibold text-brand-primary hover:underline"
-              >
-                {td("repoLink")} →
-              </a>
-            )}
-          </div>
-          {/* Dans le hero, pas en fin de page : un visiteur qui ne lit pas
-              jusqu'au bout ne verrait jamais l'offre de résumé sinon. */}
-          <div className="hero-in mt-6" style={{ animationDelay: "0.32s" }}>
-            <AiPageInsight slug={project.slug} contentType="project" />
-          </div>
-        </div>
-      </section>
-
-      <section className="px-6 py-6">
-        <div className="mx-auto max-w-[1120px]">
-          <ProjectDeviceFrame liveUrl={project.link || undefined} liveLabel={tc("seeProject")}>
-            <div
-              className={info?.coverImage ? "vt-target relative h-[260px] w-full bg-brand-light sm:h-[320px]" : "relative h-[260px] w-full bg-brand-light sm:h-[320px]"}
-              style={info?.coverImage ? { viewTransitionName: projectImageTransitionName(project.id) } : undefined}
-            >
-              {info?.coverImage ? (
-                <Image
-                  src={getMediaUrl(info.coverImage.filePath)}
-                  alt={info.coverImage.altText ?? project.title}
-                  fill
-                  sizes="1120px"
-                  className="object-cover"
-                  priority
-                />
-              ) : (
-                <ProjectVisual seed={project.id} />
-              )}
-              {/* Même position que ProjectCard (coin supérieur droit) : lecture
-                  cohérente du statut, qu'on regarde une grille ou une page projet. */}
-              <Badge variant={projectStatusVariant(project.status)} className="absolute top-3 right-3 shadow-sm">
-                {tStatus(project.status)}
-              </Badge>
+        <div className="relative mx-auto grid max-w-[1120px] gap-10 lg:grid-cols-[1.05fr_1fr] lg:items-center">
+          <div>
+            <div className="mb-6">
+              <Breadcrumb items={[{ label: t("eyebrow"), href: "/realisations" }, { label: project.title }]} />
             </div>
-          </ProjectDeviceFrame>
+            <Badge variant="accent" className="hero-in mb-4" style={{ animationDelay: "0s" }}>
+              {t("eyebrow")}
+            </Badge>
+            {/* Volontairement pas de classe hero-in sur le h1 : candidat LCP le
+                plus probable de la page, cf. commentaire dans PageHero.tsx.
+                Taille alignée sur PageHero.tsx (clamp(1.75rem,3vw,2.75rem)) —
+                ni la taille de sous-titre d'origine (clamp(1.25rem,2.5vw,1.75rem))
+                ni la taille surdimensionnée choisie ensuite (calée sur l'ancien
+                h1 de l'article, lui-même trop grand) ne correspondaient au
+                standard déjà établi sur le reste du site. */}
+            <h1 className="mb-5 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
+              {project.title}
+            </h1>
+            {info?.role && (
+              <p className="hero-in mb-8 text-sm font-semibold text-brand-primary" style={{ animationDelay: "0.16s" }}>
+                {td("roleLabel")} — {info.role}
+              </p>
+            )}
+            <div className="hero-in flex flex-wrap gap-3.5" style={{ animationDelay: "0.24s" }}>
+              {project.link ? (
+                <>
+                  <a href={project.link} target="_blank" rel="noopener" className="btn-primary">
+                    {tc("seeProject")} →
+                  </a>
+                  <ButtonLink href="/contact" variant="secondary">
+                    {tc("ctaConfierProjet")}
+                  </ButtonLink>
+                </>
+              ) : (
+                <ButtonLink href="/contact">{tc("ctaConfierProjet")}</ButtonLink>
+              )}
+              {info?.repoUrl && (
+                <a
+                  href={info.repoUrl}
+                  target="_blank"
+                  rel="noopener"
+                  className="text-sm font-semibold text-brand-primary hover:underline"
+                >
+                  {td("repoLink")} →
+                </a>
+              )}
+            </div>
+            {/* Dans le hero, pas en fin de page : un visiteur qui ne lit pas
+                jusqu'au bout ne verrait jamais l'offre de résumé sinon. */}
+            <div className="hero-in mt-6" style={{ animationDelay: "0.32s" }}>
+              <AiPageInsight slug={project.slug} contentType="project" />
+            </div>
+          </div>
+
+          <div className="hero-in" style={{ animationDelay: "0.1s" }}>
+            <ProjectDeviceFrame liveUrl={project.link || undefined} liveLabel={tc("seeProject")}>
+              <div
+                className={info?.coverImage ? "vt-target relative h-[240px] w-full bg-brand-light sm:h-[300px] lg:h-[280px]" : "relative h-[240px] w-full bg-brand-light sm:h-[300px] lg:h-[280px]"}
+                style={info?.coverImage ? { viewTransitionName: projectImageTransitionName(project.id) } : undefined}
+              >
+                {info?.coverImage ? (
+                  <Image
+                    src={getMediaUrl(info.coverImage.filePath)}
+                    alt={info.coverImage.altText ?? project.title}
+                    fill
+                    sizes="(min-width: 1024px) 520px, 1120px"
+                    className="object-cover"
+                    priority
+                  />
+                ) : (
+                  <ProjectVisual seed={project.id} />
+                )}
+                {/* Même position que ProjectCard (coin supérieur droit) : lecture
+                    cohérente du statut, qu'on regarde une grille ou une page projet. */}
+                <Badge variant={projectStatusVariant(project.status)} className="absolute top-3 right-3 shadow-sm">
+                  {tStatus(project.status)}
+                </Badge>
+              </div>
+            </ProjectDeviceFrame>
+          </div>
         </div>
       </section>
 
@@ -372,14 +375,22 @@ export default async function ProjectDetailPage({
               </h2>
             </Reveal>
             <div className="flex flex-col gap-4">
+              {/* Colonne du milieu (flèche) uniquement à partir de `md` : sous
+                  ce seuil, problème et solution s'empilent déjà verticalement
+                  et une flèche horizontale n'aurait pas de sens. */}
               {info.challenges.map((challenge, i) => (
                 <Reveal key={challenge.problem} delay={i * 0.08}>
-                  <Card variant="soft" className="grid gap-4 p-6 md:grid-cols-2">
+                  <Card variant="soft" className="grid gap-4 p-6 md:grid-cols-[1fr_auto_1fr] md:items-center">
                     <div>
                       <Badge variant="outline" className="mb-2">
                         {td("challengeLabel")}
                       </Badge>
                       <p className="text-sm opacity-80">{challenge.problem}</p>
+                    </div>
+                    <div className="hidden shrink-0 items-center justify-center text-brand-primary/50 md:flex" aria-hidden="true">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12h14M13 6l6 6-6 6" />
+                      </svg>
                     </div>
                     <div>
                       <Badge className="mb-2">{td("solutionLabel")}</Badge>
