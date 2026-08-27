@@ -1,5 +1,9 @@
 # Déploiement — horlynat.com (VPS conteneurisé)
 
+> Vue d'ensemble de l'architecture (tous composants, sécurité, continuité) :
+> [`../ARCHITECTURE.md`](../ARCHITECTURE.md). Ce fichier-ci est le runbook
+> d'exécution détaillé, pas une vue d'ensemble.
+
 Runbook d'exécution pour ce dossier `infra/`. Suppose un clone de la branche
 **`main`** sur le VPS, avec la structure :
 
@@ -640,11 +644,12 @@ reste, `messenger-worker` ci-dessus) ; conversation temps réel (Claude,
   faute de Cloudflare Access dessus.
 - ~~Filtrage de sortie anti-prompt-injection de l'assistant IA et
   anonymisation RGPD des logs de conversation~~ : implémenté, cf. §12.
-- **`config/packages/security.yaml`** : la règle globale
-  `{ path: ^/api, roles: IS_AUTHENTICATED_FULLY }` déjà repérée dans
-  `_config.frontend.md` bloque toujours tous les appels publics vers `/api`.
-  Non corrigée ici (hors scope infra) — sans ce correctif, `api.horlynat.com`
-  répondra 401 partout une fois déployé.
+- ~~**`config/packages/security.yaml`** : la règle globale
+  `{ path: ^/api, roles: IS_AUTHENTICATED_FULLY }` bloquait tous les appels
+  publics vers `/api`~~ : corrigée côté backend (`^/api, roles:
+  PUBLIC_ACCESS` — sécurité déléguée à API Platform par opération, cf.
+  `security.yaml` actuel). Vérifié le 27/08/2026, cette note était restée
+  périmée ici après le correctif.
 - **Wazuh/SIEM, Prometheus+Grafana** : mentionnés par le guide pour des
   besoins plus lourds qu'un VPS solo — AIDE/rkhunter/auditd + Netdata
   suffisent ici. Note laissée si le besoin grandit.
@@ -675,4 +680,4 @@ reste, `messenger-worker` ci-dessus) ; conversation temps réel (Claude,
 - [ ] Monitoring (Netdata + Uptime externe) en place
 - [ ] `admin-ipwhitelist` éditée avec la vraie IP avant d'utiliser `mailadmin.horlynat.com` (`dark.horlynat.com` n'en dépend plus, cf. §5)
 - [ ] DNS `db.horlynat.com` + application Cloudflare Access créés avant d'utiliser Adminer (cf. §10.5) — sans Access, `cloudflare-only` seul ne bloque que le hors-Cloudflare, pas un visiteur Cloudflare quelconque
-- [ ] `security.yaml` `/api` corrigé côté backend (sinon l'API reste 401 partout)
+- [x] `security.yaml` `/api` corrigé côté backend (vérifié 27/08/2026)
