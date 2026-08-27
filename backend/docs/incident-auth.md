@@ -110,9 +110,9 @@ soi-même, une fois, pas à chaque incident :
   place hors de cette machine — 27/08/2026.
 - [x] **Clé privée `hmm_admin_backup`** (`~/.ssh/hmm_admin_backup`, cf. §4) :
   deuxième copie mise en place hors de cette machine — 27/08/2026.
-- [ ] **Compte Cloudflare** : 2FA + codes de secours sauvegardés hors du
-  seul appareil habituel (perdre l'accès à ce compte bloque §5 ci-dessus).
-  → dash.cloudflare.com → icône profil → *My Profile* → *Authentication*.
+- [x] **Compte Cloudflare** : 2FA active avec 3 facteurs indépendants (clé
+  de sécurité, mobile, e-mail) — 27/08/2026. Pas de point de récupération
+  unique, plus robuste que de simples codes de secours.
 - [ ] **Compte GitHub** (`horlynat`) : 2FA + codes de secours — sans lui,
   impossible de déclencher le rollback du §2.
   → github.com/settings/security → *Two-factor authentication*
