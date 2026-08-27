@@ -61,7 +61,10 @@ RUN install-php-extensions \
     apcu \
     bcmath \
     gd \
-    && apk add --no-cache su-exec
+    # age : chiffrement des dumps avant copie hors-site (cf.
+    # App\Service\DatabaseBackupService::shipOffsite) — clé publique
+    # seulement embarquée ici via AGE_RECIPIENT, jamais la clé privée.
+    && apk add --no-cache su-exec age
 
 ENV APP_ENV=prod \
     APP_DEBUG=0 \
