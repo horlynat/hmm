@@ -113,10 +113,13 @@ soi-même, une fois, pas à chaque incident :
 - [x] **Compte Cloudflare** : 2FA active avec 3 facteurs indépendants (clé
   de sécurité, mobile, e-mail) — 27/08/2026. Pas de point de récupération
   unique, plus robuste que de simples codes de secours.
-- [ ] **Compte GitHub** (`horlynat`) : 2FA + codes de secours — sans lui,
-  impossible de déclencher le rollback du §2.
-  → github.com/settings/security → *Two-factor authentication*
-  (télécharger/imprimer les *recovery codes* à cette étape, pas après).
+- [x] **Compte GitHub** (`horlynat`) : 2FA active via GitHub Mobile —
+  27/08/2026. Contrairement à Cloudflare (§ ci-dessus), ce facteur unique
+  dépend d'un seul appareil (le téléphone) : les *recovery codes*
+  (github.com/settings/security → *Two-factor authentication*) restent la
+  seule voie de secours si ce téléphone est perdu/cassé — à sauvegarder
+  hors de cet appareil quand l'occasion se présente, non bloquant pour le
+  reste.
 - [ ] **Domaine `horlynat.com`** : auto-renouvellement actif chez le
   registrar, coordonnées de contact à jour (email de rappel d'expiration
   souvent le seul filet avant coupure totale du site).
