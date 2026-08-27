@@ -64,7 +64,8 @@
 			<div class="panel-header"><h3 class="panel-title">Présentation du projet</h3></div>
 			<div class="panel-body space-y-5">
 				{% if info.coverImage %}
-					<img src="/uploads/projects/{{ info.coverImage.filePath }}" alt="{{ info.coverImage.altText }}" class="w-full rounded-xl border border-gray-100 dark:border-gray-800 object-cover max-h-72">
+					{# filePath contient déjà le chemin complet depuis la racine web (cf. MediaUploader::upload) — ne pas le repréfixer. #}
+					<img src="{{ info.coverImage.filePath }}" alt="{{ info.coverImage.altText }}" class="w-full rounded-xl border border-gray-100 dark:border-gray-800 object-cover max-h-72">
 				{% endif %}
 
 				{% if info.role %}
@@ -216,7 +217,8 @@
 						<div class="rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900">
 							<div class="aspect-square flex items-center justify-center bg-gray-50/50 dark:bg-gray-800/40">
 								{% if 'image' in media.mimeType %}
-									<img src="/uploads/projects/{{ media.filePath }}" alt="{{ media.altText }}" class="object-cover w-full h-full">
+									{# media.filePath contient déjà le chemin complet depuis la racine web (cf. MediaUploader::upload) — ne pas le repréfixer. #}
+									<img src="{{ media.filePath }}" alt="{{ media.altText }}" class="object-cover w-full h-full">
 								{% else %}
 									<span class="ti ti-file text-3xl opacity-40" aria-hidden="true"></span>
 								{% endif %}
