@@ -107,5 +107,24 @@ final class AdminProjectFormRenderingTest extends KernelTestCase
         // 5) Aucun chemin d'image doublé (cf. correctif média_grid.html.twig /
         // member/project/read.html.twig — même bug de composition de chemin).
         $this->assertStringNotContainsString('/uploads/projects//uploads/projects/', $html);
+
+        // 6) Repère de format visible et permanent sur "Défis & solutions" —
+        // ajouté après que le format "Défi | Solution" par ligne ait été mal
+        // rempli deux fois en prod malgré une aide déjà présente (mais trop
+        // discrète : 11px à 40% d'opacité, et un placeholder qui disparaît
+        // dès la première frappe). Doit rester visible même une fois le champ
+        // rempli, contrairement au placeholder.
+        $this->assertStringContainsString('Défi&nbsp;|&nbsp;Solution', $html);
+        $this->assertStringContainsString('Challenge&nbsp;|&nbsp;Solution', $html);
+
+        // 7) Contrôleur Stimulus de retour en direct (pendant la frappe, pas
+        // seulement à la sauvegarde) sur challenges/challengesEn — même règle
+        // que AdminProjectController::findLinesWithoutSeparator() côté
+        // serveur, mais visible avant de cliquer sur "Enregistrer".
+        $this->assertSame(
+            2,
+            substr_count($html, 'data-controller="pair-format-hint"'),
+            'Le contrôleur de retour en direct doit être présent sur challenges ET challengesEn, nulle part ailleurs (le "|" y est obligatoire, pas sur techStack/results).',
+        );
     }
 }
