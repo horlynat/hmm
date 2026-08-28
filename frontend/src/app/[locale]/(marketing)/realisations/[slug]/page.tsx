@@ -2,6 +2,18 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import {
+  Activity,
+  Cloud,
+  Code2,
+  Database,
+  FlaskConical,
+  Globe,
+  Server,
+  ShieldCheck,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import { AnimatedStatValue, Badge, Breadcrumb, ButtonLink, Card, HeroBackground, ReadingProgressBar, Reveal } from "@/components/ui";
 import { ProjectVisual } from "@/components/sections/ProjectVisual";
 import { NextUpCard } from "@/components/sections/NextUpCard";
@@ -68,6 +80,27 @@ export async function generateMetadata({
       images: [image],
     },
   };
+}
+
+// Repère visuel par mot-clé plutôt qu'un champ "catégorie" en base (aurait
+// demandé une migration + un formulaire plus complexe pour un gain purement
+// esthétique) — première correspondance qui matche gagne, ordre du plus
+// spécifique au plus générique. `name` est saisi librement côté admin
+// (cf. ProjectType::coverImage — même mini-format "un par ligne" que
+// challenges/results), donc heuristique tolérante plutôt qu'un mapping exact.
+const TECH_ICON_RULES: Array<[RegExp, LucideIcon]> = [
+  [/ia\b|assistant|gemini|claude|rag/i, Sparkles],
+  [/cloudflare|waf|zero trust|2fa|jwt|s[ée]curit|tls/i, ShieldCheck],
+  [/mysql|database|doctrine|donn[ée]es/i, Database],
+  [/docker|traefik|github actions|infrastructure|vps|d[ée]ploiement|deploy/i, Cloud],
+  [/phpunit|phpstan|playwright|test|qualit[ée]|cs-fixer/i, FlaskConical],
+  [/netdata|uptime|observabilit[ée]|monitoring|monolog/i, Activity],
+  [/symfony|api platform|backend|php\b/i, Server],
+  [/next\.?js|react|tailwind|typescript|frontend/i, Globe],
+];
+
+function techStackIcon(name: string): LucideIcon {
+  return TECH_ICON_RULES.find(([pattern]) => pattern.test(name))?.[1] ?? Code2;
 }
 
 function CheckIcon() {
@@ -329,7 +362,7 @@ export default async function ProjectDetailPage({
 
       {info && (info.objectives.length > 0 || info.techStack.length > 0) && (
         <section className="border-y border-[var(--border-softer)] bg-bg-card px-6 py-14">
-          <div className="mx-auto grid max-w-[1120px] gap-10 md:grid-cols-2">
+          <div className="mx-auto max-w-[1120px]">
             {info.objectives.length > 0 && (
               <Reveal delay={0}>
                 <h2 className="mb-4 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
@@ -345,20 +378,41 @@ export default async function ProjectDetailPage({
                 </ul>
               </Reveal>
             )}
+            {/* Grille de cartes (pas une liste empilée) : chaque techno a assez
+                d'espace pour un vrai repère visuel (icône) + sa justification —
+                l'ancienne mise en page à 2 colonnes serrées contre les objectifs
+                laissait trop peu de place pour que la stack soit "vendeuse". */}
             {info.techStack.length > 0 && (
               <Reveal delay={0.1}>
-                <h2 className="mb-4 text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                <h2
+                  className={info.objectives.length > 0 ? "mt-12 mb-6 text-lg font-semibold" : "mb-6 text-lg font-semibold"}
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
                   {td("stackLabel")}
                 </h2>
-                <div className="flex flex-col gap-3">
-                  {info.techStack.map((tech) => (
-                    <div key={tech.name} className="soft-card p-3.5">
-                      <Badge variant="accent" className="mb-1.5 w-fit">
-                        {tech.name}
-                      </Badge>
-                      {tech.rationale && <p className="text-sm opacity-70">{tech.rationale}</p>}
-                    </div>
-                  ))}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {info.techStack.map((tech, i) => {
+                    const Icon = techStackIcon(tech.name);
+                    return (
+                      <Reveal key={tech.name} delay={0.1 + i * 0.05}>
+                        <Card
+                          variant="soft"
+                          className="group h-full p-5 transition-all duration-300 hover:-translate-y-1 hover:border-brand-primary/30 hover:shadow-lg"
+                        >
+                          <div
+                            className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl text-brand-primary transition-transform duration-300 group-hover:scale-110"
+                            style={{ background: "linear-gradient(135deg, var(--cta-gradient-from), var(--cta-gradient-to) 80%)", color: "#fff" }}
+                          >
+                            <Icon size={19} aria-hidden="true" />
+                          </div>
+                          <h3 className="mb-1.5 text-sm font-semibold" style={{ fontFamily: "var(--font-heading)" }}>
+                            {tech.name}
+                          </h3>
+                          {tech.rationale && <p className="text-sm opacity-70">{tech.rationale}</p>}
+                        </Card>
+                      </Reveal>
+                    );
+                  })}
                 </div>
               </Reveal>
             )}
