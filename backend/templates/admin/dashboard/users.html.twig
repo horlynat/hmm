@@ -53,7 +53,7 @@
 						<tr>
 							<td>
 								<div class="flex items-center gap-3">
-									<img class="h-9 w-9 rounded-full" src="{{ user.profileImage ?? 'https://ui-avatars.com/api/?name=' ~ (user.fullName ?? user.email)|url_encode }}" alt="{{ user.fullName ?? user.email }}">
+									<img class="h-9 w-9 rounded-full" src="{{ user.profileImage ?? ('https://ui-avatars.com/api/?name=' ~ (user.fullName ?? user.email)|url_encode) }}" alt="{{ user.fullName ?? user.email }}">
 									<div>
 										<div class="font-bold text-brand-dark">{{ user.fullName ?? 'Non spécifié' }}</div>
 										<div class="text-xs opacity-60">{{ user.email }}</div>

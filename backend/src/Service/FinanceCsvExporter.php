@@ -79,10 +79,13 @@ final class FinanceCsvExporter
         $response = new StreamedResponse(function () use ($headers, $rows): void {
             $handle = fopen('php://output', 'w');
             fwrite($handle, "\xEF\xBB\xBF");
-            fputcsv($handle, $headers, self::DELIMITER);
+            // escape: '' — désactive l'échappement antéslash historique de PHP
+            // (non conforme RFC 4180 et déprécié en 8.4 s'il reste implicite) ;
+            // les champs restent encadrés et les guillemets internes doublés.
+            fputcsv($handle, $headers, self::DELIMITER, escape: '');
 
             foreach ($rows as $row) {
-                fputcsv($handle, $row, self::DELIMITER);
+                fputcsv($handle, $row, self::DELIMITER, escape: '');
             }
 
             fclose($handle);
