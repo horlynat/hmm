@@ -13,7 +13,9 @@
 				{# Conteneur d'affichage de l'image #}
 				<div class="aspect-square flex items-center justify-center overflow-hidden bg-gray-50/50 relative">
 					{% if 'image' in media.mimeType %}
-						<img src="/uploads/projects/{{ media.filePath }}" alt="{{ media.altText }}" class="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105">
+						{# media.filePath contient déjà le chemin complet depuis la racine web
+						   ("/uploads/projects/xxx.jpg", cf. MediaUploader::upload() -> 'path' => '/uploads/'.$relativePath) — ne pas le repréfixer. #}
+						<img src="{{ media.filePath }}" alt="{{ media.altText }}" class="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105">
 					{% else %}
 						<div class="text-center p-4">
 							<span class="text-4xl block mb-2">📄</span>
