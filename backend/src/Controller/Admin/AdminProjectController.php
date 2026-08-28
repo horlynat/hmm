@@ -26,6 +26,7 @@ use App\Repository\UserRepository;
 use App\Security\Voter\ProjectVoter;
 use App\Service\MediaUploader;
 use App\Service\NewsletterNotifier;
+use App\Service\ProjectTranslationAuditor;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
@@ -33,6 +34,7 @@ use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -432,7 +434,7 @@ final class AdminProjectController extends AbstractController
         ]);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid() && $this->validateShowcasePairFields($form)) {
             $project->setSlug($this->uniqueProjectSlug($slugger, $entityManager, $project->getTitle()));
 
             // Upload des médias
@@ -589,6 +591,66 @@ final class AdminProjectController extends AbstractController
     }
 
     /**
+     * Vérifie que chaque ligne non vide d'un champ "clé | valeur" contient
+     * bien le séparateur — sans ça, parsePairs() range toute la ligne dans la
+     * première colonne et laisse la seconde silencieusement vide (aucune
+     * exception, rien qui alerte l'admin). Constaté deux fois en prod pour
+     * "Défis rencontrés & solutions" : un admin qui édite ce texte comme un
+     * paragraphe normal (sans se souvenir du "|") obtient un enregistrement
+     * qui semble réussir, mais une fiche publique où "Solution" reste vide.
+     *
+     * Ajoute une erreur de formulaire au lieu de corriger silencieusement à
+     * la place de l'admin — un texte tronqué automatiquement pourrait perdre
+     * du contenu qu'il avait l'intention de garder.
+     *
+     * @return string[] lignes fautives (pour le message d'erreur)
+     */
+    private function findLinesWithoutSeparator(string $raw): array
+    {
+        $offenders = [];
+        foreach (preg_split('/\r?\n/', $raw) ?: [] as $line) {
+            $line = trim($line);
+            if ('' !== $line && !str_contains($line, '|')) {
+                $offenders[] = $line;
+            }
+        }
+
+        return $offenders;
+    }
+
+    /**
+     * Applique findLinesWithoutSeparator() à chaque champ "un par ligne, clé |
+     * valeur" du formulaire (FR + EN) — techStack, challenges, results. Ajoute
+     * une FormError explicite par champ fautif plutôt que de laisser
+     * syncProjectInfoFromForm() persister silencieusement une entrée à moitié
+     * vide. Sans effet si include_showcase est absent (formulaire sans ces
+     * champs, cf. syncProjectInfoFromForm()).
+     */
+    private function validateShowcasePairFields(FormInterface $form): bool
+    {
+        if (!$form->has('challenges')) {
+            return true;
+        }
+
+        $fields = ['techStack', 'techStackEn', 'challenges', 'challengesEn', 'results', 'resultsEn'];
+        $valid = true;
+
+        foreach ($fields as $fieldName) {
+            $offenders = $this->findLinesWithoutSeparator((string) $form->get($fieldName)->getData());
+            if ([] !== $offenders) {
+                $valid = false;
+                $form->get($fieldName)->addError(new FormError(sprintf(
+                    'Il manque le séparateur "|" sur %d ligne(s) — la partie après "|" restera vide sans lui. Exemple fautif : "%s".',
+                    count($offenders),
+                    mb_strimwidth($offenders[0], 0, 80, '…'),
+                )));
+            }
+        }
+
+        return $valid;
+    }
+
+    /**
      * Inverse de parseLines() : reconstruit le texte "une valeur par ligne" à
      * partir du tableau stocké, pour pré-remplir le formulaire en édition.
      *
@@ -625,7 +687,7 @@ final class AdminProjectController extends AbstractController
     // =========================================================================
 
     #[Route('/{id}', name: 'read', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function read(Project $project): Response
+    public function read(Project $project, ProjectTranslationAuditor $translationAuditor): Response
     {
         $this->denyAccessUnlessGranted(ProjectVoter::VIEW, $project);
 
@@ -635,6 +697,10 @@ final class AdminProjectController extends AbstractController
             'priorities' => ProjectPriorityEnum::cases(),
             'billingTypes' => BillingTypeEnum::cases(),
             'taskStatuses' => TaskStatusEnum::cases(),
+            // cf. ProjectTranslationAuditor — signale une traduction EN vide
+            // ou nettement plus courte que le FR, avant qu'un visiteur
+            // anglophone ne la découvre en premier (cas réel constaté en prod).
+            'incompleteTranslations' => $translationAuditor->findIncompleteTranslations($project),
         ]);
     }
 
@@ -690,7 +756,7 @@ final class AdminProjectController extends AbstractController
 
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid() && $this->validateShowcasePairFields($form)) {
             $project->setSlug($this->uniqueProjectSlug($slugger, $entityManager, $project->getTitle(), $project->getId()));
 
             // Upload des nouveaux médias
