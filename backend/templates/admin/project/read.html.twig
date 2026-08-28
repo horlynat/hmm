@@ -119,6 +119,22 @@
 		</div>
 	</div>
 
+	{# Traduction EN incomplète (vide ou nettement plus courte que le FR) —
+	   cf. App\Service\ProjectTranslationAuditor. Rend visible côté admin,
+	   avant publication, ce qu'un visiteur anglophone découvrirait sinon en
+	   premier (cas réel constaté en prod : description EN arrêtée à
+	   mi-chemin, personne ne l'avait remarqué). #}
+	{% if incompleteTranslations is defined and incompleteTranslations|length > 0 %}
+		<div class="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+			<span class="ti ti-language mt-0.5 shrink-0" aria-hidden="true"></span>
+			<div>
+				<strong>Traduction anglaise incomplète ou manquante</strong> — {{ incompleteTranslations|length }} champ{{ incompleteTranslations|length > 1 ? 's' : '' }} concerné{{ incompleteTranslations|length > 1 ? 's' : '' }} :
+				{{ incompleteTranslations|keys|join(', ') }}.
+				<a href="{{ path('admin_project_update', {id: project.id}) }}#showcase" class="underline font-medium">Compléter →</a>
+			</div>
+		</div>
+	{% endif %}
+
 	{# ================================================================= #}
 	{# KPIs                                                              #}
 	{# ================================================================= #}
