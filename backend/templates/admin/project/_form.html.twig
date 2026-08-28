@@ -114,12 +114,18 @@
 				<div class="field">
 					{{ form_label(form.objectives, form.objectives.vars.label, {'label_attr': {'class': 'field-label'}}) }}
 					<p class="text-[11px] opacity-40 mb-1">{{ form.objectives.vars.help }} — Exemple : Réduire le temps de paiement de 40%</p>
+					<p class="inline-flex items-center gap-1.5 text-xs font-mono bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800 rounded px-2 py-1 mb-1.5">
+						<span aria-hidden="true">📌</span> Format attendu : un objectif par ligne
+					</p>
 					{{ form_widget(form.objectives, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Simplifier le parcours d'achat sur mobile\nIntégrer un paiement fiable", 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
 					{{ form_errors(form.objectives, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
 				</div>
 				<div class="field">
 					{{ form_label(form.objectivesEn, form.objectivesEn.vars.label, {'label_attr': {'class': 'field-label opacity-70'}}) }}
 					<p class="text-[11px] opacity-40 mb-1">{{ form.objectivesEn.vars.help }}</p>
+					<p class="inline-flex items-center gap-1.5 text-xs font-mono bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800 rounded px-2 py-1 mb-1.5">
+						<span aria-hidden="true">📌</span> Expected format: one objective per line
+					</p>
 					{{ form_widget(form.objectivesEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Simplify the mobile purchase journey\nIntegrate reliable payment", 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
 					{{ form_errors(form.objectivesEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
 				</div>
@@ -129,28 +135,42 @@
 				<div class="field">
 					{{ form_label(form.techStack, form.techStack.vars.label, {'label_attr': {'class': 'field-label'}}) }}
 					<p class="text-[11px] opacity-40 mb-1">{{ form.techStack.vars.help }} — Exemple : Next.js | Rendu rapide et bon référencement</p>
+					<p class="inline-flex items-center gap-1.5 text-xs font-mono bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800 rounded px-2 py-1 mb-1.5">
+						<span aria-hidden="true">📌</span> Format : <strong class="font-semibold">Technologie&nbsp;|&nbsp;Pourquoi ce choix</strong> <span class="opacity-70">(la partie après « | » est facultative)</span>
+					</p>
 					{{ form_widget(form.techStack, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Next.js | Rendu rapide et bon référencement\nSymfony / API Platform | API robuste et typée", 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
 					{{ form_errors(form.techStack, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
 				</div>
 				<div class="field">
 					{{ form_label(form.techStackEn, form.techStackEn.vars.label, {'label_attr': {'class': 'field-label opacity-70'}}) }}
 					<p class="text-[11px] opacity-40 mb-1">{{ form.techStackEn.vars.help }}</p>
+					<p class="inline-flex items-center gap-1.5 text-xs font-mono bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800 rounded px-2 py-1 mb-1.5">
+						<span aria-hidden="true">📌</span> Format: <strong class="font-semibold">Technology&nbsp;|&nbsp;Why this choice</strong> <span class="opacity-70">(the part after "|" is optional)</span>
+					</p>
 					{{ form_widget(form.techStackEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Next.js | Fast rendering and good SEO\nSymfony / API Platform | Robust, typed API", 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
 					{{ form_errors(form.techStackEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
 				</div>
 			</div>
 
 			<div class="grid grid-cols-1 lg:grid-cols-2 gap-4" data-controller="bilingual-field">
-				<div class="field">
+				<div class="field" data-controller="pair-format-hint">
 					{{ form_label(form.challenges, form.challenges.vars.label, {'label_attr': {'class': 'field-label'}}) }}
 					<p class="text-[11px] opacity-40 mb-1">{{ form.challenges.vars.help }} — c'est souvent le point le plus convaincant pour un recruteur.</p>
-					{{ form_widget(form.challenges, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Éviter la survente lors des pics de commandes | Verrouillage optimiste du stock en base", 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
+					<p class="inline-flex items-center gap-1.5 text-xs font-mono bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded px-2 py-1 mb-1.5">
+						<span aria-hidden="true">📌</span> Format attendu, une ligne par défi : <strong class="font-semibold">Défi&nbsp;|&nbsp;Solution</strong>
+					</p>
+					{{ form_widget(form.challenges, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Éviter la survente lors des pics de commandes | Verrouillage optimiste du stock en base", 'data-bilingual-field-target': 'fr', 'data-pair-format-hint-target': 'input', 'data-action': 'input->bilingual-field#scheduleFromFr input->pair-format-hint#check'}}) }}
+					<p class="hidden text-amber-600 dark:text-amber-500 text-xs mt-1" data-pair-format-hint-target="hint"></p>
 					{{ form_errors(form.challenges, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
 				</div>
-				<div class="field">
+				<div class="field" data-controller="pair-format-hint">
 					{{ form_label(form.challengesEn, form.challengesEn.vars.label, {'label_attr': {'class': 'field-label opacity-70'}}) }}
 					<p class="text-[11px] opacity-40 mb-1">{{ form.challengesEn.vars.help }}</p>
-					{{ form_widget(form.challengesEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Avoiding overselling during order spikes | Optimistic stock locking at the database level", 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
+					<p class="inline-flex items-center gap-1.5 text-xs font-mono bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded px-2 py-1 mb-1.5">
+						<span aria-hidden="true">📌</span> Expected format, one line per challenge: <strong class="font-semibold">Challenge&nbsp;|&nbsp;Solution</strong>
+					</p>
+					{{ form_widget(form.challengesEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Avoiding overselling during order spikes | Optimistic stock locking at the database level", 'data-bilingual-field-target': 'en', 'data-pair-format-hint-target': 'input', 'data-action': 'input->bilingual-field#scheduleFromEn input->pair-format-hint#check'}}) }}
+					<p class="hidden text-amber-600 dark:text-amber-500 text-xs mt-1" data-pair-format-hint-target="hint"></p>
 					{{ form_errors(form.challengesEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
 				</div>
 			</div>
@@ -159,12 +179,18 @@
 				<div class="field">
 					{{ form_label(form.results, form.results.vars.label, {'label_attr': {'class': 'field-label'}}) }}
 					<p class="text-[11px] opacity-40 mb-1">{{ form.results.vars.help }} — Exemple : Temps de paiement | -40%</p>
+					<p class="inline-flex items-center gap-1.5 text-xs font-mono bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800 rounded px-2 py-1 mb-1.5">
+						<span aria-hidden="true">📌</span> Format : <strong class="font-semibold">Indicateur&nbsp;|&nbsp;Valeur</strong> <span class="opacity-70">(la partie après « | » est facultative)</span>
+					</p>
 					{{ form_widget(form.results, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Temps de paiement | -40%\nTaux d'abandon panier | -25%", 'data-bilingual-field-target': 'fr', 'data-action': 'input->bilingual-field#scheduleFromFr'}}) }}
 					{{ form_errors(form.results, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
 				</div>
 				<div class="field">
 					{{ form_label(form.resultsEn, form.resultsEn.vars.label, {'label_attr': {'class': 'field-label opacity-70'}}) }}
 					<p class="text-[11px] opacity-40 mb-1">{{ form.resultsEn.vars.help }}</p>
+					<p class="inline-flex items-center gap-1.5 text-xs font-mono bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800 rounded px-2 py-1 mb-1.5">
+						<span aria-hidden="true">📌</span> Format: <strong class="font-semibold">Metric&nbsp;|&nbsp;Value</strong> <span class="opacity-70">(the part after "|" is optional)</span>
+					</p>
 					{{ form_widget(form.resultsEn, {'attr': {'class': 'input textarea w-full h-24', 'placeholder': "Payment time | -40%\nCart abandonment rate | -25%", 'data-bilingual-field-target': 'en', 'data-action': 'input->bilingual-field#scheduleFromEn'}}) }}
 					{{ form_errors(form.resultsEn, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
 				</div>
