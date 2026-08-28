@@ -20,7 +20,7 @@
 			<!-- 📖 CONTENU (70%) -->
 			<div class="lg:col-span-2 card">
 				<div class="flex items-center gap-4">
-					<img class="h-16 w-16 rounded-full" src="{{ user.profileImage ?? 'https://ui-avatars.com/api/?name=' ~ (user.fullName ?? user.email)|url_encode }}" alt="{{ user.fullName ?? user.email }}">
+					<img class="h-16 w-16 rounded-full" src="{{ user.profileImage ?? ('https://ui-avatars.com/api/?name=' ~ (user.fullName ?? user.email)|url_encode) }}" alt="{{ user.fullName ?? user.email }}">
 					<div>
 						<span class="badge bg-brand-light text-brand-primary">ID : #{{ user.id }}</span>
 						<h1 class="text-2xl font-heading font-bold mt-1 text-brand-dark">

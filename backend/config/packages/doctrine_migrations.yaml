@@ -4,3 +4,10 @@ doctrine_migrations:
         # as migrations classes should NOT be autoloaded
         'DoctrineMigrations': '%kernel.project_dir%/migrations'
     enable_profiler: false
+    # MySQL valide implicitement chaque DDL (CREATE/ALTER TABLE) : envelopper une
+    # migration dans une transaction n'apporte donc aucune garantie de rollback,
+    # et le commit d'une transaction déjà auto-validée déclenche une dépréciation
+    # doctrine/migrations (« relying on silencing is deprecated », issue #1169).
+    # On désactive explicitement le wrapping transactionnel — c'est la solution
+    # recommandée : https://www.doctrine-project.org/projects/doctrine-migrations/en/stable/explanation/implicit-commits.html
+    transactional: false
