@@ -5,6 +5,7 @@ namespace App\Tests\Controller\Admin;
 use App\Controller\Admin\AdminProjectController;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Form\FormInterface;
 
 /**
  * Verrouille findLinesWithoutSeparator() — le garde-fou ajouté après un cas
@@ -69,5 +70,44 @@ final class AdminProjectControllerPairValidationTest extends TestCase
     public function testEmptyInputHasNoOffenders(): void
     {
         self::assertSame([], $this->findLinesWithoutSeparator(''));
+    }
+
+    /**
+     * validateShowcasePairFields() — portée exacte, pas juste la détection
+     * elle-même. Régression réelle : la version initiale appliquait le "|"
+     * obligatoire à techStack ET results en plus de challenges — bloquait
+     * alors la réédition du projet vitrine en prod, dont les 5 "résultats
+     * concrets" sont tous des lignes à une seule partie (légitime, cf.
+     * formatPairs()/parsePairs()). Ce test verrouille que seuls
+     * challenges/challengesEn sont strictement vérifiés : results n'est même
+     * plus interrogé, une ligne sans "|" ne doit jamais y déclencher d'erreur.
+     */
+    public function testOnlyChallengesFieldsAreStrictlyValidated(): void
+    {
+        $method = new \ReflectionMethod(AdminProjectController::class, 'validateShowcasePairFields');
+        $controller = (new \ReflectionClass(AdminProjectController::class))->newInstanceWithoutConstructor();
+
+        $challengesField = $this->createMock(FormInterface::class);
+        $challengesField->method('getData')->willReturn('Défi correct | Solution correcte');
+        $challengesField->expects(self::never())->method('addError');
+
+        $challengesEnField = $this->createMock(FormInterface::class);
+        $challengesEnField->method('getData')->willReturn('Challenge | Solution');
+        $challengesEnField->expects(self::never())->method('addError');
+
+        $form = $this->createMock(FormInterface::class);
+        $form->expects(self::once())->method('has')->with('challenges')->willReturn(true);
+        // Seuls 'challenges' et 'challengesEn' doivent être demandés — un
+        // appel avec 'results' ou 'techStack' ferait échouer ce mock
+        // (aucune correspondance dans le map = valeur de retour null,
+        // provoquant une TypeError sur getData()/addError() ensuite).
+        $form->method('get')->willReturnMap([
+            ['challenges', $challengesField],
+            ['challengesEn', $challengesEnField],
+        ]);
+
+        $result = $method->invoke($controller, $form);
+
+        self::assertTrue($result);
     }
 }
