@@ -619,9 +619,20 @@ final class AdminProjectController extends AbstractController
     }
 
     /**
-     * Applique findLinesWithoutSeparator() à chaque champ "un par ligne, clé |
-     * valeur" du formulaire (FR + EN) — techStack, challenges, results. Ajoute
-     * une FormError explicite par champ fautif plutôt que de laisser
+     * Applique findLinesWithoutSeparator() aux seuls champs où l'absence de
+     * "|" n'a JAMAIS de sens légitime : challenges (FR+EN) — "Défis &
+     * solutions" implique un défi ET sa résolution, contrairement à
+     * techStack/results, qui acceptent volontairement une ligne à une seule
+     * partie (ex. un résultat qui est juste une phrase forte, sans valeur
+     * chiffrée séparée — cf. formatPairs()/parsePairs(), qui traitent
+     * délibérément `$b` manquant comme valide, pas comme une erreur).
+     *
+     * ⚠️ Validation initialement posée sur les 3 champs (techStack, challenges,
+     * results) — corrigé après avoir constaté qu'elle bloquait alors la
+     * réédition du projet vitrine en prod : ses 5 "résultats concrets" sont
+     * tous des lignes à une seule partie, existantes avant ce garde-fou.
+     *
+     * Ajoute une FormError explicite par champ fautif plutôt que de laisser
      * syncProjectInfoFromForm() persister silencieusement une entrée à moitié
      * vide. Sans effet si include_showcase est absent (formulaire sans ces
      * champs, cf. syncProjectInfoFromForm()).
@@ -632,7 +643,7 @@ final class AdminProjectController extends AbstractController
             return true;
         }
 
-        $fields = ['techStack', 'techStackEn', 'challenges', 'challengesEn', 'results', 'resultsEn'];
+        $fields = ['challenges', 'challengesEn'];
         $valid = true;
 
         foreach ($fields as $fieldName) {
