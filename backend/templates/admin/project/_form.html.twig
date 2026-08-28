@@ -10,6 +10,13 @@
 {% set hasPlanning = form.priority is defined %}
 {% set currentCover = project.info.coverImage ?? null %}
 
+{# Oubliée lors de l'unification create/update (régression constatée en
+   édition : plus aucun moyen de choisir la langue de saisie, donc plus de
+   traduction automatique en direct vers l'autre langue) — présente dans
+   l'ancien _form_wizard.html.twig, réintégrée ici pour les deux contextes.
+   Cf. bilingual_field_controller.js pour le mécanisme complet. #}
+<twig:LocaleToggle />
+
 {{ form_start(form, {'attr': {'novalidate': 'novalidate'}, 'enctype': 'multipart/form-data'}) }}
 
 <div data-project-tabs class="space-y-4">
