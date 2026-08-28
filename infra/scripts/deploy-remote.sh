@@ -98,6 +98,44 @@ echo "==> Migrations (toujours avant le worker -- cf. README §6)"
 echo "==> Worker Messenger (même image que backend, déjà pull ci-dessus)"
 up_with_retry messenger-worker
 
+# Le healthcheck Docker du backend ne teste que l'admin FrankenPHP
+# (127.0.0.1:2019/config/, cf. docker-compose.prod.yml) -- il passe donc
+# "Healthy" bien avant que Symfony/API Platform ne serve une vraie requête
+# applicative. Or `next build` ci-dessous fait des fetch server-side vers ces
+# endpoints pendant la génération statique et fait `throw` (aucune
+# dégradation) si /home_contents ou /about_contents ne répondent pas dans les
+# 8 s du timeout client (frontend/src/lib/api/client.ts). Sur un conteneur
+# backend qui vient d'être recréé, la première requête sur ces endpoints
+# (requête DB + sérialisation d'entités ~40 champs) peut dépasser ce budget.
+# Comme `build --no-cache` rejoue `next build` à CHAQUE déploiement, cette
+# fenêtre de quelques secondes de backend froid faisait échouer tout le
+# déploiement (constaté en prod : run 33173366683, "Contenu de la page
+# d'accueil indisponible" au prerender de /en). On sonde donc ici, via le
+# même port loopback que le build (127.0.0.1:8000), jusqu'à ce que les
+# endpoints critiques répondent réellement -- ce qui les laisse aussi chauds
+# pour le build qui suit.
+echo "==> Attente API prête (endpoints qui font échouer next build s'ils traînent)"
+wait_for_api() {
+  local ep deadline
+  # Seuls /home_contents et /about_contents font `throw` au prerender (page
+  # d'accueil + "À propos") ; les autres fetch du build dégradent proprement
+  # (liste vide). On ne bloque donc que sur ces deux-là.
+  for ep in home_contents about_contents; do
+    deadline=$((SECONDS + 120))
+    until curl -fsS --max-time 10 -o /dev/null \
+      -H 'Accept: application/ld+json' \
+      "http://127.0.0.1:8000/api/${ep}"; do
+      if ((SECONDS >= deadline)); then
+        echo "API /${ep} toujours injoignable après 120 s -- build frontend annulé." >&2
+        return 1
+      fi
+      sleep 3
+    done
+    echo "    /api/${ep} OK"
+  done
+}
+wait_for_api
+
 echo "==> Frontend : build local (a besoin de backend joignable en 127.0.0.1:8000 pendant le build SSG/ISR, cf. Dockerfile)"
 # --no-cache : constaté en prod, le cache de build Docker a repris tel quel
 # les layers COPY . . et npm run build sur un déploiement où le code source
