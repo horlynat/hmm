@@ -38,6 +38,21 @@ http:
           ipStrategy:
             depth: 1 # 1er hop derrière Cloudflare = IP visiteur réelle (forwardedHeaders)
 
+    # Basic-auth à l'origine devant Adminer (db.horlynat.com) — 2ᵉ barrière
+    # d'identité indépendante de Cloudflare Access (configuré hors dépôt, donc
+    # invérifiable ici). Adminer n'a aucun contrôle d'accès propre : ce
+    # middleware garantit un mot de passe même si la politique Access est
+    # désactivée ou mal configurée. Fichier htpasswd (bcrypt) monté en secret
+    # Docker sur le conteneur traefik — générer avec :
+    #   ./infra/scripts/gen-admin-basicauth.sh
+    # removeHeader: l'en-tête Authorization n'est pas relayé à Adminer (qui a
+    # son propre écran de connexion MySQL derrière).
+    admin-basicauth:
+      basicAuth:
+        usersFile: /run/secrets/admin_basicauth
+        realm: "Zone restreinte"
+        removeHeader: true
+
     # Rate-limit serré pour dark.horlynat.com (login back-office) — en
     # complément de fail2ban côté hôte qui lit les logs Symfony
     # security_errors (cf. scripts/01-base-hardening.sh).

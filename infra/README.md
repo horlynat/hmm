@@ -27,7 +27,7 @@ qui suit est à exécuter par toi sur le VPS.
 | API | https://api.horlynat.com | — |
 | Back-office app (projets, contenu, utilisateurs...) | https://dark.horlynat.com | Cloudflare Access (code email) puis compte `ROLE_SUPER_ADMIN` — cf. §6.5 |
 | Gestion des comptes mail | https://mailadmin.horlynat.com | Compte super-admin PostfixAdmin créé via `/setup.php` — cf. §10 |
-| Base applicative (Adminer) | https://db.horlynat.com | Cloudflare Access (code email) puis compte MySQL `app` (`secrets/database_password`) — cf. §10.5 |
+| Base applicative (Adminer) | https://db.horlynat.com | Cloudflare Access (code email) + basic-auth origine (`secrets/admin_basicauth`) puis compte MySQL `app` (`secrets/database_password`) — cf. §10.5 |
 | Webmail / client mail (IMAP 993, SMTP 587) | `vps122840.serveur-vps.net` (pas `mail.horlynat.com`, cf. §3) | Comptes créés dans PostfixAdmin |
 
 Identifiants eux-mêmes non stockés ici (gestionnaire de mots de passe) —
@@ -101,6 +101,7 @@ une variable d'env via `docker-entrypoint.sh`) :
 | `secrets/database_password` | Mot de passe MySQL de l'utilisateur `app` (doit matcher celui dans `database_url`) |
 | `secrets/postfixadmin_db_password` | Mot de passe MySQL de l'utilisateur `postfixadmin` (base dédiée, native sur l'hôte — cf. §10) |
 | `secrets/postfixadmin_setup_password` | Hash bcrypt protégeant `/setup.php` de PostfixAdmin (cf. §10) |
+| `secrets/admin_basicauth`   | Fichier htpasswd (bcrypt) protégeant Adminer à l'origine — généré par `./infra/scripts/gen-admin-basicauth.sh`. 2ᵉ barrière indépendante de Cloudflare Access, cf. §3 / §10.5. **Requis avant déploiement** (garde-fou secrets, §7). |
 | `secrets/offsite_s3_endpoint` | URL du endpoint S3-compatible (ex. `https://<account_id>.r2.cloudflarestorage.com` pour Cloudflare R2) — **vide = copie hors-site désactivée**, voir ci-dessous |
 | `secrets/offsite_s3_bucket` | Nom du bucket dédié à la copie hors-site (uploads ET sauvegardes DB, préfixes séparés) |
 | `secrets/offsite_s3_access_key_id` | Access key ID du provider S3-compatible |
@@ -139,6 +140,22 @@ tant que ce fichier n'existe pas, même vide —
 # Sans clé pour l'instant (désactive juste la copie hors-site des sauvegardes) :
 touch infra/secrets/age_recipient && chmod 600 infra/secrets/age_recipient
 ```
+
+**Idem pour `secrets/admin_basicauth`** (nouveau secret requis par le
+conteneur `traefik` — middleware `admin-basicauth@file` devant Adminer, cf.
+§3 / §10.5). Contrairement aux deux ci-dessus, il n'a **pas** de mode
+« désactivé » : un fichier vide fait échouer *toute* connexion à
+`db.horlynat.com` (fail-closed voulu — mieux vaut Adminer injoignable
+qu'Adminer sans mot de passe). Un script dédié le génère (mot de passe
+aléatoire, hash bcrypt, affiché une seule fois) :
+
+```bash
+./infra/scripts/gen-admin-basicauth.sh          # utilisateur "admin"
+# -> note le mot de passe affiché dans ton gestionnaire de mots de passe
+```
+
+Si `htpasswd` manque : `sudo apt install -y apache2-utils` puis relance
+(sans quoi le script retombe sur un hash `apr1`, accepté mais moins solide).
 
 ```bash
 chmod 600 infra/secrets/*
@@ -471,10 +488,26 @@ Interface web (`db.horlynat.com`) pour consulter/éditer la base MySQL du
 service `database` sans repasser par un `docker compose exec` + SQL manuel.
 Ajouté sur demande explicite, pas un outil de dev laissé traîner en prod.
 
-**Protection** : copie exacte du modèle `dark.horlynat.com` (cf. §3/§5), pas
-celui de `mailadmin.horlynat.com` — `cloudflare-only` + Cloudflare Access en
-amont, pas de `admin-ipwhitelist` (même raison qu'expliquée en §5 : IP non
-stable, ça bloquerait plus souvent qu'autre chose).
+**Protection en couches** — contrairement à `dark.horlynat.com` (auth
+applicative Symfony : mot de passe + 2FA + rate-limit + fail2ban + blocage
+IP) et `mailadmin.horlynat.com` (`admin-ipwhitelist`), **Adminer n'a aucun
+contrôle d'accès propre** au-delà de l'écran de connexion MySQL. D'où trois
+barrières :
+
+1. `cloudflare-only@file` — n'accepte que le trafic transitant par Cloudflare.
+   À lui seul, il ne bloque **pas** un visiteur Cloudflare quelconque : toute
+   requête proxyée par Cloudflare (n'importe qui pointant un domaine chez eux)
+   atteint le routeur.
+2. `admin-basicauth@file` — **barrière d'identité à l'origine**, htpasswd
+   bcrypt (`secrets/admin_basicauth`, cf. §4), gérée dans ce dépôt et donc
+   vérifiable. Elle tient même si l'application Cloudflare Access ci-dessous
+   est supprimée, expirée ou mal configurée. Fail-closed : secret manquant =
+   `db.horlynat.com` injoignable.
+3. **Cloudflare Access** (Zero Trust, code email) — barrière principale
+   recommandée, en amont. Configurée hors dépôt → à créer ET à revérifier
+   périodiquement (cf. checklist §12).
+
+Pas de `admin-ipwhitelist` (même raison qu'en §5 : IP non stable).
 
 **Deux étapes manuelles, côté dashboard Cloudflare, avant que ce soit
 utilisable** (rien de tout ça n'est dans ce repo) :
@@ -484,7 +517,9 @@ utilisable** (rien de tout ça n'est dans ce repo) :
 2. **Access** : Zero Trust → Access → Applications → nouvelle application
    couvrant `db.horlynat.com`, même politique (code email) que celle déjà en
    place sur `dark.horlynat.com` — la dupliquer plutôt que la réutiliser
-   (une politique par sous-domaine).
+   (une politique par sous-domaine). **Vérifier** ensuite en navigation
+   privée que `https://db.horlynat.com` renvoie bien l'écran Access (et pas
+   directement Adminer).
 
 **Connexion** : sur l'écran de connexion Adminer, le champ Serveur est déjà
 pré-rempli (`database`) — Système = MySQL, Utilisateur = `app`, Mot de passe
@@ -679,5 +714,7 @@ reste, `messenger-worker` ci-dessus) ; conversation temps réel (Claude,
 - [ ] Sauvegardes 3-2-1 en place (locale + hors-site cloud + machine perso, cf. §8) et restauration testée sur les trois
 - [ ] Monitoring (Netdata + Uptime externe) en place
 - [ ] `admin-ipwhitelist` éditée avec la vraie IP avant d'utiliser `mailadmin.horlynat.com` (`dark.horlynat.com` n'en dépend plus, cf. §5)
+- [ ] `secrets/admin_basicauth` généré (htpasswd bcrypt) avant tout déploiement — sinon `db.horlynat.com` est injoignable (fail-closed voulu, cf. §4 / §10.5)
 - [ ] DNS `db.horlynat.com` + application Cloudflare Access créés avant d'utiliser Adminer (cf. §10.5) — sans Access, `cloudflare-only` seul ne bloque que le hors-Cloudflare, pas un visiteur Cloudflare quelconque
+- [ ] **Revérifier périodiquement** (navigation privée) que `db.horlynat.com`, `dark.horlynat.com` et `mailadmin.horlynat.com` renvoient bien l'écran Cloudflare Access / la whitelist — une politique supprimée ou expirée ne se voit pas autrement
 - [x] `security.yaml` `/api` corrigé côté backend (vérifié 27/08/2026)
