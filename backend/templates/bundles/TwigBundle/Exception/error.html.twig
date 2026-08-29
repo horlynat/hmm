@@ -6,7 +6,7 @@
 #}
 
 {% block page_title %}Erreur {{ status_code|default('') }}{% endblock %}
-{% block code_color %}text-gray-700{% endblock %}
+{% block code_color %}code--muted{% endblock %}
 {% block code %}{{ status_code|default('?') }}{% endblock %}
 {% block title %}Une erreur est survenue{% endblock %}
 {% block message %}Merci de réessayer plus tard.{% endblock %}

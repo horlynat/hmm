@@ -1,0 +1,81 @@
+# Sanitizer HTML du contenu rédigé dans l'éditeur riche (Quill) — corps
+# d'article (Article::content/contentEn) et description de projet
+# (Project::description/descriptionEn).
+#
+# Jusqu'ici la sanitisation n'existait QUE côté frontend Next.js
+# (frontend/src/lib/sanitize.ts, au rendu via dangerouslySetInnerHTML). Le
+# back-office Symfony, lui, rend ces champs via le filtre `raw` : un payload
+# XSS stocké par un compte ROLE_ADMIN s'exécutait donc dans le back-office
+# pour tout autre admin ouvrant la fiche (CSP admin autorise 'unsafe-inline'
+# sur script-src).
+#
+# Cette liste blanche est le miroir de celle du frontend (sanitizeArticleHtml)
+# — la garder synchronisée. Appliquée à l'écriture par
+# App\Doctrine\RichTextSanitizerListener (couvre formulaires ET API Platform)
+# et au rendu par le filtre Twig `sanitize_rich_html` (filet pour le contenu
+# déjà en base avant ce correctif).
+framework:
+    html_sanitizer:
+        sanitizers:
+            app.rich_text:
+                # Rien n'est autorisé par défaut : seuls les éléments listés
+                # ci-dessous passent, tout le reste (script, style, iframe,
+                # gestionnaires on*, etc.) est retiré.
+                allow_safe_elements: false
+                allow_static_elements: false
+
+                allow_elements:
+                    p: []
+                    br: []
+                    hr: []
+                    h1: []
+                    h2: []
+                    h3: []
+                    h4: []
+                    ul: []
+                    ol: []
+                    li: []
+                    a: ['href', 'title']
+                    strong: []
+                    b: []
+                    em: []
+                    i: []
+                    u: []
+                    s: []
+                    blockquote: []
+                    code: []
+                    pre: []
+                    img: ['src', 'alt', 'title', 'width', 'height', 'loading']
+                    figure: []
+                    figcaption: []
+                    table: []
+                    thead: []
+                    tbody: []
+                    tr: []
+                    th: []
+                    td: []
+                    span: []
+
+                # `class` autorisé partout — Quill écrit l'alignement en
+                # classes (ql-align-center…), cf. rich_text_controller.js.
+                allow_attributes:
+                    class: '*'
+
+                # Schémas d'URL — bloque javascript:, vbscript:, data: sur les
+                # liens, etc. (data: reste autorisé sur les médias / img).
+                allowed_link_schemes: ['https', 'http', 'mailto', 'tel']
+                allowed_media_schemes: ['https', 'http', 'data']
+                allow_relative_links: true
+                allow_relative_medias: true
+
+                # Liens externes sûrs (pas de reverse tabnabbing, pas de jus de
+                # lien involontaire). Le frontend force en plus target=_blank
+                # sur les liens http(s), inutile de le dupliquer pour un rendu
+                # back-office.
+                force_attributes:
+                    a:
+                        rel: 'noopener noreferrer nofollow'
+
+                # Plafond de taille d'entrée (défaut 0 = illimité ; on borne
+                # quand même) — au-delà, la sanitisation renvoie ''.
+                max_input_length: 500000

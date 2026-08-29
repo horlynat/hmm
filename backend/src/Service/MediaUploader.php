@@ -3,8 +3,10 @@
 namespace App\Service;
 
 use App\Message\OffsiteBackupMessage;
+use enshrined\svgSanitize\Sanitizer as SvgSanitizer;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Psr\Log\LoggerInterface;
@@ -25,6 +27,7 @@ class MediaUploader
     private SluggerInterface $slugger;
     private LoggerInterface $logger;
     private MessageBusInterface $bus;
+    private RequestStack $requestStack;
     /** @var array<int, string> */
     private array $allowedMimeTypes;
     private int $maxFileSize;
@@ -37,6 +40,7 @@ class MediaUploader
         SluggerInterface $slugger,
         LoggerInterface $logger,
         MessageBusInterface $bus,
+        RequestStack $requestStack,
         array $allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'],
         int $maxFileSize = 5242880 // 5 Mo
     ) {
@@ -44,6 +48,7 @@ class MediaUploader
         $this->slugger = $slugger;
         $this->logger = $logger;
         $this->bus = $bus;
+        $this->requestStack = $requestStack;
         $this->allowedMimeTypes = $allowedMimeTypes;
         $this->maxFileSize = $maxFileSize;
     }
@@ -92,19 +97,30 @@ class MediaUploader
         }
 
         try {
-            $file->move($targetDir, $newFilename);
+            if ('image/svg+xml' === $mimeType) {
+                // Un SVG est du XML : il peut embarquer <script>, des
+                // gestionnaires on*, des <foreignObject>/<use> vers une
+                // ressource distante… Servi tel quel depuis /uploads/ (hôte
+                // api.horlynat.com), il s'exécute à l'ouverture directe de son
+                // URL. On le nettoie AVANT écriture — plus de « risque résiduel
+                // assumé » : le fichier stocké est neutralisé.
+                $this->writeSanitizedSvg($file, $targetDir . '/' . $newFilename);
+            } else {
+                $file->move($targetDir, $newFilename);
+            }
             chmod($targetDir . '/' . $newFilename, 0644);
 
             // Déduction du type
             $type = $this->deduceType($mimeType);
 
-            // Logging
+            // Logging — vraie IP client (proxy-aware), pas $_SERVER['REMOTE_ADDR']
+            // qui vaut l'IP du reverse proxy derrière Traefik/Cloudflare.
             $this->logger->info("Fichier uploadé", [
                 'filename' => $newFilename,
                 'mimeType' => $mimeType,
                 'size' => $size,
                 'type' => $type,
-                'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
+                'ip' => $this->requestStack->getCurrentRequest()?->getClientIp(),
                 'location' => $subDirectory ?? 'root',
             ]);
         } catch (FileException $e) {
@@ -145,6 +161,39 @@ class MediaUploader
             $results[] = $this->upload($file, $subDirectory);
         }
         return $results;
+    }
+
+    /**
+     * Nettoie un SVG uploadé (retrait de <script>, des attributs on*, des
+     * références distantes…) puis l'écrit à destination. Refuse le fichier
+     * si le nettoyage échoue ou vide entièrement le contenu.
+     *
+     * @throws \RuntimeException Si le SVG est illisible ou irrécupérable
+     */
+    private function writeSanitizedSvg(UploadedFile $file, string $destination): void
+    {
+        $raw = @file_get_contents($file->getPathname());
+        if (false === $raw || '' === trim($raw)) {
+            throw new \RuntimeException("Le fichier SVG est vide ou illisible.");
+        }
+
+        $sanitizer = new SvgSanitizer();
+        // Bloque les références distantes (xlink:href/href vers http(s)) :
+        // exfiltration / pixel espion / SSRF au rendu.
+        $sanitizer->removeRemoteReferences(true);
+
+        $clean = $sanitizer->sanitize($raw);
+        if (false === $clean || '' === trim($clean)) {
+            throw new \RuntimeException("Ce fichier SVG n'a pas pu être sécurisé et a été refusé.");
+        }
+
+        if (false === @file_put_contents($destination, $clean)) {
+            throw new FileException(sprintf('Écriture impossible dans "%s".', $destination));
+        }
+
+        // Le fichier temporaire uploadé n'est plus déplacé par move() : on le
+        // retire nous-mêmes pour ne pas le laisser traîner dans le tmp PHP.
+        @unlink($file->getPathname());
     }
 
     /**

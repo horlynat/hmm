@@ -6,6 +6,7 @@ use App\EventSubscriber\ExceptionSubscriber;
 use App\Exception\ConflictException;
 use App\Service\EmailManager;
 use App\Service\ErrorNotifier;
+use App\Service\SensitiveDataScrubber;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -43,9 +44,10 @@ final class ExceptionSubscriberTest extends TestCase
             new InMemoryStorage(),
         );
 
-        $errorNotifier = new ErrorNotifier($emailManager, $notifier, $limiter, $this->createStub(LoggerInterface::class));
+        $scrubber = new SensitiveDataScrubber();
+        $errorNotifier = new ErrorNotifier($emailManager, $notifier, $limiter, $this->createStub(LoggerInterface::class), $scrubber);
 
-        return new ExceptionSubscriber($appErrors, $securityErrors, $businessErrors, $errorNotifier);
+        return new ExceptionSubscriber($appErrors, $securityErrors, $businessErrors, $errorNotifier, $scrubber);
     }
 
     public function testBusinessExceptionGoesToBusinessErrorsChannelAndDoesNotNotify(): void

@@ -4,6 +4,7 @@ namespace App\Tests\Service;
 
 use App\Service\EmailManager;
 use App\Service\ErrorNotifier;
+use App\Service\SensitiveDataScrubber;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Notifier\Notifier;
@@ -47,6 +48,7 @@ final class ErrorNotifierTest extends TestCase
             $this->createNotifierWithAdminRecipient(),
             $this->createLimiter(),
             $logger,
+            new SensitiveDataScrubber(),
         );
 
         $exception = new \RuntimeException('boom');
@@ -66,6 +68,7 @@ final class ErrorNotifierTest extends TestCase
             $this->createNotifierWithAdminRecipient(),
             $this->createLimiter(),
             $this->createStub(LoggerInterface::class),
+            new SensitiveDataScrubber(),
         );
 
         $errorNotifier->notify(new \RuntimeException('boom'), 500);
@@ -85,6 +88,7 @@ final class ErrorNotifierTest extends TestCase
             $this->createNotifierWithAdminRecipient(),
             $this->createLimiter(),
             $logger,
+            new SensitiveDataScrubber(),
         );
 
         // Ne doit lever aucune exception, malgré l'échec de sendNow().

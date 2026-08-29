@@ -10,15 +10,60 @@
 			via SystemSettingRepository) ni du manifest Vite — si l'erreur affichée
 			vient justement d'une panne DB ou d'assets manquants, la page d'erreur
 			elle-même ne doit pas planter à son tour.
+
+			D'où ce petit CSS inline plutôt qu'un framework : il n'y a AUCUNE
+			ressource externe (le CDN Tailwind précédent était un <script> tiers
+			exécuté sur chaque page d'erreur, y compris pendant un incident). Les
+			classes ci-dessous reprennent le sous-ensemble utilitaire utilisé par
+			les gabarits error*.html.twig — les garder synchronisés si l'un change.
 		#}
-		<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+		<style>
+			*, *::before, *::after { box-sizing: border-box; }
+			body {
+				margin: 0;
+				font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+				background: #f3f4f6;
+				color: #1f2937;
+				min-height: 100vh;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			.card {
+				max-width: 32rem;
+				width: 100%;
+				margin: 0 1rem;
+				padding: 2rem;
+				background: #fff;
+				border: 1px solid #e5e7eb;
+				border-radius: 0.5rem;
+				box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+				text-align: center;
+			}
+			.code { font-size: 3.75rem; line-height: 1; font-weight: 700; margin: 0 0 0.5rem; }
+			.code--info { color: #1e3a8a; }
+			.code--muted { color: #374151; }
+			.code--warn { color: #d97706; }
+			.code--danger { color: #b91c1c; }
+			.title { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; margin: 0 0 1rem; }
+			.message { color: #4b5563; margin: 0 0 1.5rem; }
+			.home-link {
+				display: inline-block;
+				padding: 0.5rem 1rem;
+				background: #1e3a8a;
+				color: #fff;
+				text-decoration: none;
+				border-radius: 0.5rem;
+			}
+			.home-link:hover { background: #1e40af; }
+		</style>
 	</head>
-	<body class="bg-gray-100 font-sans text-gray-800 min-h-screen flex items-center justify-center">
-		<div class="max-w-lg w-full mx-4 p-8 bg-white border border-gray-200 rounded-lg shadow-md text-center">
-			<p class="text-6xl font-bold {% block code_color %}text-blue-900{% endblock %} mb-2">{% block code %}{% endblock %}</p>
-			<h1 class="text-xl font-semibold mb-4">{% block title %}Une erreur est survenue{% endblock %}</h1>
-			<p class="text-gray-600 mb-6">{% block message %}Veuillez réessayer plus tard.{% endblock %}</p>
-			<a href="/" class="inline-block px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800">Retour à l'accueil</a>
+	<body>
+		<div class="card">
+			<p class="code {% block code_color %}code--info{% endblock %}">{% block code %}{% endblock %}</p>
+			<h1 class="title">{% block title %}Une erreur est survenue{% endblock %}</h1>
+			<p class="message">{% block message %}Veuillez réessayer plus tard.{% endblock %}</p>
+			<a href="/" class="home-link">Retour à l'accueil</a>
 		</div>
 	</body>
 </html>

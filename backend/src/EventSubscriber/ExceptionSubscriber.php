@@ -5,6 +5,7 @@ namespace App\EventSubscriber;
 use App\Exception\AppException;
 use App\Exception\JWTException;
 use App\Service\ErrorNotifier;
+use App\Service\SensitiveDataScrubber;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -39,6 +40,7 @@ final class ExceptionSubscriber implements EventSubscriberInterface
         #[Autowire(service: 'monolog.logger.security_errors')] private readonly LoggerInterface $securityErrorsLogger,
         #[Autowire(service: 'monolog.logger.business_errors')] private readonly LoggerInterface $businessErrorsLogger,
         private readonly ErrorNotifier $errorNotifier,
+        private readonly SensitiveDataScrubber $scrubber,
     ) {
     }
 
@@ -66,9 +68,15 @@ final class ExceptionSubscriber implements EventSubscriberInterface
 
         [$logger, $level] = $this->resolveLoggerAndLevel($throwable);
 
+        // Masque tout secret (DSN avec mot de passe, en-tête Authorization…)
+        // qu'une exception d'infrastructure pourrait recracher dans son message
+        // — les logs partent sur stderr + un fichier lu par fail2ban, et le
+        // message est aussi transmis à ErrorNotifier (alerte email).
+        $message = $this->scrubber->scrub($throwable->getMessage());
+
         $context = [
             'exception' => $throwable::class,
-            'message' => $throwable->getMessage(),
+            'message' => $message,
             'status' => $statusCode,
         ];
         if ($throwable instanceof AppException) {
@@ -82,7 +90,7 @@ final class ExceptionSubscriber implements EventSubscriberInterface
             $context['ip'] = $event->getRequest()->getClientIp();
         }
 
-        $logger->log($level, $throwable->getMessage(), $context);
+        $logger->log($level, $message, $context);
 
         $shouldNotify = $statusCode >= 500 || ($throwable instanceof AppException && $throwable->shouldNotify());
         if ($shouldNotify) {

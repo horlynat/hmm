@@ -23,6 +23,12 @@ services:
     _defaults:
         autowire: true
         autoconfigure: true
+        bind:
+            # Sanitizer HTML de l'éditeur riche (cf. config/packages/html_sanitizer.yaml) —
+            # injecté dans App\Doctrine\RichTextSanitizerListener (écriture) et
+            # App\Twig\AppExtension (rendu). Symfony expose chaque sanitizer
+            # configuré sous html_sanitizer.sanitizer.<nom>.
+            $richTextSanitizer: '@html_sanitizer.sanitizer.app.rich_text'
 
     App\:
         resource: '../src/'
@@ -42,6 +48,8 @@ services:
     # uniquement) rejetait silencieusement ces deux formats à l'upload réel.
     # Le service par défaut ci-dessus reste inchangé pour tous les autres
     # usages (articles, projets, justificatifs de dépense, témoignages).
+    # Les SVG sont nettoyés (retrait script/on*/refs distantes) avant écriture
+    # par MediaUploader — cf. MediaUploader::writeSanitizedSvg().
     app.media_uploader.branding:
         class: App\Service\MediaUploader
         arguments:
@@ -62,11 +70,9 @@ services:
     # Instance dédiée aux médias d'un projet (image de couverture + galerie,
     # cf. AdminProjectController) : SVG autorisé, même raisonnement que pour
     # la branding — upload réservé à ROLE_ADMIN (ProjectVoter::EDIT), pas un
-    # flux ouvert à un rôle moins élevé ni au public, donc le même niveau de
-    # confiance. Risque résiduel assumé (identique à branding) : un SVG
-    # uploadé reste exécutable si sa page est ouverte DIRECTEMENT par son URL
-    # (contourne le rendu <img>, qui lui neutralise tout script embarqué) —
-    # acceptable ici pour la même raison que pour le logo.
+    # flux ouvert à un rôle moins élevé ni au public. Les SVG sont nettoyés
+    # avant écriture (MediaUploader::writeSanitizedSvg) : plus de risque
+    # résiduel à l'ouverture directe de l'URL.
     app.media_uploader.project:
         class: App\Service\MediaUploader
         arguments:
@@ -152,6 +158,13 @@ services:
     App\EventSubscriber\TotpSecretEncryptionListener:
         tags:
             - { name: doctrine.event_listener, event: postLoad }
+
+    # Sanitise le HTML de l'éditeur riche avant persistance (Article::content*,
+    # Project::description*) — même raison que ci-dessus pour le tag explicite.
+    App\Doctrine\RichTextSanitizerListener:
+        tags:
+            - { name: doctrine.event_listener, event: prePersist }
+            - { name: doctrine.event_listener, event: preUpdate }
 
     App\EventSubscriber\TranslationHydrationListener:
         tags:
