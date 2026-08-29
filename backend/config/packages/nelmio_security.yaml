@@ -87,6 +87,11 @@ when@dev:
                     - 'http://127.0.0.1:5173'
                 style-src:
                     - 'http://127.0.0.1:5173'
+                # font-src : la webfont Tabler Icons (assets/vendor/tabler, importée
+                # par assets/app.js) charge son .woff2 depuis le serveur de dev en
+                # dev. En prod elle est servie en 'self' depuis public/build.
+                font-src:
+                    - 'http://127.0.0.1:5173'
                 connect-src:
                     - 'http://127.0.0.1:5173'
                     - 'ws://127.0.0.1:5173'
