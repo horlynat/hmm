@@ -373,13 +373,16 @@ export type TwoFactorConfirmResult =
 
 /**
  * Termine l'activation de la 2FA : POST /api/me/2fa/confirm avec le secret
- * obtenu via setupTwoFactor() et le code à 6 chiffres saisi par l'utilisateur.
+ * obtenu via setupTwoFactor(), le code à 6 chiffres saisi par l'utilisateur
+ * et son mot de passe actuel (exigé par le backend : un Bearer token
+ * intercepté ne doit pas suffire à lier un appareil TOTP tiers au compte).
  * En cas de succès, renvoie les codes de récupération — affichés une seule
  * fois, l'appelant doit les faire noter avant de continuer.
  */
 export async function confirmTwoFactorSetup(
   secret: string,
   code: string,
+  currentPassword: string,
 ): Promise<TwoFactorConfirmResult> {
   const token = await getToken();
   if (!token) {
@@ -394,7 +397,7 @@ export async function confirmTwoFactorSetup(
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ secret, code }),
+      body: JSON.stringify({ secret, code, currentPassword }),
       cache: "no-store",
       signal: AbortSignal.timeout(8000),
     });
@@ -405,6 +408,10 @@ export async function confirmTwoFactorSetup(
       }
       if (res.status === 401) {
         return { ok: false, error: "invalid_code" };
+      }
+      // 422 : mot de passe actuel incorrect (cf. ApiTwoFactorSetupController::confirm).
+      if (res.status === 422) {
+        return { ok: false, error: "invalid_password" };
       }
 
       return { ok: false, error: `HTTP ${res.status}` };

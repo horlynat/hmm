@@ -30,6 +30,7 @@ export function TwoFactorActivationInline() {
   const [setupData, setSetupData] = useState<{ secret: string; qrCodeDataUri: string } | null>(null);
   const [showSecret, setShowSecret] = useState(false);
   const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
@@ -53,7 +54,7 @@ export function TwoFactorActivationInline() {
 
     setError("");
     setSubmitting(true);
-    const result = await confirmTwoFactorSetup(setupData.secret, code);
+    const result = await confirmTwoFactorSetup(setupData.secret, code, password);
     setSubmitting(false);
 
     if (result.ok) {
@@ -65,9 +66,11 @@ export function TwoFactorActivationInline() {
     setError(
       result.error === "invalid_code"
         ? t("invalidCode")
-        : result.error === "too_many_attempts"
-          ? t("tooManyAttempts")
-          : t("error"),
+        : result.error === "invalid_password"
+          ? t("invalidPassword")
+          : result.error === "too_many_attempts"
+            ? t("tooManyAttempts")
+            : t("error"),
     );
   }
 
@@ -182,6 +185,15 @@ export function TwoFactorActivationInline() {
               onChange={(e) => setCode(e.target.value)}
               autoFocus
               className="text-center font-mono text-xl tracking-[0.55em]"
+            />
+
+            <TextInput
+              label={t("passwordLabel")}
+              type="password"
+              autoComplete="current-password"
+              hint={t("passwordHint")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
 
             <SubmitButton className="mt-4 w-full" pending={submitting} pendingLabel={t("submit")}>

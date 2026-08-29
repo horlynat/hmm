@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 
@@ -14,10 +15,24 @@ import { revalidateTag } from "next/cache";
  * (ici le backend) qui a besoin d'une expiration immédiate, sans dépendre
  * d'une visite ultérieure pour déclencher le rafraîchissement.
  */
-export async function POST(request: NextRequest) {
-  const secret = request.headers.get("x-revalidate-secret");
 
-  if (!secret || secret !== process.env.REVALIDATE_SECRET) {
+/**
+ * Comparaison à temps constant du secret partagé : un `!==` classique
+ * s'arrête au premier octet différent, ce qui fuite (marginalement, mais
+ * inutilement) la longueur du préfixe correct. On compare les empreintes
+ * SHA-256 — toujours 32 octets, donc aucune fuite de longueur non plus.
+ */
+function secretMatches(provided: string | null): boolean {
+  const expected = process.env.REVALIDATE_SECRET;
+  if (!expected || !provided) return false;
+
+  const a = createHash("sha256").update(provided).digest();
+  const b = createHash("sha256").update(expected).digest();
+  return timingSafeEqual(a, b);
+}
+
+export async function POST(request: NextRequest) {
+  if (!secretMatches(request.headers.get("x-revalidate-secret"))) {
     return NextResponse.json({ message: "Invalid secret" }, { status: 401 });
   }
 
