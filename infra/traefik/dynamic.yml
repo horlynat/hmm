@@ -44,7 +44,7 @@ http:
     # middleware garantit un mot de passe même si la politique Access est
     # désactivée ou mal configurée. Fichier htpasswd (bcrypt) monté en secret
     # Docker sur le conteneur traefik — générer avec :
-    #   htpasswd -nbB admin '<motdepasse-fort>' > infra/secrets/admin_basicauth
+    #   ./infra/scripts/gen-admin-basicauth.sh
     # removeHeader: l'en-tête Authorization n'est pas relayé à Adminer (qui a
     # son propre écran de connexion MySQL derrière).
     admin-basicauth:

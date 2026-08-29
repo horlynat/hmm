@@ -438,7 +438,7 @@ secrets:
     file: ./secrets/postfixadmin_setup_password
   # Fichier htpasswd (bcrypt) protégeant Adminer à l'origine — cf. middleware
   # admin-basicauth@file (traefik/dynamic.yml). Générer avec :
-  #   htpasswd -nbB admin '<motdepasse-fort>' > infra/secrets/admin_basicauth
+  #   ./infra/scripts/gen-admin-basicauth.sh
   admin_basicauth:
     file: ./secrets/admin_basicauth
   offsite_s3_endpoint:

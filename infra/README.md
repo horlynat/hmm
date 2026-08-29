@@ -101,7 +101,7 @@ une variable d'env via `docker-entrypoint.sh`) :
 | `secrets/database_password` | Mot de passe MySQL de l'utilisateur `app` (doit matcher celui dans `database_url`) |
 | `secrets/postfixadmin_db_password` | Mot de passe MySQL de l'utilisateur `postfixadmin` (base dédiée, native sur l'hôte — cf. §10) |
 | `secrets/postfixadmin_setup_password` | Hash bcrypt protégeant `/setup.php` de PostfixAdmin (cf. §10) |
-| `secrets/admin_basicauth`   | Fichier htpasswd (bcrypt) protégeant Adminer à l'origine — `htpasswd -nbB admin '<motdepasse-fort>'`. 2ᵉ barrière indépendante de Cloudflare Access, cf. §3 / §10.5. **Requis avant déploiement** (garde-fou secrets, §7). |
+| `secrets/admin_basicauth`   | Fichier htpasswd (bcrypt) protégeant Adminer à l'origine — généré par `./infra/scripts/gen-admin-basicauth.sh`. 2ᵉ barrière indépendante de Cloudflare Access, cf. §3 / §10.5. **Requis avant déploiement** (garde-fou secrets, §7). |
 | `secrets/offsite_s3_endpoint` | URL du endpoint S3-compatible (ex. `https://<account_id>.r2.cloudflarestorage.com` pour Cloudflare R2) — **vide = copie hors-site désactivée**, voir ci-dessous |
 | `secrets/offsite_s3_bucket` | Nom du bucket dédié à la copie hors-site (uploads ET sauvegardes DB, préfixes séparés) |
 | `secrets/offsite_s3_access_key_id` | Access key ID du provider S3-compatible |
@@ -146,14 +146,16 @@ conteneur `traefik` — middleware `admin-basicauth@file` devant Adminer, cf.
 §3 / §10.5). Contrairement aux deux ci-dessus, il n'a **pas** de mode
 « désactivé » : un fichier vide fait échouer *toute* connexion à
 `db.horlynat.com` (fail-closed voulu — mieux vaut Adminer injoignable
-qu'Adminer sans mot de passe). Le générer avant le déploiement :
+qu'Adminer sans mot de passe). Un script dédié le génère (mot de passe
+aléatoire, hash bcrypt, affiché une seule fois) :
 
 ```bash
-# htpasswd fait partie du paquet apache2-utils (Debian/Ubuntu) :
-sudo apt install -y apache2-utils
-htpasswd -nbB admin '<un-mot-de-passe-fort-et-unique>' > infra/secrets/admin_basicauth
-chmod 600 infra/secrets/admin_basicauth
+./infra/scripts/gen-admin-basicauth.sh          # utilisateur "admin"
+# -> note le mot de passe affiché dans ton gestionnaire de mots de passe
 ```
+
+Si `htpasswd` manque : `sudo apt install -y apache2-utils` puis relance
+(sans quoi le script retombe sur un hash `apr1`, accepté mais moins solide).
 
 ```bash
 chmod 600 infra/secrets/*
