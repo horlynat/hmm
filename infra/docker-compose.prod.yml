@@ -24,6 +24,10 @@ services:
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./traefik/dynamic.yml:/etc/traefik/dynamic/dynamic.yml:ro
       - ./certs:/etc/traefik/certs:ro
+    secrets:
+      # Consommé par le middleware admin-basicauth@file (traefik/dynamic.yml) —
+      # 2ᵉ barrière devant Adminer, indépendante de Cloudflare Access.
+      - admin_basicauth
     networks:
       - edge-net
     mem_limit: 256m
@@ -337,18 +341,23 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=edge-net
-      # Copie exacte de la protection de dark.horlynat.com (guide §3) :
-      # cloudflare-only interdit tout accès qui ne transite pas par
-      # Cloudflare, Cloudflare Access (à configurer dans le dashboard —
-      # Zero Trust -> Access -> Applications -- hors périmètre de ce fichier)
-      # fait le vrai contrôle d'identité en amont, ratelimit-strict limite le
-      # bruteforce. Pas de admin-ipwhitelist@file (cf. commentaire sur
-      # dark.horlynat.com ci-dessus : IP non stable, ça bloquerait plus
-      # souvent qu'autre chose) — Access joue déjà ce rôle.
+      # Protection en couches (guide §3) :
+      #  - cloudflare-only : interdit tout accès qui ne transite pas par Cloudflare ;
+      #  - admin-basicauth : 2ᵉ barrière d'identité À L'ORIGINE (htpasswd,
+      #    secrets/admin_basicauth) — contrairement à dark.horlynat.com (auth
+      #    applicative Symfony complète) et mailadmin (whitelist IP), Adminer
+      #    n'a AUCUN contrôle d'accès propre : sans ça, la seule barrière est
+      #    Cloudflare Access, configuré hors de ce dépôt et donc invérifiable
+      #    ici. Le basic-auth garantit un mot de passe même si la politique
+      #    Access est désactivée ou mal configurée ;
+      #  - Cloudflare Access (Zero Trust -> Access -> Applications, dashboard)
+      #    reste la barrière principale recommandée, en amont ;
+      #  - ratelimit-strict : anti-bruteforce.
+      # Pas de admin-ipwhitelist@file (IP non stable, cf. dark.horlynat.com).
       - traefik.http.routers.dbadmin.rule=Host(`db.horlynat.com`)
       - traefik.http.routers.dbadmin.entrypoints=websecure
       - traefik.http.routers.dbadmin.tls=true
-      - traefik.http.routers.dbadmin.middlewares=cloudflare-only@file,security-headers@file,ratelimit-strict@file
+      - traefik.http.routers.dbadmin.middlewares=cloudflare-only@file,admin-basicauth@file,security-headers@file,ratelimit-strict@file
       - traefik.http.services.dbadmin.loadbalancer.server.port=8080
 
   postfixadmin:
@@ -427,6 +436,11 @@ secrets:
     file: ./secrets/postfixadmin_db_password
   postfixadmin_setup_password:
     file: ./secrets/postfixadmin_setup_password
+  # Fichier htpasswd (bcrypt) protégeant Adminer à l'origine — cf. middleware
+  # admin-basicauth@file (traefik/dynamic.yml). Générer avec :
+  #   htpasswd -nbB admin '<motdepasse-fort>' > infra/secrets/admin_basicauth
+  admin_basicauth:
+    file: ./secrets/admin_basicauth
   offsite_s3_endpoint:
     file: ./secrets/offsite_s3_endpoint
   offsite_s3_bucket:
