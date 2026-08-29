@@ -35,11 +35,16 @@ nelmio_security:
     # build standard (alpinejs@3.x.x) le fait via `new Function()`, qui exige
     # 'unsafe-eval' et casse silencieusement (pas d'erreur serveur, juste des
     # violations CSP en console) dès que ce header est actif sans ce mot-clé.
-    # C'est pour ça que templates/base.html.twig charge le build @alpinejs/csp
-    # (évaluateur sûr, sans eval) au lieu du build standard. Si un jour Alpine.js
-    # est remplacé/mis à jour, NE PAS revenir au build standard sans ajouter
-    # 'unsafe-eval' ici — sinon tous les x-data de l'admin (menu mobile,
-    # accordéons du nav, dropdowns) se figent à nouveau.
+    # C'est pour ça que l'app embarque le build @alpinejs/csp (évaluateur sûr,
+    # sans eval), désormais bundlé par Vite (assets/app.js) et non plus chargé
+    # depuis un CDN. Si un jour Alpine.js est remplacé/mis à jour, NE PAS
+    # revenir au build standard sans ajouter 'unsafe-eval' ici — sinon tous les
+    # x-data de l'admin (menu mobile, accordéons du nav, dropdowns) se figent.
+    #
+    # Plus AUCUN hôte tiers pour script/style/font : Alpine (csp + collapse) et
+    # la webfont Tabler Icons sont bundlés par Vite et servis en 'self' depuis
+    # public/build. Ne restent que Google Fonts (feuille de style + fichiers
+    # .woff2) pour les polices de marque.
     csp:
         enforce:
             default-src:
@@ -47,31 +52,20 @@ nelmio_security:
             script-src:
                 - 'self'
                 - 'unsafe-inline'
-                - 'https://cdn.jsdelivr.net'
             style-src:
                 - 'self'
                 - 'unsafe-inline'
                 - 'https://fonts.googleapis.com'
-                - 'https://cdn.jsdelivr.net'
-                - 'https://cdnjs.cloudflare.com'
             font-src:
                 - 'self'
                 - 'data:'
                 - 'https://fonts.gstatic.com'
-                - 'https://cdn.jsdelivr.net'
-                - 'https://cdnjs.cloudflare.com'
             img-src:
                 - 'self'
                 - 'data:'
                 - 'https://ui-avatars.com'
             connect-src:
                 - 'self'
-                # Uniquement pour les source maps (.css.map/.js.map) que les devtools du
-                # navigateur vont chercher automatiquement pour les assets Tabler Icons
-                # chargés depuis jsdelivr (cf. base.html.twig) — sans ça, violation CSP
-                # visible en console à chaque page (aucun impact fonctionnel, juste du
-                # bruit : le fichier .map n'est utile qu'au debug, jamais exécuté).
-                - 'https://cdn.jsdelivr.net'
             object-src:
                 - 'none'
             base-uri:
@@ -92,6 +86,11 @@ when@dev:
                 script-src:
                     - 'http://127.0.0.1:5173'
                 style-src:
+                    - 'http://127.0.0.1:5173'
+                # font-src : la webfont Tabler Icons (assets/vendor/tabler, importée
+                # par assets/app.js) charge son .woff2 depuis le serveur de dev en
+                # dev. En prod elle est servie en 'self' depuis public/build.
+                font-src:
                     - 'http://127.0.0.1:5173'
                 connect-src:
                     - 'http://127.0.0.1:5173'

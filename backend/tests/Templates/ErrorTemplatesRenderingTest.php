@@ -37,6 +37,12 @@ final class ErrorTemplatesRenderingTest extends KernelTestCase
         $html = $twig->render($template);
 
         $this->assertStringContainsString($expectedTitle, $html);
+        // La page d'erreur doit rester 100% autonome : ni manifest Vite, ni
+        // base de données, ni ressource externe (avant, un <script> Tailwind
+        // depuis un CDN s'exécutait ici, y compris pendant un incident).
+        $this->assertStringNotContainsString('cdn.jsdelivr.net', $html);
+        $this->assertStringNotContainsString('http://', $html);
+        $this->assertStringNotContainsString('https://', $html);
     }
 
     public function testFallbackTemplateRendersWithArbitraryStatusCode(): void

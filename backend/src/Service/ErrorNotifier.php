@@ -33,6 +33,7 @@ final class ErrorNotifier
         #[Autowire(service: 'notifier')] private readonly Notifier $notifier,
         #[Autowire(service: 'limiter.error_notification')] private readonly RateLimiterFactory $errorNotificationLimiter,
         #[Autowire(service: 'monolog.logger.app_errors')] private readonly LoggerInterface $logger,
+        private readonly SensitiveDataScrubber $scrubber,
     ) {
     }
 
@@ -59,7 +60,10 @@ final class ErrorNotifier
                     template: 'error_alert',
                     context: [
                         'exceptionClass' => $throwable::class,
-                        'message' => $throwable->getMessage(),
+                        // Masque tout secret (DSN, en-tête Authorization…) que
+                        // l'exception recracherait — cet e-mail atterrit dans
+                        // une boîte de réception.
+                        'message' => $this->scrubber->scrub($throwable->getMessage()),
                         'statusCode' => $statusCode,
                         'context' => $context,
                         'date' => new \DateTimeImmutable(),

@@ -63,6 +63,7 @@ class TwoFactorController extends AbstractController
         EntityManagerInterface $entityManager,
         BackupCodeManager $backupCodeManager,
         SecretEncryptor $secretEncryptor,
+        UserPasswordHasherInterface $passwordHasher,
         #[Autowire(service: 'limiter.two_factor_setup')]
         RateLimiterFactory $twoFactorSetupLimiter,
     ): Response {
@@ -95,6 +96,11 @@ class TwoFactorController extends AbstractController
             $limiter = $twoFactorSetupLimiter->create($user->getUserIdentifier());
             if (!$limiter->consume(1)->isAccepted()) {
                 $error = 'Trop de tentatives, patientez une minute avant de réessayer.';
+            } elseif (!$passwordHasher->isPasswordValid($user, (string) $request->request->get('password', ''))) {
+                // Re-saisie du mot de passe, comme pour disable() et la
+                // régénération des codes : une session ouverte ne doit pas
+                // suffire à lier un appareil TOTP tiers au compte.
+                $error = 'Mot de passe incorrect.';
             } else {
                 $code = (string) $request->request->get('code', '');
 

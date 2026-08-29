@@ -15,6 +15,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -35,6 +36,13 @@ use Symfony\Component\Routing\Attribute\Route;
  *
  * Le secret TOTP n'est écrit sur l'entité qu'après vérification d'un code
  * valide (voir confirm()) — jamais avant, comme côté web.
+ *
+ * confirm() exige en plus la re-saisie du mot de passe : ce endpoint est
+ * accessible via un Bearer token stateless (TTL 1 h) ; sans cette preuve, un
+ * token intercepté suffirait à lier l'appareil TOTP d'un attaquant au compte
+ * — une prise de contrôle qui survivrait à l'expiration du token. Même
+ * exigence que MeController::update() pour le changement de mot de passe, et
+ * que TwoFactorController (web) pour l'activation.
  */
 #[Route('/api/me/2fa', name: 'api_me_two_factor_')]
 final class ApiTwoFactorSetupController extends AbstractController
@@ -82,6 +90,7 @@ final class ApiTwoFactorSetupController extends AbstractController
         EntityManagerInterface $entityManager,
         BackupCodeManager $backupCodeManager,
         SecretEncryptor $secretEncryptor,
+        UserPasswordHasherInterface $passwordHasher,
         #[Autowire(service: 'limiter.two_factor_setup')]
         RateLimiterFactory $twoFactorSetupLimiter,
     ): JsonResponse {
@@ -97,6 +106,7 @@ final class ApiTwoFactorSetupController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $secret = is_array($data) && is_string($data['secret'] ?? null) ? $data['secret'] : '';
         $code = is_array($data) && is_string($data['code'] ?? null) ? trim((string) $data['code']) : '';
+        $currentPassword = is_array($data) && is_string($data['currentPassword'] ?? null) ? $data['currentPassword'] : '';
 
         if ('' === $secret || '' === $code) {
             return $this->json(['detail' => 'Requête invalide : secret et code sont requis.'], Response::HTTP_BAD_REQUEST);
@@ -108,6 +118,12 @@ final class ApiTwoFactorSetupController extends AbstractController
         $limiter = $twoFactorSetupLimiter->create($user->getUserIdentifier());
         if (!$limiter->consume(1)->isAccepted()) {
             return $this->json(['detail' => 'Trop de tentatives. Patientez avant de réessayer.'], Response::HTTP_TOO_MANY_REQUESTS);
+        }
+
+        // Re-saisie du mot de passe : un Bearer token intercepté ne doit pas
+        // suffire à lier un appareil TOTP tiers au compte (cf. docblock de classe).
+        if ('' === $currentPassword || !$passwordHasher->isPasswordValid($user, $currentPassword)) {
+            return $this->json(['detail' => 'Mot de passe actuel incorrect.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         $pendingTotpUser = new PendingTotpUser($user->getTotpAuthenticationUsername(), $secret);

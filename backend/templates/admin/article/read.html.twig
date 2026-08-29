@@ -42,7 +42,7 @@
 				{% endif %}
 
 				<div class="article-body text-base border-t border-gray-100 pt-6">
-					{{ article.content|raw }}
+					{{ article.content|sanitize_rich_html }}
 				</div>
 			</div>
 

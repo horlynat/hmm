@@ -1,3 +1,6 @@
+import Alpine from "@alpinejs/csp";
+import collapse from "@alpinejs/collapse";
+import "./vendor/tabler/tabler-icons.min.css";
 import "@hotwired/turbo";
 import "./stimulus_bootstrap.js";
 import "./styles/app.css";
@@ -5,7 +8,18 @@ import "./js/dashboard.js";
 import "./js/project.js";
 import "./js/idle-timeout.js";
 
-// 🔁 Alpine.js (build CSP, cf. base.html.twig) + Turbo Drive : à chaque navigation
+// 🏔️ Alpine.js — build CSP (@alpinejs/csp : évaluateur d'expressions sans
+// `eval`/`new Function`, indispensable tant que la CSP n'autorise pas
+// 'unsafe-eval', cf. config/packages/nelmio_security.yaml). Bundlé ici par
+// Vite et servi en 'self' — remplace les <script> jsdelivr des base.html.twig
+// (plus aucun hôte tiers pour le JS/CSS de l'admin). Le plugin collapse doit
+// être enregistré AVANT le démarrage du core (même contrainte d'ordre que
+// l'ancien chargement CDN "collapse avant csp").
+Alpine.plugin(collapse);
+window.Alpine = Alpine;
+Alpine.start();
+
+// 🔁 Alpine.js (build CSP, cf. ci-dessus) + Turbo Drive : à chaque navigation
 // interceptée (clic sur un lien du menu, etc.), Turbo REMPLACE <body> par un
 // nouveau nœud plutôt que de muter l'existant. Le MutationObserver interne
 // d'Alpine, attaché une seule fois au tout premier chargement, ne voit donc plus
@@ -17,8 +31,8 @@ import "./js/idle-timeout.js";
 // Turbo ne retire l'ancien body (turbo:before-render), puis on le réinitialise
 // sur le nouveau body une fois le remplacement effectué (turbo:render). Ces deux
 // évènements ne se déclenchent QUE lors d'une navigation Turbo, jamais au tout
-// premier chargement de page — donc pas de double init avec l'auto-démarrage
-// d'Alpine (Alpine.start(), déclenché par son propre script CDN).
+// premier chargement de page — donc pas de double init avec l'Alpine.start()
+// explicite ci-dessus.
 document.addEventListener("turbo:before-render", () => {
     // ⚠️ Le build CSP expose `destroyTree`, PAS `destroy` (qui n'existe que sur le
     // build standard alpinejs) — l'appeler par erreur lève un TypeError non
