@@ -9,14 +9,13 @@ use App\Repository\IntegrationRepository;
 use App\Security\Voter\SettingsVoter;
 use App\Service\AuditLogger;
 use App\Service\SecretEncryptor;
+use App\Service\WebhookTestSender;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Contracts\HttpClient\Exception\ExceptionInterface as HttpClientExceptionInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * Intégrations externes (Slack, GitHub, CRM, API générique).
@@ -110,7 +109,7 @@ class AdminIntegrationController extends AbstractController
     public function test(
         Request $request,
         Integration $integration,
-        HttpClientInterface $httpClient,
+        WebhookTestSender $webhookTestSender,
         EntityManagerInterface $entityManager,
     ): Response {
         $this->denyAccessUnlessGranted(SettingsVoter::MANAGE_INTEGRATIONS);
@@ -133,15 +132,14 @@ class AdminIntegrationController extends AbstractController
             return $this->redirectToRoute('admin_integration_index');
         }
 
-        try {
-            $response = $httpClient->request('POST', $integration->getWebhookUrl(), [
-                'json' => ['text' => sprintf('✅ Test de connexion depuis le back-office (%s).', $integration->getName())],
-                'timeout' => 10,
-            ]);
-            $success = $response->getStatusCode() < 300;
-        } catch (HttpClientExceptionInterface) {
-            $success = false;
-        }
+        // Vérification ci-dessus = message d'erreur clair ; la vraie barrière
+        // (IP vérifiée à la connexion, aucune redirection) est dans
+        // WebhookTestSender — gethostbyname() seul se contourne par DNS
+        // rebinding ou par une redirection vers un hôte interne.
+        $success = $webhookTestSender->send(
+            $integration->getWebhookUrl(),
+            sprintf('✅ Test de connexion depuis le back-office (%s).', $integration->getName()),
+        );
 
         $integration->recordTestResult($success);
         $entityManager->flush();
