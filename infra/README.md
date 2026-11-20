@@ -268,15 +268,28 @@ docker compose -f docker-compose.prod.yml exec -u www-data backend php bin/conso
 
 # 4. Frontend ensuite — son build a besoin de `backend` joignable en HTTP le
 #    temps du `RUN npm run build` (génération statique/ISR). BuildKit ne
-#    supporte pas nommer un réseau bridge personnalisé pour un RUN ; le
-#    Dockerfile utilise donc `RUN --network=host`, et le service `backend`
-#    publie son port sur `127.0.0.1:8000` (loopback uniquement — jamais
-#    exposé publiquement, cf. commentaire dans docker-compose.prod.yml) pour
-#    que ce RUN puisse l'atteindre via l'hôte. `docker compose build` gère
-#    l'entitlement `network.host` tout seul, rien à ajouter en CLI.
-docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build frontend
+#    supporte ni un réseau bridge nommé pour un RUN, ni l'accès au loopback
+#    de l'hôte hors mode `network: host` — qui donnait auparavant à TOUT le
+#    build (dont `npm ci` et ses scripts postinstall) la pile réseau de
+#    l'hôte entière (audit 2026-11-20, point 15 : accès possible à MariaDB,
+#    Netdata... et, sur ce VPS partagé, à tout ce qui écoute côté de l'autre
+#    projet). Remplacé par le service `api-build-gateway` (profil `build`,
+#    cf. docker-compose.prod.yml) : une passerelle TCP socat éphémère,
+#    publiée UNIQUEMENT sur l'IP de docker0 (jamais 0.0.0.0, jamais
+#    127.0.0.1 — injoignable depuis un RUN hors mode host) et démarrée/
+#    supprimée automatiquement par `deploy-remote.sh` autour du build.
+#    Démarrage manuel équivalent :
+docker compose --env-file .env.prod -f docker-compose.prod.yml --profile build up -d api-build-gateway
+docker compose --env-file .env.prod -f docker-compose.prod.yml build --no-cache frontend
+docker compose --env-file .env.prod -f docker-compose.prod.yml --profile build rm -sf api-build-gateway
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d frontend
 docker compose -f docker-compose.prod.yml ps
 ```
+
+⚠️ `HMM_BUILD_GATEWAY_BIND` (`.env.prod`, défaut `172.17.0.1`) doit correspondre
+à l'IP de `docker0` sur ce VPS (`ip -4 addr show docker0`) — sinon le build
+échoue à joindre `backend` (testé localement : mécanisme validé de bout en
+bout, y compris `wait_for_api()` de `deploy-remote.sh` via cette passerelle).
 
 Aux déploiements suivants (mise à jour de code), même ordre à respecter —
 sauf le contenu du back-office, qui persiste déjà en base.
@@ -304,8 +317,12 @@ cat > /tmp/create-admin.sql <<'SQL_EOF'
 INSERT INTO user (email, roles, password, is_verified, is_active, is_two_factor_enabled, created_at, updated_at)
 VALUES ('email@exemple.com', '["ROLE_SUPER_ADMIN"]', '<hash obtenu ci-dessus>', 1, 1, 0, NOW(), NOW());
 SQL_EOF
-DBPASS=$(sudo cat secrets/database_password)
-sudo docker exec -i infra-database-1 mysql -u app -p"$DBPASS" app < /tmp/create-admin.sql
+# MYSQL_PWD (variable d'env du seul process mysql lancé par docker exec) au
+# lieu de "-p$DBPASS" : un argument de ligne de commande reste visible dans
+# `ps aux`/`/proc/<pid>/cmdline` pour tout utilisateur du VPS le temps de
+# l'exécution — une variable d'env transmise ainsi ne l'est pas (seul root,
+# via /proc/<pid>/environ, peut encore la lire).
+sudo docker exec -i -e MYSQL_PWD="$(sudo cat secrets/database_password)" infra-database-1 mysql -u app app < /tmp/create-admin.sql
 rm -f /tmp/create-admin.sql   # contient le hash, pas juste un mot de passe en clair mais autant nettoyer
 ```
 
@@ -386,11 +403,72 @@ Tester une restauration au moins une fois avant d'en dépendre — normale
 complet (VPS perdu, base à reconstruire depuis la copie cloud ou la machine
 perso) via la procédure pas-à-pas de `backend/docs/incident-data-loss.md`.
 
+### 8.5. Montée MySQL 8.0 → 8.4 LTS — ⚠️ À VALIDER AVANT FUSION
+
+**Non appliquée dans ce lot** (image actuelle : `mysql:8.0.46`, épinglée par
+digest, dernière publication de la branche 8.0 — fin de vie). À faire dans
+un **commit séparé**, après une sauvegarde complète et testée, en dehors
+d'une fenêtre de déploiement automatique :
+
+```bash
+cd /opt/hmm/infra
+
+# 1. Sauvegarde — AVANT toute action (cf. §8). Vérifier la taille/contenu
+#    du dump obtenu, pas seulement son exit code.
+docker compose -f docker-compose.prod.yml exec -T -u www-data backend \
+  php bin/console app:backup:create
+
+# 2. Snapshot du volume de données (filet de secours indépendant du dump
+#    applicatif — restaure l'état binaire exact en cas de souci pendant la
+#    conversion du format de fichiers 8.0 -> 8.4) :
+docker compose -f docker-compose.prod.yml stop database
+sudo cp -a "$(docker volume inspect -f '{{.Mountpoint}}' infra_mysql_data)" \
+  /root/mysql_data.pre-8.4.bak   # chemin hors des bind mounts rsync'd
+
+# 3. Changer l'image dans docker-compose.prod.yml :
+#      image: mysql:8.4.13@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902
+#    puis recréer SEULEMENT ce service :
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d database
+docker compose -f docker-compose.prod.yml logs -f database   # suivre l'upgrade interne de l'image officielle (mysql_upgrade)
+
+# 4. Vérifier la version effective et l'intégrité :
+docker compose -f docker-compose.prod.yml exec database \
+  sh -c 'MYSQL_PWD="$(cat /run/secrets/database_password)" mysql -u app app -e "SELECT VERSION(); CHECK TABLE user, project, invoice;"'
+
+# 5. Redémarrer backend/messenger-worker (reconnexion propre, pas requis en
+#    théorie — Doctrine se reconnecte — mais plus prudent) :
+docker compose -f docker-compose.prod.yml restart backend messenger-worker
+
+# 6. Mettre à jour database_url (serverVersion=8.4...) dans secrets/ si la
+#    chaîne de connexion l'épingle explicitement, puis vérifier
+#    /admin/dashboard et quelques écritures réelles (création d'un brouillon,
+#    etc.) avant de considérer la montée terminée.
+```
+
+**Retour arrière** (avant l'étape 3, ou si l'étape 3-4 échoue) : remettre
+`image: mysql:8.0.46@sha256:...` dans le compose, `docker compose stop
+database`, restaurer le volume depuis le snapshot de l'étape 2
+(`rsync -a --delete /root/mysql_data.pre-8.4.bak/ <mountpoint>/`), puis
+`docker compose up -d database`. MySQL ne revient PAS en arrière après avoir
+démarré en 8.4 sur un datadir donné (changement de format de fichiers
+`undo` irréversible) — le retour arrière passe donc uniquement par la
+restauration du volume, jamais par un simple changement de tag d'image.
+
 ### 9. Monitoring (léger, cohérent avec un VPS solo)
 
-- **Netdata** : `curl https://get.netdata.cloud/kickstart.sh | sh` sur l'hôte
-  (hors Docker — surveille aussi l'hôte lui-même, pas seulement les
-  conteneurs). Pas scripté ici (interactif, à valider toi-même).
+- **Netdata** : PAS `curl | sh` (exécute un script téléchargé sans jamais
+  l'avoir lu — root sur l'hôte) : télécharger le kickstart, le lire, puis
+  l'exécuter en deux étapes séparées (ou utiliser le paquet natif
+  `apt install netdata` quand la version du dépôt Ubuntu est acceptable) :
+  ```bash
+  curl -fsSL https://get.netdata.cloud/kickstart.sh -o /tmp/netdata-kickstart.sh
+  sha256sum /tmp/netdata-kickstart.sh   # comparer avec le hash publié par Netdata avant d'aller plus loin
+  less /tmp/netdata-kickstart.sh        # relecture
+  sudo sh /tmp/netdata-kickstart.sh
+  rm -f /tmp/netdata-kickstart.sh
+  ```
+  Sur l'hôte (hors Docker — surveille aussi l'hôte lui-même, pas seulement
+  les conteneurs). Pas scripté ici (interactif, à valider toi-même).
 - **UptimeRobot / Better Stack** : moniteur externe HTTPS sur les 3 domaines,
   à créer manuellement (compte tiers, hors scope infra). Ajouter un moniteur
   **dédié à `https://dark.horlynat.com/login`** en plus de la racine des
@@ -447,8 +525,11 @@ sudo apt install -y dovecot-mysql postfix-mysql
 #    docker-compose.prod.yml + secrets/postfixadmin_db_password et
 #    secrets/postfixadmin_setup_password (hash bcrypt, PAS une variable
 #    ${...} — testé, un hash plein de "$" est tronqué par la substitution
-#    Compose). Générer le hash :
-#    php -r 'echo password_hash("motdepasse", PASSWORD_DEFAULT);'
+#    Compose). Générer le hash SANS passer le mot de passe en argument (visible
+#    dans l'historique shell et `ps`) — saisie masquée (read -s), lue depuis
+#    stdin par PHP, jamais affichée ni placée sur la ligne de commande :
+#    read -rs -p 'Mot de passe : ' PFA_PW && echo && printf '%s' "$PFA_PW" | \
+#      php -r 'echo password_hash(trim(fgets(STDIN)), PASSWORD_DEFAULT), "\n";'; unset PFA_PW
 
 # 4. Une fois le conteneur up et le domaine/les boîtes créés via
 #    https://mailadmin.horlynat.com/setup.php puis l'UI normale :
@@ -492,18 +573,26 @@ Ajouté sur demande explicite, pas un outil de dev laissé traîner en prod.
 applicative Symfony : mot de passe + 2FA + rate-limit + fail2ban + blocage
 IP) et `mailadmin.horlynat.com` (`admin-ipwhitelist`), **Adminer n'a aucun
 contrôle d'accès propre** au-delà de l'écran de connexion MySQL. D'où trois
-barrières :
+barrières, **dans cet ordre précis** sur le routeur (`cloudflare-only` puis
+`security-headers` puis `ratelimit-strict` puis `admin-basicauth`) : le
+limiteur de débit doit voir — et compter — CHAQUE essai de mot de passe,
+basic-auth compris. Dans l'ordre inverse (testé) : `admin-basicauth`
+répond 401 avant que `ratelimit-strict` n'intervienne, autorisant un
+brute-force illimité sur le htpasswd depuis une IP qui reste malgré tout
+derrière Cloudflare.
 
 1. `cloudflare-only@file` — n'accepte que le trafic transitant par Cloudflare.
    À lui seul, il ne bloque **pas** un visiteur Cloudflare quelconque : toute
    requête proxyée par Cloudflare (n'importe qui pointant un domaine chez eux)
    atteint le routeur.
-2. `admin-basicauth@file` — **barrière d'identité à l'origine**, htpasswd
+2. `ratelimit-strict@file` — anti-bruteforce, compte les essais AVANT
+   l'étape suivante (cf. remarque d'ordre ci-dessus).
+3. `admin-basicauth@file` — **barrière d'identité à l'origine**, htpasswd
    bcrypt (`secrets/admin_basicauth`, cf. §4), gérée dans ce dépôt et donc
    vérifiable. Elle tient même si l'application Cloudflare Access ci-dessous
    est supprimée, expirée ou mal configurée. Fail-closed : secret manquant =
    `db.horlynat.com` injoignable.
-3. **Cloudflare Access** (Zero Trust, code email) — barrière principale
+4. **Cloudflare Access** (Zero Trust, code email) — barrière principale
    recommandée, en amont. Configurée hors dépôt → à créer ET à revérifier
    périodiquement (cf. checklist §12).
 
@@ -535,28 +624,58 @@ supplémentaire à provisionner, c'est le même compte que celui du backend.
 Trois workflows (`.github/workflows/`), déclenchés uniquement depuis `main`
 (le repo est un monorepo à branches longues intégrées par PR — backend/
 frontend n'ont pas leur propre copie de ces fichiers, inutile puisque
-`pull_request` lit toujours la version présente sur la branche cible) :
+`pull_request` lit toujours la version présente sur la branche cible).
+Durcissement commun (audit 2026-11-20, point 15) : `permissions: contents:
+read` au niveau workflow partout (`packages: write` uniquement sur le job
+qui pousse l'image), toutes les actions tierces épinglées par SHA complet
+(tag d'origine en commentaire — Dependabot, cf. plus bas, propose les
+montées de version sans jamais relâcher l'épinglage).
 
-- `backend-ci.yml` — sur chaque PR touchant `backend/` : PHPStan + PHPUnit
-  contre une vraie base MySQL 8 (service container), même dialecte qu'en
-  prod.
+- `backend-ci.yml` — sur chaque PR touchant `backend/` :
+  - `test` : PHPStan + PHPUnit contre une vraie base MySQL 8.0.46 (service
+    container, même version épinglée qu'en prod), PHP 8.4 à jour (`update:
+    true`) ;
+  - `image-scan` : construit l'image de prod (même `Dockerfile`, cache
+    `gha`) **sans la pousser** (`push: false`), vérifie que le PHP embarqué
+    est ≥ 8.4.27 (même garde-fou PHP2Shell que dans `deploy.yml`), puis la
+    scanne avec **Trivy** (image officielle épinglée par digest, pas l'action
+    tierce `aquasecurity/trivy-action` — dont les tags ont été réécrits lors
+    d'une compromission de la supply chain en mars 2026) : la CI échoue sur
+    toute vulnérabilité **CRITICAL/HIGH pour laquelle un correctif existe**
+    (`--ignore-unfixed` : une CVE sans correctif publié n'est pas
+    actionnable, elle ne bloque pas la PR).
 - `frontend-ci.yml` — sur chaque PR touchant `frontend/` : lint + tests
-  unitaires (Vitest). **Ne construit pas** l'app (`next build` a besoin d'un
-  backend joignable et peuplé de contenu réel, cf. commentaire dans le
-  fichier) — les tests e2e (`test:e2e`, Playwright) restent volontairement
-  manuels pour la même raison.
+  unitaires (Vitest) + `type-check`. **Ne construit pas** l'app (`next build`
+  a besoin d'un backend joignable et peuplé de contenu réel, cf. commentaire
+  dans le fichier) — les tests e2e (`test:e2e`, Playwright) restent
+  volontairement manuels pour la même raison.
 - `deploy.yml` — à chaque merge sur `main` (ou déclenchement manuel) :
-  1. build + push de l'image backend sur GHCR (`ghcr.io/horlynat/hmm-backend`),
-     taguée `latest` et `<sha>` — c'est la même image pour `backend` et
-     `messenger-worker` (cf. `docker-compose.prod.yml`) ;
-  2. déploiement via un environnement GitHub **`production`** protégé
-     (validation manuelle requise avant exécution — à configurer dans
-     *Settings → Environments*) ;
-  3. `rsync` de `infra/` et `frontend/` vers `/opt/hmm/` (jamais `backend/`,
-     dont le code arrive désormais uniquement via l'image GHCR) ;
-  4. exécution de `infra/scripts/deploy-remote.sh` sur le VPS, qui reproduit
-     l'ordre du §6 (backend → migrations → messenger-worker → frontend,
-     toujours dans cet ordre, redeploy ou non).
+  1. `resolve-tag` : valide `backend_tag` (`workflow_dispatch`) contre
+     `^([0-9a-f]{7,40}|latest)$` **avant tout usage** — une valeur hors de ce
+     format fait échouer le run immédiatement, avant même de toucher au VPS ;
+  2. `build-backend-image` (sauté sur un rollback, `backend_tag` fourni) :
+     build **sans push**, vérification PHP ≥ 8.4.27, puis push sur GHCR
+     (`ghcr.io/horlynat/hmm-backend`, tags `latest` et `<sha>`) — c'est la
+     même image pour `backend` et `messenger-worker` (cf.
+     `docker-compose.prod.yml`) ;
+  3. `deploy` (environnement GitHub **`production`** protégé, validation
+     manuelle requise — cf. ci-dessous) :
+     - clé SSH décodée dans un fichier temporaire, jamais interpolée dans
+       une commande shell (`DEPLOY_SSH_KEY`/`DEPLOY_HOST` lus via `env:`) ;
+     - `rsync` de `infra/` et `frontend/` vers `/opt/hmm/` (jamais
+       `backend/`, dont le code arrive désormais uniquement via l'image
+       GHCR) ;
+     - exécution de `infra/scripts/deploy-remote.sh <tag>` sur le VPS (tag
+       passé en **argument**, re-validé une 2ᵉ fois côté script, échappé
+       via `printf %q` avant d'entrer dans la commande SSH), qui reproduit
+       l'ordre du §6 (backend → migrations → messenger-worker → frontend,
+       toujours dans cet ordre, redeploy ou non) ;
+     - clé SSH supprimée du runner en fin de job (`if: always()`).
+  - `concurrency: deploy-production` (`cancel-in-progress: false`) : un
+    deuxième déclenchement (merge rapproché, rollback manuel) attend la fin
+    du précédent plutôt que d'entrelacer deux `rsync`/`docker compose up`
+    sur le même VPS — un déploiement coupé à mi-chemin est pire qu'une
+    file d'attente.
 
 **Garde-fou secrets** : `deploy-remote.sh` vérifie, avant tout appel Docker
 Compose, que chaque secret déclaré dans `docker-compose.prod.yml` existe bien
@@ -568,9 +687,95 @@ fait échouer le déploiement dès la première commande — toujours créer le
 fichier secret (§4) **avant** de merger/pusher le changement qui le
 référence.
 
+**Garde-fou final** : après le déploiement, `deploy-remote.sh` vérifie que
+`https://api.horlynat.com/login` renvoie bien **404** (cf. point 4
+ci-dessous, routeur `hmm-api` restreint à `/api`/`/uploads`/`/newsletter`) —
+tout autre code fait échouer le run avec une alerte explicite, pour détecter
+une régression de cette restriction au déploiement qui la causerait, pas
+des semaines après.
+
 **Rollback** : relancer `deploy.yml` manuellement (`workflow_dispatch`) avec
 `backend_tag` = un `<sha>` antérieur (visible dans l'historique GHCR ou les
 runs précédents) — saute le rebuild et redéploie directement cette image.
+
+**Dependabot** (`.github/dependabot.yml`) : mises à jour hebdomadaires
+groupées (une PR par écosystème et par semaine, passant par les mêmes CI)
+pour les actions GitHub (SHA + commentaire mis à jour ensemble), les images
+des `Dockerfile` (`backend/`, `frontend/`), les images du compose de prod
+(`infra/`, écosystème `docker-compose`), Composer (`backend/`) et npm
+(`backend/`, `frontend/`). Les alertes de **sécurité** Dependabot (*Settings
+→ Code security*) restent immédiates, indépendantes de ce calendrier.
+`backend/Dockerfile` référence l'image FrankenPHP via un `ARG`
+(`FRANKENPHP_IMAGE`) que Dependabot ne suit pas : la montée PHP/FrankenPHP
+reste manuelle (cf. commentaire dans ce fichier).
+
+#### Secret de déploiement — à déplacer en secrets d'environnement (ACTION MANUELLE REQUISE)
+
+⚠️ **Constat de l'audit, non corrigé automatiquement** (nécessite des clics
+dans les réglages GitHub, pas un changement de code) : si `DEPLOY_SSH_KEY`
+et `DEPLOY_HOST` restent des secrets/variables **de dépôt** (*Settings →
+Secrets and variables → Actions*), **n'importe quel workflow déclenché
+depuis n'importe quelle branche poussée** y a accès, sans attendre
+l'approbation manuelle de l'environnement `production` — et l'utilisateur
+`deploy` est dans le groupe `docker`, donc équivalent root sur le VPS (cf.
+plus bas). Un repli `${{ secrets.DEPLOY_SSH_KEY || ... }}` existe dans
+`deploy.yml` pour ne pas casser un déploiement en cours de bascule, mais
+**le but est de ne plus jamais utiliser ce repli en pratique**.
+
+**Bascule sans coupure de service** — GitHub résout `secrets.X`/`vars.X`
+dans un job qui porte `environment: production` (c'est le cas du job
+`deploy`) en préférant la valeur **de l'environnement** sur celle **du
+dépôt** quand les deux existent sous le même nom, de façon totalement
+transparente pour `deploy.yml` : aucun changement de workflow n'est requis
+pour basculer, seulement des clics dans les réglages, dans cet ordre :
+
+1. *Settings → Environments → `production`* (déjà créé pour le required
+   reviewer, cf. ci-dessous) → **Add secret** → `DEPLOY_SSH_KEY`, même
+   valeur que le secret de dépôt actuel. Idem **Add variable** pour
+   `DEPLOY_HOST` et `DEPLOY_KNOWN_HOSTS` (ou **Add secret** pour `DEPLOY_HOST`
+   si tu préfères ne plus l'exposer même en lecture dans les réglages —
+   `deploy.yml` accepte les deux formes, cf. `secrets.DEPLOY_HOST ||
+   vars.DEPLOY_HOST`). Pendant cette étape, le secret/la variable de dépôt
+   reste en place : la valeur de l'environnement, une fois ajoutée, est
+   DÉJÀ celle utilisée par le job `deploy` (priorité automatique) — pas de
+   fenêtre sans secret disponible.
+2. Déclencher un déploiement de test (`workflow_dispatch` sans
+   `backend_tag`, par ex.) et vérifier qu'il réussit — il utilise déjà la
+   valeur de l'environnement à ce stade (les deux étant identiques, aucune
+   différence observable ; l'étape 3 confirme laquelle était réellement lue).
+3. **Supprimer** `DEPLOY_SSH_KEY`/`DEPLOY_HOST` au niveau dépôt (*Settings →
+   Secrets and variables → Actions*) et relancer le même déploiement de
+   test : s'il réussit toujours, la valeur venait bien de l'environnement.
+   Ne JAMAIS faire cette suppression avant l'étape 1 (le job échouerait
+   faute de n'importe quelle valeur disponible).
+4. *Settings → Environments → `production` → Deployment branches and tags*
+   → **Selected branches** → `main` : rend explicite et vérifiable dans les
+   réglages que ces secrets ne sont accessibles qu'aux runs déclenchés
+   depuis `main` (déjà le cas par construction, puisque seul `main`
+   déclenche `deploy.yml`, mais une restriction au niveau de
+   l'environnement reste la garantie qui ne dépend pas de rester
+   synchronisée avec `on.push.branches` du workflow).
+
+**Restriction de la clé côté VPS** (`~deploy/.ssh/authorized_keys`), pour
+qu'une clé volée ne donne PAS un shell SSH interactif : préfixer la clé CI
+d'un `command=` forcé et de `restrict` (pas de pty, ni redirection de
+port/agent/X11), par exemple :
+
+```
+restrict,command="/usr/local/sbin/hmm-deploy-gate" ssh-ed25519 AAAA... ci-deploy
+```
+
+**⚠️ Proposé, NON intégré à ce lot** : un script `deploy-ssh-gate.sh`
+implémentant cette commande forcée (délègue le `rsync` en écriture seule à
+`rrsync`, confiné à `/opt/hmm/`, et n'autorise que
+`bash /opt/hmm/infra/scripts/deploy-remote.sh <tag>` avec `<tag>` déjà
+validé) a été écrit et testé localement (rsync légitime accepté, lecture/
+tunnel/autre commande/injection shell dans le tag tous refusés et journalisés)
+mais **reste hors de ce dépôt** : une restriction de clé SSH touche l'accès
+à l'hôte entier, potentiellement partagé avec un autre projet sur ce même
+VPS — décision à prendre par toi, pas par ce lot. Si tu veux l'adopter,
+demande-le explicitement ; le fichier existe en dehors du contrôle de
+version, prêt à être ajouté.
 
 #### Utilisateur `deploy` dédié (pas `ubuntu`)
 
@@ -597,19 +802,22 @@ de monter n'importe quel chemin hôte dans un conteneur). Ne pas donner sudo
 contexte (clé stockée uniquement dans les secrets chiffrés GitHub, jamais
 sur un poste), pas une isolation complète.
 
-#### Secrets et variables à configurer sur le dépôt GitHub
+#### Secrets et variables à configurer sur GitHub
 
-*Settings → Secrets and variables → Actions* :
+**Cible** (après la bascule décrite ci-dessus — *Settings → Environments →
+`production`*, pas *Settings → Secrets and variables → Actions* au niveau
+dépôt) :
 
-| Type | Nom | Valeur |
-|---|---|---|
-| Secret | `DEPLOY_SSH_KEY` | Clé privée ed25519 dédiée à la CI (jamais celle de `ubuntu`) |
-| Variable | `DEPLOY_KNOWN_HOSTS` | Sortie de `ssh-keyscan -t ed25519 <IP_VPS>` |
-| Variable | `DEPLOY_HOST` | IP ou nom d'hôte du VPS |
+| Portée | Type | Nom | Valeur |
+|---|---|---|---|
+| Environnement `production` | Secret | `DEPLOY_SSH_KEY` | Clé privée ed25519 dédiée à la CI (jamais celle de `ubuntu`) |
+| Environnement `production` | Variable (ou secret) | `DEPLOY_HOST` | IP ou nom d'hôte du VPS |
+| Environnement `production` | Variable | `DEPLOY_KNOWN_HOSTS` | Sortie de `ssh-keyscan -t ed25519 <IP_VPS>` |
 
 *Settings → Environments → New environment `production`* : ajouter un
 *required reviewer* (toi-même) pour que chaque déploiement attende une
-validation manuelle en un clic avant de s'exécuter.
+validation manuelle en un clic avant de s'exécuter, et restreindre
+*Deployment branches and tags* à `main` (cf. ci-dessus).
 
 *Packages* : le package `hmm-backend` doit être **public** (Settings du
 package sur GitHub) — aucun secret n'est embarqué dans l'image (tout passe
@@ -666,6 +874,182 @@ reste, `messenger-worker` ci-dessus) ; conversation temps réel (Claude,
   automatique après 90 jours (`app:ai-assistant:purge-logs`, en cron, cf.
   §8) — c'est le garde-fou documenté depuis longtemps dans "Hors périmètre"
   ci-dessous, désormais implémenté.
+
+### 13. Durcissement des conteneurs & réseau (ce lot, services du portfolio)
+
+Scope de ce lot : **uniquement** les services propres au portfolio
+(`backend`, `messenger-worker`, `frontend`, `database`, `adminer`,
+`api-build-gateway`). Le service `traefik`, ses fichiers
+(`traefik/traefik.yml`, `traefik/dynamic.yml`), le service `postfixadmin`
+et les `networks:` du compose sont **partagés avec un autre projet hébergé
+sur ce même VPS** et restent donc hors de ce lot — recommandations listées
+en fin de section, à valider séparément avant tout changement.
+
+#### Images épinglées (version exacte + digest)
+
+Toutes les images des services du portfolio sont désormais épinglées par
+digest (`image:tag@sha256:...`) — une image retaguée localement ou repoussée
+sous le même tag sur le registre n'est jamais utilisée silencieusement.
+Dependabot (ci-dessus) propose les montées de version. Résumé :
+
+| Service | Avant | Après |
+|---|---|---|
+| `database` | `mysql:8.0` (flottant) | `mysql:8.0.46@sha256:...` (fin de vie — montée 8.4 LTS documentée en §8.5, hors de ce lot) |
+| `adminer` | `adminer:latest` | `adminer:6.3.0@sha256:...` (PHP 8.4.28 embarqué ; `latest` tournait depuis 3 mois en PHP 8.4.24, vulnérable PHP2Shell) |
+| `backend`/`messenger-worker` | `ghcr.io/horlynat/hmm-backend:${BACKEND_IMAGE_TAG}` | inchangé (déjà versionné par sha de commit, cf. `deploy.yml`) |
+| `api-build-gateway` (nouveau) | — | `alpine/socat:1.8.1.3@sha256:...` |
+
+`deploy-remote.sh` fait désormais un `pull` explicite de **tous** les
+services du portfolio tirés d'un registre (`database backend
+messenger-worker adminer`, plus `api-build-gateway` sous son profil) — pas
+seulement `backend` comme avant. C'est ce qui applique réellement une
+montée de version de `mysql`/`adminer`/`socat` dès le déploiement qui la
+contient (sans ce `pull`, une image locale plus ancienne du même tag reste
+utilisée indéfiniment). `traefik` et `postfixadmin` sont exclus de cette
+liste : partagés avec l'autre projet / image locale non versionnée
+(`postfixadmin:dbg`, cf. plus bas) — un `pull` sur `postfixadmin` ferait
+échouer tout le déploiement.
+
+#### `no-new-privileges` / `cap_drop: [ALL]` / `read_only` / `pids_limit`
+
+Appliqué à `backend`, `messenger-worker`, `frontend`, `database`, `adminer`
+(`x-hardening` dans `docker-compose.prod.yml`), chaque `cap_add` justifié en
+commentaire à côté du service et **validé en conditions réelles** (stack
+jetable locale : migrations, seed, build frontend, connexion Adminer) :
+
+| Service | `cap_add` | `read_only` | Pourquoi |
+|---|---|---|---|
+| `backend` | `CHOWN,DAC_OVERRIDE,SETUID,SETGID,NET_BIND_SERVICE` | non | entrypoint root (lit les secrets, écrit `.env.local`), su-exec vers www-data, frankenphp lié au port 80 |
+| `messenger-worker` | `CHOWN,DAC_OVERRIDE,SETUID,SETGID` | non | même entrypoint, jamais frankenphp (pas de `NET_BIND_SERVICE`) |
+| `frontend` | `SETUID,SETGID,DAC_OVERRIDE` | non (ISR réécrit `.next/`) | même mécanisme d'entrypoint côté Next.js |
+| `database` | `CHOWN,DAC_OVERRIDE,SETUID,SETGID` | **oui** (+ tmpfs `/tmp`, `/var/run/mysqld`) | entrypoint officiel MySQL, validé : init + migrations + redémarrage OK |
+| `adminer` | aucune | **oui** (+ tmpfs `/tmp`) | aucun entrypoint privilégié, sessions PHP en tmpfs |
+| `api-build-gateway` | aucune | **oui** | `socat` seul, utilisateur non-root (`65534:65534`) |
+
+`pids_limit` posé sur les 6 (64 à 512 selon le service) — anti fork-bomb,
+sans impact observé en usage normal (worker Messenger, requêtes concurrentes
+backend/frontend testées en local).
+
+#### Routeur `api` restreint (point 4 de l'audit)
+
+`api.horlynat.com` ne servait auparavant aucune restriction de chemin — tout
+le back-office (`/login`, `/admin/*`, `/2fa`...) y était joignable avec le
+rate-limit standard (pas `strict`) et sans Cloudflare Access. Restreint à :
+`Host(api.horlynat.com) && (Path(/api) || PathPrefix(/api/) ||
+PathPrefix(/uploads/) || PathPrefix(/newsletter/))` — vérifié contre le
+frontend (`frontend/src/lib/media.ts`, `next.config.ts` : seul `/uploads/**`
+est consommé publiquement par le domaine API) et le backend (préfixe
+`/newsletter/*`, routes publiques hors `/api` cliquées depuis un client
+mail ; `/build` et `/bundles` volontairement exclus — back-office seul
+consommateur, doc API Platform désactivée en prod). **Testé par attaque** :
+~25 tentatives de contournement (traversée de chemin en clair et encodée,
+double-encodage, `..;`, `%00`, préfixe dupliqué `//api/..`) contre une
+instance Traefik réelle — toutes bloquées (404 natif de Traefik, backend
+jamais atteint) ; les quelques requêtes qui matchent légitimement le
+préfixe `/api/` littéral (ex. `/api/..%2Fadmin/`) atteignent bien l'API,
+jamais le back-office (confirmé : réponse vide, pas de contenu admin/login).
+
+#### Collision de noms de routeur/service Traefik avec l'autre projet du VPS — **trouvé pendant la phase d'attaque**
+
+En testant la restriction ci-dessus contre une instance Traefik réelle
+partageant le socket Docker de l'hôte (comme en prod), les routeurs/services
+du portfolio nommés `api`, `backend`, `frontend` et `dbadmin` (identifiants
+**globaux à toute l'instance Traefik**, tous projets confondus — pas de
+simple nom de service Docker) sont entrés en collision avec des conteneurs
+d'un autre projet utilisant les **mêmes noms génériques** pour leurs propres
+routeurs. Résultat observé : `"HTTP router defined multiple times with
+different configurations"` — Traefik **supprime les deux routeurs en
+conflit**, silencieusement (404 natif, aucune erreur visible côté
+utilisateur) ; `api.horlynat.com` (et le routeur de l'autre côté) auraient
+cessé de répondre sans qu'aucun log d'erreur applicatif ne le signale.
+
+Ce risque est **pré-existant à ce lot** (les noms `api`/`backend`/`dark`/
+`dbadmin` étaient déjà ceux du compose avant ces changements) et touche
+potentiellement la prod réelle, selon les noms utilisés par l'autre projet
+— à vérifier côté Traefik/dashboard interne (désactivé ici) ou en
+confirmant avec l'équipe de l'autre projet.
+
+**Corrigé** (changement de labels, uniquement sur les services du
+portfolio — ne touche ni le service `traefik`, ni `postfixadmin`, ni les
+`networks:`) : tous les identifiants de routeur/service du portfolio
+préfixés `hmm-` (`hmm-api`, `hmm-dark`, `hmm-frontend`, `hmm-backend`,
+`hmm-dbadmin`) — `mailadmin`/`postfixadmin`, hors périmètre de ce lot, **non
+renommé**, à vérifier séparément. **Retesté après correction** : plus aucune
+erreur de collision, les quatre routeurs du portfolio répondent
+correctement (`api.horlynat.com`, `dark.horlynat.com`, `horlynat.com`/`www`,
+`db.horlynat.com`), y compris avec les conteneurs de l'autre projet présents
+sur le même hôte Docker.
+
+#### Nouvelles variables d'environnement optionnelles (`.env.prod`)
+
+Documentées dans `.env.prod.example`, sans effet par défaut (vide = pas de
+restriction, comportement identique à avant ce lot) :
+
+- `BACKOFFICE_URL` — base des liens e-mail destinés aux comptes back-office
+  (côté Symfony, cf. B2 `fix/backend-auth-hardening`) ; défaut compose :
+  `https://dark.horlynat.com`.
+- `SYMFONY_TRUSTED_HOSTS` — liste blanche d'hôtes Symfony (`trusted_hosts`),
+  vide = aucune restriction. Doit inclure `^backend$` (appels internes
+  frontend + build via `api-build-gateway`) en plus de `api`/`dark`.
+- `CF_ACCESS_TEAM_DOMAIN` / `CF_ACCESS_AUD` — vérification côté Symfony du
+  jeton Cloudflare Access sur `dark.horlynat.com` (implémentation côté B2) ;
+  vide = désactivée, aucun impact sur le déploiement.
+- `HMM_BUILD_GATEWAY_BIND` — IP de `docker0` pour la passerelle de build
+  éphémère (défaut `172.17.0.1`, cf. §6).
+
+#### Secrets SQL hors ligne de commande (P2, `README` uniquement)
+
+`mysql -p"$DBPASS"` (argument visible dans `ps`) remplacé par `MYSQL_PWD`
+(variable d'environnement du seul process concerné) dans le healthcheck
+`database` et dans la procédure de création du premier compte admin (§6.5).
+Génération du hash bcrypt PostfixAdmin (§10) : saisie masquée (`read -s`),
+plus de mot de passe en clair sur la ligne de commande ni dans l'historique
+shell. Netdata (§9) : plus de `curl | sh` (téléchargement, vérification,
+relecture puis exécution en étapes séparées).
+
+#### `.gitignore`
+
+Racine (nouveau) + `infra/.gitignore` (étendu) : `*.sql`, `*.sql.gz`,
+`*.sql.age`, `backups/`, `logs/`, `.env.prod*` (sauf `.env.prod.example`),
+clés/certificats (`*.pem`, `*.key`, `id_*`). Aucun fichier déjà suivi par
+Git ne correspondait à ces nouveaux motifs (vérifié par `git ls-files` avant
+d'ajouter les règles — rien à purger de l'historique).
+
+#### Hors périmètre de ce lot — infra partagée avec l'autre projet (recommandations, non appliquées)
+
+- **`docker.sock` monté dans Traefik** (`:ro`, qui ne protège pas l'API) :
+  recommandation inchangée — `tecnativa/docker-socket-proxy` (image
+  épinglée, `CONTAINERS=1 NETWORKS=1 EVENTS=1 POST=0`) sur un réseau
+  interne dédié, `providers.docker.endpoint: tcp://socket-proxy:2375` côté
+  Traefik. Nécessite de modifier le service `traefik` partagé — à faire
+  avec l'accord de l'autre projet, pas unilatéralement.
+- **`providers.docker.network`**, `aliasHeadersStrategy`,
+  `core.strictTLSOptions`, `encodedCharacters` (`traefik.yml`) : durcissements
+  valables en général (testés dans ce lot sur une instance isolée) mais
+  touchent la config statique partagée — à proposer, pas à appliquer seul.
+- **Segmentation réseau** (`edge-net` plat, un seul réseau pour tous les
+  services routés) : un réseau par paire routeur↔service réduirait le rayon
+  d'action d'un conteneur compromis, mais `edge-net`/`data-net` sont
+  partagés avec l'autre projet — à coordonner.
+- **`SYMFONY_TRUSTED_PROXIES`** sur tout le RFC1918 : resserrer au seul
+  sous-réseau Traefik↔backend suppose un réseau dédié à cette paire (cf.
+  point précédent) — même dépendance.
+- **Image PostfixAdmin** : la prod tourne sur `postfixadmin:dbg` (image
+  locale construite sur le VPS par l'autre projet, absente de tout
+  registre — confirmé : un `pull` échoue avec `not found`). Cible validée
+  en local pour ce lot (non appliquée) : `postfixadmin:4.0.7-apache@sha256:
+  3d81c8e0c55d6984befc4076765f57cf730c1288b3408373569181d42176b636` (PHP
+  8.4.28, contre PHP 8.3.33 sur l'image `:dbg` actuelle — montée de version
+  PostfixAdmin elle-même, donc schéma de base à vérifier via `/setup.php`
+  avant bascule). Durcissement conteneur prêt mais non appliqué (cap_add
+  `CHOWN,DAC_OVERRIDE,FOWNER,SETUID,SETGID,KILL`, validé localement contre
+  l'image officielle 4.0.7) — à activer SEULEMENT en même temps que le
+  changement d'image, jamais sur l'image `:dbg` actuelle (capacités non
+  testées contre elle).
+- **fail2ban `symfony-security`** (bannit l'IP réelle mais le trafic arrive
+  de Cloudflare via `DOCKER-USER`, pas filtré par ce jail), jail `sshd`
+  (cohérence du port avec la CI) : scripts hôte (`01-base-hardening.sh`)
+  hors de ce lot.
 
 ## Hors périmètre de cette livraison (documenté, pas implémenté)
 
