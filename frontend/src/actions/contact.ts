@@ -13,7 +13,8 @@ export async function submitContactMessage(
   const parsed = contactMessageSchema.safeParse(payload);
   if (!parsed.success) return invalidInput;
 
-  return apiPost("/contact_messages", payload);
+  // `parsed.data` et non `payload` : seuls les champs validés atteignent le backend.
+  return apiPost("/contact_messages", parsed.data);
 }
 
 /**
