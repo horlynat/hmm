@@ -6,23 +6,31 @@ export function getMediaUrl(filePath: string): string {
 }
 
 /**
- * Avatar d'un utilisateur : photo de profil si définie, sinon des initiales
- * générées via ui-avatars.com — même repli que les templates Twig du
- * back-office (`user.profileImage ?? 'https://ui-avatars.com/api/?name=...'`),
- * mais aux couleurs de la marque (brand-primary #0077b6) plutôt qu'au gris par
- * défaut du service, pour rester cohérent avec les badges/boutons de l'espace.
+ * Photo de profil d'un utilisateur, ou `null` s'il n'en a pas — l'appelant
+ * affiche alors des initiales générées localement (composant `Avatar`).
+ *
+ * Plus aucun repli vers ui-avatars.com : ce service tiers recevait le nom
+ * complet (ou l'e-mail) de chaque utilisateur affiché, à chaque affichage —
+ * une fuite de données personnelles vers un tiers sans base légale (RGPD,
+ * audit 2026-11-20).
  */
-export function getAvatarUrl(user: {
-  profileImage?: string | null;
-  fullName?: string | null;
-  email: string;
-}): string {
-  if (user.profileImage) {
-    return user.profileImage.startsWith("http")
-      ? user.profileImage
-      : getMediaUrl(user.profileImage);
-  }
+export function getAvatarImageUrl(user: { profileImage?: string | null }): string | null {
+  if (!user.profileImage) return null;
+  return /^https?:\/\//i.test(user.profileImage) ? user.profileImage : getMediaUrl(user.profileImage);
+}
 
-  const name = encodeURIComponent(user.fullName ?? user.email);
-  return `https://ui-avatars.com/api/?name=${name}&background=0077B6&color=fff&bold=true`;
+/**
+ * Initiales (1 à 2 lettres, majuscules) à partir du nom complet, sinon de la
+ * partie locale de l'e-mail. Calculées localement — rien n'est envoyé à un tiers.
+ */
+export function getInitials(user: { fullName?: string | null; email?: string | null }): string {
+  const source = (user.fullName ?? "").trim() || (user.email ?? "").split("@")[0].trim();
+  const words = source
+    .split(/[\s._-]+/)
+    .map((w) => w.replace(/[^\p{L}\p{N}]/gu, ""))
+    .filter(Boolean);
+
+  if (words.length === 0) return "?";
+  const letters = words.length === 1 ? Array.from(words[0]).slice(0, 2) : [Array.from(words[0])[0], Array.from(words[words.length - 1])[0]];
+  return letters.join("").toLocaleUpperCase();
 }

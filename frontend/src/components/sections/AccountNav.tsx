@@ -24,9 +24,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Link, usePathname } from "@/i18n/navigation";
-import { Badge, ButtonLink } from "@/components/ui";
+import { Badge, ButtonLink, Avatar } from "@/components/ui";
 import { LogoutButton } from "@/components/sections/LogoutButton";
-import { getAvatarUrl } from "@/lib/media";
 
 /**
  * Routes statiques (sans paramètre) de l'aside compte — cf. src/i18n/routing.ts.
@@ -152,11 +151,10 @@ function NavProfile({ user, collapsed }: { user: NavUser; collapsed: boolean }) 
         collapsed && "justify-center",
       )}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- avatar externe (ui-avatars.com) ou média backend, hors domaines optimisables par next/image sans config supplémentaire */}
-      <img
-        src={getAvatarUrl(user)}
-        alt=""
-        className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-brand-primary/20 transition-colors group-hover:ring-brand-primary/40"
+      <Avatar
+        user={user}
+        className="h-8 w-8 ring-2 ring-brand-primary/20 transition-colors group-hover:ring-brand-primary/40"
+        textClassName="text-[11px]"
       />
       {!collapsed && (
         <>

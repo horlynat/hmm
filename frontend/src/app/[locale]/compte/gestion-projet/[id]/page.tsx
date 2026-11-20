@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ArrowLeft, UserRoundCheck } from "lucide-react";
-import { Alert, Badge, ButtonLink, Card, Breadcrumb, SectionHeading } from "@/components/ui";
+import { Alert, Badge, ButtonLink, Card, Breadcrumb, SectionHeading, Avatar } from "@/components/ui";
 import { ProjectDiscussion } from "@/components/sections/ProjectDiscussion";
 import { ProjectTaskBoard } from "@/components/sections/ProjectTaskBoard";
 import { ProjectTimeTracking } from "@/components/sections/ProjectTimeTracking";
@@ -13,9 +13,9 @@ import {
   getMyProjectTimeTracking,
   getProjectComments,
 } from "@/lib/auth/session";
-import { getAvatarUrl } from "@/lib/media";
 import { projectStatusVariant } from "@/lib/status";
 import type { TaskStatus } from "@/lib/types";
+import { parseRouteId } from "@/lib/api/path";
 
 /** Nombre de jours entre aujourd'hui et la deadline (négatif si dépassée). */
 function daysUntil(deadline: string): number {
@@ -32,8 +32,9 @@ export default async function GestionProjetDetailPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { locale, id } = await params;
-  const projectId = Number(id);
-  if (!Number.isInteger(projectId)) {
+  // Entier décimal strictement positif uniquement (cf. parseRouteId).
+  const projectId = parseRouteId(id);
+  if (projectId === null) {
     notFound();
   }
 
@@ -128,12 +129,7 @@ export default async function GestionProjetDetailPage({
         <SectionHeading title={tw("team.title")} />
         <Card variant="soft" className="divide-y divide-(--border-neutral) overflow-hidden p-0">
           <div className="flex items-center gap-3.5 p-4">
-            {/* eslint-disable-next-line @next/next/no-img-element -- avatar externe ou média backend, cf. ProfilPage */}
-            <img
-              src={getAvatarUrl(team.owner)}
-              alt=""
-              className="h-11 w-11 shrink-0 rounded-full border border-(--border-neutral) object-cover"
-            />
+            <Avatar user={team.owner} className="h-11 w-11 border border-(--border-neutral)" textClassName="text-sm" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{team.owner.fullName ?? team.owner.email}</p>
               <Badge variant="accent" className="mt-1">
@@ -143,12 +139,7 @@ export default async function GestionProjetDetailPage({
           </div>
           {team.collaborators.map((member) => (
             <div key={member.id} className="flex items-center gap-3.5 p-4">
-              {/* eslint-disable-next-line @next/next/no-img-element -- avatar externe ou média backend */}
-              <img
-                src={getAvatarUrl(member)}
-                alt=""
-                className="h-11 w-11 shrink-0 rounded-full border border-(--border-neutral) object-cover"
-              />
+              <Avatar user={member} className="h-11 w-11 border border-(--border-neutral)" textClassName="text-sm" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{member.fullName ?? member.email}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-1.5">

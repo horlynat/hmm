@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import clsx from "clsx";
 import { Link } from "@/i18n/navigation";
-import { getAvatarUrl } from "@/lib/media";
 import { LogoutButton } from "./LogoutButton";
+import { Avatar } from "@/components/ui/Avatar";
 
 interface AccountUserMenuProps {
   user: { fullName: string | null; email: string; profileImage: string | null };
@@ -43,12 +43,7 @@ export function AccountUserMenu({ user }: AccountUserMenuProps) {
         aria-label={t("header.userMenu")}
         className="flex items-center gap-2 rounded-full border border-(--border-neutral) bg-bg-card py-1 pl-1 pr-2.5 transition-colors hover:border-brand-primary"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element -- avatar externe (ui-avatars.com) ou média backend, hors domaines optimisables par next/image sans config supplémentaire */}
-        <img
-          src={getAvatarUrl(user)}
-          alt=""
-          className="h-7 w-7 shrink-0 rounded-full object-cover"
-        />
+        <Avatar user={user} className="h-7 w-7" textClassName="text-[10px]" />
         <span className="hidden max-w-[140px] truncate text-sm font-semibold md:inline">
           {user.fullName ?? user.email}
         </span>
