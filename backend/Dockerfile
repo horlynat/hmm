@@ -103,14 +103,36 @@ ENV APP_ENV=prod \
 
 WORKDIR /app
 
-COPY --from=vendor --chown=www-data:www-data /build /app
-COPY --from=assets --chown=www-data:www-data /app/public/build /app/public/build
-COPY --chown=www-data:www-data frankenphp/Caddyfile /etc/caddy/Caddyfile
+# Code applicatif, assets compilés et config Caddy : propriété de root, en
+# lecture seule pour www-data (audit 2026-11-20, P2 infra « aucun
+# durcissement »). Avant, tout /app appartenait à www-data : une faille
+# d'écriture de fichier ou une RCE sous www-data pouvait réécrire le code
+# (public/index.php, src/, vendor/) ou la config Caddy de façon persistante
+# dans le conteneur. Seuls restent inscriptibles par www-data :
+#   - var/ (cache Symfony, logs, sauvegardes — cf. volumes prod) ;
+#   - public/uploads/ (App\Service\MediaUploader, volume uploads_data) ;
+#   - /config/caddy et /data/caddy (état Caddy, cf. plus bas).
+# /app/.env.local (secrets) est écrit au démarrage par l'entrypoint (root),
+# en root:www-data 0640 : lisible, pas modifiable par l'application.
+COPY --from=vendor /build /app
+COPY --from=assets /app/public/build /app/public/build
+COPY frankenphp/Caddyfile /etc/caddy/Caddyfile
 COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY --chmod=755 frankenphp/healthcheck.sh /usr/local/bin/healthcheck.sh
 
-RUN mkdir -p var/cache var/log \
-    && chown -R www-data:www-data var \
-    && chmod -R u+rwX var
+# COPY donne déjà root:root et conserve les droits du contexte de build ;
+# les `find` ne corrigent que les écarts (fichier non-root, écriture
+# groupe/autres, lecture absente pour « autres » — www-data n'est ni
+# propriétaire ni membre du groupe root) sans dupliquer tout /app dans une
+# nouvelle couche quand le contexte est déjà propre (checkout CI en 644/755).
+RUN find /app /etc/caddy ! -user root -exec chown root:root {} + \
+    && find /app /etc/caddy \( -perm -0002 -o -perm -0020 \) -exec chmod go-w {} + \
+    && find /app /etc/caddy ! -perm -0004 -exec chmod go+r {} + \
+    && find /app /etc/caddy -type d ! -perm -0001 -exec chmod go+x {} + \
+    && find /app/bin -type f -name console ! -perm -0001 -exec chmod go+x {} + \
+    && mkdir -p var/cache var/log var/backups public/uploads \
+    && chown -R www-data:www-data var public/uploads \
+    && chmod -R u+rwX var public/uploads
 
 # Caddy (sous FrankenPHP) écrit son état (config autosave, storage TLS) dans
 # les dossiers XDG /config/caddy et /data/caddy, appartenant à root par
@@ -129,8 +151,13 @@ RUN mkdir -p /config/caddy /data/caddy \
 
 EXPOSE 80
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD wget -qO- http://127.0.0.1:2019/config/ || exit 1
+# Sonde une vraie route Symfony servie par le worker PHP (/health/live, sans
+# dépendance à la base), pas l'API admin Caddy : celle-ci répondait « sain »
+# alors que PHP n'était pas prêt (cache froid → premières requêtes en 500).
+# Le port suit SERVER_NAME (cf. frankenphp/healthcheck.sh). start-period
+# couvre le préchauffage du cache fait par l'entrypoint avant de servir.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD ["/usr/local/bin/healthcheck.sh"]
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
