@@ -124,14 +124,6 @@ services:
             $monthlyBudgetUsd: '%env(float:ASSISTANT_MONTHLY_BUDGET_USD)%'
             $alertThresholdUsd: '%env(float:ASSISTANT_BUDGET_ALERT_THRESHOLD_USD)%'
 
-    App\State\AiAssistantChatProcessor:
-        arguments:
-            $appSecret: '%kernel.secret%'
-
-    App\State\AiContentSummaryProcessor:
-        arguments:
-            $appSecret: '%kernel.secret%'
-
     # ⚠️ doctrine-bundle (3.x) + symfony/doctrine-bridge n'auto-tagguent PAS les classes
     #    qui implémentent Doctrine\Common\EventSubscriber (contrairement aux anciennes
     #    versions) : seul le tag "doctrine.event_listener" est reconnu par

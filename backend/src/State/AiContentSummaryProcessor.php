@@ -5,9 +5,9 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\AiContentSummaryApiResource;
-use App\Entity\AiAssistantConversationLog;
 use App\Entity\AiAssistantSettings;
 use App\Entity\Project;
+use App\Enum\ProjectStatusEnum;
 use App\Exception\AiAssistantUnavailableException;
 use App\Repository\AiAssistantSettingsRepository;
 use App\Repository\ArticleRepository;
@@ -15,11 +15,10 @@ use App\Repository\ProjectRepository;
 use App\Service\AiAssistantBudgetGuard;
 use App\Service\AiAssistantInputGuard;
 use App\Service\AiAssistantOutputSanitizer;
+use App\Service\AiAssistantUsageRecorder;
 use App\Service\ClaudeClient;
 use App\Service\PublicSubmissionThrottler;
-use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
@@ -39,15 +38,14 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  */
 final class AiContentSummaryProcessor implements ProcessorInterface
 {
-    // Mêmes tarifs que AiAssistantChatProcessor (cf. son docblock pour le
-    // détail) — dupliqués plutôt que partagés via un service commun : les
-    // deux processors restent de taille raisonnable et indépendants l'un de
-    // l'autre, pas de couplage à introduire pour quelques constantes stables.
-    private const CLAUDE_PRICING = [
-        'sonnet' => ['input' => 2.0, 'output' => 10.0],
+    // Mêmes statuts que App\Doctrine\ProjectVisibilityExtension (API publique
+    // /api/projects) : seul un projet visible publiquement peut être résumé.
+    // Avant, `findOneBy(['slug'])` sans filtre résumait aussi les projets à
+    // venir, suspendus ou en collaboration (fuite, audit 2026-11-20 P1 #11).
+    private const PUBLIC_PROJECT_STATUSES = [
+        ProjectStatusEnum::IN_PROGRESS->value,
+        ProjectStatusEnum::COMPLETED->value,
     ];
-    private const CACHE_WRITE_MULTIPLIER = 2.0;
-    private const CACHE_READ_MULTIPLIER = 0.1;
 
     public function __construct(
         private readonly AiAssistantSettingsRepository $settingsRepository,
@@ -56,12 +54,10 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         private readonly AiAssistantInputGuard $inputGuard,
         private readonly ClaudeClient $claudeClient,
         private readonly AiAssistantOutputSanitizer $outputSanitizer,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly RequestStack $requestStack,
+        private readonly AiAssistantUsageRecorder $usageRecorder,
         private readonly LoggerInterface $logger,
         private readonly ArticleRepository $articleRepository,
         private readonly ProjectRepository $projectRepository,
-        private readonly string $appSecret,
     ) {
     }
 
@@ -71,19 +67,20 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         $locale = $data->getLocale() ?: 'fr';
         $question = trim($data->getQuestion());
 
+        // Même compteur que le chat (limiter.ai_assistant_chat) : un seul
+        // budget de requêtes par visiteur pour l'ensemble de l'assistant,
+        // pas un second quota indépendant qui doublerait l'exposition.
+        // Appelé AVANT toute écriture en base (cf. AiAssistantChatProcessor).
+        $this->throttler->assertAiAssistantAllowed();
+
         if (!$settings->isAiAssistantEnabled()) {
-            $this->persistBlockedLog($locale, $question, 'feature_disabled');
+            $this->usageRecorder->recordBlocked($locale, mb_strlen($question), 'feature_disabled');
 
             throw new AiAssistantUnavailableException("L'assistant IA est temporairement désactivé.");
         }
 
-        // Même compteur que le chat (limiter.ai_assistant_chat) : un seul
-        // budget de requêtes par visiteur pour l'ensemble de l'assistant,
-        // pas un second quota indépendant qui doublerait l'exposition.
-        $this->throttler->assertAiAssistantAllowed();
-
         if ($this->budgetGuard->isBudgetExceeded()) {
-            $this->persistBlockedLog($locale, $question, 'budget_exceeded');
+            $this->usageRecorder->recordBlocked($locale, mb_strlen($question), 'budget_exceeded');
 
             throw new AiAssistantUnavailableException('Plafond budgétaire mensuel atteint.');
         }
@@ -95,15 +92,27 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         // pour pourquoi ça doit être résolu ici et non fourni par l'appelant.
         // Seule une éventuelle question de suivi (visiteur) passe ce filtre.
         if ('' !== $question && $this->inputGuard->isSuspicious($question)) {
-            $this->persistBlockedLog($locale, $question, 'input_injection_suspected');
+            $this->usageRecorder->recordBlocked($locale, mb_strlen($question), 'input_injection_suspected');
+            $data->setAnswer($this->fallbackText($settings, $locale));
+
+            return $data;
+        }
+
+        // Chaque tour d'historique (forgeable, y compris `assistant`) passe le
+        // même filtre — cf. AiAssistantChatProcessor.
+        if ($this->inputGuard->isHistorySuspicious($data->getHistory())) {
+            $this->usageRecorder->recordBlocked($locale, mb_strlen($question), 'history_injection_suspected');
             $data->setAnswer($this->fallbackText($settings, $locale));
 
             return $data;
         }
 
         $resolved = $this->resolveContent($data->getSlug(), $data->getContentType(), $locale);
+        // Slug inexistant ET projet non public : même journal, même 404, même
+        // message — aucune différence observable permettant de sonder
+        // l'existence d'un projet non publié.
         if (null === $resolved) {
-            $this->persistBlockedLog($locale, $question, 'unknown_content_slug');
+            $this->usageRecorder->recordBlocked($locale, mb_strlen($question), 'unknown_content_slug');
 
             throw new NotFoundHttpException('Contenu introuvable.');
         }
@@ -116,7 +125,7 @@ final class AiContentSummaryProcessor implements ProcessorInterface
             $result = $this->claudeClient->ask($systemPrompt, $data->getHistory(), $effectiveQuestion, true);
         } catch (\Throwable $e) {
             $this->logger->error('AiContentSummaryProcessor : pipeline en échec.', ['error' => $e->getMessage()]);
-            $this->persistBlockedLog($locale, $question, 'upstream_error');
+            $this->usageRecorder->recordBlocked($locale, mb_strlen($question), 'upstream_error');
             $data->setAnswer($this->fallbackText($settings, $locale));
 
             return $data;
@@ -128,21 +137,15 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         $suggestions = $sanitized['leaked'] ? [] : $this->outputSanitizer->sanitizeSuggestions($split['suggestions']);
         $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
 
-        $log = (new AiAssistantConversationLog())
-            ->setIpHash($this->hashIp())
-            ->setLocale($locale)
-            ->setQuestionLength(mb_strlen($effectiveQuestion))
-            ->setAnswerLength(mb_strlen($answer))
-            ->setChunkIdsUsed([])
-            ->setModel($result['model'])
-            ->setClaudeTokens($result['inputTokens'] + $result['outputTokens'] + $result['cacheCreationTokens'] + $result['cacheReadTokens'])
-            ->setCostUsd(number_format($this->estimateCost($result), 6, '.', ''))
-            ->setLatencyMs($latencyMs)
-            ->setBlocked($sanitized['leaked'])
-            ->setBlockReason($sanitized['leaked'] ? 'output_leak_suspected' : null);
-
-        $this->entityManager->persist($log);
-        $this->entityManager->flush();
+        $this->usageRecorder->recordCall(
+            $result,
+            $locale,
+            mb_strlen($effectiveQuestion),
+            mb_strlen($answer),
+            $latencyMs,
+            [],
+            $sanitized['leaked'] ? 'output_leak_suspected' : null,
+        );
 
         $data->setAnswer($answer);
         $data->setSuggestions($suggestions);
@@ -167,7 +170,7 @@ final class AiContentSummaryProcessor implements ProcessorInterface
     private function resolveContent(string $slug, string $contentType, string $locale): ?array
     {
         if ('project' === $contentType) {
-            $project = $this->projectRepository->findOneBy(['slug' => $slug]);
+            $project = $this->projectRepository->findOneBy(['slug' => $slug, 'status' => self::PUBLIC_PROJECT_STATUSES]);
             if (null === $project) {
                 return null;
             }
@@ -380,39 +383,5 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         }
 
         return $settings->getFallback();
-    }
-
-    private function persistBlockedLog(string $locale, string $question, string $reason): void
-    {
-        $log = (new AiAssistantConversationLog())
-            ->setIpHash($this->hashIp())
-            ->setLocale($locale)
-            ->setQuestionLength(mb_strlen($question))
-            ->setAnswerLength(0)
-            ->setBlocked(true)
-            ->setBlockReason($reason);
-
-        $this->entityManager->persist($log);
-        $this->entityManager->flush();
-    }
-
-    private function hashIp(): string
-    {
-        $ip = $this->requestStack->getCurrentRequest()?->getClientIp() ?? 'unknown';
-
-        return hash('sha256', $ip.$this->appSecret);
-    }
-
-    /**
-     * @param array{model: string, inputTokens: int, outputTokens: int, cacheCreationTokens: int, cacheReadTokens: int} $claudeResult
-     */
-    private function estimateCost(array $claudeResult): float
-    {
-        $pricing = self::CLAUDE_PRICING['sonnet'];
-
-        return ($claudeResult['inputTokens'] / 1_000_000) * $pricing['input']
-            + ($claudeResult['cacheCreationTokens'] / 1_000_000) * $pricing['input'] * self::CACHE_WRITE_MULTIPLIER
-            + ($claudeResult['cacheReadTokens'] / 1_000_000) * $pricing['input'] * self::CACHE_READ_MULTIPLIER
-            + ($claudeResult['outputTokens'] / 1_000_000) * $pricing['output'];
     }
 }

@@ -75,6 +75,10 @@ class QuoteQualifyApiResource
     #[Groups(['qualify_input'])]
     private string $delai = '';
 
+    // Liste fermée : la colonne `locale` du journal fait 5 caractères ; une
+    // valeur libre faisait échouer l'écriture du coût APRÈS l'appel Claude
+    // (plafond budgétaire contourné, audit 2026-11-20 P1 #11).
+    #[Assert\Choice(choices: ['fr', 'en'], message: 'Langue non prise en charge.')]
     #[Groups(['qualify_input'])]
     private string $locale = 'fr';
 

@@ -5,7 +5,6 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\AiAssistantChatApiResource;
-use App\Entity\AiAssistantConversationLog;
 use App\Entity\AiAssistantDocumentChunk;
 use App\Entity\AiAssistantSettings;
 use App\Exception\AiAssistantUnavailableException;
@@ -15,11 +14,10 @@ use App\Service\AiAssistantBudgetGuard;
 use App\Service\AiAssistantInputGuard;
 use App\Service\AiAssistantModelSelector;
 use App\Service\AiAssistantOutputSanitizer;
+use App\Service\AiAssistantUsageRecorder;
 use App\Service\ClaudeClient;
 use App\Service\PublicSubmissionThrottler;
-use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Orchestre un tour de conversation avec l'assistant IA : garde-fous (feature
@@ -59,18 +57,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 final class AiAssistantChatProcessor implements ProcessorInterface
 {
-    // Tarifs (USD / million de tokens, entrée standard) — uniquement pour le
-    // suivi de budget interne (AiAssistantBudgetGuard), pas de la facturation
-    // exacte. À ajuster si les tarifs Anthropic évoluent. Sonnet 5 est en
-    // tarif de lancement ($2 au lieu de $3) jusqu'au 31/08/2026.
-    private const CLAUDE_PRICING = [
-        'sonnet' => ['input' => 2.0, 'output' => 10.0],
-        'haiku' => ['input' => 1.0, 'output' => 5.0],
-    ];
-    // Multiplicateurs du cache de prompt (App\Service\ClaudeClient, TTL 1h) —
-    // appliqués au prix d'entrée standard du modèle ci-dessus.
-    private const CACHE_WRITE_MULTIPLIER = 2.0; // écriture (miss), TTL 1h
-    private const CACHE_READ_MULTIPLIER = 0.1;  // lecture (hit)
+    // Tarifs et journalisation du coût : cf. App\Service\AiAssistantUsageRecorder
+    // (partagé avec le résumé de contenu et la qualification de devis).
 
     // Nombre de chunks retenus pour Haiku (cf. selectChunksForHaiku) — même
     // ordre de grandeur que l'ancien topK du retrieval par embedding.
@@ -94,10 +82,8 @@ final class AiAssistantChatProcessor implements ProcessorInterface
         private readonly AiAssistantModelSelector $modelSelector,
         private readonly ClaudeClient $claudeClient,
         private readonly AiAssistantOutputSanitizer $outputSanitizer,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly RequestStack $requestStack,
+        private readonly AiAssistantUsageRecorder $usageRecorder,
         private readonly LoggerInterface $logger,
-        private readonly string $appSecret,
     ) {
     }
 
@@ -109,22 +95,37 @@ final class AiAssistantChatProcessor implements ProcessorInterface
         $question = trim($data->getQuestion());
         $locale = $data->getLocale() ?: 'fr';
 
+        // Rate limit AVANT toute écriture en base : sinon, assistant désactivé,
+        // chaque requête anonyme insérait une ligne de journal sans limite
+        // (remplissage de table à coût nul pour l'attaquant).
+        $this->throttler->assertAiAssistantAllowed();
+
         if (!$settings->isAiAssistantEnabled()) {
-            $this->persistBlockedLog($locale, $question, 'feature_disabled');
+            $this->usageRecorder->recordBlocked($locale, mb_strlen($question), 'feature_disabled');
 
             throw new AiAssistantUnavailableException("L'assistant IA est temporairement désactivé.");
         }
 
-        $this->throttler->assertAiAssistantAllowed();
-
         if ($this->budgetGuard->isBudgetExceeded()) {
-            $this->persistBlockedLog($locale, $question, 'budget_exceeded');
+            $this->usageRecorder->recordBlocked($locale, mb_strlen($question), 'budget_exceeded');
 
             throw new AiAssistantUnavailableException('Plafond budgétaire mensuel atteint.');
         }
 
         if ($this->inputGuard->isSuspicious($question)) {
-            $this->persistBlockedLog($locale, $question, 'input_injection_suspected');
+            $this->usageRecorder->recordBlocked($locale, mb_strlen($question), 'input_injection_suspected');
+            $data->setAnswer($this->fallbackText($settings, $locale));
+
+            return $data;
+        }
+
+        // L'historique est renvoyé tel quel par le client : chaque tour (y
+        // compris les tours `assistant`, forgeables) passe le même filtre que
+        // la question — sinon l'injection se déplaçait simplement dans
+        // `history`. L'alternance des rôles est imposée par la contrainte
+        // App\Validator\ConversationHistory sur la ressource.
+        if ($this->inputGuard->isHistorySuspicious($data->getHistory())) {
+            $this->usageRecorder->recordBlocked($locale, mb_strlen($question), 'history_injection_suspected');
             $data->setAnswer($this->fallbackText($settings, $locale));
 
             return $data;
@@ -142,7 +143,7 @@ final class AiAssistantChatProcessor implements ProcessorInterface
             $result = $this->claudeClient->ask($systemPrompt, $data->getHistory(), $question, $useSonnet);
         } catch (\Throwable $e) {
             $this->logger->error('AiAssistantChatProcessor : pipeline conversationnel en échec.', ['error' => $e->getMessage()]);
-            $this->persistBlockedLog($locale, $question, 'upstream_error');
+            $this->usageRecorder->recordBlocked($locale, mb_strlen($question), 'upstream_error');
             $data->setAnswer($this->fallbackText($settings, $locale));
 
             return $data;
@@ -157,21 +158,15 @@ final class AiAssistantChatProcessor implements ProcessorInterface
         $suggestions = $sanitized['leaked'] ? [] : $this->outputSanitizer->sanitizeSuggestions($split['suggestions']);
         $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
 
-        $log = (new AiAssistantConversationLog())
-            ->setIpHash($this->hashIp())
-            ->setLocale($locale)
-            ->setQuestionLength(mb_strlen($question))
-            ->setAnswerLength(mb_strlen($answer))
-            ->setChunkIdsUsed(array_map(static fn (AiAssistantDocumentChunk $c): int => (int) $c->getId(), $chunks))
-            ->setModel($result['model'])
-            ->setClaudeTokens($result['inputTokens'] + $result['outputTokens'] + $result['cacheCreationTokens'] + $result['cacheReadTokens'])
-            ->setCostUsd(number_format($this->estimateCost($result), 6, '.', ''))
-            ->setLatencyMs($latencyMs)
-            ->setBlocked($sanitized['leaked'])
-            ->setBlockReason($sanitized['leaked'] ? 'output_leak_suspected' : null);
-
-        $this->entityManager->persist($log);
-        $this->entityManager->flush();
+        $this->usageRecorder->recordCall(
+            $result,
+            $locale,
+            mb_strlen($question),
+            mb_strlen($answer),
+            $latencyMs,
+            array_map(static fn (AiAssistantDocumentChunk $c): int => (int) $c->getId(), $chunks),
+            $sanitized['leaked'] ? 'output_leak_suspected' : null,
+        );
 
         $data->setAnswer($answer);
         $data->setSuggestions($suggestions);
@@ -331,45 +326,5 @@ final class AiAssistantChatProcessor implements ProcessorInterface
         }
 
         return $settings->getFallback();
-    }
-
-    private function persistBlockedLog(string $locale, string $question, string $reason): void
-    {
-        $log = (new AiAssistantConversationLog())
-            ->setIpHash($this->hashIp())
-            ->setLocale($locale)
-            ->setQuestionLength(mb_strlen($question))
-            ->setAnswerLength(0)
-            ->setBlocked(true)
-            ->setBlockReason($reason);
-
-        $this->entityManager->persist($log);
-        $this->entityManager->flush();
-    }
-
-    private function hashIp(): string
-    {
-        $ip = $this->requestStack->getCurrentRequest()?->getClientIp() ?? 'unknown';
-
-        return hash('sha256', $ip . $this->appSecret);
-    }
-
-    /**
-     * @param array{model: string, inputTokens: int, outputTokens: int, cacheCreationTokens: int, cacheReadTokens: int} $claudeResult
-     */
-    private function estimateCost(array $claudeResult): float
-    {
-        $tier = str_contains(mb_strtolower($claudeResult['model']), 'haiku') ? 'haiku' : 'sonnet';
-        $pricing = self::CLAUDE_PRICING[$tier];
-
-        // Le system prompt (corpus statique) est mis en cache côté ClaudeClient :
-        // à chaque appel, soit il est écrit en cache (miss, +100% sur le prix
-        // d'entrée), soit relu depuis le cache (hit, -90%) — jamais les deux à
-        // la fois. `inputTokens` ne couvre que la partie non cachée (historique
-        // + question), toujours facturée au tarif standard.
-        return ($claudeResult['inputTokens'] / 1_000_000) * $pricing['input']
-            + ($claudeResult['cacheCreationTokens'] / 1_000_000) * $pricing['input'] * self::CACHE_WRITE_MULTIPLIER
-            + ($claudeResult['cacheReadTokens'] / 1_000_000) * $pricing['input'] * self::CACHE_READ_MULTIPLIER
-            + ($claudeResult['outputTokens'] / 1_000_000) * $pricing['output'];
     }
 }
