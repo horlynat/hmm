@@ -2,6 +2,7 @@
 
 namespace App\Tests\Functional\Security;
 
+use App\EventSubscriber\PublicApiHostRestrictionSubscriber;
 use App\Tests\Functional\FunctionalTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -46,6 +47,31 @@ final class HostApiRestrictionTest extends FunctionalTestCase
     {
         $this->client->request('GET', 'http://API.Test.Invalid/login');
         self::assertSame(404, $this->client->getResponse()->getStatusCode());
+    }
+
+    /**
+     * Contre-audit : `api.example.` (point final, FQDN absolu) est le même
+     * hôte pour le DNS/Traefik ; il ne doit pas échapper à la restriction.
+     */
+    public function testTrailingDotInHostDoesNotBypassRestriction(): void
+    {
+        // (`api.test.invalid..` n'est même pas un Host valide : Symfony le
+        // rejette en amont — 400 en production, exception dans le client de test.)
+        foreach (['http://api.test.invalid./login', 'http://API.TEST.INVALID./admin', 'http://api.test.invalid./2fa'] as $url) {
+            $this->client->request('GET', $url);
+            self::assertSame(404, $this->client->getResponse()->getStatusCode(), $url);
+        }
+
+        $this->client->request('GET', 'http://api.test.invalid./api/me', server: ['HTTP_ACCEPT' => 'application/json']);
+        self::assertSame(401, $this->client->getResponse()->getStatusCode());
+    }
+
+    public function testConfiguredHostListIsNormalized(): void
+    {
+        self::assertSame(
+            ['api.horlynat.com', 'other.example'],
+            PublicApiHostRestrictionSubscriber::parseHostList(' API.Horlynat.com. , other.example.., ,'),
+        );
     }
 
     public function testApiUploadsAndNewsletterStayServedOnApiHost(): void

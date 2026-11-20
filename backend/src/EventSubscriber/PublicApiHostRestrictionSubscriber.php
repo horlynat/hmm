@@ -61,7 +61,7 @@ final class PublicApiHostRestrictionSubscriber implements EventSubscriberInterfa
         }
 
         $request = $event->getRequest();
-        if (!\in_array(strtolower($request->getHost()), $this->apiHosts, true)) {
+        if (!\in_array(self::normalizeHost($request->getHost()), $this->apiHosts, true)) {
             return;
         }
 
@@ -91,8 +91,20 @@ final class PublicApiHostRestrictionSubscriber implements EventSubscriberInterfa
         }
 
         return array_values(array_filter(array_map(
-            static fn (string $host): string => strtolower(trim($host)),
+            static fn (string $host): string => self::normalizeHost($host),
             explode(',', $raw),
         ), static fn (string $host): bool => '' !== $host));
+    }
+
+    /**
+     * Forme canonique d'un nom d'hôte pour la comparaison : minuscules, sans
+     * espaces, sans point final. `api.horlynat.com.` (FQDN absolu) désigne le
+     * MÊME hôte que `api.horlynat.com` pour le DNS et pour Traefik : sans ce
+     * rtrim, `GET http://api.horlynat.com./login` échappait à la liste et
+     * servait le back-office (contre-audit P0 #4).
+     */
+    public static function normalizeHost(string $host): string
+    {
+        return rtrim(strtolower(trim($host)), '.');
     }
 }
