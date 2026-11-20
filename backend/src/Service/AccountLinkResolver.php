@@ -4,7 +4,6 @@ namespace App\Service;
 
 use App\Entity\User;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Résout le bon lien à inclure dans un email selon le rôle du destinataire.
@@ -16,11 +15,16 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * qu'il voit réellement. Seul un compte ROLE_ADMIN (minimum) vit encore dans
  * le back-office Symfony (admin_profile_read...) et doit y être renvoyé
  * directement.
+ *
+ * Le lien back-office est construit sur BACKOFFICE_URL (MailLinkGenerator),
+ * JAMAIS sur l'hôte de la requête courante : sinon un X-Forwarded-Host forgé
+ * sur un POST /api/forgot-password anonyme suffisait à faire recevoir à un
+ * administrateur un vrai lien de réinitialisation vers un domaine tiers.
  */
 final class AccountLinkResolver
 {
     public function __construct(
-        private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly MailLinkGenerator $mailLinkGenerator,
         #[Autowire(param: 'app.frontend_url')] private readonly string $frontendUrl,
     ) {
     }
@@ -36,7 +40,7 @@ final class AccountLinkResolver
     public function resolve(User $user, string $backendRoute, array $backendRouteParams, string $frontendPath): string
     {
         if ($this->isBackOfficeUser($user)) {
-            return $this->urlGenerator->generate($backendRoute, $backendRouteParams, UrlGeneratorInterface::ABSOLUTE_URL);
+            return $this->mailLinkGenerator->backOfficeUrl($backendRoute, $backendRouteParams);
         }
 
         // Espace client/freelance non (encore) localisé par utilisateur :

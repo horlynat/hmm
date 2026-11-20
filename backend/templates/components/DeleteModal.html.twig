@@ -11,7 +11,7 @@
 #}
 {% props id, action, token, label, entity = 'cet élément' %}
 <div class="inline-block">
-	<button type="button" onclick="document.getElementById('delete-modal-{{ id }}').showModal()"
+	<button type="button" data-controller="dialog" data-action="dialog#open" data-dialog-id-param="delete-modal-{{ id }}"
 			class="btn btn-ghost btn-icon text-danger" aria-label="Supprimer {{ label }}">
 		<span class="ti ti-trash text-lg" aria-hidden="true"></span>
 	</button>
@@ -33,7 +33,7 @@
 						<span class="ti ti-trash" aria-hidden="true"></span> Confirmer
 					</button>
 				</form>
-				<button type="button" onclick="document.getElementById('delete-modal-{{ id }}').close()" class="btn btn-secondary w-full sm:w-auto flex-1">
+				<button type="button" data-controller="dialog" data-action="dialog#close" data-dialog-id-param="delete-modal-{{ id }}" class="btn btn-secondary w-full sm:w-auto flex-1">
 					Annuler
 				</button>
 			</div>

@@ -32,7 +32,7 @@
 
 					{% if is_granted(constant('App\\Security\\Voter\\ProjectVoter::EDIT'), project) %}
 						{# Formulaire de sécurité couplé à votre contrôleur d'administration #}
-						<form action="{{ path('admin_project_delete_media', {id: project.id, mediaId: media.id}) }}" method="POST" onsubmit="return confirm('Confirmer la suppression définitive de ce média ?');" class="inline-block">
+						<form action="{{ path('admin_project_delete_media', {id: project.id, mediaId: media.id}) }}" method="POST" data-controller="confirm" data-confirm-message-value="Confirmer la suppression définitive de ce média ?" class="inline-block">
 							<input type="hidden" name="_token" value="{{ csrf_token('admin_project_delete_media_' ~ media.id) }}">
 							<button type="submit" class="text-danger hover:text-red-700 p-1.5 hover:bg-red-50 rounded-lg transition-colors cursor-pointer bg-transparent border-0 flex items-center justify-center" title="Supprimer">
 								<svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">

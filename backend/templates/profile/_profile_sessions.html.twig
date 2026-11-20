@@ -38,7 +38,7 @@
 								{% if entry.state == 'expired' %}
 									<twig:Badge variant="warning">Expirée</twig:Badge>
 								{% endif %}
-								<form method="post" action="{{ path('self_session_revoke', {id: userSession.id}) }}" onsubmit="return confirm('Déconnecter cet appareil ?');">
+								<form method="post" action="{{ path('self_session_revoke', {id: userSession.id}) }}" data-controller="confirm" data-confirm-message-value="Déconnecter cet appareil ?">
 									<input type="hidden" name="_token" value="{{ csrf_token('self_session_revoke_' ~ userSession.id) }}">
 									<button type="submit" class="btn btn-ghost btn-sm text-danger gap-1.5">
 										<span class="ti ti-logout" aria-hidden="true"></span>

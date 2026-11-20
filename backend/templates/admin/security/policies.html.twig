@@ -59,7 +59,7 @@
 								{% if entry.ip in blockedIps|map(b => b.ip) %}
 									<twig:Badge variant="neutral">Déjà bloquée</twig:Badge>
 								{% elseif is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_IP_BLOCKS')) %}
-									<form method="post" action="{{ path('admin_security_policy_block_ip') }}" onsubmit="return confirm('Bloquer {{ entry.ip }} ? Plus aucune tentative de connexion ne sera acceptée depuis cette IP.');">
+									<form method="post" action="{{ path('admin_security_policy_block_ip') }}" data-controller="confirm" data-confirm-message-value="Bloquer {{ entry.ip }} ? Plus aucune tentative de connexion ne sera acceptée depuis cette IP.">
 										<input type="hidden" name="_token" value="{{ csrf_token('admin_security_policy_block_ip') }}">
 										<input type="hidden" name="ip" value="{{ entry.ip }}">
 										<input type="hidden" name="reason" value="Rapport IPs suspectes : {{ entry.count }} échecs de connexion sur la dernière {{ suspiciousIpWindowHours }}h.">
@@ -112,7 +112,7 @@
 							<td class="text-sm opacity-70">{{ blockedIp.blockedByLabel ?? '—' }}</td>
 							<td class="text-sm opacity-70 whitespace-nowrap">{{ blockedIp.createdAt|date('d/m/Y H:i') }}</td>
 							<td class="text-right">
-								<form method="post" action="{{ path('admin_security_policy_unblock_ip', {id: blockedIp.id}) }}" onsubmit="return confirm('Débloquer {{ blockedIp.ip }} ?');">
+								<form method="post" action="{{ path('admin_security_policy_unblock_ip', {id: blockedIp.id}) }}" data-controller="confirm" data-confirm-message-value="Débloquer {{ blockedIp.ip }} ?">
 									<input type="hidden" name="_token" value="{{ csrf_token('admin_security_policy_unblock_ip_' ~ blockedIp.id) }}">
 									<button type="submit" class="btn btn-ghost btn-sm gap-1.5">
 										<span class="ti ti-lock-open" aria-hidden="true"></span>

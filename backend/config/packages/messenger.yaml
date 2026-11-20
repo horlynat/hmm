@@ -42,3 +42,11 @@ framework:
             'App\Message\SessionRevokedNotification': async
 
         failure_transport: failed
+# Tests fonctionnels : les messages restent en mémoire (inspectables via le
+# service messenger.transport.async) au lieu d'être écrits dans la table
+# messenger_messages de la base de test — et aucun e-mail ne part réellement.
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: 'in-memory://'

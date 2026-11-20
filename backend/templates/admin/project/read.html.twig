@@ -573,12 +573,12 @@
 													<button type="submit" class="ml-2 text-amber-700 hover:underline font-semibold text-xs bg-transparent border-0 cursor-pointer">Remettre en attente</button>
 												</form>
 											{% elseif invoice.status.value == 'revision_requested' %}
-												<form method="POST" action="{{ path('admin_invoice_mark_unpaid', {id: project.id, invoiceId: invoice.id}) }}" class="inline" onsubmit="return confirm('Remettre cette facture en attente de paiement ? À faire après avoir ajusté le montant si besoin (bouton Modifier).');">
+												<form method="POST" action="{{ path('admin_invoice_mark_unpaid', {id: project.id, invoiceId: invoice.id}) }}" class="inline" data-controller="confirm" data-confirm-message-value="Remettre cette facture en attente de paiement ? À faire après avoir ajusté le montant si besoin (bouton Modifier).">
 													<input type="hidden" name="_token" value="{{ csrf_token('invoice_' ~ invoice.id) }}">
 													<button type="submit" class="ml-2 text-blue-700 hover:underline font-semibold text-xs bg-transparent border-0 cursor-pointer">Rouvrir après révision</button>
 												</form>
 											{% endif %}
-											<form method="POST" action="{{ path('admin_invoice_delete', {id: project.id, invoiceId: invoice.id}) }}" class="inline" onsubmit="return confirm('Supprimer cette facture ?');">
+											<form method="POST" action="{{ path('admin_invoice_delete', {id: project.id, invoiceId: invoice.id}) }}" class="inline" data-controller="confirm" data-confirm-message-value="Supprimer cette facture ?">
 												<input type="hidden" name="_token" value="{{ csrf_token('delete_invoice_' ~ invoice.id) }}">
 												<button type="submit" class="ml-2 text-danger hover:underline font-semibold text-xs bg-transparent border-0 cursor-pointer">Supprimer</button>
 											</form>
@@ -677,7 +677,7 @@
 																	</div>
 																</div>
 															{% endif %}
-															<form method="post" action="{{ path('admin_project_task_delete', {id: project.id, taskId: task.id}) }}" onsubmit="return confirm('Supprimer cette tâche ?');">
+															<form method="post" action="{{ path('admin_project_task_delete', {id: project.id, taskId: task.id}) }}" data-controller="confirm" data-confirm-message-value="Supprimer cette tâche ?">
 																<input type="hidden" name="_token" value="{{ csrf_token('task_delete_' ~ task.id) }}">
 																<button type="submit" class="btn btn-ghost btn-icon btn-sm text-danger" title="Supprimer"><span class="ti ti-trash" aria-hidden="true"></span></button>
 															</form>
@@ -777,7 +777,7 @@
 									<div class="flex items-center gap-3 shrink-0">
 										<span class="text-xs text-brand-dark/60 whitespace-nowrap">{{ taskOpenByUser[collaborator.id] ?? 0 }} en cours · {{ taskTotalByUser[collaborator.id] ?? 0 }} tâche(s)</span>
 										{% if canEdit %}
-											<form method="POST" action="{{ path('admin_project_remove_collaborator', {id: project.id, collaboratorId: collaborator.id}) }}" onsubmit="return confirm('Retirer {{ collaborator.fullName ?? collaborator.email }} de ce projet ?');">
+											<form method="POST" action="{{ path('admin_project_remove_collaborator', {id: project.id, collaboratorId: collaborator.id}) }}" data-controller="confirm" data-confirm-message-value="Retirer {{ collaborator.fullName ?? collaborator.email }} de ce projet ?">
 												<input type="hidden" name="_token" value="{{ csrf_token('remove_collaborator_' ~ collaborator.id) }}">
 												<button type="submit" class="text-danger hover:underline text-sm font-medium bg-transparent border-0 cursor-pointer">Retirer</button>
 											</form>
@@ -862,7 +862,7 @@
 												<td class="text-right font-semibold whitespace-nowrap">{{ e.formattedDuration }}</td>
 												{% if canManageTasks %}
 													<td class="text-right">
-														<form method="post" action="{{ path('admin_project_delete_time', {id: project.id, entryId: e.id}) }}" onsubmit="return confirm('Supprimer cette saisie ?');">
+														<form method="post" action="{{ path('admin_project_delete_time', {id: project.id, entryId: e.id}) }}" data-controller="confirm" data-confirm-message-value="Supprimer cette saisie ?">
 															<input type="hidden" name="_token" value="{{ csrf_token('time_delete_' ~ e.id) }}">
 															<button type="submit" class="btn btn-ghost btn-icon btn-sm text-danger" title="Supprimer"><span class="ti ti-trash" aria-hidden="true"></span></button>
 														</form>
@@ -917,7 +917,7 @@
 										<p class="text-sm text-brand-dark/80 whitespace-pre-line mb-0">{{ comment.content }}</p>
 									</div>
 									{% if comment.author.id == app.user.id or isAdmin %}
-										<form method="post" action="{{ path('admin_project_delete_comment', {id: project.id, commentId: comment.id}) }}" onsubmit="return confirm('Supprimer ce commentaire ?');">
+										<form method="post" action="{{ path('admin_project_delete_comment', {id: project.id, commentId: comment.id}) }}" data-controller="confirm" data-confirm-message-value="Supprimer ce commentaire ?">
 											<input type="hidden" name="_token" value="{{ csrf_token('comment_delete_' ~ comment.id) }}">
 											<button type="submit" class="btn btn-ghost btn-icon btn-sm text-danger" title="Supprimer"><span class="ti ti-trash" aria-hidden="true"></span></button>
 										</form>

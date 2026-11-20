@@ -1,7 +1,8 @@
 /**
  * dashboard.js
  * Initialise les graphiques du tableau de bord admin (Chart.js) à partir
- * des données injectées côté Twig dans `window.dashboardData`.
+ * des données JSON portées par l'attribut `data-chart` de #dashboard-data
+ * (cf. index.html.twig — jamais de <script> inline construit côté Twig).
  *
  * Prérequis :
  *   npm install chart.js
@@ -166,8 +167,15 @@ function initDashboard() {
     // canvas quand Turbo revisite la page (retour arrière, navigation, etc.)
     destroyDashboardCharts();
 
-    const data = window.dashboardData;
-    if (!data) return;
+    const holder = document.getElementById("dashboard-data");
+    if (!holder || !holder.dataset.chart) return;
+
+    let data;
+    try {
+        data = JSON.parse(holder.dataset.chart);
+    } catch {
+        return;
+    }
 
     buildProjectsByStatusChart(
         document.getElementById("projectsByStatusChart"),

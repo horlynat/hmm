@@ -110,6 +110,21 @@ services:
       - CORS_ALLOW_ORIGIN=^https://(horlynat\.com|www\.horlynat\.com)$$
       - FRONTEND_URL=${NEXT_PUBLIC_SITE_URL}
       - DEFAULT_URI=https://api.horlynat.com
+      # Liens e-mail des comptes back-office (réinitialisation, vérification…)
+      # construits sur cette base, JAMAIS sur l'hôte de la requête (P0 #3,
+      # App\Service\MailLinkGenerator). Obligatoire en prod : le backend
+      # refuse de démarrer un envoi si elle est vide ou pointe vers l'hôte API.
+      - BACKOFFICE_URL=${BACKOFFICE_URL:-https://dark.horlynat.com}
+      # Hôte(s) où seuls /api, /uploads, /newsletter répondent (P0 #4,
+      # PublicApiHostRestrictionSubscriber) — même liste que le routeur
+      # Traefik `api`, en défense en profondeur.
+      - PUBLIC_API_HOSTS=${PUBLIC_API_HOSTS:-api.horlynat.com}
+      # Liste blanche des Host acceptés par Symfony (400 sinon). `backend` =
+      # appels serveur du frontend (API_URL=http://backend:80/api) ;
+      # 127.0.0.1 = build du frontend et scripts/deploy-remote.sh via le port
+      # publié 127.0.0.1:8000. `$$` = `$` littéral pour compose ; PAS
+      # d'apostrophes (elles entreraient dans la regex -> 400 partout).
+      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^backend$$,^127\.0\.0\.1$$}
       # IP/plage du conteneur traefik (réseau edge-net) ET plages Cloudflare
       # (cf. cloudflare-ips.txt) — Symfony doit faire confiance aux DEUX pour
       # lire correctement les en-têtes X-Forwarded-* : Traefik restaure l'IP
@@ -252,6 +267,14 @@ services:
       # là-bas) : sans elle, %app.frontend_url% retombe sur le défaut .env
       # http://localhost:3000, qui ne pointe vers rien dans ce conteneur.
       - FRONTEND_URL=${NEXT_PUBLIC_SITE_URL}
+      # Mêmes bases de liens et mêmes hôtes que le service backend (cf. ses
+      # commentaires) : un message traité ici qui génère un lien doit donner
+      # exactement le même résultat qu'en HTTP. DEFAULT_URI manquait jusqu'ici
+      # (repli sur http://localhost du .env).
+      - DEFAULT_URI=https://api.horlynat.com
+      - BACKOFFICE_URL=${BACKOFFICE_URL:-https://dark.horlynat.com}
+      - PUBLIC_API_HOSTS=${PUBLIC_API_HOSTS:-api.horlynat.com}
+      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^backend$$,^127\.0\.0\.1$$}
     secrets:
       - app_secret
       - database_url

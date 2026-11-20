@@ -9,9 +9,9 @@ use App\Entity\NewsletterSubscriber;
 use App\Repository\NewsletterSubscriberRepository;
 use App\Service\EmailManager;
 use App\Service\JWTService;
+use App\Service\MailLinkGenerator;
 use App\Service\PublicSubmissionThrottler;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * NewsletterSubscriberApiResource n'étant pas lui-même mappé Doctrine (seul
@@ -50,7 +50,7 @@ final class NewsletterSubscriberCreateProcessor implements ProcessorInterface
         private readonly PublicSubmissionThrottler $throttler,
         private readonly JWTService $jwt,
         private readonly EmailManager $emailManager,
-        private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly MailLinkGenerator $mailLinkGenerator,
     ) {
     }
 
@@ -82,15 +82,16 @@ final class NewsletterSubscriberCreateProcessor implements ProcessorInterface
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
 
-        $confirmUrl = $this->urlGenerator->generate(
+        // Base fixe (DEFAULT_URI) : l'hôte de cette requête publique est
+        // contrôlé par le visiteur (Host / X-Forwarded-Host), il ne doit jamais
+        // se retrouver dans un lien envoyé par e-mail.
+        $confirmUrl = $this->mailLinkGenerator->publicUrl(
             'newsletter_confirm',
             ['token' => $this->jwt->generateNewsletterConfirmationToken((int) $entity->getId())],
-            UrlGeneratorInterface::ABSOLUTE_URL,
         );
-        $unsubscribeUrl = $this->urlGenerator->generate(
+        $unsubscribeUrl = $this->mailLinkGenerator->publicUrl(
             'newsletter_unsubscribe',
             ['token' => $this->jwt->generateNewsletterUnsubscribeToken((int) $entity->getId())],
-            UrlGeneratorInterface::ABSOLUTE_URL,
         );
 
         $this->emailManager->sendNow(

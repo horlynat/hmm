@@ -4,7 +4,6 @@ namespace App\Service;
 
 use App\Repository\NewsletterSubscriberRepository;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Notifie les abonnés newsletter confirmés (double opt-in, cf. App\Entity\
@@ -26,7 +25,7 @@ final class NewsletterNotifier
         private readonly NewsletterSubscriberRepository $subscriberRepository,
         private readonly EmailManager $emailManager,
         private readonly JWTService $jwt,
-        private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly MailLinkGenerator $mailLinkGenerator,
         #[Autowire(param: 'app.frontend_url')] private readonly string $frontendUrl,
     ) {
     }
@@ -47,10 +46,10 @@ final class NewsletterNotifier
         foreach ($subscribers as $subscriber) {
             $locale = 'en' === $subscriber->getLocale() ? 'en' : 'fr';
             $contentUrl = rtrim($this->frontendUrl, '/')."/{$locale}/{$path}/{$slug}";
-            $unsubscribeUrl = $this->urlGenerator->generate(
+            // Base fixe (DEFAULT_URI), jamais l'hôte de la requête admin courante.
+            $unsubscribeUrl = $this->mailLinkGenerator->publicUrl(
                 'newsletter_unsubscribe',
                 ['token' => $this->jwt->generateNewsletterUnsubscribeToken((int) $subscriber->getId())],
-                UrlGeneratorInterface::ABSOLUTE_URL,
             );
 
             $subject = 'en' === $locale
