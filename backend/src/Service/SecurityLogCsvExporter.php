@@ -63,10 +63,10 @@ final class SecurityLogCsvExporter
             // escape: '' — désactive l'échappement antéslash historique de PHP
             // (non conforme RFC 4180 et déprécié en 8.4 s'il reste implicite) ;
             // les champs restent encadrés et les guillemets internes doublés.
-            fputcsv($handle, $headers, self::DELIMITER, escape: '');
+            CsvFormulaGuard::putRow($handle, $headers, self::DELIMITER);
 
             foreach ($rows as $row) {
-                fputcsv($handle, $row, self::DELIMITER, escape: '');
+                CsvFormulaGuard::putRow($handle, $row, self::DELIMITER);
             }
 
             fclose($handle);
