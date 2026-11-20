@@ -1,17 +1,40 @@
 # syntax=docker/dockerfile:1
 
+# Image de base épinglée (version exacte + digest de l'index multi-arch) :
+# un tag flottant (`node:22-alpine`) pouvait changer de contenu d'un build à
+# l'autre sans aucune trace dans le dépôt. Node ≥ 22.12 requis
+# (sanitize-html ≥ 2.17.6 dépend d'un htmlparser2 ESM-only). Mise à jour :
+#   docker buildx imagetools inspect node:22-alpine   (version + digest)
+ARG NODE_IMAGE=node:22.23.5-alpine3.24@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a
+
 # ---- Stage 1 : dépendances ----
-FROM node:22-alpine AS deps
+FROM ${NODE_IMAGE} AS deps
 WORKDIR /app
 # Le npm embarqué dans node:22-alpine (10.x) résout ce lockfile différemment
 # de npm 11 (utilisé pour le générer) et fait échouer `npm ci` à tort
-# ("Missing: @swc/helpers@... from lock file") — on aligne la version.
-RUN npm install -g npm@11
+# ("Missing: @swc/helpers@... from lock file") — on aligne la version, ÉPINGLÉE
+# (même valeur que .github/workflows/frontend-ci.yml).
+RUN npm install -g npm@11.21.2
 COPY package.json package-lock.json ./
-RUN npm ci
+# `--ignore-scripts` : aucun script install/postinstall d'une dépendance
+# (transitive comprise) ne s'exécute pendant le build — étage qui tourne avec
+# `network: host` côté compose, donc avec accès aux services de l'hôte.
+# Inventaire des paquets à scripts du lockfile (`hasInstallScript`) :
+#  - @swc/core, @parcel/watcher (via next-intl) : leurs scripts ne sont que
+#    des REPLIS (compilation depuis les sources / @swc/wasm) si le binaire
+#    précompilé manque ; celui-ci arrive par une dépendance optionnelle
+#    (@swc/core-linux-x64-musl, @parcel/watcher-linux-x64-musl), installée
+#    sans script. Vérifié explicitement ci-dessous : échec franc du build
+#    plutôt qu'une erreur au runtime si un binaire venait à manquer.
+#  - unrs-resolver (eslint, dev) : non utilisé par `next build`.
+#  - fsevents : macOS uniquement, jamais installé ici.
+# next et sharp n'ont pas de script d'installation (binaires précompilés
+# @next/swc-*, @img/sharp-* en dépendances optionnelles).
+RUN npm ci --ignore-scripts \
+    && node -e "require('@swc/core'); require('@parcel/watcher'); require('sharp')"
 
 # ---- Stage 2 : build (standalone) ----
-FROM node:22-alpine AS builder
+FROM ${NODE_IMAGE} AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -41,7 +64,7 @@ ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
 RUN --network=host npm run build
 
 # ---- Stage 3 : runtime minimal ----
-FROM node:22-alpine AS runner
+FROM ${NODE_IMAGE} AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production \
@@ -49,22 +72,27 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
-# su-exec : permet à docker-entrypoint.sh de démarrer en root (nécessaire
-# pour lire les secrets Docker, cf. commentaire dans ce script) puis de
-# basculer sur nextjs juste avant d'exécuter node.
+# su-exec : conservé uniquement pour le cas où le conteneur serait lancé
+# explicitement en root (`user: "0"`), cf. docker-entrypoint.sh.
 RUN apk add --no-cache su-exec \
     && addgroup --system --gid 1001 nodejs \
-    && adduser --system --uid 1001 nextjs
+    && adduser --system --uid 1001 --ingroup nodejs nextjs
 
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-# Pas de USER ici : l'ENTRYPOINT doit démarrer en root pour lire les secrets
-# Docker (cf. docker-entrypoint.sh), qui bascule ensuite explicitement sur
-# nextjs via su-exec avant d'exécuter node — le process applicatif final ne
-# tourne jamais en root.
+# Utilisateur NON-root pour toute l'image finale : l'ENTRYPOINT, le process
+# Node ET le HEALTHCHECK (qui s'exécute avec l'utilisateur de l'image)
+# tournent sous nextjs (uid 1001). Conséquence : les secrets Docker montés
+# dans /run/secrets doivent être lisibles par l'uid/gid 1001 — `docker
+# compose` hors Swarm ignore `uid`/`gid`/`mode` et garde les permissions du
+# fichier hôte. Action à faire une fois sur le VPS (cf. docker-entrypoint.sh) :
+#   chgrp 1001 infra/secrets/revalidate_secret && chmod 0440 infra/secrets/revalidate_secret
+# (le backend, qui lit le même fichier en root avant de basculer sur
+# www-data, n'est pas affecté).
+USER nextjs:nodejs
 
 EXPOSE 3000
 
