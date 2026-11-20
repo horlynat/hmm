@@ -24,6 +24,13 @@ services:
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./traefik/dynamic.yml:/etc/traefik/dynamic/dynamic.yml:ro
       - ./certs:/etc/traefik/certs:ro
+      # Ce Traefik sert AUSSI le portail Digital Business Group (projet
+      # séparé, /opt/dbg sur le VPS) : routeurs/certificats DBG chargés depuis
+      # son propre dépôt. Ajouté à la main sur le VPS le 2026-08-30/31 puis
+      # reporté ici (2026-11-20) — sans ces deux lignes, un déploiement hmm
+      # (rsync --delete d'infra/) faisait tomber les sites groupdbg.com.
+      - /opt/dbg/dbg-infra/traefik/portal-dynamic.yml:/etc/traefik/dynamic/dbg.dynamic.yml:ro
+      - /opt/dbg/certs:/etc/traefik/certs-dbg:ro
     secrets:
       # Consommé par le middleware admin-basicauth@file (traefik/dynamic.yml) —
       # 2ᵉ barrière devant Adminer, indépendante de Cloudflare Access.
@@ -366,7 +373,12 @@ services:
     # ci-dessus. Sa propre base MySQL tourne nativement sur l'hôte (pas dans
     # Docker), jointe via host.docker.internal, protection défense-en-
     # profondeur identique à dark.horlynat.com (cf. labels).
-    image: postfixadmin:latest
+    # Image LOCALE au VPS (thème « Messagerie » DBG), absente de tout registre :
+    #   docker build --pull -t postfixadmin:dbg /opt/dbg/dbg-infra/mailadmin
+    # (FROM postfixadmin:latest — la reconstruire à chaque correctif de
+    # l'image officielle). Ne jamais `docker compose pull` ce service : le
+    # pull échoue (« postfixadmin:dbg not found »).
+    image: postfixadmin:dbg
     restart: unless-stopped
     environment:
       - POSTFIXADMIN_DB_TYPE=mysqli
@@ -393,7 +405,7 @@ services:
       - traefik.http.routers.mailadmin.rule=Host(`mailadmin.horlynat.com`)
       - traefik.http.routers.mailadmin.entrypoints=websecure
       - traefik.http.routers.mailadmin.tls=true
-      - traefik.http.routers.mailadmin.middlewares=cloudflare-only@file,admin-ipwhitelist@file,security-headers@file,ratelimit-strict@file
+      - traefik.http.routers.mailadmin.middlewares=cloudflare-only@file,admin-basicauth@file,security-headers@file,ratelimit-strict@file
       - traefik.http.services.mailadmin.loadbalancer.server.port=80
 
 networks:
