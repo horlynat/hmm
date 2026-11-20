@@ -297,11 +297,13 @@ class QuoteRequest
         return $this;
     }
 
+    /** @return array<int, array{question: string, answer: string}>|null */
     public function getClarifications(): ?array
     {
         return $this->clarifications;
     }
 
+    /** @param array<int, array{question: string, answer: string}>|null $clarifications */
     public function setClarifications(?array $clarifications): static
     {
         $this->clarifications = $clarifications;
