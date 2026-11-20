@@ -50,7 +50,12 @@ ping:
   entryPoint: traefik
 
 api:
-  dashboard: false
+  # Activé pour le portail DBG : seul le routeur `dbg-traefik-dashboard`
+  # (/opt/dbg/dbg-infra/traefik/portal-dynamic.yml, hôte
+  # traefik.groupdbg.com, cloudflare-only + basic-auth + présence d'un en-tête
+  # Cf-Access-Jwt-Assertion) l'expose — `insecure: false` : pas de port
+  # dédié. Reporté depuis le VPS le 2026-11-20.
+  dashboard: true
   insecure: false
 
 providers:
