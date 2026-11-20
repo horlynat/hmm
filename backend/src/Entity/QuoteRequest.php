@@ -42,48 +42,79 @@ class QuoteRequest
     /** Métier concerné : Développement web, Application mobile, Intégration IA, Cybersécurité, Assurance, Design, Autre. */
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: "La catégorie de la demande est obligatoire.")]
+    #[Assert\Length(max: 100)]
     #[Groups(['api_public', 'api_admin'])]
     private string $category = '';
 
     /** Réponse à la question de qualification propre à la catégorie choisie (ex : "Site e-commerce"). */
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $categoryDetail = null;
 
     #[ORM\Column(length: 100, nullable: true)]
+    #[Assert\Length(max: 100)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $source = null;
 
     #[ORM\Column(length: 150, nullable: true)]
+    #[Assert\Length(max: 150)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $budget = null;
 
     #[ORM\Column(length: 10, nullable: true)]
+    #[Assert\Length(max: 10)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $currency = null;
 
     #[ORM\Column(length: 100, nullable: true)]
+    #[Assert\Length(max: 100)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $timeline = null;
 
     /** Canal de contact préféré : Email, WhatsApp ou Appel — conditionne l'obligation du téléphone. */
     #[ORM\Column(length: 30)]
     #[Assert\NotBlank(message: "Le canal de contact préféré est obligatoire.")]
+    #[Assert\Length(max: 30)]
     #[Groups(['api_public', 'api_admin'])]
     private string $channel = '';
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $attachmentName = null;
 
-    /** Précisions apportées lors de l'échange avec l'assistant IA avant envoi, sous forme [{question, answer}]. */
+    /**
+     * Précisions apportées lors de l'échange avec l'assistant IA avant
+     * envoi, sous forme [{question, answer}] — fourni tel quel par le
+     * client (POST /api/quote_requests), donc borné comme le fait déjà le
+     * wizard frontend (useQuoteWizard : max 10 entrées, question/answer
+     * bornés) pour empêcher un payload disproportionné stocké en base
+     * (audit 2026-11-20, P2).
+     *
+     * @var array<int, array{question: string, answer: string}>|null
+     */
     #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Assert\Count(max: 10, maxMessage: 'Trop de précisions ({{ count }}), maximum {{ limit }}.')]
+    #[Assert\All([
+        new Assert\Collection(
+            fields: [
+                'question' => [new Assert\NotBlank(), new Assert\Length(max: 500)],
+                'answer' => [new Assert\NotBlank(), new Assert\Length(max: 2000)],
+            ],
+            allowExtraFields: false,
+            allowMissingFields: false,
+        ),
+    ])]
     #[Groups(['api_public', 'api_admin'])]
     private ?array $clarifications = null;
 
+    // TEXT (MySQL, 64 Ko) : pas de limite de colonne stricte, mais une
+    // borne haute reste nécessaire côté anonyme (audit 2026-11-20, P2) —
+    // même plafond que SupportTicketMessage::content.
     #[ORM\Column(type: Types::TEXT)]
     #[Assert\NotBlank(message: "Le message est obligatoire.")]
-    #[Assert\Length(min: 10)]
+    #[Assert\Length(min: 10, max: 5000)]
     #[Groups(['api_public', 'api_admin'])]
     private string $message = '';
 

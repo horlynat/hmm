@@ -23,6 +23,7 @@ class ContactMessage
     #[ORM\Column(length: 100)]
     #[Groups(["api_public", "api_admin"])]
     #[Assert\NotBlank(message: "L'origine du message est obligatoire")]
+    #[Assert\Length(max: 100)]
     private string $source = '';
 
     #[ORM\Column(length: 255)]
@@ -34,6 +35,7 @@ class ContactMessage
     /** Renseignée si le contact écrit au nom d'une société plutôt qu'à titre individuel. */
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(["api_public", "api_admin"])]
+    #[Assert\Length(max: 255)]
     private ?string $company = null;
 
     #[ORM\Column(length: 150)]
@@ -52,11 +54,13 @@ class ContactMessage
     /** Canal de contact préféré : Email, WhatsApp ou Appel. Non pertinent pour tous les flux (ex : candidature freelance), donc nullable. */
     #[ORM\Column(length: 30, nullable: true)]
     #[Groups(["api_public", "api_admin"])]
+    #[Assert\Length(max: 30)]
     private ?string $channel = null;
 
     /** Créneau souhaité pour un échange (flux "Rendez-vous" uniquement). */
     #[ORM\Column(length: 100, nullable: true)]
     #[Groups(["api_public", "api_admin"])]
+    #[Assert\Length(max: 100)]
     private ?string $slot = null;
 
     #[ORM\Column(length: 255)]
@@ -65,10 +69,13 @@ class ContactMessage
     #[Assert\Length(max: 255)]
     private string $subject = '';
 
+    // TEXT (MySQL, 64 Ko) : pas de limite de colonne stricte, mais une
+    // borne haute reste nécessaire côté anonyme (audit 2026-11-20, P2) —
+    // même plafond que SupportTicketMessage::content.
     #[ORM\Column(type: Types::TEXT)]
     #[Groups(["api_public", "api_admin"])]
     #[Assert\NotBlank(message: "Le message est obligatoire")]
-    #[Assert\Length(min: 10)]
+    #[Assert\Length(min: 10, max: 5000)]
     private string $message = '';
 
     #[ORM\Column]
