@@ -7,11 +7,15 @@
 # L'image tourne désormais en utilisateur NON-root (USER nextjs, uid 1001,
 # cf. Dockerfile). `docker compose` (hors Swarm) ignore silencieusement
 # `mode`/`uid`/`gid` sur les secrets : les fichiers de /run/secrets gardent
-# les permissions du fichier hôte. Un secret illisible par l'uid 1001 n'est
-# donc PAS chargé : on le signale bruyamment dans les logs sans bloquer le
+# les permissions du fichier hôte (ubuntu:hmmsecrets 640 sur le VPS). La
+# lecture repose sur `group_add: ["${HMM_SECRETS_GID:-5002}"]` posé sur le
+# service `frontend` (docker-compose.prod.yml, lot infra) : nextjs obtient
+# le groupe hôte `hmmsecrets` en groupe supplémentaire, aucun chgrp/chmod
+# requis. Ce repli (avertissement, pas de crash) couvre malgré tout tout
+# secret qui resterait illisible — groupe mal aligné, fichier monté avec
+# d'autres droits : on le signale bruyamment dans les logs sans bloquer le
 # démarrage (le site reste servi ; la fonctionnalité qui en dépend — ex.
 # REVALIDATE_SECRET pour /api/revalidate — échoue fermée d'elle-même).
-# Correctif côté hôte : chgrp 1001 <fichier> && chmod 0440 <fichier>.
 #
 # Compatibilité : si le conteneur est lancé explicitement en root
 # (`user: "0"`), le comportement historique est conservé — lecture en root
@@ -26,7 +30,7 @@ if [ -d /run/secrets ]; then
             *[!A-Z0-9_]*|[0-9]*|'') echo "[entrypoint] nom de secret ignoré : $(basename "$secret_file")" >&2; continue ;;
         esac
         if [ ! -r "$secret_file" ]; then
-            echo "[entrypoint] AVERTISSEMENT : secret '$name' illisible par l'uid $(id -u) — non chargé (sur l'hôte : chgrp 1001 + chmod 0440 sur le fichier)." >&2
+            echo "[entrypoint] AVERTISSEMENT : secret '$name' illisible par l'uid $(id -u) (gid $(id -g) + groupes supplémentaires $(id -G)) — non chargé. Vérifier HMM_SECRETS_GID / le groupe propriétaire du fichier sur l'hôte." >&2
             continue
         fi
         value=$(cat "$secret_file")

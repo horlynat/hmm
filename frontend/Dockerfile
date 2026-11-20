@@ -17,9 +17,10 @@ WORKDIR /app
 RUN npm install -g npm@11.21.2
 COPY package.json package-lock.json ./
 # `--ignore-scripts` : aucun script install/postinstall d'une dépendance
-# (transitive comprise) ne s'exécute pendant le build — étage qui tourne avec
-# `network: host` côté compose, donc avec accès aux services de l'hôte.
-# Inventaire des paquets à scripts du lockfile (`hasInstallScript`) :
+# (transitive comprise) ne s'exécute pendant le build — protection
+# indépendante du réseau du RUN (bridge par défaut ici, cf. stage builder
+# pour l'accès au backend). Inventaire des paquets à scripts du lockfile
+# (`hasInstallScript`) :
 #  - @swc/core, @parcel/watcher (via next-intl) : leurs scripts ne sont que
 #    des REPLIS (compilation depuis les sources / @swc/wasm) si le binaire
 #    précompilé manque ; celui-ci arrive par une dépendance optionnelle
@@ -48,11 +49,19 @@ COPY . .
 # piloté par le back-office est absent (cf. commentaires dans ces pages) —
 # sans backend joignable au build, `next build` échoue.
 #
-# `--network=host` (nécessite `docker build --allow network.host`, déjà posé
-# dans docker-compose.prod.yml) donne à ce RUN un accès direct à la stack
-# réseau de l'hôte : le conteneur backend doit donc publier son port sur
-# 127.0.0.1 (loopback uniquement, jamais exposé publiquement — cf. compose)
-# le temps du build. Cf. infra/README.md "Build en deux temps".
+# Ce RUN tourne sur le réseau bridge PAR DÉFAUT (plus de `--network=host`,
+# qui donnait à TOUT le build — y compris les scripts postinstall des
+# dépendances — la pile réseau complète de l'hôte, services tiers du VPS
+# compris). Le backend est joint via le nom `backend`, résolu par
+# `extra_hosts: ["backend:host-gateway"]` posé sur le SERVICE `frontend`
+# dans docker-compose.prod.yml (pas par ce Dockerfile) vers la passerelle
+# éphémère `api-build-gateway` (socat sur l'IP de docker0, port 8000,
+# démarrée par infra/scripts/deploy-remote.sh le temps du build) — cf.
+# docker-compose.prod.yml et infra/README.md "Build en deux temps". `backend`
+# est le même Host qu'à l'exécution, accepté par SYMFONY_TRUSTED_HOSTS.
+# API_URL doit donc valoir `http://backend:8000/api` pendant ce build (fourni
+# en `args:` par compose) — PAS `http://127.0.0.1:8000/api` (plus joignable
+# sans réseau host).
 ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_MEDIA_URL
 ARG API_URL
@@ -61,7 +70,7 @@ ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
     API_URL=${API_URL} \
     NEXT_TELEMETRY_DISABLED=1
 
-RUN --network=host npm run build
+RUN npm run build
 
 # ---- Stage 3 : runtime minimal ----
 FROM ${NODE_IMAGE} AS runner
@@ -88,10 +97,14 @@ COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 # tournent sous nextjs (uid 1001). Conséquence : les secrets Docker montés
 # dans /run/secrets doivent être lisibles par l'uid/gid 1001 — `docker
 # compose` hors Swarm ignore `uid`/`gid`/`mode` et garde les permissions du
-# fichier hôte. Action à faire une fois sur le VPS (cf. docker-entrypoint.sh) :
-#   chgrp 1001 infra/secrets/revalidate_secret && chmod 0440 infra/secrets/revalidate_secret
-# (le backend, qui lit le même fichier en root avant de basculer sur
-# www-data, n'est pas affecté).
+# fichier hôte (ubuntu:hmmsecrets 640 sur le VPS, cf. infra/README.md §4 ;
+# le GID 1001 de ce conteneur n'existe pas côté hôte). Résolu côté compose
+# par `group_add: ["${HMM_SECRETS_GID:-5002}"]` sur le service `frontend`
+# (docker-compose.prod.yml) : nextjs obtient le groupe hôte `hmmsecrets` en
+# groupe supplémentaire et lit les secrets 640 sans aucun chgrp/chmod ni
+# capacité Linux. Aucune action requise ici, ni côté docker-entrypoint.sh
+# (le repli « secret illisible -> avertissement, pas de crash » y reste en
+# place pour tout autre cas de permissions mal alignées).
 USER nextjs:nodejs
 
 EXPOSE 3000
