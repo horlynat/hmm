@@ -87,15 +87,12 @@ services:
         NEXT_PUBLIC_MEDIA_URL: ${NEXT_PUBLIC_MEDIA_URL}
         API_URL: http://backend:8000/api
     <<: *hardening
-    # SETUID/SETGID : su-exec root -> nextjs (docker-entrypoint.sh) ;
-    # DAC_OVERRIDE : lecture par l'entrypoint root des secrets montés
-    # (fichiers 600/640 appartenant à un utilisateur de l'hôte).
+    # Aucune capacité : l'image tourne entièrement en non-root (USER nextjs,
+    # uid/gid 1001 — entrypoint, node et healthcheck compris, cf.
+    # frontend/Dockerfile) ; plus de lecture des secrets en root ni de
+    # su-exec. Les secrets sont lus via le bit groupe (group_add ci-dessous).
     # Pas de read_only : Next.js (ISR) réécrit les pages régénérées et son
     # cache dans .next/ à l'exécution.
-    cap_add:
-      - SETUID
-      - SETGID
-      - DAC_OVERRIDE
     tmpfs:
       - /tmp:size=64m,mode=1777
     pids_limit: 512

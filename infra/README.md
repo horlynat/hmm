@@ -933,7 +933,7 @@ jetable locale : migrations, seed, build frontend, connexion Adminer) :
 |---|---|---|---|
 | `backend` | `CHOWN,DAC_OVERRIDE,SETUID,SETGID,NET_BIND_SERVICE` | non | entrypoint root (lit les secrets, écrit `.env.local`), su-exec vers www-data, frankenphp lié au port 80 |
 | `messenger-worker` | `CHOWN,DAC_OVERRIDE,SETUID,SETGID` | non | même entrypoint, jamais frankenphp (pas de `NET_BIND_SERVICE`) |
-| `frontend` | `SETUID,SETGID,DAC_OVERRIDE` | non (ISR réécrit `.next/`) | même mécanisme d'entrypoint côté Next.js |
+| `frontend` | aucune (+ `group_add` GID `hmmsecrets`) | non (ISR réécrit `.next/`) | image entièrement non-root (uid 1001) : secrets lus via le bit groupe, ni root ni su-exec |
 | `database` | `CHOWN,DAC_OVERRIDE,SETUID,SETGID` | **oui** (+ tmpfs `/tmp`, `/var/run/mysqld`) | entrypoint officiel MySQL, validé : init + migrations + redémarrage OK |
 | `adminer` | aucune | **oui** (+ tmpfs `/tmp`) | aucun entrypoint privilégié, sessions PHP en tmpfs |
 | `api-build-gateway` | aucune | **oui** | `socat` seul, utilisateur non-root (`65534:65534`) |
