@@ -170,8 +170,15 @@ GID de `hmmsecrets` lui étant ajouté comme groupe supplémentaire
 GID de `hmmsecrets` sur le VPS ; à surcharger dans `.env.prod` si `getent
 group hmmsecrets` donne autre chose). **Aucun `chgrp` par fichier** vers un
 autre groupe (ex. 1001) : un secret en `600`, ou dans un autre groupe, est
-illisible pour ce conteneur et fait échouer son démarrage. Après création
-d'un nouveau secret, relancer les deux commandes ci-dessus.
+illisible pour ce conteneur. Le démarrage n'échoue PAS pour autant —
+l'entrypoint journalise un avertissement (`[entrypoint] AVERTISSEMENT :
+secret '...' illisible`) et continue sans charger le secret : le site reste
+servi, mais la fonctionnalité concernée échoue fermée (ex. sans
+`REVALIDATE_SECRET`, `/api/revalidate` répond 401 et la revalidation
+déclenchée par le back-office ne se fait plus). Panne silencieuse côté
+utilisateur : vérifier `docker compose logs frontend | grep entrypoint`
+après chaque ajout/modification de secret. Après création d'un nouveau
+secret, relancer les deux commandes ci-dessus.
 
 🛑 **Base de données — bloquant, confirmé** : les migrations existantes
 (`migrations/Version*.php`) sont écrites en dialecte **MySQL**
@@ -297,6 +304,23 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml --profile build r
 docker compose --env-file .env.prod -f docker-compose.prod.yml up -d frontend
 docker compose -f docker-compose.prod.yml ps
 ```
+
+⚠️ **Risque accepté pendant la fenêtre de build** : tant que la passerelle
+existe (de l'attente API à la fin de `docker compose build frontend`),
+`172.17.0.1:8000` expose le backend **entier**, HORS Traefik — sans
+`cloudflare-only`, sans limitation de débit, sans la restriction de chemins
+du routeur `hmm-api` (back-office `/login`, `/admin`... compris) — à tous les
+conteneurs (y compris ceux de l'autre projet du VPS) et processus de
+l'hôte. Accepté parce que la passerelle est éphémère (quelques minutes par
+déploiement, supprimée même en cas d'échec ou de coupure SSH via les
+traps de `deploy-remote.sh`), liée à l'IP de docker0 seulement (jamais
+joignable depuis Internet : `DOCKER-USER` ne laisse passer que 80/443
+depuis Cloudflare), et durcie (`socat` non-root, `cap_drop: ALL`,
+`read_only`, `no-new-privileges`). Les protections applicatives (auth,
+2FA, limiteurs Symfony) restent actives ; seules celles de Traefik sont
+contournées. Ne jamais laisser ce service tourner en dehors d'un build
+(`docker compose ps api-build-gateway` doit être vide après un
+déploiement).
 
 ⚠️ `HMM_BUILD_GATEWAY_BIND` (`.env.prod`, défaut `172.17.0.1`) doit correspondre
 à l'IP de `docker0` sur ce VPS (`ip -4 addr show docker0`) — sinon le build

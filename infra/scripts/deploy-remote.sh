@@ -149,11 +149,28 @@ up_with_retry messenger-worker
 # pour le build qui suit.
 #
 # La passerelle n'existe que le temps du build : supprimée juste après, et
-# dans tous les cas à la sortie du script (échec compris).
+# dans tous les cas à la sortie du script — échec compris, ET coupure de la
+# session SSH (SIGHUP) ou interruption (SIGINT/SIGTERM).
+#
+# Les signaux ne font PAS appel directement à stop_build_gateway : ils
+# terminent le script (code 128+n), et c'est le trap EXIT qui nettoie.
+# `trap stop_build_gateway EXIT HUP INT TERM` serait faux : quand le signal
+# arrive pendant une commande au premier plan (`docker compose build`, cas
+# typique), bash exécute le handler à la fin de cette commande puis REPREND
+# le script — le déploiement continuait sans session et finissait en code 0
+# (testé). Idempotente : appelable plusieurs fois (appel explicite après le
+# build + trap EXIT), n'agit qu'une fois, ne peut pas faire échouer le
+# script sous `set -euo pipefail`.
+GATEWAY_STOPPED=0
 stop_build_gateway() {
+  [[ "$GATEWAY_STOPPED" == 1 ]] && return 0
+  GATEWAY_STOPPED=1
   "${COMPOSE[@]}" --profile build rm -sf api-build-gateway >/dev/null 2>&1 || true
 }
 trap stop_build_gateway EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 echo "==> Passerelle de build (${BUILD_GATEWAY_BIND}:8000 -> backend:80)"
 "${COMPOSE[@]}" --profile build up -d --no-deps api-build-gateway
 
