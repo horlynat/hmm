@@ -1,0 +1,79 @@
+# Mises à jour automatiques des dépendances — hebdomadaires, groupées par
+# écosystème (une PR par écosystème et par semaine, pas une par paquet).
+# Les alertes de SÉCURITÉ Dependabot (Settings -> Code security) restent
+# immédiates et indépendantes de ce calendrier.
+#
+# Les PR ciblent `main` (défaut) et passent par les mêmes CI que le reste
+# (backend-ci / frontend-ci) ; rien n'est fusionné automatiquement.
+version: 2
+updates:
+  # Actions GitHub épinglées par SHA (tag en commentaire) : Dependabot met à
+  # jour le SHA ET le commentaire.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+
+  # Images de base des Dockerfile.
+  # NB : backend/Dockerfile référence l'image FrankenPHP via un ARG
+  # (FRANKENPHP_IMAGE) que Dependabot ne suit pas — seul `composer:` y est
+  # mis à jour ; la montée FrankenPHP/PHP reste manuelle (cf. commentaire
+  # dans ce Dockerfile).
+  - package-ecosystem: docker
+    directories:
+      - /backend
+      - /frontend
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      docker-images:
+        patterns: ["*"]
+    commit-message:
+      prefix: chore
+
+  # Images du compose de prod (traefik, socket-proxy, mysql, adminer,
+  # socat...), épinglées version + digest. Vérifier dans l'onglet
+  # Insights -> Dependency graph -> Dependabot que infra/docker-compose.prod.yml
+  # est bien détecté (nom de fichier non standard).
+  - package-ecosystem: docker-compose
+    directory: /infra
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      compose-images:
+        patterns: ["*"]
+    commit-message:
+      prefix: chore
+
+  - package-ecosystem: composer
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      composer:
+        patterns: ["*"]
+    commit-message:
+      prefix: chore
+
+  # npm : backend (assets Vite du back-office) et frontend (Next.js).
+  - package-ecosystem: npm
+    directories:
+      - /backend
+      - /frontend
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      npm:
+        patterns: ["*"]
+    commit-message:
+      prefix: chore
