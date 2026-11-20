@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Exception\TooManyRequestsException;
+use App\Security\ClientIpRateLimitKey;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
@@ -65,7 +66,9 @@ final class PublicSubmissionThrottler
 
     private function assert(RateLimiterFactory $factory): void
     {
-        $ip = $this->requestStack->getCurrentRequest()?->getClientIp() ?? 'unknown';
+        // Clé par préfixe IPv6 /64 (IPv4 inchangée) : sinon un seul hôte IPv6
+        // contourne le limiteur en changeant d'adresse à chaque requête.
+        $ip = ClientIpRateLimitKey::fromIp($this->requestStack->getCurrentRequest()?->getClientIp());
 
         if (!$factory->create($ip)->consume(1)->isAccepted()) {
             throw new TooManyRequestsException('Trop de tentatives. Merci de réessayer plus tard.');

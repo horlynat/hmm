@@ -119,6 +119,12 @@ services:
             $frontendUrl: '%app.frontend_url%'
             $secret: '%env(REVALIDATE_SECRET)%'
 
+    # Limiteur natif login_throttling du firewall api_login : compté par
+    # préfixe IPv6 /64 (cf. App\Security\ClientIpRateLimitKey).
+    App\Security\NormalizedIpLoginRateLimiter:
+        decorates: security.login_throttling.api_login.limiter
+        arguments: ['@.inner']
+
     App\Service\AiAssistantBudgetGuard:
         arguments:
             $monthlyBudgetUsd: '%env(float:ASSISTANT_MONTHLY_BUDGET_USD)%'
