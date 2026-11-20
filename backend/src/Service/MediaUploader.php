@@ -173,7 +173,33 @@ class MediaUploader
     private function writeSanitizedSvg(UploadedFile $file, string $destination): void
     {
         $raw = @file_get_contents($file->getPathname());
-        if (false === $raw || '' === trim($raw)) {
+        if (false === $raw) {
+            throw new \RuntimeException("Le fichier SVG est vide ou illisible.");
+        }
+
+        $clean = $this->sanitizeSvg($raw);
+
+        if (false === @file_put_contents($destination, $clean)) {
+            throw new FileException(sprintf('Écriture impossible dans "%s".', $destination));
+        }
+
+        // Le fichier temporaire uploadé n'est plus déplacé par move() : on le
+        // retire nous-mêmes pour ne pas le laisser traîner dans le tmp PHP.
+        @unlink($file->getPathname());
+    }
+
+    /**
+     * Nettoyage SVG unique du projet — utilisé à l'upload (writeSanitizedSvg)
+     * ET pour repasser les SVG déjà stockés (commande
+     * app:media:resanitize-svg) : une seule politique, jamais dupliquée.
+     * Idempotent : nettoyer un SVG déjà nettoyé le renvoie à l'identique.
+     *
+     * @throws \RuntimeException Si le contenu est vide, n'est pas un SVG
+     *                           exploitable ou est entièrement vidé par le nettoyage
+     */
+    public function sanitizeSvg(string $raw): string
+    {
+        if ('' === trim($raw)) {
             throw new \RuntimeException("Le fichier SVG est vide ou illisible.");
         }
 
@@ -187,13 +213,7 @@ class MediaUploader
             throw new \RuntimeException("Ce fichier SVG n'a pas pu être sécurisé et a été refusé.");
         }
 
-        if (false === @file_put_contents($destination, $clean)) {
-            throw new FileException(sprintf('Écriture impossible dans "%s".', $destination));
-        }
-
-        // Le fichier temporaire uploadé n'est plus déplacé par move() : on le
-        // retire nous-mêmes pour ne pas le laisser traîner dans le tmp PHP.
-        @unlink($file->getPathname());
+        return $clean;
     }
 
     /**
