@@ -3,6 +3,9 @@ parameters:
     app.default_sender: '%env(APP_DEFAULT_SENDER)%'
     app.jwtsecret: '%env(APP_JWTSECRET)%'
     app.frontend_url: '%env(FRONTEND_URL)%'
+    # Base des liens sortants (e-mails) — cf. App\Service\MailLinkGenerator.
+    # BACKOFFICE_URL retombe sur DEFAULT_URI quand il n'est pas défini (dev).
+    app.default_uri: '%env(DEFAULT_URI)%'
 
     # ✅ CORRECTION 1 : utiliser %kernel.project_dir% ici (paramètre Symfony)
     #    et non dans .env où cette syntaxe n'est pas supportée

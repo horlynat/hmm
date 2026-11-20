@@ -5,12 +5,12 @@ namespace App\Controller;
 use App\Repository\NewsletterSubscriberRepository;
 use App\Service\EmailManager;
 use App\Service\JWTService;
+use App\Service\MailLinkGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Confirmation d'inscription (double opt-in) et désinscription de la
@@ -41,6 +41,7 @@ final class NewsletterConfirmationController extends AbstractController
         NewsletterSubscriberRepository $subscriberRepository,
         EntityManagerInterface $entityManager,
         EmailManager $emailManager,
+        MailLinkGenerator $mailLinkGenerator,
     ): Response {
         try {
             $payload = $jwt->validate($token, 'newsletter_confirmation');
@@ -79,10 +80,10 @@ final class NewsletterConfirmationController extends AbstractController
             context: [
                 'locale' => $subscriber->getLocale(),
                 'blogUrl' => rtrim($this->frontendUrl, '/').'/'.('en' === $subscriber->getLocale() ? 'en' : 'fr').'/blog',
-                'unsubscribeUrl' => $this->generateUrl(
+                // Base fixe (DEFAULT_URI), jamais l'hôte de la requête de clic.
+                'unsubscribeUrl' => $mailLinkGenerator->publicUrl(
                     'newsletter_unsubscribe',
                     ['token' => $jwt->generateNewsletterUnsubscribeToken((int) $subscriber->getId())],
-                    UrlGeneratorInterface::ABSOLUTE_URL,
                 ),
             ],
         );
