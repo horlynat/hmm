@@ -39,6 +39,7 @@
 		</form>
 
 		<form method="post" action="{{ path('admin_currency_set') }}" class="hidden sm:block">
+			<input type="hidden" name="_token" value="{{ csrf_token('admin_currency_set') }}">
 			<label for="admin-currency" class="sr-only">Devise d'affichage</label>
 			<select id="admin-currency" name="currency" onchange="this.form.requestSubmit()"
 					class="input input-select text-sm py-1.5 w-auto" aria-label="Devise d'affichage">
