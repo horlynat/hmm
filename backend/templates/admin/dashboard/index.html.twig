@@ -5,11 +5,13 @@
 
 {% block javascripts %}
 	{{ parent() }}
-	<script>window.dashboardData = {{ chartData|json_encode|raw }};</script>
 	{{ vite_entry_script_tags('dashboard') }}
 {% endblock %}
 
 {% block body %}
+	{# Données des graphiques : attribut de données (JSON échappé HTML), lu par
+	   assets/js/dashboard.js — jamais interpolées dans un <script> inline. #}
+	<div id="dashboard-data" hidden data-chart="{{ chartData|json_encode }}"></div>
 	<div class="container mx-auto px-4 py-8 text-brand-dark">
 
 		<!-- 👑 EN-TÊTE DU DASHBOARD -->

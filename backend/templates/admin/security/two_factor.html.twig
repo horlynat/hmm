@@ -25,7 +25,7 @@
 						</td>
 						<td class="text-right">
 							{% if user.isTotpAuthenticationEnabled %}
-								<form method="post" action="{{ path('admin_security_two_factor_disable', {id: user.id}) }}" onsubmit="return confirm('Forcer la désactivation de la 2FA pour {{ user.email }} ?');">
+								<form method="post" action="{{ path('admin_security_two_factor_disable', {id: user.id}) }}" data-controller="confirm" data-confirm-message-value="Forcer la désactivation de la 2FA pour {{ user.email }} ?">
 									<input type="hidden" name="_token" value="{{ csrf_token('admin_security_two_factor_disable_' ~ user.id) }}">
 									<button type="submit" class="btn btn-ghost btn-icon text-danger" aria-label="Forcer la désactivation de la 2FA pour {{ user.email }}">
 										<span class="ti ti-lock-open text-lg" aria-hidden="true"></span>

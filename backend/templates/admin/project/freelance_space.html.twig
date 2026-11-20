@@ -102,7 +102,7 @@
 									</div>
 								</div>
 								<div class="flex items-center gap-2 shrink-0">
-									<form method="POST" action="{{ path('admin_project_reject_join_request', {id: joinRequest.project.id, requestId: joinRequest.id}) }}" onsubmit="return confirm('Refuser cette demande ?');">
+									<form method="POST" action="{{ path('admin_project_reject_join_request', {id: joinRequest.project.id, requestId: joinRequest.id}) }}" data-controller="confirm" data-confirm-message-value="Refuser cette demande ?">
 										<input type="hidden" name="_token" value="{{ csrf_token('join_request_' ~ joinRequest.id) }}">
 										<button type="submit" class="btn btn-secondary btn-sm gap-1.5">
 											<span class="ti ti-x" aria-hidden="true"></span> Refuser

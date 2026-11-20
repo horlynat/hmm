@@ -46,7 +46,7 @@
 									<p class="font-mono text-xs opacity-50">{{ definition.code }}</p>
 								</td>
 								<td>
-									<form method="post" action="{{ path('admin_security_permission_update', {id: definition.id}) }}" class="flex items-center gap-2" onsubmit="return confirm('Changer le rôle minimum de « {{ definition.label }} » ?');">
+									<form method="post" action="{{ path('admin_security_permission_update', {id: definition.id}) }}" class="flex items-center gap-2" data-controller="confirm" data-confirm-message-value="Changer le rôle minimum de « {{ definition.label }} » ?">
 										<input type="hidden" name="_token" value="{{ csrf_token('admin_security_permission_update_' ~ definition.id) }}">
 										<select name="role" class="input input-sm">
 											{% for role in roles %}
@@ -59,7 +59,7 @@
 								</td>
 								<td class="text-right">
 									{% if definition.isOverridden %}
-										<form method="post" action="{{ path('admin_security_permission_reset', {id: definition.id}) }}" onsubmit="return confirm('Réinitialiser « {{ definition.label }} » à {{ definition.defaultRole.label }} (valeur d\'origine) ?');">
+										<form method="post" action="{{ path('admin_security_permission_reset', {id: definition.id}) }}" data-controller="confirm" data-confirm-message-value="Réinitialiser « {{ definition.label }} » à {{ definition.defaultRole.label }} (valeur d'origine) ?">
 											<input type="hidden" name="_token" value="{{ csrf_token('admin_security_permission_reset_' ~ definition.id) }}">
 											<button type="submit" class="btn btn-ghost btn-sm gap-1" title="Revenir à {{ definition.defaultRole.label }}">
 												<span class="ti ti-restore text-sm" aria-hidden="true"></span> Réinitialiser

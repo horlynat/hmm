@@ -18,13 +18,13 @@
 		<a href="{{ path('admin_security_session_export', {search: search, status: status}) }}" class="btn btn-secondary gap-2">
 			<span class="ti ti-download" aria-hidden="true"></span> Exporter (CSV)
 		</a>
-		<form method="post" action="{{ path('admin_security_session_purge_ended') }}" onsubmit="return confirm('Purger toutes les sessions terminées ({{ statusCounts.ended }}) ? Ce sont des lignes d\'historique déjà mortes, aucun accès actif n\'est affecté.');">
+		<form method="post" action="{{ path('admin_security_session_purge_ended') }}" data-controller="confirm" data-confirm-message-value="Purger toutes les sessions terminées ({{ statusCounts.ended }}) ? Ce sont des lignes d'historique déjà mortes, aucun accès actif n'est affecté.">
 			<input type="hidden" name="_token" value="{{ csrf_token('admin_security_session_purge_ended') }}">
 			<button type="submit" class="btn btn-secondary gap-2">
 				<span class="ti ti-eraser" aria-hidden="true"></span> Purger les terminées
 			</button>
 		</form>
-		<form method="post" action="{{ path('admin_security_session_revoke_all') }}" onsubmit="return confirm('Déconnecter de force TOUTES les autres sessions actives ou expirées ? Chaque utilisateur concerné (vous y compris, sur vos autres appareils) devra se reconnecter et recevra un email. Seule cette session-ci restera active.');">
+		<form method="post" action="{{ path('admin_security_session_revoke_all') }}" data-controller="confirm" data-confirm-message-value="Déconnecter de force TOUTES les autres sessions actives ou expirées ? Chaque utilisateur concerné (vous y compris, sur vos autres appareils) devra se reconnecter et recevra un email. Seule cette session-ci restera active.">
 			<input type="hidden" name="_token" value="{{ csrf_token('admin_security_session_revoke_all') }}">
 			<button type="submit" class="btn btn-danger gap-2">
 				<span class="ti ti-logout" aria-hidden="true"></span> Déconnecter tout le reste
@@ -141,7 +141,7 @@
 						</td>
 						<td class="text-right">
 							{% if entry.state in ['active', 'expired'] and userSession.sessionId != currentSessionId %}
-								<form method="post" action="{{ path('admin_security_session_revoke', {id: userSession.id}) }}" onsubmit="return confirm('Forcer la déconnexion de {{ userSession.user.email }} ? Un email l\'en informera.');">
+								<form method="post" action="{{ path('admin_security_session_revoke', {id: userSession.id}) }}" data-controller="confirm" data-confirm-message-value="Forcer la déconnexion de {{ userSession.user.email }} ? Un email l'en informera.">
 									<input type="hidden" name="_token" value="{{ csrf_token('admin_security_session_revoke_' ~ userSession.id) }}">
 									<button type="submit" class="btn btn-ghost btn-icon text-danger" aria-label="Forcer la déconnexion de {{ userSession.user.email }}">
 										<span class="ti ti-logout text-lg" aria-hidden="true"></span>

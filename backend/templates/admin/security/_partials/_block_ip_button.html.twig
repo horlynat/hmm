@@ -9,7 +9,7 @@
 {% elseif isBlocked %}
 	<twig:Badge variant="neutral">Bloquée</twig:Badge>
 {% elseif is_granted(constant('App\\Security\\Voter\\SecurityVoter::MANAGE_IP_BLOCKS')) %}
-	<form method="post" action="{{ path('admin_security_policy_block_ip') }}" onsubmit="return confirm('Bloquer {{ ip }} ? Plus aucune tentative de connexion ne sera acceptée depuis cette IP.');">
+	<form method="post" action="{{ path('admin_security_policy_block_ip') }}" data-controller="confirm" data-confirm-message-value="Bloquer {{ ip }} ? Plus aucune tentative de connexion ne sera acceptée depuis cette IP.">
 		<input type="hidden" name="_token" value="{{ csrf_token('admin_security_policy_block_ip') }}">
 		<input type="hidden" name="ip" value="{{ ip }}">
 		<input type="hidden" name="reason" value="{{ autoReason ?? 'Blocage rapide.' }}">

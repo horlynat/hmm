@@ -45,7 +45,7 @@
 									<span class="ti ti-download text-lg" aria-hidden="true"></span>
 								</a>
 								{% if is_granted('SETTINGS_RESTORE_BACKUP') %}
-									<button type="button" onclick="document.getElementById('restore-modal-{{ loop.index }}').showModal()" class="btn btn-ghost btn-icon text-amber-600" aria-label="Restaurer {{ backup.filename }}">
+									<button type="button" data-controller="dialog" data-action="dialog#open" data-dialog-id-param="restore-modal-{{ loop.index }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Restaurer {{ backup.filename }}">
 										<span class="ti ti-refresh text-lg" aria-hidden="true"></span>
 									</button>
 								{% endif %}
@@ -76,7 +76,7 @@
 										<button type="submit" onclick="this.disabled=true; this.form.submit();" class="btn btn-danger w-full gap-2">
 											<span class="ti ti-refresh" aria-hidden="true"></span> Confirmer la restauration
 										</button>
-										<button type="button" onclick="document.getElementById('restore-modal-{{ loop.index }}').close()" class="btn btn-secondary w-full sm:w-auto flex-1">Annuler</button>
+										<button type="button" data-controller="dialog" data-action="dialog#close" data-dialog-id-param="restore-modal-{{ loop.index }}" class="btn btn-secondary w-full sm:w-auto flex-1">Annuler</button>
 									</div>
 								</form>
 							</div>
