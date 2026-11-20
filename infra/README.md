@@ -158,8 +158,20 @@ Si `htpasswd` manque : `sudo apt install -y apache2-utils` puis relance
 (sans quoi le script retombe sur un hash `apr1`, accepté mais moins solide).
 
 ```bash
-chmod 600 infra/secrets/*
+sudo chgrp -R hmmsecrets infra/secrets && sudo chmod 750 infra/secrets
+sudo find infra/secrets -type f -exec chmod 640 {} \;
 ```
+
+⚠️ **Droits des secrets : toujours `640`, groupe `hmmsecrets`** (cf. §11,
+utilisateur `deploy`) — pas `600`. Le conteneur `frontend` tourne en
+non-root (uid/gid 1001) : il lit ses secrets grâce au bit **groupe**, le
+GID de `hmmsecrets` lui étant ajouté comme groupe supplémentaire
+(`group_add: ${HMM_SECRETS_GID:-5002}` dans `docker-compose.prod.yml`, 5002 =
+GID de `hmmsecrets` sur le VPS ; à surcharger dans `.env.prod` si `getent
+group hmmsecrets` donne autre chose). **Aucun `chgrp` par fichier** vers un
+autre groupe (ex. 1001) : un secret en `600`, ou dans un autre groupe, est
+illisible pour ce conteneur et fait échouer son démarrage. Après création
+d'un nouveau secret, relancer les deux commandes ci-dessus.
 
 🛑 **Base de données — bloquant, confirmé** : les migrations existantes
 (`migrations/Version*.php`) sont écrites en dialecte **MySQL**

@@ -99,6 +99,15 @@ services:
     tmpfs:
       - /tmp:size=64m,mode=1777
     pids_limit: 512
+    # Conteneur non-root (USER nextjs, uid/gid 1001, cf. frontend/Dockerfile) :
+    # les secrets montés gardent les droits du fichier hôte
+    # (ubuntu:hmmsecrets 640, cf. README §4). Ajout du GID de `hmmsecrets`
+    # comme groupe supplémentaire du processus : lecture via le bit groupe,
+    # sans chgrp par fichier ni capacité. 5002 = GID de `hmmsecrets` sur le
+    # VPS (vérifié) ; surcharger HMM_SECRETS_GID dans .env.prod s'il diffère
+    # (`getent group hmmsecrets`).
+    group_add:
+      - "${HMM_SECRETS_GID:-5002}"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
