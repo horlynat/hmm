@@ -117,10 +117,18 @@ class NewsletterSubscriber
         return $this;
     }
 
-    /** Re-soumettre le formulaire avec un e-mail déjà désinscrit vaut consentement explicite — cf. NewsletterSubscriberCreateProcessor. */
+    /**
+     * Ré-inscription d'une adresse désinscrite : le consentement donné à
+     * l'origine ne vaut plus (RGPD) — retour à l'état « en attente » du
+     * double opt-in, un nouveau lien de confirmation doit être cliqué
+     * (cf. NewsletterSubscriberCreateProcessor). Sans ça, n'importe qui
+     * pouvait réabonner une adresse tierce en la saisissant dans le
+     * formulaire, sans aucune confirmation de son titulaire.
+     */
     public function resubscribe(): static
     {
         $this->unsubscribedAt = null;
+        $this->confirmedAt = null;
 
         return $this;
     }

@@ -64,11 +64,16 @@ final class NewsletterSubscriberCreateProcessor implements ProcessorInterface
         $email = mb_strtolower(trim($data->getEmail()));
         $existing = $this->subscriberRepository->findOneBy(['email' => $email]);
         if (null !== $existing) {
-            // Ré-abonnement implicite si l'e-mail s'était désinscrit —
-            // re-soumettre le formulaire est un signal de consentement clair.
+            // Ré-inscription d'une adresse désinscrite : NOUVEAU double opt-in
+            // (confirmedAt remis à zéro par resubscribe(), nouveau lien). Le
+            // formulaire peut être rempli par n'importe qui avec l'adresse
+            // d'un tiers : ce n'est pas un consentement du titulaire
+            // (RGPD, audit 2026-11-20 P2). Les envois (NewsletterNotifier)
+            // ne visent que les adresses confirmées.
             if (null !== $existing->getUnsubscribedAt()) {
                 $existing->resubscribe();
                 $this->entityManager->flush();
+                $this->sendConfirmation($existing);
             }
 
             return $existing;
@@ -82,9 +87,18 @@ final class NewsletterSubscriberCreateProcessor implements ProcessorInterface
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
 
+        $this->sendConfirmation($entity);
+
+        return $entity;
+    }
+
+    private function sendConfirmation(NewsletterSubscriber $entity): void
+    {
+        $locale = 'en' === $entity->getLocale() ? 'en' : 'fr';
+
         // Base fixe (DEFAULT_URI) : l'hôte de cette requête publique est
         // contrôlé par le visiteur (Host / X-Forwarded-Host), il ne doit jamais
-        // se retrouver dans un lien envoyé par e-mail.
+        // se retrouver dans un lien envoyé par e-mail (P0 #3, PR #149).
         $confirmUrl = $this->mailLinkGenerator->publicUrl(
             'newsletter_confirm',
             ['token' => $this->jwt->generateNewsletterConfirmationToken((int) $entity->getId())],
@@ -104,7 +118,5 @@ final class NewsletterSubscriberCreateProcessor implements ProcessorInterface
                 'unsubscribeUrl' => $unsubscribeUrl,
             ],
         );
-
-        return $entity;
     }
 }
