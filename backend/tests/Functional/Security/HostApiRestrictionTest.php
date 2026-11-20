@@ -26,7 +26,7 @@ final class HostApiRestrictionTest extends FunctionalTestCase
             '/mot-de-passe-oublie', '/reinitialiser-mot-de-passe/x', '/user/profil', '/projects', '/mes-devis',
             '/mes-sessions/1/revoke', '/_components/admin_project_table', '/', '/%61dmin', '//admin',
             '/api/../admin', '/apiadmin', '/API/me', '/uploadsx', '/newsletterx', '/admin?x=/api/',
-            '/build/manifest.json', '/health', '/favicon.ico', '/robots.txt',
+            '/health',
         ] as $path) {
             yield $path => [$path];
         }
@@ -41,6 +41,21 @@ final class HostApiRestrictionTest extends FunctionalTestCase
 
         $this->client->request('POST', 'http://api.test.invalid'.$path, ['email' => 'x@y.z', 'password' => 'x']);
         self::assertSame(404, $this->client->getResponse()->getStatusCode(), 'POST '.$path);
+    }
+
+    /**
+     * Portée RÉELLE pour les chemins de fichiers statiques : ce test ne
+     * prouve que le refus des requêtes qui ATTEIGNENT PHP (fichier absent).
+     * En prod, un fichier existant de public/ (/build, /bundles, /uploads,
+     * favicon…) est servi par Caddy avant PHP : sur l'hôte API, seul le
+     * routeur Traefik le protège — pas ce listener.
+     */
+    public function testMissingStaticPathsReachingPhpAreRefused(): void
+    {
+        foreach (['/build/manifest.json', '/bundles/x.js', '/favicon.ico', '/robots.txt'] as $path) {
+            $this->client->request('GET', 'http://api.test.invalid'.$path);
+            self::assertSame(404, $this->client->getResponse()->getStatusCode(), $path);
+        }
     }
 
     public function testHostMatchingIsCaseInsensitive(): void
@@ -82,10 +97,9 @@ final class HostApiRestrictionTest extends FunctionalTestCase
         $this->client->request('GET', 'http://api.test.invalid/newsletter/confirm/not-a-token');
         self::assertSame(200, $this->client->getResponse()->getStatusCode());
 
-        // /uploads/** : fichier absent -> 404 applicatif normal (pas la 404
-        // "nue" de ce listener, qui ne bloque pas ce préfixe) ; on vérifie
-        // simplement qu'aucun comportement "back-office" n'apparaît, via le
-        // préfixe refusé le plus proche (uploadsx) déjà couvert ci-dessus.
+        // /uploads/** : le listener laisse passer (fichier absent -> 404 du
+        // routeur, pas la 404 « nue » du listener). En prod, un fichier
+        // existant y est servi par Caddy sans PHP.
         $this->client->request('GET', 'http://api.test.invalid/uploads/anything.png');
         self::assertNotSame('Not Found', $this->client->getResponse()->getContent());
     }

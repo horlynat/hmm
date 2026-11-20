@@ -27,7 +27,13 @@ use Symfony\Component\HttpKernel\KernelEvents;
  *  - /uploads/**    : médias publics (next/image, cf. remotePatterns) ;
  *  - /newsletter/** : liens de confirmation/désinscription cliqués depuis un
  *                     client mail par un visiteur sans compte.
- * Tout le reste (back-office, assets /build, /_components…) répond 404 ici.
+ * Tout le reste ATTEINT PAR PHP (back-office, /_components…) répond 404 ici.
+ *
+ * Limite assumée : en prod, Caddy (`php_server` + `file_server`, cf.
+ * frankenphp/Caddyfile) sert DIRECTEMENT tout fichier existant de public/
+ * (`/build/**`, `/bundles/**`, `/uploads/**`, et tout autre fichier statique)
+ * sans jamais passer par PHP — ce listener ne les voit donc pas. Pour ces
+ * chemins, la seule barrière sur l'hôte API est le routeur Traefik.
  *
  * Réponse : 404 nue, identique pour toute route existante ou non (aucune
  * indication que le back-office existe sur ce serveur). Priorité 256 : avant
