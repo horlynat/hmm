@@ -9,10 +9,21 @@
 # premier déploiement : migrations toujours avant le worker, sinon collision
 # sur la table messenger_messages (auto_setup du transport doctrine).
 #
-# BACKEND_IMAGE_TAG : tag de l'image ghcr.io/horlynat/hmm-backend à déployer
-# (sha du commit, ou tag antérieur pour un rollback manuel). Défaut "latest"
-# pour un lancement manuel direct sur le VPS.
+# Usage : deploy-remote.sh [TAG]
+# TAG : tag de l'image ghcr.io/horlynat/hmm-backend à déployer (sha hex du
+# commit, 7 à 40 caractères, ou "latest" ; tag antérieur pour un rollback
+# manuel). À défaut d'argument : variable BACKEND_IMAGE_TAG (ancien mode
+# d'appel), puis "latest" (lancement manuel direct sur le VPS). Validé
+# ci-dessous AVANT tout usage — c'est aussi la forme exacte qu'accepte la
+# commande forcée SSH (deploy-ssh-gate.sh).
 set -euo pipefail
+
+BACKEND_IMAGE_TAG="${1:-${BACKEND_IMAGE_TAG:-latest}}"
+if [[ ! "$BACKEND_IMAGE_TAG" =~ ^([0-9a-f]{7,40}|latest)$ ]]; then
+  echo "Tag d'image invalide : '${BACKEND_IMAGE_TAG}' (attendu : sha hex 7-40 car. ou 'latest')." >&2
+  exit 2
+fi
+export BACKEND_IMAGE_TAG
 
 # rsync tourne avec --no-perms (cf. deploy.yml -- deploy n'est pas
 # propriétaire de ces dossiers, cf. README §11) : les fichiers fraîchement
@@ -46,9 +57,19 @@ check_secrets() {
 }
 check_secrets
 
-export BACKEND_IMAGE_TAG="${BACKEND_IMAGE_TAG:-latest}"
-
 COMPOSE=(docker compose --env-file .env.prod -f docker-compose.prod.yml)
+
+# Passerelle éphémère du build frontend (service api-build-gateway, profil
+# `build`, cf. docker-compose.prod.yml) : publiée sur l'IP de docker0 et
+# jointe par les RUN du build sous le nom `backend`. Même valeur par défaut
+# que dans le compose ; surcharger les deux via .env.prod si docker0 n'est
+# pas en 172.17.0.1.
+BUILD_GATEWAY_BIND="$(sed -n 's/^HMM_BUILD_GATEWAY_BIND=//p' .env.prod 2>/dev/null | tail -n1 | tr -d "\"' ")"
+BUILD_GATEWAY_BIND="${BUILD_GATEWAY_BIND:-172.17.0.1}"
+if [[ ! "$BUILD_GATEWAY_BIND" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+  echo "HMM_BUILD_GATEWAY_BIND invalide dans .env.prod : '${BUILD_GATEWAY_BIND}'" >&2
+  exit 2
+fi
 
 # `docker compose up` renomme temporairement l'ancien conteneur pendant un
 # recreate (<hash>_<service>) avant de le supprimer -- rencontré en prod un
@@ -69,8 +90,19 @@ up_with_retry() {
   return 1
 }
 
-echo "==> Backend (${BACKEND_IMAGE_TAG}) : pull + traefik/database à jour"
-"${COMPOSE[@]}" pull backend
+# Pull de TOUTES les images du portfolio tirées d'un registre (et plus
+# seulement backend) : avec des images épinglées par digest, c'est ce qui
+# applique réellement une montée de version de mysql, adminer... dès le
+# déploiement qui la contient. Exclus volontairement :
+#  - frontend : construit localement ci-dessous ;
+#  - traefik et postfixadmin : partagés avec un autre projet du VPS, gérés
+#    hors de ce pipeline (postfixadmin tourne en outre sur une image LOCALE
+#    `postfixadmin:dbg`, absente de tout registre : un pull échouerait et
+#    ferait échouer tout le déploiement — cf. README §13).
+PULL_SERVICES=(database backend messenger-worker adminer)
+echo "==> Images (${BACKEND_IMAGE_TAG}) : pull ${PULL_SERVICES[*]} + api-build-gateway"
+"${COMPOSE[@]}" pull "${PULL_SERVICES[@]}"
+"${COMPOSE[@]}" --profile build pull api-build-gateway
 
 # Bind mounts écrits par www-data (UID/GID 82 dans l'image Alpine du
 # backend, cf. Dockerfile) : logs applicatifs et sauvegardes DB. Docker les
@@ -110,10 +142,21 @@ up_with_retry messenger-worker
 # Comme `build --no-cache` rejoue `next build` à CHAQUE déploiement, cette
 # fenêtre de quelques secondes de backend froid faisait échouer tout le
 # déploiement (constaté en prod : run 33173366683, "Contenu de la page
-# d'accueil indisponible" au prerender de /en). On sonde donc ici, via le
-# même port loopback que le build (127.0.0.1:8000), jusqu'à ce que les
+# d'accueil indisponible" au prerender de /en). On sonde donc ici, via la
+# même passerelle que le build (api-build-gateway, Host `backend` comme les
+# RUN du build -- accepté par framework.trusted_hosts), jusqu'à ce que les
 # endpoints critiques répondent réellement -- ce qui les laisse aussi chauds
 # pour le build qui suit.
+#
+# La passerelle n'existe que le temps du build : supprimée juste après, et
+# dans tous les cas à la sortie du script (échec compris).
+stop_build_gateway() {
+  "${COMPOSE[@]}" --profile build rm -sf api-build-gateway >/dev/null 2>&1 || true
+}
+trap stop_build_gateway EXIT
+echo "==> Passerelle de build (${BUILD_GATEWAY_BIND}:8000 -> backend:80)"
+"${COMPOSE[@]}" --profile build up -d --no-deps api-build-gateway
+
 echo "==> Attente API prête (endpoints qui font échouer next build s'ils traînent)"
 wait_for_api() {
   local ep deadline
@@ -123,8 +166,8 @@ wait_for_api() {
   for ep in home_contents about_contents; do
     deadline=$((SECONDS + 120))
     until curl -fsS --max-time 10 -o /dev/null \
-      -H 'Accept: application/ld+json' \
-      "http://127.0.0.1:8000/api/${ep}"; do
+      -H 'Accept: application/ld+json' -H 'Host: backend' \
+      "http://${BUILD_GATEWAY_BIND}:8000/api/${ep}"; do
       if ((SECONDS >= deadline)); then
         echo "API /${ep} toujours injoignable après 120 s -- build frontend annulé." >&2
         return 1
@@ -136,7 +179,7 @@ wait_for_api() {
 }
 wait_for_api
 
-echo "==> Frontend : build local (a besoin de backend joignable en 127.0.0.1:8000 pendant le build SSG/ISR, cf. Dockerfile)"
+echo "==> Frontend : build local (backend joint via api-build-gateway pendant le build SSG/ISR, cf. Dockerfile)"
 # --no-cache : constaté en prod, le cache de build Docker a repris tel quel
 # les layers COPY . . et npm run build sur un déploiement où le code source
 # avait pourtant changé (rsync avait bien livré le nouveau frontend/) --
@@ -148,9 +191,13 @@ echo "==> Frontend : build local (a besoin de backend joignable en 127.0.0.1:800
 # rebuild complet à chaque déploiement plutôt que de rejouer ce genre de
 # panne silencieuse.
 "${COMPOSE[@]}" build --no-cache frontend
+stop_build_gateway
 up_with_retry frontend
 
 echo "==> Reste de la stack (postfixadmin...) + nettoyage des orphelins"
+# Rappel : relance TOUT service arrêté à la main (docker compose stop X) —
+# pour garder un service arrêté, le retirer du compose, pas seulement le
+# stopper (cf. README §6).
 # Sans --wait ici, ce up recréait parfois backend/messenger-worker une 2e
 # fois (Compose réconcilie tout le stack à ce stade) sans attendre leur
 # healthcheck avant les curls de vérification finale juste après -- constaté
@@ -166,6 +213,14 @@ echo "==> État final"
 echo "==> Vérification santé publique"
 curl -sf -o /dev/null -w "horlynat.com      : %{http_code}\n" https://horlynat.com
 curl -sf -o /dev/null -w "api.horlynat.com  : %{http_code}\n" https://api.horlynat.com/api
+# Le back-office ne doit PAS être servi par api. (routeur limité à
+# /api, /uploads, /newsletter) : 404 attendu, tout autre code = régression.
+code="$(curl -s -o /dev/null -w '%{http_code}' https://api.horlynat.com/login || true)"
+if [[ "$code" != "404" ]]; then
+  echo "ALERTE : https://api.horlynat.com/login renvoie ${code} (404 attendu) -- back-office exposé hors dark. ?" >&2
+  exit 1
+fi
+echo "api.horlynat.com/login : 404 (attendu)"
 
 # Nettoyage Docker -- seulement une fois le déploiement confirmé sain
 # ci-dessus (jamais avant : un rollback manuel entre deux étapes doit garder
