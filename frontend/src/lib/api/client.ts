@@ -1,36 +1,16 @@
+import "server-only";
+
 /**
- * Client API serveur uniquement — jamais importé depuis un Client Component.
+ * Client API serveur uniquement — jamais importé depuis un Client Component
+ * (garanti par `server-only`).
  *
  * `apiFetch`/`apiPost` gèrent l'échec en douceur (null / objet d'erreur)
  * plutôt que de faire planter la page, pour tolérer un backend indisponible
  * ou une ressource momentanément non exposée publiquement.
  */
 
-import { headers } from "next/headers";
-
-const API_URL = process.env.API_URL ?? "http://127.0.0.1:8000/api";
-
-/**
- * IP + User-Agent du vrai visiteur, à transmettre aux POST backend émis par
- * ce client (inscription, contact, devis, témoignages...). Sans ça, le
- * backend ne voit que la requête serveur-à-serveur de CE conteneur Next.js —
- * les rate limiters IP (registration_attempt, public_form_submission) et les
- * journaux deviennent aveugles à la vraie origine. SYMFONY_TRUSTED_PROXIES
- * couvre déjà le réseau Docker interne (cf. main/infra/README.md). Même
- * pattern que src/lib/auth/actions.ts et app/api/ai-assistant/chat/route.ts.
- * Toujours appelé depuis une Server Action / route handler (jamais un
- * contexte statique/ISR) : `headers()` y est valide.
- */
-async function forwardedVisitorHeaders(): Promise<Record<string, string>> {
-  const h = await headers();
-  const forwardedFor = h.get("x-forwarded-for") ?? h.get("x-real-ip") ?? "";
-  const userAgent = h.get("user-agent") ?? "";
-
-  return {
-    ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
-    ...(userAgent ? { "User-Agent": userAgent } : {}),
-  };
-}
+import { API_URL } from "@/lib/auth/config";
+import { forwardedVisitorHeaders } from "@/lib/http/visitor";
 
 /**
  * Délai maximal d'un appel API. Sans lui, un backend lent ou injoignable
@@ -45,6 +25,11 @@ interface FetchOptions {
   revalidate?: number | false;
 }
 
+/**
+ * Lecture de contenu public, mise en cache (SSG/ISR, tags de revalidation).
+ * N'envoie volontairement AUCUN en-tête visiteur : appelée au build, `headers()`
+ * y est indisponible — et une réponse en cache est partagée par tous.
+ */
 export async function apiFetch<T>(
   path: string,
   options: FetchOptions = {},
@@ -57,6 +42,34 @@ export async function apiFetch<T>(
         tags: options.tags,
         revalidate: options.revalidate ?? 3600,
       },
+    });
+
+    if (!res.ok) {
+      console.error(`[api] GET ${path} -> ${res.status} ${res.statusText}`);
+      return null;
+    }
+
+    return (await res.json()) as T;
+  } catch (error) {
+    console.error(`[api] GET ${path} failed`, error);
+    return null;
+  }
+}
+
+/**
+ * Lecture publique émise PENDANT une requête visiteur (jamais au build/ISR) :
+ * pas de cache, et en-têtes du vrai visiteur transmis — sans eux, les
+ * limiteurs par IP du backend (ex. consultation d'un ticket invité) seraient
+ * partagés par tous les visiteurs, l'IP vue étant celle de ce conteneur.
+ * `apiFetch` ci-dessus reste réservé au contenu public mis en cache.
+ */
+export async function apiFetchDynamic<T>(path: string): Promise<T | null> {
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      headers: { Accept: "application/ld+json", ...(await forwardedVisitorHeaders()) },
+      cache: "no-store",
+      redirect: "manual",
+      signal: AbortSignal.timeout(API_TIMEOUT_MS),
     });
 
     if (!res.ok) {

@@ -1,3 +1,4 @@
+import "server-only";
 import { apiFetch, extractCollection, pickLocalized, pickLocalizedList } from "./client";
 import { getMediaUrl } from "@/lib/media";
 import type { AboutContent } from "@/lib/types";
