@@ -1,12 +1,32 @@
 # syntax=docker/dockerfile:1
 
+# Image PHP unique, VERSION FIGÉE, partagée par le build Composer et l'image
+# finale. Auparavant : `dunglas/frankenphp:1-php8.4-alpine` (tag flottant) +
+# `composer:2` — la prod tournait en PHP 8.4.25 (build du 2026-08-29) et
+# l'étage Composer en PHP 8.5.6, tous deux vulnérables à PHP2Shell
+# (CVE-2026-109618 / CVE-2026-109619, RCE non authentifiée exploitée, corrigée
+# en 8.4.27 / 8.5.12). Monter de version = changer CETTE ligne. Garde-fous :
+# la contrainte "php" de composer.json (~8.4.27 || >=8.5.12) fait échouer
+# `composer install` ci-dessous — donc le build — sur tout PHP non corrigé
+# (l'étage vendor utilise la même image que la prod), et
+# vendor/composer/platform_check.php refuse en plus de démarrer l'app sous
+# 8.4.27 (borne basse seulement : un 8.5.0–8.5.11 n'y est pas détecté, seul
+# le `composer install` du build l'arrête).
+ARG FRANKENPHP_IMAGE=dunglas/frankenphp:1.13.6-php8.4.28-alpine
+
 # ---- Stage 1 : dépendances Composer (prod, sans dev) ----
-FROM composer:2 AS vendor
-WORKDIR /app
+# Même PHP que la prod (et non l'image composer:2, dont le PHP embarqué suit
+# son propre calendrier) : seul le binaire composer est repris de l'image
+# officielle, à version figée.
+FROM ${FRANKENPHP_IMAGE} AS vendor
+USER root
+COPY --from=composer:2.9.8 /usr/bin/composer /usr/bin/composer
+ENV COMPOSER_ALLOW_SUPERUSER=1
+WORKDIR /build
 # ext-xsl : requis par twig/inky-extra (templates email). ext-bcmath : requis
-# par composer.json (App\Entity\Project et consorts) depuis qu'on l'a
-# déclaré explicitement — les deux absents de l'image composer:2 de base.
-RUN apk add --no-cache libxslt-dev $PHPIZE_DEPS && docker-php-ext-install xsl bcmath
+# par composer.json (App\Entity\Project et consorts). ext-zip : extraction
+# des archives --prefer-dist (pas d'unzip dans l'image de base).
+RUN install-php-extensions xsl bcmath zip
 COPY composer.json composer.lock symfony.lock ./
 RUN composer install \
     --no-dev \
@@ -29,14 +49,14 @@ RUN composer dump-autoload --optimize --no-dev --classmap-authoritative \
 # déjà présent.
 FROM node:22-alpine AS assets
 WORKDIR /app
-COPY --from=vendor /app/vendor ./vendor
+COPY --from=vendor /build/vendor ./vendor
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 RUN npm run build
 
 # ---- Stage 3 : image finale FrankenPHP ----
-FROM dunglas/frankenphp:1-php8.4-alpine AS app
+FROM ${FRANKENPHP_IMAGE} AS app
 
 # L'image de base bascule déjà sur www-data (son propre USER) — remonter en
 # root explicitement, sinon les RUN/COPY qui suivent (et in fine l'ENTRYPOINT,
@@ -83,7 +103,7 @@ ENV APP_ENV=prod \
 
 WORKDIR /app
 
-COPY --from=vendor --chown=www-data:www-data /app /app
+COPY --from=vendor --chown=www-data:www-data /build /app
 COPY --from=assets --chown=www-data:www-data /app/public/build /app/public/build
 COPY --chown=www-data:www-data frankenphp/Caddyfile /etc/caddy/Caddyfile
 COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
