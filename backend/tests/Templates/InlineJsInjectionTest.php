@@ -125,6 +125,9 @@ final class InlineJsInjectionTest extends FunctionalTestCase
             }
         }
 
+        // Avatars : initiales locales, plus aucun nom/email envoyé à ui-avatars.com (RGPD).
+        self::assertStringNotContainsString('ui-avatars.com', $html, "$url : avatar tiers.");
+
         foreach ($xpath->query('//script') ?: [] as $script) {
             self::assertStringNotContainsString('alert(1)', (string) $script->textContent, "$url : charge dans un <script>.");
         }
