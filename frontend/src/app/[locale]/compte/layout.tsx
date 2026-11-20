@@ -3,6 +3,12 @@ import { redirect } from "@/i18n/navigation";
 import { AccountShell } from "@/components/sections/AccountShell";
 import { TwoFactorSetupGate } from "@/components/sections/TwoFactorSetupGate";
 import { getCurrentUser } from "@/lib/auth/session";
+import { mustSetUpTwoFactor } from "@/lib/auth/two-factor";
+
+// Rendu toujours dynamique (déjà le cas via les cookies de session, rendu
+// explicite ici) : la CSP stricte par nonce appliquée à /compte/** (cf.
+// src/proxy.ts) exige un nonce généré à chaque requête.
+export const dynamic = "force-dynamic";
 
 /**
  * Garde serveur de l'espace compte : toute page sous /compte exige une session
@@ -35,7 +41,7 @@ export default async function CompteLayout({
   // soit la page /compte/* demandée — TwoFactorSetupGate déclenche un
   // router.refresh() une fois l'activation confirmée, qui refait ce rendu
   // serveur et laisse la vraie page s'afficher normalement.
-  if (!user.roles.includes("ROLE_EDITOR") && !user.isTwoFactorEnabled) {
+  if (mustSetUpTwoFactor(user)) {
     return (
       <main id="main-content" className="flex-1">
         <TwoFactorSetupGate />
