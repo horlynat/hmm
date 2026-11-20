@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\EventSubscriber\PublicApiHostRestrictionSubscriber;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RequestContext;
@@ -25,7 +26,8 @@ use Symfony\Component\Routing\RouterInterface;
  * - backOfficeUrl() : BACKOFFICE_URL — hôte du back-office (ex.
  *                     https://dark.horlynat.com), pour les liens destinés aux
  *                     comptes ROLE_ADMIN+ (réinitialisation, vérification,
- *                     profil…). Retombe sur DEFAULT_URI si non défini (dev).
+ *                     profil…). Obligatoire en prod (exception sinon) ;
+ *                     retombe sur DEFAULT_URI hors prod.
  *
  * Le contexte du routeur est restauré dans tous les cas (finally) : le
  * service est partagé entre requêtes en mode worker FrankenPHP.
@@ -36,8 +38,12 @@ final class MailLinkGenerator
         private readonly RouterInterface $router,
         #[Autowire(env: 'DEFAULT_URI')]
         private readonly string $publicBaseUrl,
-        #[Autowire('%env(default:app.default_uri:BACKOFFICE_URL)%')]
-        private readonly string $backOfficeBaseUrl,
+        #[Autowire('%env(default::BACKOFFICE_URL)%')]
+        private readonly ?string $backOfficeBaseUrl,
+        #[Autowire('%env(default::PUBLIC_API_HOSTS)%')]
+        private readonly ?string $publicApiHosts,
+        #[Autowire('%kernel.environment%')]
+        private readonly string $environment,
     ) {
     }
 
@@ -54,7 +60,37 @@ final class MailLinkGenerator
      */
     public function backOfficeUrl(string $route, array $parameters = []): string
     {
-        return $this->generate($this->backOfficeBaseUrl, $route, $parameters);
+        return $this->generate($this->backOfficeBase(), $route, $parameters);
+    }
+
+    /**
+     * Base des liens back-office.
+     *
+     * En prod, échec FRANC (exception, donc aucun e-mail envoyé) plutôt qu'un
+     * repli silencieux si BACKOFFICE_URL est vide ou désigne un hôte de
+     * PUBLIC_API_HOSTS : un lien admin vers l'hôte API mènerait à une 404
+     * (P0 #4) — ou, si cette restriction sautait, vers un back-office hors
+     * Cloudflare Access. Hors prod (dev/test), repli sur DEFAULT_URI.
+     */
+    private function backOfficeBase(): string
+    {
+        $base = trim((string) $this->backOfficeBaseUrl);
+        $isProd = 'prod' === $this->environment;
+
+        if ('' === $base) {
+            if ($isProd) {
+                throw new \LogicException('BACKOFFICE_URL doit être défini en production (base des liens e-mail des comptes back-office, ex. https://dark.horlynat.com).');
+            }
+
+            return $this->publicBaseUrl;
+        }
+
+        $host = PublicApiHostRestrictionSubscriber::normalizeHost((string) parse_url($base, \PHP_URL_HOST));
+        if ($isProd && \in_array($host, PublicApiHostRestrictionSubscriber::parseHostList($this->publicApiHosts), true)) {
+            throw new \LogicException(sprintf('BACKOFFICE_URL (%s) ne doit pas désigner un hôte de PUBLIC_API_HOSTS : le back-office n\'y est pas servi.', $base));
+        }
+
+        return $base;
     }
 
     /**
