@@ -1,11 +1,15 @@
+import "server-only";
+
 /**
  * Helpers de session côté serveur uniquement (utilisent `next/headers`).
- * Ne jamais importer depuis un Client Component.
+ * Ne jamais importer depuis un Client Component (garanti par `server-only`).
  */
 
 import { cache } from "react";
 import { cookies } from "next/headers";
-import { API_URL, SESSION_COOKIE } from "./config";
+import { LEGACY_SESSION_COOKIE, LEGACY_SESSION_COOKIE_ISSUED_BEFORE, sessionCookieName } from "./config";
+import { backendFetch, enforceTwoFactor } from "@/lib/api/backend";
+import { apiPath, parseResourceId } from "@/lib/api/path";
 import { CURRENCY_COOKIE, DEFAULT_CURRENCY, isCurrency } from "@/lib/currency/config";
 import type {
   SessionUser,
@@ -42,10 +46,24 @@ export function decodeJwt(token: string): JwtPayload | null {
   }
 }
 
-/** Lit le JWT courant depuis le cookie httpOnly, ou null. */
+/**
+ * Lit le JWT courant depuis le cookie httpOnly, ou null. Migration douce du
+ * préfixe `__Host-` (cf. config.ts) : l'ancien cookie `hmm_token` est encore
+ * accepté s'il est seul présent ET émis avant la fin de migration (cf.
+ * LEGACY_SESSION_COOKIE_ISSUED_BEFORE) — il expire de lui-même avec le JWT
+ * qu'il porte et n'est plus jamais réécrit (setSessionCookie le supprime).
+ */
 export async function getToken(): Promise<string | null> {
   const store = await cookies();
-  return store.get(SESSION_COOKIE)?.value ?? null;
+  const name = sessionCookieName();
+  const current = store.get(name)?.value;
+  if (current) return current;
+  if (name === LEGACY_SESSION_COOKIE) return null;
+
+  const legacy = store.get(LEGACY_SESSION_COOKIE)?.value;
+  if (!legacy) return null;
+  const iat = decodeJwt(legacy)?.iat;
+  return typeof iat === "number" && iat < LEGACY_SESSION_COOKIE_ISSUED_BEFORE ? legacy : null;
 }
 
 /** Pose le cookie httpOnly de session, avec une expiration alignée sur celle du JWT. */
@@ -56,19 +74,60 @@ export async function setSessionCookie(token: string): Promise<void> {
     ? Math.max(0, payload.exp - Math.floor(Date.now() / 1000))
     : 3600;
 
-  store.set(SESSION_COOKIE, token, {
+  const name = sessionCookieName();
+  // `__Host-` : Secure + Path=/ + aucun attribut Domain (exigences du préfixe).
+  store.set(name, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge,
   });
+  if (name !== LEGACY_SESSION_COOKIE) store.delete(LEGACY_SESSION_COOKIE);
 }
 
-/** Supprime le cookie de session (déconnexion). */
+/** Supprime le cookie de session (déconnexion) — nouveau ET ancien nom. */
 export async function clearSessionCookie(): Promise<void> {
   const store = await cookies();
-  store.delete(SESSION_COOKIE);
+  const name = sessionCookieName();
+  if (name.startsWith("__Host-")) {
+    // Un cookie `__Host-` n'est remplacé/supprimé par le navigateur que si
+    // l'en-tête Set-Cookie respecte lui aussi le préfixe (Secure, Path=/).
+    store.set(name, "", { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 0 });
+  } else {
+    store.delete(name);
+  }
+  if (name !== LEGACY_SESSION_COOKIE) store.delete(LEGACY_SESSION_COOKIE);
+}
+
+/**
+ * GET authentifié générique pour les lectures de l'espace /compte. Renvoie
+ * `null` si non authentifié, en cas d'erreur réseau ou de statut non-2xx.
+ * Si le backend répond 403 `2fa_required` (compte soumis à la 2FA
+ * obligatoire sans 2FA active), redirige vers la mise en place de la 2FA —
+ * hors du try/catch, `redirect()` levant NEXT_REDIRECT.
+ */
+async function authedGet<T>(label: string, path: string): Promise<T | null> {
+  const token = await getToken();
+  if (!token) return null;
+
+  let res: Response;
+  try {
+    res = await backendFetch(path, { token });
+  } catch (error) {
+    console.error(`[auth] GET ${label} failed`, error);
+    return null;
+  }
+
+  await enforceTwoFactor(res);
+  if (!res.ok) return null;
+
+  try {
+    return (await res.json()) as T;
+  } catch (error) {
+    console.error(`[auth] GET ${label} invalid JSON`, error);
+    return null;
+  }
 }
 
 /**
@@ -79,6 +138,10 @@ export async function clearSessionCookie(): Promise<void> {
  * ET chaque page appellent tous deux `getCurrentUser()` — sans ça, une seule
  * navigation ré-authentifie plusieurs fois sur le firewall API stateless,
  * ce qui rejoue tout effet de bord de l'authentification à chaque fois).
+ *
+ * Volontairement SANS redirection 2FA : GET /api/me reste accessible à un
+ * compte sans 2FA active (le layout /compte s'en sert justement pour afficher
+ * l'écran de mise en place) — y rediriger créerait une boucle.
  */
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const token = await getToken();
@@ -88,15 +151,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     const currencyCookie = (await cookies()).get(CURRENCY_COOKIE)?.value;
     const currency = isCurrency(currencyCookie) ? currencyCookie : DEFAULT_CURRENCY;
 
-    const res = await fetch(`${API_URL}/me?currency=${currency}`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-
+    const res = await backendFetch(`/me?currency=${encodeURIComponent(currency)}`, { token });
     if (!res.ok) return null;
 
     return (await res.json()) as SessionUser;
@@ -113,26 +168,9 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
  * distinction n'est faite pour ne pas révéler l'existence d'un projet privé).
  */
 export async function getMyProject(id: number): Promise<SessionProjectDetail | null> {
-  const token = await getToken();
-  if (!token) return null;
-
-  try {
-    const res = await fetch(`${API_URL}/me/projects/${id}`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!res.ok) return null;
-
-    return (await res.json()) as SessionProjectDetail;
-  } catch (error) {
-    console.error("[auth] GET /me/projects/:id failed", error);
-    return null;
-  }
+  const projectId = parseResourceId(id);
+  if (projectId === null) return null;
+  return authedGet<SessionProjectDetail>("/me/projects/:id", apiPath`/me/projects/${projectId}`);
 }
 
 /**
@@ -143,27 +181,8 @@ export async function getMyProject(id: number): Promise<SessionProjectDetail | n
  * planter la page — l'appelant décide de l'affichage dans ce cas.
  */
 export async function getAvailableProjects(): Promise<AvailableProject[] | null> {
-  const token = await getToken();
-  if (!token) return null;
-
-  try {
-    const res = await fetch(`${API_URL}/me/projects/available`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!res.ok) return null;
-
-    const body = (await res.json()) as { projects: AvailableProject[] };
-    return body.projects;
-  } catch (error) {
-    console.error("[auth] GET /me/projects/available failed", error);
-    return null;
-  }
+  const body = await authedGet<{ projects: AvailableProject[] }>("/me/projects/available", "/me/projects/available");
+  return body ? body.projects : null;
 }
 
 /**
@@ -173,27 +192,8 @@ export async function getAvailableProjects(): Promise<AvailableProject[] | null>
  * l'appelant décide de l'affichage dans ce cas plutôt que de faire planter la page.
  */
 export async function getMyJoinRequests(): Promise<SessionJoinRequest[] | null> {
-  const token = await getToken();
-  if (!token) return null;
-
-  try {
-    const res = await fetch(`${API_URL}/me/projects/join-requests`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!res.ok) return null;
-
-    const body = (await res.json()) as { requests: SessionJoinRequest[] };
-    return body.requests;
-  } catch (error) {
-    console.error("[auth] GET /me/projects/join-requests failed", error);
-    return null;
-  }
+  const body = await authedGet<{ requests: SessionJoinRequest[] }>("/me/projects/join-requests", "/me/projects/join-requests");
+  return body ? body.requests : null;
 }
 
 /**
@@ -204,76 +204,26 @@ export async function getMyJoinRequests(): Promise<SessionJoinRequest[] | null> 
  * `notFound()`.
  */
 export async function getMyProjectTeam(projectId: number): Promise<SessionProjectTeam | null> {
-  const token = await getToken();
-  if (!token) return null;
-
-  try {
-    const res = await fetch(`${API_URL}/me/projects/${projectId}/team`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!res.ok) return null;
-
-    return (await res.json()) as SessionProjectTeam;
-  } catch (error) {
-    console.error("[auth] GET /me/projects/:id/team failed", error);
-    return null;
-  }
+  const id = parseResourceId(projectId);
+  if (id === null) return null;
+  return authedGet<SessionProjectTeam>("/me/projects/:id/team", apiPath`/me/projects/${id}/team`);
 }
 
 /** Tâches d'un projet auquel l'utilisateur courant est rattaché. Renvoie [] si non authentifié, introuvable, ou non-rattaché. */
 export async function getMyProjectTasks(projectId: number): Promise<SessionTask[]> {
-  const token = await getToken();
-  if (!token) return [];
-
-  try {
-    const res = await fetch(`${API_URL}/me/projects/${projectId}/tasks`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!res.ok) return [];
-
-    const body = (await res.json()) as { tasks: SessionTask[] };
-    return body.tasks;
-  } catch (error) {
-    console.error("[auth] GET /me/projects/:id/tasks failed", error);
-    return [];
-  }
+  const id = parseResourceId(projectId);
+  if (id === null) return [];
+  const body = await authedGet<{ tasks: SessionTask[] }>("/me/projects/:id/tasks", apiPath`/me/projects/${id}/tasks`);
+  return body?.tasks ?? [];
 }
 
 /** Suivi du temps d'un projet (toute l'équipe). Renvoie un objet vide si non authentifié, introuvable, ou non-rattaché. */
 export async function getMyProjectTimeTracking(projectId: number): Promise<SessionTimeTracking> {
   const empty: SessionTimeTracking = { entries: [], totalMinutes: 0, formattedTotalTime: "0h00", mineMinutes: 0, mineFormattedTime: "0h00" };
-  const token = await getToken();
-  if (!token) return empty;
-
-  try {
-    const res = await fetch(`${API_URL}/me/projects/${projectId}/time-entries`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!res.ok) return empty;
-
-    return (await res.json()) as SessionTimeTracking;
-  } catch (error) {
-    console.error("[auth] GET /me/projects/:id/time-entries failed", error);
-    return empty;
-  }
+  const id = parseResourceId(projectId);
+  if (id === null) return empty;
+  const body = await authedGet<SessionTimeTracking>("/me/projects/:id/time-entries", apiPath`/me/projects/${id}/time-entries`);
+  return body ?? empty;
 }
 
 /**
@@ -283,74 +233,21 @@ export async function getMyProjectTimeTracking(projectId: number): Promise<Sessi
  * peut afficher ces sections même en cas d'erreur réseau ponctuelle.
  */
 export async function getMyActivity(): Promise<SessionActivity> {
-  const empty: SessionActivity = { history: [], messages: [] };
-  const token = await getToken();
-  if (!token) return empty;
-
-  try {
-    const res = await fetch(`${API_URL}/me/activity`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!res.ok) return empty;
-
-    return (await res.json()) as SessionActivity;
-  } catch (error) {
-    console.error("[auth] GET /me/activity failed", error);
-    return empty;
-  }
+  const body = await authedGet<SessionActivity>("/me/activity", "/me/activity");
+  return body ?? { history: [], messages: [] };
 }
 
 /** Fil de discussion complet d'un projet auquel l'utilisateur courant est rattaché. Renvoie [] si non authentifié, introuvable, ou non-rattaché. */
 export async function getProjectComments(projectId: number): Promise<SessionComment[]> {
-  const token = await getToken();
-  if (!token) return [];
-
-  try {
-    const res = await fetch(`${API_URL}/me/projects/${projectId}/comments`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!res.ok) return [];
-
-    const body = (await res.json()) as { comments: SessionComment[] };
-    return body.comments;
-  } catch (error) {
-    console.error("[auth] GET /me/projects/:id/comments failed", error);
-    return [];
-  }
+  const id = parseResourceId(projectId);
+  if (id === null) return [];
+  const body = await authedGet<{ comments: SessionComment[] }>("/me/projects/:id/comments", apiPath`/me/projects/${id}/comments`);
+  return body?.comments ?? [];
 }
 
 /** Détail d'un devis appartenant à l'utilisateur courant. Renvoie null si non authentifié, introuvable, ou non-propriétaire. */
 export async function getMyQuote(id: number): Promise<SessionQuoteDetail | null> {
-  const token = await getToken();
-  if (!token) return null;
-
-  try {
-    const res = await fetch(`${API_URL}/me/quotes/${id}`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!res.ok) return null;
-
-    return (await res.json()) as SessionQuoteDetail;
-  } catch (error) {
-    console.error("[auth] GET /me/quotes/:id failed", error);
-    return null;
-  }
+  const quoteId = parseResourceId(id);
+  if (quoteId === null) return null;
+  return authedGet<SessionQuoteDetail>("/me/quotes/:id", apiPath`/me/quotes/${quoteId}`);
 }
