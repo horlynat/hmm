@@ -43,6 +43,12 @@ jobs:
 
       - name: PHP 8.4 + extensions (miroir de l'image FrankenPHP de prod)
         uses: shivammathur/setup-php@v2
+        # update: true — toujours le dernier correctif 8.4, jamais le PHP
+        # préinstallé (potentiellement antérieur) du runner : composer.json
+        # exige ~8.4.27 (correctif PHP2Shell), un PHP plus ancien ferait
+        # échouer `composer install`.
+        env:
+          update: true
         with:
           php-version: "8.4"
           extensions: bcmath, ctype, iconv, intl, xsl, pdo_mysql, zip, opcache
