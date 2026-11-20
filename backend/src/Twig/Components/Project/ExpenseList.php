@@ -13,11 +13,23 @@ use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
+use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\UX\TwigComponent\Attribute\PostMount;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * Liste réactive des dépenses d'un projet avec workflow d'approbation.
  * Toute la logique budgétaire est déléguée à App\Service\ExpenseWorkflow.
+ *
+ * P1 #6 (IDOR) : $project N'EST PLUS writable. Avant, un visiteur autorisé sur
+ * UN projet pouvait renvoyer ce composant avec `"updated":{"project":<autre
+ * id>}` — la ré-hydratation d'une LiveProp writable n'est jamais revérifiée
+ * par un voter, contrairement au rendu initial (contrôlé par le contrôleur
+ * parent). En plus de retirer writable, un hook #[PostMount] revérifie
+ * PROJECT_VIEW à CHAQUE (re)montage du composant — y compris le rendu
+ * initial — en défense en profondeur (ex: accès révoqué entre deux
+ * affichages d'un même onglet resté ouvert).
  */
 #[AsLiveComponent(
     name: 'project:expense_list',
@@ -27,8 +39,36 @@ class ExpenseList extends AbstractController
 {
     use DefaultActionTrait;
 
-    #[LiveProp(writable: true)]
+    #[LiveProp]
     public Project $project;
+
+    public function __construct(private readonly Security $security)
+    {
+    }
+
+    /**
+     * Revalidation d'accès au MONTAGE initial du composant (le seul moment où
+     * #[PostMount] s'exécute — les ré-affichages AJAX ultérieurs passent par
+     * LiveComponentHydrator::hydrate(), qui n'appelle jamais ce hook ; c'est
+     * pourquoi $project n'est plus writable, seul vrai rempart contre un
+     * échange d'identité côté AJAX). Security est injecté au constructeur
+     * (pas en paramètre de méthode) : ce hook est invoqué par réflexion
+     * directe avec le seul tableau de données de montage, sans passer par le
+     * résolveur d'arguments de Symfony — aucun service n'y est autowiré.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    #[PostMount]
+    public function checkAccess(array $data): array
+    {
+        if (!$this->security->isGranted(ProjectVoter::VIEW, $this->project)) {
+            throw new AccessDeniedException('Vous n\'avez pas accès à ce projet.');
+        }
+
+        return $data;
+    }
 
     #[LiveAction]
     public function approveExpense(#[LiveArg] int $expenseId, EntityManagerInterface $em, ExpenseWorkflow $workflow, \App\Service\ProjectNotifier $notifier): void

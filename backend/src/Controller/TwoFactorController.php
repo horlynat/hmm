@@ -43,6 +43,7 @@ class TwoFactorController extends AbstractController
     public function __construct(
         private readonly AccountLinkResolver $accountLinkResolver,
         private readonly RequestStack $requestStack,
+        private readonly \App\Security\TwoFactorMandatePolicy $twoFactorMandatePolicy,
     ) {
     }
 
@@ -265,13 +266,13 @@ class TwoFactorController extends AbstractController
     }
 
     /**
-     * Même frontière que AccountStatusSubscriber : la 2FA est obligatoire pour
-     * tout compte de l'espace membre (client/collaborateur, ROLE_USER sans
-     * ROLE_EDITOR), jamais pour le back-office.
+     * Seule source de vérité : App\Security\TwoFactorMandatePolicy (partagée
+     * avec AccountStatusSubscriber et l'API) — espace membre (sans
+     * ROLE_EDITOR) ET désormais back-office ROLE_ADMIN+ (P1 #13).
      */
     private function isTwoFactorMandatoryForCurrentUser(): bool
     {
-        return !$this->isGranted('ROLE_EDITOR');
+        return $this->twoFactorMandatePolicy->isMandatoryFor($this->getCurrentUser());
     }
 
     /**

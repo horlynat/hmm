@@ -13,14 +13,14 @@
 			{{ form_errors(form.fullName, {'attr': {'class': 'field-error'}}) }}
 		</div>
 		<div class="field">
-			{{ form_label(form.email, null, {'label_attr': {'class': 'field-label'}}) }}
-			{{ form_widget(form.email, {'attr': {'class': 'input w-full'}}) }}
-			{{ form_errors(form.email, {'attr': {'class': 'field-error'}}) }}
-		</div>
-		<div class="field">
-			{{ form_label(form.phone, null, {'label_attr': {'class': 'field-label'}}) }}
-			{{ form_widget(form.phone, {'attr': {'class': 'input w-full'}}) }}
-			{{ form_errors(form.phone, {'attr': {'class': 'field-error'}}) }}
+			<label class="field-label">Email</label>
+			<input type="email" class="input w-full input-disabled" value="{{ user.email }}" disabled readonly>
+			{% if app.user == user %}
+				<p class="field-hint mt-1">
+					<a href="{{ path('profile_email_request') }}" class="text-(--color-brand-primary) hover:underline">Changer d'adresse e-mail</a>
+					(confirmation requise depuis la nouvelle adresse).
+				</p>
+			{% endif %}
 		</div>
 	</div>
 </div>
@@ -28,6 +28,13 @@
 <div class="panel">
 	<div class="panel-header"><h2 class="panel-title">Mot de passe</h2></div>
 	<div class="panel-body grid grid-cols-1 md:grid-cols-2 gap-4">
+		{% if app.user == user %}
+			<div class="field md:col-span-2">
+				{{ form_label(form.currentPassword, null, {'label_attr': {'class': 'field-label'}}) }}
+				{{ form_widget(form.currentPassword, {'attr': {'class': 'input w-full'}}) }}
+				{{ form_errors(form.currentPassword, {'attr': {'class': 'field-error'}}) }}
+			</div>
+		{% endif %}
 		<div class="field">
 			{{ form_label(form.plainPassword, null, {'label_attr': {'class': 'field-label'}}) }}
 			{{ form_widget(form.plainPassword, {'attr': {'class': 'input w-full'}}) }}

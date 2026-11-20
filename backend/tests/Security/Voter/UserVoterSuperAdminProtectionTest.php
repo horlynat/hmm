@@ -3,6 +3,7 @@
 namespace App\Tests\Security\Voter;
 
 use App\Entity\User;
+use App\Security\SuperAdminElevationContext;
 use App\Security\Voter\UserVoter;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -19,6 +20,11 @@ use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
  */
 final class UserVoterSuperAdminProtectionTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        SuperAdminElevationContext::reset();
+    }
+
     public function testDormantSuperAdminTargetStaysProtectedFromRegularAdmin(): void
     {
         $target = new User();
@@ -41,8 +47,11 @@ final class UserVoterSuperAdminProtectionTest extends TestCase
         $target->setRoles(['ROLE_ADMIN', 'ROLE_SUPER_ADMIN']);
 
         $elevatedActor = new User();
+        $elevatedActor->setEmail('elevated@test.invalid');
         $elevatedActor->setRoles(['ROLE_ADMIN', 'ROLE_SUPER_ADMIN']);
-        $elevatedActor->setSuperAdminElevatedUntil(new \DateTimeImmutable('+30 minutes'));
+        $until = new \DateTimeImmutable('+30 minutes');
+        $elevatedActor->setSuperAdminElevatedUntil($until);
+        SuperAdminElevationContext::grant('elevated@test.invalid', $until->getTimestamp());
 
         $voter = $this->makeVoter();
 

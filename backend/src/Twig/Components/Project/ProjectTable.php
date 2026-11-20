@@ -16,7 +16,17 @@ use Symfony\UX\LiveComponent\Attribute\AsLiveComponent; // Import de l'attribut 
 use Symfony\UX\LiveComponent\Attribute\LiveAction; // Import de l'attribut d'action[cite: 9]
 use Symfony\UX\LiveComponent\Attribute\LiveProp; // Import de l'attribut de propriété[cite: 9]
 use Symfony\UX\LiveComponent\DefaultActionTrait; // Import du trait par défaut[cite: 9]
+use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\UX\TwigComponent\Attribute\PostMount;
 
+// P1 #6 : ce composant liste TOUS les projets (budgets, clients, équipe) sans
+// filtre — réservé à l'admin. Le rempart principal est la règle
+// access_control ^/_components/admin_project_table (ROLE_ADMIN) de
+// security.yaml : la route HTTP /_components/{nom} est partagée par TOUS les
+// composants, un simple ROLE_USER pouvait donc l'atteindre directement sans
+// jamais passer par /admin. Le #[PostMount] ci-dessous est une seconde
+// barrière, au cas où ce composant serait un jour embarqué ailleurs.
 #[AsLiveComponent(name: 'admin_project_table', template: 'components/project/project_table.html.twig')] // Définition du composant[cite: 9]
 class ProjectTable
 {
@@ -53,10 +63,31 @@ class ProjectTable
     
     private int $limit = 20; // Limite de projets par page[cite: 9]
 
+    /**
+     * Cf. docblock équivalent sur ExpenseList::checkAccess() : Security est
+     * injecté au constructeur, aucun service n'est autowiré en paramètre
+     * d'un hook #[PostMount] (invoqué par réflexion directe par
+     * ComponentFactory, hors du résolveur d'arguments de Symfony).
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    #[PostMount]
+    public function checkAccess(array $data): array
+    {
+        if (!$this->security->isGranted('ROLE_ADMIN')) {
+            throw new AccessDeniedException('Réservé aux administrateurs.');
+        }
+
+        return $data;
+    }
+
     public function __construct(
         private ProjectRepository $projectRepository, // Repository des projets[cite: 9]
         private UserRepository $userRepository, // Repository des utilisateurs[cite: 9]
         private TagRepository $tagRepository, // Repository des tags[cite: 9]
+        private readonly Security $security,
     ) {
     }
 

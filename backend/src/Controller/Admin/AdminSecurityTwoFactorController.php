@@ -23,7 +23,8 @@ use Symfony\Component\Routing\Attribute\Route;
  * admin ne peut pas activer la 2FA à la place d'un utilisateur, seulement
  * la désactiver.
  *
- * 🔒 Sécurité : réservé à SecurityVoter::MANAGE_2FA (ROLE_ADMIN et plus).
+ * 🔒 Sécurité : réservé à SecurityVoter::MANAGE_2FA (ROLE_ADMIN et plus ;
+ * super-admin actuellement élevé si la cible détient le droit super-admin).
  */
 #[Route('/admin/security/2fa', name: 'admin_security_two_factor_')]
 class AdminSecurityTwoFactorController extends AbstractController
@@ -56,6 +57,9 @@ class AdminSecurityTwoFactorController extends AbstractController
 
         $user->setTotpSecret(null);
         $user->setIsTwoFactorEnabled(false);
+        // Les codes de récupération ne survivent jamais à la 2FA (même règle
+        // que TwoFactorController::disable()).
+        $user->setBackupCodes([]);
         $entityManager->flush();
 
         $actor = $this->getUser();

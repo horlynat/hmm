@@ -39,10 +39,13 @@ class FailedLoginAttempt
 
     public function __construct(string $email, string $reason, ?string $ip = null, ?string $userAgent = null)
     {
-        $this->email = $email;
-        $this->reason = $reason;
-        $this->ip = $ip;
-        $this->userAgent = $userAgent;
+        // Tronqué aux longueurs de colonne (P1 #10) : l'e-mail tenté et le
+        // User-Agent sont contrôlés par un anonyme ; un dépassement faisait
+        // échouer le flush (MySQL strict) et donc disparaître l'échec du journal.
+        $this->email = mb_substr($email, 0, 180);
+        $this->reason = mb_substr($reason, 0, 30);
+        $this->ip = null === $ip ? null : mb_substr($ip, 0, 45);
+        $this->userAgent = null === $userAgent ? null : mb_substr($userAgent, 0, 255);
     }
 
     public function getId(): ?int

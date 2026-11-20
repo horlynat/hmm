@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use App\Security\SuperAdminElevationContext;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Common\Collections\Collection;
@@ -143,6 +144,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     private ?\DateTimeImmutable $passwordChangedAt = null;
 
     /**
+     * Version des « jetons » du compte (P1 #8) : incrémentée à chaque
+     * changement/réinitialisation de mot de passe, déconnexion forcée,
+     * changement d'e-mail ou suppression du compte. Elle est embarquée dans
+     * chaque JWT (claim `tv`, cf. App\Security\Api\JwtRevocationSubscriber)
+     * et mémorisée dans chaque session web (App\EventSubscriber\
+     * SessionTokenVersionSubscriber) : tout jeton ou toute session émis avant
+     * l'incrément est refusé à la requête suivante.
+     */
+    #[ORM\Column(options: ['default' => 0])]
+    private int $tokenVersion = 0;
+
+    /**
      * Horodatage de la dernière demande de réinitialisation de mot de passe
      * (SecurityController::forgotPasswordRequest). Sert de jeton d'usage
      * unique côté serveur pour le JWT envoyé par email : ce dernier embarque
@@ -153,6 +166,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
      */
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $passwordResetRequestedAt = null;
+
+    /**
+     * Changement d'e-mail en deux temps (P1 #7) : la nouvelle adresse n'est
+     * JAMAIS écrite directement dans `email` — elle attend ici la
+     * confirmation cliquée depuis cette même nouvelle adresse (cf.
+     * App\Controller\ProfileEmailChangeController). Même mécanique
+     * d'usage unique que $passwordResetRequestedAt : un e-mail change de
+     * contrôle d'accès (c'est le nouvel identifiant de connexion), donc le
+     * même soin que pour un mot de passe.
+     */
+    #[ORM\Column(length: 180, nullable: true)]
+    private ?string $pendingEmail = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $emailChangeRequestedAt = null;
 
     #[ORM\Column(length: 20, nullable: true)]
     #[Groups(["api_user", "api_admin", "collaborator_signup", "client_signup"])]
@@ -281,6 +309,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     public function setEmail(string $email): self
     {
         $this->email = $email;
+        // Toute demande de changement en attente devient sans objet, quel que
+        // soit le chemin par lequel l'e-mail change (confirmation normale,
+        // correction admin...).
+        $this->pendingEmail = null;
+        $this->emailChangeRequestedAt = null;
         return $this;
     }
 
@@ -315,9 +348,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
         return \in_array('ROLE_SUPER_ADMIN', $this->roles, true);
     }
 
+    /**
+     * Élévation active ET portée par la session web courante (cf.
+     * App\Security\SuperAdminElevationContext) : jamais pour un JWT, une
+     * autre session du même compte, la CLI ou un worker.
+     */
     public function isSuperAdminElevated(): bool
     {
-        return null !== $this->superAdminElevatedUntil && $this->superAdminElevatedUntil > new \DateTimeImmutable();
+        return null !== $this->superAdminElevatedUntil
+            && $this->superAdminElevatedUntil > new \DateTimeImmutable()
+            && SuperAdminElevationContext::allows($this->email, $this->superAdminElevatedUntil);
     }
 
     public function getSuperAdminElevatedUntil(): ?\DateTimeImmutable
@@ -495,7 +535,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
 
     public function setLastIp(?string $lastIp): self
     {
-        $this->lastIp = $lastIp;
+        $this->lastIp = null === $lastIp ? null : mb_substr($lastIp, 0, 45);
         return $this;
     }
 
@@ -506,7 +546,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
 
     public function setLastLocation(?string $lastLocation): self
     {
-        $this->lastLocation = $lastLocation;
+        $this->lastLocation = null === $lastLocation ? null : mb_substr($lastLocation, 0, 255);
         return $this;
     }
 
@@ -528,7 +568,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
 
     public function setLastDevice(?string $lastDevice): self
     {
-        $this->lastDevice = $lastDevice;
+        // Tronqué à la longueur de colonne : User-Agent contrôlé par le client.
+        $this->lastDevice = null === $lastDevice ? null : mb_substr($lastDevice, 0, 255);
         return $this;
     }
 
@@ -565,9 +606,50 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
         return $this;
     }
 
+    public function getTokenVersion(): int
+    {
+        return $this->tokenVersion;
+    }
+
+    /** Révoque d'un coup tous les JWT et sessions web émis jusqu'ici pour ce compte. */
+    public function bumpTokenVersion(): self
+    {
+        ++$this->tokenVersion;
+
+        return $this;
+    }
+
     public function getPasswordResetRequestedAt(): ?\DateTimeImmutable
     {
         return $this->passwordResetRequestedAt;
+    }
+
+    public function getPendingEmail(): ?string
+    {
+        return $this->pendingEmail;
+    }
+
+    public function getEmailChangeRequestedAt(): ?\DateTimeImmutable
+    {
+        return $this->emailChangeRequestedAt;
+    }
+
+    /** Démarre (ou remplace) une demande de changement d'e-mail en attente. */
+    public function requestEmailChange(string $newEmail, \DateTimeImmutable $requestedAt): self
+    {
+        $this->pendingEmail = $newEmail;
+        $this->emailChangeRequestedAt = $requestedAt;
+
+        return $this;
+    }
+
+    /** Annule toute demande en attente (confirmée, ou explicitement abandonnée). */
+    public function clearPendingEmailChange(): self
+    {
+        $this->pendingEmail = null;
+        $this->emailChangeRequestedAt = null;
+
+        return $this;
     }
 
     public function setPasswordResetRequestedAt(?\DateTimeImmutable $passwordResetRequestedAt): self

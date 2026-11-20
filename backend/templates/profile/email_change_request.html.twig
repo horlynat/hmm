@@ -1,0 +1,46 @@
+{# templates/profile/email_change_request.html.twig #}
+{% extends layout %}
+
+{% block title %}Changer d'adresse e-mail{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Changer d'adresse e-mail" icon="ti-mail"
+		subtitle="Votre adresse actuelle reste active jusqu'à ce que vous confirmiez la nouvelle depuis sa propre boîte de réception." />
+
+	<div class="max-w-md space-y-4">
+		{% if error %}
+			<div class="field-error">{{ error }}</div>
+		{% endif %}
+
+		<div class="panel">
+			<div class="panel-body">
+				<p class="field-hint mb-4">Adresse actuelle : <strong>{{ user.email }}</strong></p>
+
+				{{ form_start(form, {'attr': {'class': 'space-y-4', 'novalidate': 'novalidate'}}) }}
+
+				{% if form_errors(form) %}
+					<div class="field-error mb-2">{{ form_errors(form) }}</div>
+				{% endif %}
+
+				<div class="field">
+					{{ form_label(form.newEmail, null, {'label_attr': {'class': 'field-label'}}) }}
+					{{ form_widget(form.newEmail, {'attr': {'class': 'input w-full'}}) }}
+					{{ form_errors(form.newEmail, {'attr': {'class': 'field-error'}}) }}
+				</div>
+
+				<div class="field">
+					{{ form_label(form.currentPassword, null, {'label_attr': {'class': 'field-label'}}) }}
+					{{ form_widget(form.currentPassword, {'attr': {'class': 'input w-full'}}) }}
+					{{ form_errors(form.currentPassword, {'attr': {'class': 'field-error'}}) }}
+				</div>
+
+				<button type="submit" class="btn btn-primary w-full gap-1.5">
+					<span class="ti ti-send" aria-hidden="true"></span>
+					Envoyer le lien de confirmation
+				</button>
+
+				{{ form_end(form) }}
+			</div>
+		</div>
+	</div>
+{% endblock %}

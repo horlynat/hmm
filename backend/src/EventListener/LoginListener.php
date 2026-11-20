@@ -12,6 +12,7 @@ use App\Enum\NotificationPriorityEnum;
 use App\Message\CheckSessionAnomaliesMessage;
 use App\Message\EnrichLoginLocationMessage;
 use App\Message\LoginNotification;
+use App\Security\LockedAccountAuthenticationException;
 use App\Repository\FailedLoginAttemptRepository;
 use App\Repository\UserRepository;
 use App\Repository\UserSessionRepository;
@@ -20,11 +21,13 @@ use App\Service\LiveSessionStateResolver;
 use App\Service\SessionAnomalyDetector;
 use App\Service\UserSessionRevoker;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Security\Core\Exception\AccountStatusException;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
+use Symfony\Component\Security\Core\Exception\TooManyLoginAttemptsAuthenticationException;
 use Symfony\Component\Security\Http\Event\InteractiveLoginEvent;
 use Symfony\Component\Security\Http\Event\LoginFailureEvent;
 use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
@@ -38,17 +41,13 @@ class LoginListener
     private const SUSPICIOUS_WINDOW_HOURS = 1;
     private const SUSPICIOUS_MIN_ATTEMPTS = 3;
 
-    /**
-     * Verrouillage de compte automatique — distinct du rate-limiter (5/min,
-     * très court, anti-bruteforce immédiat) et de l'alerte IP ci-dessus
-     * (notification admin seule, pas de blocage) : ici, au-delà du seuil,
-     * le COMPTE lui-même (par email, indépendamment de l'IP) est verrouillé
-     * temporairement. Seuils par défaut, à ajuster si une politique plus
-     * précise est définie.
+    /*
+     * Le verrouillage automatique de compte (User::$lockedUntil après 5
+     * échecs) a été remplacé par un délai progressif par (e-mail, IP) —
+     * App\Security\LoginThrottle, appliqué AVANT la vérification du mot de
+     * passe (P1 #10) : le verrou dur était un DoS ciblé réarmable à l'infini
+     * et, pendant le verrou, un oracle de mot de passe.
      */
-    private const ACCOUNT_LOCK_WINDOW_MINUTES = 15;
-    private const ACCOUNT_LOCK_MIN_ATTEMPTS = 5;
-    private const ACCOUNT_LOCK_DURATION_MINUTES = 15;
 
     /**
      * Firewalls sur lesquels un LoginSuccessEvent représente une vraie connexion
@@ -73,6 +72,7 @@ class LoginListener
         private LiveSessionStateResolver $liveSessionStateResolver,
         private UserSessionRevoker $userSessionRevoker,
         private SessionAnomalyDetector $anomalyDetector,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -95,6 +95,8 @@ class LoginListener
         $ip = $request->getClientIp() ?? '0.0.0.0';
         $device = $request->headers->get('User-Agent') ?? 'Appareil inconnu';
 
+        // Les setters tronquent à la longueur de colonne : un User-Agent
+        // démesuré ne peut plus faire échouer la connexion elle-même.
         $user->setLastIp($ip);
         $user->setLastDevice($device);
         $user->setLastLoginAt(new \DateTimeImmutable());
@@ -182,6 +184,8 @@ class LoginListener
 
         $exception = $event->getException();
         $reason = match (true) {
+            $exception instanceof LockedAccountAuthenticationException => 'locked_account',
+            $exception instanceof TooManyLoginAttemptsAuthenticationException => 'rate_limited',
             // Statut du compte (UserChecker) : le message porte le mot-clé.
             $exception instanceof AccountStatusException => match (true) {
                 str_contains($exception->getMessage(), 'vérifié') => 'unverified_account',
@@ -200,6 +204,11 @@ class LoginListener
             default => 'bad_credentials',
         };
 
+        // Le constructeur tronque chaque champ à sa longueur de colonne (un
+        // User-Agent > 255 ou un e-mail > 180 faisait échouer le flush en
+        // MySQL strict : ni journal, ni alerte). Et une erreur d'écriture
+        // résiduelle ne doit jamais casser la réponse d'échec elle-même — le
+        // délai anti-bruteforce (LoginThrottleListener) est déjà compté.
         $attempt = new FailedLoginAttempt(
             email: $email,
             reason: $reason,
@@ -207,44 +216,13 @@ class LoginListener
             userAgent: $request->headers->get('User-Agent'),
         );
 
-        $this->entityManager->persist($attempt);
-        $this->entityManager->flush();
-
-        $this->alertIfSuspicious($attempt);
-
-        // Ne compte que les vrais mauvais mots de passe contre un compte existant
-        // et non déjà bloqué (cf. reason ci-dessus) — inutile de verrouiller un
-        // compte inconnu ou déjà rejeté pour une autre raison.
-        if ('bad_credentials' === $reason) {
-            $this->lockAccountIfThresholdReached($email);
+        try {
+            $this->entityManager->persist($attempt);
+            $this->entityManager->flush();
+            $this->alertIfSuspicious($attempt);
+        } catch (\Throwable $e) {
+            $this->logger->error('Journalisation d\'un échec de connexion impossible.', ['exception' => $e]);
         }
-    }
-
-    /**
-     * Verrouille temporairement le compte après trop d'échecs récents sur le
-     * même email — indépendant de l'IP (cf. alertIfSuspicious, qui ne fait que
-     * notifier l'admin sans jamais bloquer). Le verrou expire de lui-même
-     * (User::isLocked()) ; aucune action de déverrouillage manuel requise.
-     */
-    private function lockAccountIfThresholdReached(string $email): void
-    {
-        $count = $this->failedLoginAttemptRepository->countRecentByEmail(
-            $email,
-            new \DateInterval(sprintf('PT%dM', self::ACCOUNT_LOCK_WINDOW_MINUTES)),
-        );
-
-        if ($count < self::ACCOUNT_LOCK_MIN_ATTEMPTS) {
-            return;
-        }
-
-        $user = $this->userRepository->findOneBy(['email' => $email]);
-        if (!$user instanceof User) {
-            return;
-        }
-
-        $user->setLockedUntil(new \DateTimeImmutable(sprintf('+%d minutes', self::ACCOUNT_LOCK_DURATION_MINUTES)));
-        $user->setLockedReason('too_many_failed_attempts');
-        $this->entityManager->flush();
     }
 
     /**

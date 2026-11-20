@@ -346,27 +346,21 @@ class AdminSecuritySessionController extends AbstractController
             return $this->redirectBackOrToSessions($request);
         }
 
-        $currentSessionId = $request->getSession()->getId();
-        $revokedCount = 0;
-
-        foreach ($userSessionRepository->findByUserOrderedByCreatedAt($user) as $userSession) {
-            if ($userSession->getSessionId() === $currentSessionId) {
-                continue;
-            }
-
-            $this->userSessionRevoker->forceLogout($userSession);
-            $revokedCount++;
-        }
-
+        // Révocation complète (P1 #8) : sessions web connues, TOUS les
+        // remember-me, et tous les JWT/sessions non répertoriées via
+        // User::$tokenVersion — même si aucune session web n'est listée (un
+        // client connecté uniquement au frontend n'a que des JWT). La session
+        // en cours est conservée si elle appartient au même compte.
+        $revokedCount = $this->userSessionRevoker->revokeAll($user);
+        $auditLogger->log(User::class, (int) $user->getId(), $user->getEmail(), 'force_logout_everywhere');
+        $this->entityManager->flush();
         if ($revokedCount > 0) {
-            $auditLogger->log(User::class, (int) $user->getId(), $user->getEmail(), 'force_logout_everywhere');
-            $this->entityManager->flush();
             $this->notifyRevoked(null, $user);
         }
 
         $this->addFlash('success', $revokedCount > 0
             ? sprintf('%s a été déconnecté de partout (%d session(s)).', $user->getEmail(), $revokedCount)
-            : sprintf('%s n\'avait aucune session active à déconnecter.', $user->getEmail()));
+            : sprintf('%s : aucune session web active ; ses jetons API et « se souvenir de moi » ont été révoqués.', $user->getEmail()));
 
         return $this->redirectBackOrToSessions($request);
     }

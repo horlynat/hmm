@@ -7,6 +7,7 @@ use App\Form\ForgotPasswordRequestType;
 use App\Form\ResetPasswordFormType;
 use App\Repository\UserRepository;
 use App\Service\AccountLinkResolver;
+use App\Service\UserSessionRevoker;
 use App\Service\AuditLogger;
 use App\Service\EmailManager;
 use App\Service\JWTService;
@@ -142,6 +143,7 @@ class SecurityController extends AbstractController
         UserPasswordHasherInterface $passwordHasher,
         EntityManagerInterface $entityManager,
         AuditLogger $auditLogger,
+        UserSessionRevoker $userSessionRevoker,
     ): Response {
         try {
             $payload = $jwt->validate($token, 'password_reset');
@@ -173,6 +175,9 @@ class SecurityController extends AbstractController
             } else {
                 $user->setPassword($passwordHasher->hashPassword($user, $plainPassword));
                 $user->setPasswordChangedAt(new \DateTimeImmutable());
+                // Réinitialisation = compte possiblement compromis : toutes les
+                // sessions, remember-me et JWT antérieurs tombent (P1 #8).
+                $userSessionRevoker->revokeAll($user);
                 $entityManager->flush();
 
                 $auditLogger->log(User::class, (int) $user->getId(), $user->getEmail(), 'password_reset_web');

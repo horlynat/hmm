@@ -3,6 +3,8 @@
 namespace App\Security\Voter;
 
 use App\Entity\User;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 
 /**
  * Permissions sur la section Sécurité & Audit du back-office.
@@ -12,6 +14,11 @@ use App\Entity\User;
  *
  * - FORCE_LOGOUT prend un User en sujet (le compte à déconnecter de force) ;
  *   les autres actions sont globales (pas de sujet).
+ * - MANAGE_2FA / FORCE_LOGOUT sur un compte qui détient le droit Super
+ *   Administrateur (hasSuperAdminEntitlement(), même dormant) : réservés à
+ *   un Super Administrateur ACTUELLEMENT élevé — même garde que
+ *   UserVoter::canEdit(). Sans elle, un simple ROLE_ADMIN compromis pouvait
+ *   retirer la 2FA du super-admin (puis déconnecter ses sessions).
  */
 class SecurityVoter extends AbstractRoleVoter
 {
@@ -51,5 +58,22 @@ class SecurityVoter extends AbstractRoleVoter
             self::MANAGE_PERMISSIONS === $attribute && null === $subject => 'ROLE_SUPER_ADMIN',
             default => null,
         };
+    }
+
+    protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
+    {
+        if (!parent::voteOnAttribute($attribute, $subject, $token, $vote)) {
+            return false;
+        }
+
+        if ($subject instanceof User && \in_array($attribute, [self::MANAGE_2FA, self::FORCE_LOGOUT], true)) {
+            $actor = $token->getUser();
+            if ($subject->hasSuperAdminEntitlement()
+                && (!$actor instanceof User || !\in_array('ROLE_SUPER_ADMIN', $actor->getRoles(), true))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

@@ -21,6 +21,7 @@ class JWTService
     private const NEWSLETTER_CONFIRMATION_VALIDITY = 604800; // 7 jours — enjeu bien plus faible qu'un compte, un visiteur peut mettre du temps à ouvrir cet e-mail
     private const PASSWORD_RESET_VALIDITY = 3600; // 1 heure pour la réinitialisation de mot de passe
     private const API_TWO_FACTOR_CHALLENGE_VALIDITY = 300; // 5 min : le temps de saisir un code TOTP, pas plus
+    private const EMAIL_CHANGE_VALIDITY = 3600; // 1 heure — même durée que password_reset.
 
     // Limite de taille pour éviter les attaques DoS
     private const MAX_PAYLOAD_SIZE = 4096; // 4 Ko
@@ -159,6 +160,38 @@ class JWTService
         $payload = [
             'user_id' => $userId,
             'purpose' => 'password_reset',
+            'requested_at' => $requestedAt,
+        ];
+
+        return $this->generate($header, $payload, $validity);
+    }
+
+    /**
+     * Jeton de confirmation de changement d'e-mail (P1 #7) : cliqué depuis la
+     * NOUVELLE adresse, jamais depuis l'ancienne. $requestedAt (horodatage de
+     * la demande) doit correspondre à User::$emailChangeRequestedAt au moment
+     * de la validation — usage unique et invalidation d'une demande
+     * supplantée par une plus récente, même mécanique que password_reset. Le
+     * payload ne transporte PAS la nouvelle adresse elle-même (jamais fait
+     * confiance au token pour la valeur à écrire) : EmailChangeController la
+     * relit depuis User::$pendingEmail en base.
+     *
+     * @throws \InvalidArgumentException Si l'ID utilisateur est invalide
+     */
+    public function generateEmailChangeToken(int $userId, int $requestedAt, int $validity = self::EMAIL_CHANGE_VALIDITY): string
+    {
+        if ($userId <= 0) {
+            throw new \InvalidArgumentException('L\'ID utilisateur doit être un entier positif.');
+        }
+
+        $header = [
+            'typ' => 'JWT',
+            'alg' => self::DEFAULT_ALGORITHM,
+        ];
+
+        $payload = [
+            'user_id' => $userId,
+            'purpose' => 'email_change',
             'requested_at' => $requestedAt,
         ];
 

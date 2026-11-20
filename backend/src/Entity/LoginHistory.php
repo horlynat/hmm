@@ -78,7 +78,7 @@ class LoginHistory
 
     public function setIp(?string $ip): self
     {
-        $this->ip = $ip;
+        $this->ip = null === $ip ? null : mb_substr($ip, 0, 45);
 
         return $this;
     }
@@ -90,7 +90,8 @@ class LoginHistory
 
     public function setDevice(?string $device): self
     {
-        $this->device = $device;
+        // Tronqué à la longueur de colonne (User-Agent contrôlé par le client).
+        $this->device = null === $device ? null : mb_substr($device, 0, 255);
 
         return $this;
     }
@@ -102,7 +103,7 @@ class LoginHistory
 
     public function setLocation(?string $location): self
     {
-        $this->location = $location;
+        $this->location = null === $location ? null : mb_substr($location, 0, 255);
 
         return $this;
     }

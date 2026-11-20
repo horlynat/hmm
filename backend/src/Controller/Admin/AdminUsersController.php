@@ -28,6 +28,7 @@ final class AdminUsersController extends AbstractController
         private readonly UserRepository $userRepository,
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly AccountWelcomeNotifier $accountWelcomeNotifier,
+        private readonly \App\Service\UserSessionRevoker $userSessionRevoker,
     ) {
     }
 
@@ -192,6 +193,12 @@ final class AdminUsersController extends AbstractController
             $user->setPassword(
                 $this->passwordHasher->hashPassword($user, $form->get('plainPassword')->getData())
             );
+            $user->setPasswordChangedAt(new \DateTimeImmutable());
+            // Mot de passe imposé par un administrateur sur un compte existant :
+            // toutes ses sessions, jetons remember-me et JWT tombent (P1 #8).
+            if (null !== $user->getId()) {
+                $this->userSessionRevoker->revokeAll($user);
+            }
         }
     }
 }

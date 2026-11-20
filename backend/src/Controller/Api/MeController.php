@@ -2,6 +2,9 @@
 
 namespace App\Controller\Api;
 
+use App\Security\PasswordConfirmationGuard;
+use App\Service\UserSessionRevoker;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use App\Entity\CandidateMessage;
 use App\Entity\Comment;
 use App\Entity\Invoice;
@@ -107,6 +110,9 @@ final class MeController extends AbstractController
         private readonly DeviceParser $deviceParser,
         private readonly CurrencyConversionService $conversionService,
         private readonly CandidateMessageRepository $candidateMessageRepository,
+        private readonly PasswordConfirmationGuard $passwordConfirmationGuard,
+        private readonly UserSessionRevoker $userSessionRevoker,
+        private readonly JWTTokenManagerInterface $jwtManager,
     ) {
     }
 
@@ -287,9 +293,15 @@ final class MeController extends AbstractController
         // token stateless : un token intercepté ne doit pas suffire à verrouiller le
         // titulaire légitime hors de son compte.
         $newPassword = $payload['plainPassword'] ?? null;
+        $passwordChanged = false;
         if (\is_string($newPassword) && '' !== $newPassword) {
-            $currentPassword = $payload['currentPassword'] ?? null;
-            if (!\is_string($currentPassword) || '' === $currentPassword || !$this->passwordHasher->isPasswordValid($user, $currentPassword)) {
+            // Limité par compte (5 essais / 15 min) : sans ça, un JWT volé
+            // offrait un oracle illimité sur le mot de passe actuel.
+            $check = $this->passwordConfirmationGuard->check($user, $payload['currentPassword'] ?? null);
+            if (PasswordConfirmationGuard::THROTTLED === $check) {
+                return $this->json(['detail' => 'Trop de tentatives. Patientez avant de réessayer.'], Response::HTTP_TOO_MANY_REQUESTS);
+            }
+            if (PasswordConfirmationGuard::OK !== $check) {
                 return $this->json(['detail' => 'Mot de passe actuel incorrect.'], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
@@ -307,6 +319,7 @@ final class MeController extends AbstractController
 
             $user->setPassword($this->passwordHasher->hashPassword($user, $newPassword));
             $user->setPasswordChangedAt(new \DateTimeImmutable());
+            $passwordChanged = true;
         }
 
         // Valide les contraintes portées par l'entité (email, phone, portfolioUrl…).
@@ -315,10 +328,25 @@ final class MeController extends AbstractController
             return $this->json(['detail' => $violations[0]->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
+        if ($passwordChanged) {
+            // P1 #8 : toutes les sessions, remember-me et JWT du compte tombent —
+            // y compris le jeton qui a servi à cette requête.
+            $this->userSessionRevoker->revokeAll($user);
+        }
+
         $user->setUpdatedAt(new \DateTimeImmutable());
         $this->entityManager->flush();
 
-        return $this->json($this->serializeUser($user));
+        $body = $this->serializeUser($user);
+        if ($passwordChanged) {
+            // Nouveau jeton pour l'appareil qui vient de changer le mot de passe
+            // (l'ancien est révoqué) : le frontend peut remplacer son cookie
+            // au lieu de forcer une reconnexion. Champ additionnel, ignoré par
+            // un client qui ne le connaît pas.
+            $body['token'] = $this->jwtManager->create($user);
+        }
+
+        return $this->json($body);
     }
 
     /**
@@ -337,18 +365,36 @@ final class MeController extends AbstractController
      * par erreur.
      */
     #[Route('', name: 'delete', methods: ['DELETE'])]
-    public function delete(): JsonResponse
+    public function delete(Request $request): JsonResponse
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
             return $this->json(['detail' => 'Authentification requise.'], Response::HTTP_UNAUTHORIZED);
         }
 
-        if (\in_array('ROLE_EDITOR', $user->getRoles(), true)) {
+        // isGranted() applique la hiérarchie : un ROLE_MODERATOR/MANAGER/ADMIN
+        // (sans ROLE_EDITOR littéral dans ses rôles) était auparavant accepté
+        // par le simple in_array('ROLE_EDITOR', getRoles()).
+        if ($this->isGranted('ROLE_EDITOR') || $user->isSystemAccount()) {
             return $this->json([
                 'detail' => 'Les comptes collaborateur ou administrateur ne peuvent pas être supprimés depuis cet espace. Contactez un administrateur.',
             ], Response::HTTP_FORBIDDEN);
         }
+
+        // Action irréversible : preuve de connaissance du mot de passe actuel
+        // exigée (un JWT volé ne doit pas suffire à effacer le compte).
+        // Corps attendu : {"currentPassword": "..."}.
+        $payload = json_decode($request->getContent(), true);
+        $check = $this->passwordConfirmationGuard->check($user, \is_array($payload) ? ($payload['currentPassword'] ?? null) : null);
+        if (PasswordConfirmationGuard::THROTTLED === $check) {
+            return $this->json(['detail' => 'Trop de tentatives. Patientez avant de réessayer.'], Response::HTTP_TOO_MANY_REQUESTS);
+        }
+        if (PasswordConfirmationGuard::OK !== $check) {
+            return $this->json(['detail' => 'Mot de passe actuel incorrect.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        // Avant l'anonymisation : la purge des remember-me se fait par e-mail.
+        $this->userSessionRevoker->revokeAll($user);
 
         $user->setFullName(null);
         $user->setPhone(null);
@@ -359,6 +405,7 @@ final class MeController extends AbstractController
         $user->setPortfolioUrl(null);
         $user->setIsTwoFactorEnabled(false);
         $user->setTotpSecret(null);
+        $user->setBackupCodes([]);
         $user->setIsActive(false);
         $user->setEmail(sprintf('deleted-user-%d@deleted.invalid', (int) $user->getId()));
         $user->setPassword($this->passwordHasher->hashPassword($user, bin2hex(random_bytes(32))));

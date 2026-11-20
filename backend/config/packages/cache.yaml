@@ -22,3 +22,13 @@ framework:
             # partagent le pool cache.rate_limiter par défaut.
             cache.error_notifier:
                 adapter: cache.adapter.filesystem
+            # Liste de blocage des JWT (POST /api/logout, cf.
+            # lexik_jwt_authentication.yaml) — en base (table cache_items, cf.
+            # migration) : doit survivre à un redéploiement du conteneur, sinon
+            # un jeton « déconnecté » redeviendrait valide jusqu'à son exp.
+            cache.jwt_blocklist:
+                adapter: cache.adapter.doctrine_dbal
+            # Compteurs du délai progressif de connexion (App\Security\
+            # LoginThrottle) — même stockage en base, pour la même raison.
+            cache.login_throttle:
+                adapter: cache.adapter.doctrine_dbal

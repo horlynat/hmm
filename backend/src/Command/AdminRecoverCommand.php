@@ -38,6 +38,7 @@ class AdminRecoverCommand extends Command
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly ValidatorInterface $validator,
         private readonly AuditLogger $auditLogger,
+        private readonly \App\Service\UserSessionRevoker $userSessionRevoker,
     ) {
         parent::__construct();
     }
@@ -90,6 +91,9 @@ class AdminRecoverCommand extends Command
             $plainPassword = $this->askNewPassword($io);
             $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
             $user->setPasswordChangedAt(new \DateTimeImmutable());
+            // Compte potentiellement compromis : plus aucune session, aucun
+            // remember-me ni JWT antérieur ne doit survivre (P1 #8).
+            $this->userSessionRevoker->revokeAll($user);
         }
 
         if ($unlock) {

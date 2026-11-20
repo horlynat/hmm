@@ -2,16 +2,18 @@
 
 namespace App\Service;
 
+use App\Entity\User;
 use App\Entity\UserSession;
+use App\EventSubscriber\SessionTokenVersionSubscriber;
+use App\Repository\UserSessionRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
- * Point d'entrée unique pour détruire une session serveur — utilisé à la fois
- * par l'éviction automatique (limite de sessions concurrentes, cf.
- * LoginListener) et la déconnexion forcée manuelle
- * (AdminSecuritySessionController), qui n'ont volontairement PAS la même
- * portée :
+ * Point d'entrée unique pour détruire une session serveur — et, depuis le
+ * correctif P1 #8, pour révoquer TOUT ce qui permet encore d'agir au nom d'un
+ * compte. Trois portées, volontairement distinctes :
  *
  * - killLiveSession() ne touche que CETTE session (ligne `sessions` + entité
  *   UserSession). Un appareil qui a un cookie remember-me valide pourra
@@ -19,10 +21,22 @@ use Doctrine\ORM\EntityManagerInterface;
  *   comportement voulu pour une simple éviction de capacité : on ne
  *   sanctionne pas l'appareil le plus ancien, on libère juste une place.
  *
- * - forceLogout() fait la même chose ET supprime TOUS les jetons
- *   remember-me de l'utilisateur : déconnexion complète, plus aucun appareil
- *   ne peut se reconnecter silencieusement. C'est le comportement voulu pour
- *   une action de sécurité explicite (admin, ou suspicion de compromission).
+ * - forceLogout() : déconnexion forcée d'un compte à partir d'une de ses
+ *   sessions (admin, ou révocation par l'utilisateur lui-même) = revokeAll()
+ *   en conservant la session courante si elle appartient au même compte.
+ *
+ * - revokeAll() : purge complète — sessions web connues (UserSession),
+ *   TOUS les jetons remember-me, et incrément de User::$tokenVersion qui
+ *   invalide tous les JWT émis (claim `tv`) et toute session non répertoriée
+ *   (restaurée par remember-me, ouverte avant le suivi…) via
+ *   SessionTokenVersionSubscriber. Appelée à chaque changement ou
+ *   réinitialisation de mot de passe, changement d'e-mail, suppression de
+ *   compte et déconnexion forcée.
+ *
+ * Si la requête courante est une session web DU MÊME compte (l'utilisateur
+ * change son propre mot de passe), elle est conservée et resynchronisée sur
+ * la nouvelle version : il reste connecté sur cet appareil, tous les autres
+ * tombent.
  *
  * N'effectue PAS le flush de l'EntityManager : laissé à l'appelant, pour
  * permettre de grouper plusieurs révocations dans une seule écriture.
@@ -32,6 +46,8 @@ final class UserSessionRevoker
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly Connection $connection,
+        private readonly UserSessionRepository $userSessionRepository,
+        private readonly RequestStack $requestStack,
     ) {
     }
 
@@ -48,10 +64,51 @@ final class UserSessionRevoker
     public function forceLogout(UserSession $userSession): void
     {
         $this->killLiveSession($userSession);
+        $this->revokeAll($userSession->getUser());
+    }
+
+    /**
+     * @return int nombre de sessions web connues détruites
+     */
+    public function revokeAll(User $user): int
+    {
+        $currentSession = $this->currentSessionOf($user);
+        $keepSessionId = $currentSession?->getId();
+
+        $killed = 0;
+        foreach ($this->userSessionRepository->findBy(['user' => $user]) as $userSession) {
+            if (null !== $keepSessionId && $userSession->getSessionId() === $keepSessionId) {
+                continue;
+            }
+            $this->killLiveSession($userSession);
+            ++$killed;
+        }
 
         $this->connection->executeStatement(
             'DELETE FROM rememberme_token WHERE username = :email',
-            ['email' => $userSession->getUser()->getUserIdentifier()],
+            ['email' => $user->getUserIdentifier()],
         );
+
+        $user->bumpTokenVersion();
+
+        // La session de l'appareil qui agit (même compte) reste valide.
+        $currentSession?->set(SessionTokenVersionSubscriber::SESSION_KEY, $user->getTokenVersion());
+
+        return $killed;
+    }
+
+    private function currentSessionOf(User $user): ?\Symfony\Component\HttpFoundation\Session\SessionInterface
+    {
+        $request = $this->requestStack->getMainRequest();
+        if (null === $request || !$request->hasSession() || str_starts_with($request->getPathInfo(), '/api')) {
+            return null;
+        }
+
+        $session = $request->getSession();
+        if (!$session->isStarted() && !$request->hasPreviousSession()) {
+            return null;
+        }
+
+        return $session->get(SessionTokenVersionSubscriber::SESSION_USER_KEY) === $user->getUserIdentifier() ? $session : null;
     }
 }
