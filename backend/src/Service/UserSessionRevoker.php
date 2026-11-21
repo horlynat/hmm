@@ -124,7 +124,7 @@ final class UserSessionRevoker
     private function currentSessionOf(User $user): ?\Symfony\Component\HttpFoundation\Session\SessionInterface
     {
         $request = $this->requestStack->getMainRequest();
-        if (null === $request || !$request->hasSession() || str_starts_with($request->getPathInfo(), '/api')) {
+        if (null === $request || !$request->hasSession() || str_starts_with(rawurldecode($request->getPathInfo()), '/api')) {
             return null;
         }
 

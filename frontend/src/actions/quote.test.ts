@@ -72,6 +72,20 @@ describe("B2 — quote submission stays usable for a logged-in client without 2F
     expect(fetchCalls[1].init.headers.Authorization).toBeUndefined();
   });
 
+  it.each([
+    ["403 with another code", { code: "account_suspended" }],
+    ["403 with a detail", { detail: "Demande refusée." }],
+    ["403 with an empty body", {}],
+  ])("never retries anonymously on a %s (only 2fa_required does)", async (_label, body) => {
+    cookieJar.set("hmm_token", TOKEN);
+    setFetch(async () => jsonResponse(body, 403));
+
+    const result = await submitQuoteRequest(ANSWERS);
+    expect(result.ok).toBe(false);
+    expect(fetchCalls).toHaveLength(1);
+    expect(fetchCalls[0].init.headers.Authorization).toBe(`Bearer ${TOKEN}`);
+  });
+
   it("does not retry on a 403 unrelated to the token (surfaces the error instead)", async () => {
     setFetch(async () => jsonResponse({ detail: "banni" }, 403));
 

@@ -22,8 +22,8 @@ t() { local exp=$1 label=$2 content=$3 rc
 
 # Cas sains
 t OK "rien de défini (défauts du compose)" "APP_ENV=prod"
-t OK "Cloudflare complet" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=abc'
-t OK "Cloudflare complet, guillemets + export" $'export CF_ACCESS_HOSTS="dark.horlynat.com"\nCF_ACCESS_TEAM_DOMAIN=\'x.cloudflareaccess.com\'\nCF_ACCESS_AUD=abc # app'
+t OK "Cloudflare complet" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+t OK "Cloudflare complet, guillemets + export" $'export CF_ACCESS_HOSTS="dark.horlynat.com"\nCF_ACCESS_TEAM_DOMAIN=\'x.cloudflareaccess.com\'\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef # app'
 t OK "Cloudflare explicitement vide" $'CF_ACCESS_HOSTS=\nCF_ACCESS_TEAM_DOMAIN=""\nCF_ACCESS_AUD='
 t OK "PUBLIC_API_HOSTS correct" "PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend,backend"
 t OK "PUBLIC_API_HOSTS majuscules/espaces" "PUBLIC_API_HOSTS=api.horlynat.com, HMM-BACKEND ,backend"
@@ -31,9 +31,9 @@ t OK "commentaire ignoré" $'# CF_ACCESS_HOSTS=dark.horlynat.com\nAPP_ENV=prod'
 
 # Attaques / erreurs de configuration
 t KO "hôte Cloudflare seul" "CF_ACCESS_HOSTS=dark.horlynat.com"
-t KO "équipe + AUD sans hôte" $'CF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=abc'
+t KO "équipe + AUD sans hôte" $'CF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 t KO "2/3 avec guillemets" $'CF_ACCESS_HOSTS="dark.horlynat.com"\nCF_ACCESS_TEAM_DOMAIN="x.cloudflareaccess.com"\nCF_ACCESS_AUD=""'
-t KO "dernière affectation vide l'AUD" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=abc\nCF_ACCESS_AUD='
+t KO "dernière affectation vide l'AUD" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\nCF_ACCESS_AUD='
 t KO "PUBLIC_API_HOSTS sans hmm-backend" "PUBLIC_API_HOSTS=api.horlynat.com"
 t KO "PUBLIC_API_HOSTS nom piège" "PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend-evil"
 # `${PUBLIC_API_HOSTS:-défaut}` : une valeur VIDE prend le défaut (sûr)
@@ -45,9 +45,9 @@ t OK "PUBLIC_API_HOSTS avec point final" "PUBLIC_API_HOSTS=api.horlynat.com,hmm-
 t KO "espaces autour du = (PUBLIC_API_HOSTS)" "PUBLIC_API_HOSTS = api.horlynat.com"
 t KO "syntaxe deux-points (PUBLIC_API_HOSTS)" "PUBLIC_API_HOSTS: api.horlynat.com"
 t KO "espaces autour du = (CF hôte seul)" "CF_ACCESS_HOSTS = dark.horlynat.com"
-t KO "équipe + AUD en « X = y », sans hôte" $'CF_ACCESS_TEAM_DOMAIN = x.cloudflareaccess.com\nCF_ACCESS_AUD = abc'
+t KO "équipe + AUD en « X = y », sans hôte" $'CF_ACCESS_TEAM_DOMAIN = x.cloudflareaccess.com\nCF_ACCESS_AUD = 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 t KO "AUD = \${NOPE} (vide une fois résolu)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=${NOPE}'
-t OK "Cloudflare complet en « X = y »" $'CF_ACCESS_HOSTS = dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN = x.cloudflareaccess.com\nCF_ACCESS_AUD = abc'
+t OK "Cloudflare complet en « X = y »" $'CF_ACCESS_HOSTS = dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN = x.cloudflareaccess.com\nCF_ACCESS_AUD = 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 # Caractères non ASCII normalisés différemment par Python et PHP (6e passe)
 t KO "espace insécable après hmm-backend" $'PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend\u00a0,backend'
 t KO "signe Kelvin à la place d'un K" $'PUBLIC_API_HOSTS=api.horlynat.com,hmm-bac\u212aend,backend'
@@ -56,12 +56,21 @@ t KO "saut de page (\\f) après hmm-backend" $'PUBLIC_API_HOSTS="api.horlynat.co
 t OK "tabulation verticale (\\v) retirée des deux côtés" $'PUBLIC_API_HOSTS="api.horlynat.com,hmm-backend\\v,backend"'
 t OK "équipe Cloudflare avec https:// et / final (toléré par PHP)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=https://x.cloudflareaccess.com/\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 # 8e passe — F2 : valeurs dégénérées jugées comme PHP les lit
-t KO "hôte Cloudflare réduit à une virgule (= vide pour PHP)" $'CF_ACCESS_HOSTS=,\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=abc'
-t KO "équipe réduite à https:// (= vide pour PHP)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=https://\nCF_ACCESS_AUD=abc'
+t KO "hôte Cloudflare réduit à une virgule (= vide pour PHP)" $'CF_ACCESS_HOSTS=,\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+t KO "équipe réduite à https:// (= vide pour PHP)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=https://\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 t KO "AUD réduit à des virgules (= vide pour PHP)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=" , "'
-t KO "blanc interne dans l'équipe" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN="t.com /"\nCF_ACCESS_AUD=abc'
-t OK "plusieurs AUD séparés par des virgules" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=abc, def'
-t OK "audience « 0 » (gardée aussi par PHP)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0'
+t KO "blanc interne dans l'équipe" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN="t.com /"\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+t OK "plusieurs AUD séparés par des virgules" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef, fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210'
+t KO "audience « 0 » (format Cloudflare invalide)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0'
+# 10e passe — noms internes acceptés par Symfony mais pas limités à /api
+t KO "backend accepté par les hôtes de confiance, absent de PUBLIC_API_HOSTS" $'SYMFONY_TRUSTED_HOSTS=^(api|dark)\\.horlynat\\.com$$,^hmm-backend$$,^backend$$\nPUBLIC_API_HOSTS=api.horlynat.com,hmm-backend'
+t OK "backend accepté ET limité à /api" $'SYMFONY_TRUSTED_HOSTS=^(api|dark)\\.horlynat\\.com$$,^hmm-backend$$,^backend$$\nPUBLIC_API_HOSTS=api.horlynat.com,hmm-backend,backend'
+t KO "localhost accepté (motif trop large)" $'SYMFONY_TRUSTED_HOSTS=^(api|dark)\\.horlynat\\.com$$,^hmm-backend$$,^localhost$$'
+t KO "motif qui accepte tout" $'SYMFONY_TRUSTED_HOSTS=.*'
+t KO "casse : ^BACKEND$ accepte backend (Symfony ignore la casse)" $'SYMFONY_TRUSTED_HOSTS=^hmm-backend$$,^BACKEND$$\nPUBLIC_API_HOSTS=api.horlynat.com,hmm-backend'
+t KO "motif illisible" $'SYMFONY_TRUSTED_HOSTS=^(api$$'
+t KO "AUD tronqué (63 caractères)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde'
+t KO "AUD non hexadécimal" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdez'
 t KO "dernière affectation retire hmm-backend" $'PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend\nPUBLIC_API_HOSTS=api.horlynat.com'
 
 bash "$CHECK" "$T/absent" "$COMPOSE" >/dev/null 2>&1 && { echo "FAIL fichier absent accepté"; fail=1; } || echo "PASS KO fichier absent"
@@ -87,7 +96,7 @@ mkdir -p "$T/bin"
 cat > "$T/bin/docker" <<'SHIM'
 #!/usr/bin/env bash
 echo 'time="2030-01-01" level=warning msg="Unresolved variable reference s3cr in value"' >&2
-echo '{"services":{"backend":{"environment":{"PUBLIC_API_HOSTS":"api.horlynat.com,hmm-backend,backend"}}}}'
+echo '{"services":{"backend":{"environment":{"PUBLIC_API_HOSTS":"api.horlynat.com,hmm-backend,backend","SYMFONY_TRUSTED_HOSTS":"^(api|dark)\\.horlynat\\.com$,^hmm-backend$"}}}}'
 SHIM
 chmod +x "$T/bin/docker"
 printf '%s\n' "$BASE" > "$T/env"
@@ -96,7 +105,7 @@ out="$(PATH="$T/bin:$PATH" bash "$CHECK" "$T/env" "$COMPOSE" 2>&1)" && { echo "F
 cat > "$T/bin/docker" <<'SHIM'
 #!/usr/bin/env bash
 echo 'level=warning msg="docker-compose version attribute is obsolete"' >&2
-echo '{"services":{"backend":{"environment":{"PUBLIC_API_HOSTS":"api.horlynat.com,hmm-backend,backend"}}}}'
+echo '{"services":{"backend":{"environment":{"PUBLIC_API_HOSTS":"api.horlynat.com,hmm-backend,backend","SYMFONY_TRUSTED_HOSTS":"^(api|dark)\\.horlynat\\.com$,^hmm-backend$"}}}}'
 SHIM
 PATH="$T/bin:$PATH" bash "$CHECK" "$T/env" "$COMPOSE" >/dev/null 2>&1 && echo "PASS OK avertissement sans rapport avec les variables" || { echo "FAIL avertissement anodin refusé"; fail=1; }
 

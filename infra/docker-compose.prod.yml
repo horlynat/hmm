@@ -199,11 +199,13 @@ services:
       - BACKOFFICE_URL=${BACKOFFICE_URL:-https://dark.horlynat.com}
       # Hôte(s) où seuls /api, /uploads, /newsletter répondent (P0 #4,
       # PublicApiHostRestrictionSubscriber) — même liste que le routeur
-      # Traefik `api`, en défense en profondeur. Les noms INTERNES
-      # (`hmm-backend`, `backend`) y figurent aussi (contre-audit B2, M3) :
-      # joignables sans passer par Cloudflare (réseau edge-net, passerelle de
-      # build), ils ne doivent jamais servir le back-office — seul
-      # dark.horlynat.com le sert, derrière Cloudflare Access.
+      # Traefik `api`, en défense en profondeur. Les noms INTERNES y
+      # figurent aussi (contre-audit B2, M3) : joignables sans passer par
+      # Cloudflare (réseau edge-net, passerelle de build), ils ne doivent
+      # jamais servir le back-office — seul dark.horlynat.com le sert,
+      # derrière Cloudflare Access. `backend` n'est plus accepté par
+      # SYMFONY_TRUSTED_HOSTS (400) ; il reste ici pour le cas où un
+      # .env.prod le réintroduirait (refusé sinon par check-env-prod.sh).
       - PUBLIC_API_HOSTS=${PUBLIC_API_HOSTS:-api.horlynat.com,hmm-backend,backend}
       # Liste blanche des Host acceptés par Symfony (400 sinon). `hmm-backend`
       # = appels serveur du frontend (API_URL=http://hmm-backend:80/api) ; le

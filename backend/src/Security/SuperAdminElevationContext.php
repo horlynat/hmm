@@ -61,7 +61,7 @@ final class SuperAdminElevationContext
     {
         self::reset();
 
-        if (str_starts_with($request->getPathInfo(), '/api') || !$request->hasPreviousSession()) {
+        if (str_starts_with(rawurldecode($request->getPathInfo()), '/api') || !$request->hasPreviousSession()) {
             return;
         }
 

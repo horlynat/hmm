@@ -68,7 +68,7 @@ final class SessionTokenVersionSubscriber implements EventSubscriberInterface
         }
 
         $request = $event->getRequest();
-        if (str_starts_with($request->getPathInfo(), '/api') || !$request->hasPreviousSession()) {
+        if (str_starts_with(rawurldecode($request->getPathInfo()), '/api') || !$request->hasPreviousSession()) {
             return;
         }
 

@@ -11,14 +11,27 @@
 # relire .env.prod à la main laissait passer des formats que Compose accepte
 # (contre-audit B2, 5e passe, C3).
 #
-# Refuse (code 1, message explicite) :
-# - Cloudflare Access PARTIEL : CF_ACCESS_HOSTS, CF_ACCESS_TEAM_DOMAIN et
-#   CF_ACCESS_AUD doivent être tous vides ou tous renseignés. CF_ACCESS_HOSTS
-#   seul refuse tout le back-office en 403 (fail-closed) ; équipe/AUD sans
-#   hôte n'active rien, en silence ;
-# - PUBLIC_API_HOSTS sans `hmm-backend` : ce nom interne, joignable sans
-#   passer par Cloudflare, servirait alors tout le back-office.
-# Un échec de Compose lui-même (fichier illisible, syntaxe) refuse aussi.
+# Refuse (code 1, message explicite, JAMAIS de valeur de .env.prod : cette
+# sortie finit dans les logs GitHub Actions, publics sur ce dépôt) :
+# - un échec de Compose (syntaxe, guillemet non fermé…) : seules la nature de
+#   l'erreur et le numéro de ligne sont affichés ;
+# - tout avertissement « variable non définie » : un `$` non échappé dans une
+#   valeur la tronque et ferait afficher un fragment de la valeur par chaque
+#   commande Compose suivante. Écrire `$$` pour un `$` littéral ;
+# - Cloudflare Access PARTIEL, jugé sur ce que PHP lira : CF_ACCESS_HOSTS,
+#   CF_ACCESS_TEAM_DOMAIN et CF_ACCESS_AUD tous vides ou tous renseignés ;
+#   AUD au format Cloudflare (64 caractères hexadécimaux) ;
+# - des caractères hors ASCII ou des blancs internes dans ces variables (PHP
+#   et Python ne les normaliseraient pas pareil) ;
+# - PUBLIC_API_HOSTS sans `hmm-backend`, et tout nom interne du réseau Docker
+#   (backend, localhost…) accepté par SYMFONY_TRUSTED_HOSTS sans être limité
+#   à /api : il servirait le back-office sans passer par Cloudflare ;
+#   SYMFONY_TRUSTED_HOSTS vide (tout Host accepté) aussi.
+#
+# Limite connue (non détectable ici) : un `$` suivi du nom d'une variable
+# DÉJÀ définie (`PASS=ab$HOME`) est remplacé en silence par Compose, sans
+# avertissement. Pas de fuite dans les logs, mais une valeur altérée :
+# toujours écrire `$$` pour un `$` littéral dans .env.prod.
 set -euo pipefail
 
 ENV_FILE="${1:-.env.prod}"
@@ -61,7 +74,7 @@ if grep -qiE 'variable is not set|level=warn[a-z]*.*variable' "$compose_err"; th
 fi
 
 printf '%s' "$resolved" | python3 -I -c '
-import json, sys
+import json, re, sys
 
 env = (json.load(sys.stdin).get("services", {}).get("backend", {}) or {}).get("environment") or {}
 if isinstance(env, list):  # forme « KEY=VAL » selon les versions de Compose
@@ -123,6 +136,15 @@ for name, vals in effective.items():
             errors.append("%s contient un blanc à l intérieur d une valeur : la valeur lue par PHP serait inutilisable." % name)
             break
 
+# Format réel des AUD Cloudflare Access : 64 caractères hexadécimaux. Une
+# valeur tronquée ou mal collée (« 0 », « abc »…) n est jamais émise par
+# Cloudflare : elle bloquerait tout le back-office en 403 — refusée ici,
+# au déploiement, avec un message clair (contre-audit B2, 10e passe).
+for aud in effective["CF_ACCESS_AUD"]:
+    if not re.fullmatch(r"[0-9a-fA-F]{64}", aud):
+        errors.append("CF_ACCESS_AUD : « %d caractères » ne correspond pas au format Cloudflare (64 caractères hexadécimaux, Access -> Applications -> Overview)." % len(aud))
+        break
+
 cf = [n for n, vals in effective.items() if vals]
 if len(cf) not in (0, 3):
     errors.append(
@@ -137,6 +159,34 @@ if "hmm-backend" not in hosts:
         "sans passer par Cloudflare. Valeur attendue (ou retirer la ligne de .env.prod) : "
         "api.horlynat.com,hmm-backend,backend"
     )
+
+# Contre-audit B2 (10e passe, constat 1) : exiger hmm-backend ne suffit pas.
+# TOUT nom interne joignable sur le réseau Docker sans passer par Cloudflare
+# et accepté par Symfony (SYMFONY_TRUSTED_HOSTS) doit être limité à /api
+# (PUBLIC_API_HOSTS) — sinon `Host: backend` (ancien .env.prod.example) ou
+# `Host: localhost` servirait tout le back-office. Symfony compare chaque
+# motif en `{motif}i` (Request::setTrustedHosts).
+INTERNAL_NAMES = ("hmm-backend", "backend", "localhost", "127.0.0.1", "frontend", "database", "traefik", "adminer")
+trusted = [t for t in (p.strip(ASCII_WS) for p in value("SYMFONY_TRUSTED_HOSTS").split(",")) if t]
+if not trusted:
+    errors.append(
+        "SYMFONY_TRUSTED_HOSTS effectif vide : Symfony accepterait n importe quel Host, y compris les noms "
+        "internes du réseau Docker, qui serviraient le back-office sans Cloudflare."
+    )
+else:
+    try:
+        patterns = [re.compile(t, re.IGNORECASE) for t in trusted]
+    except re.error:
+        patterns = None
+        errors.append("SYMFONY_TRUSTED_HOSTS contient un motif illisible : impossible de vérifier quels hôtes sont acceptés.")
+    if patterns is not None:
+        exposed = [n for n in INTERNAL_NAMES if any(p.search(n) for p in patterns) and n not in hosts]
+        if exposed:
+            errors.append(
+                "Nom(s) interne(s) accepté(s) par SYMFONY_TRUSTED_HOSTS mais absent(s) de PUBLIC_API_HOSTS : %s — "
+                "ils serviraient tout le back-office sans passer par Cloudflare. Les ajouter à PUBLIC_API_HOSTS "
+                "ou les retirer de SYMFONY_TRUSTED_HOSTS." % ", ".join(exposed)
+            )
 
 if errors:
     print("==> Variables de sécurité incohérentes, déploiement annulé avant toute action :", file=sys.stderr)

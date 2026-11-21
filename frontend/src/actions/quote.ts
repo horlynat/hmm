@@ -45,14 +45,16 @@ export async function submitQuoteRequest(
   if (!token) return apiPost("/quote_requests", payload, {});
 
   const result = await apiPost("/quote_requests", payload, { token });
-  if (result.ok || result.error !== "HTTP 403") return result;
+  // Seul le refus PRÉCIS « 2FA requise » déclenche le nouvel essai anonyme :
+  // un autre 403 (refus lié au compte, règle métier future) ne doit pas être
+  // contourné en silence par un envoi sans jeton (contre-audit B2, 10e passe).
+  if (result.ok || result.error !== "2fa_required") return result;
 
   // Contre-audit B2 : la 2FA obligatoire couvre désormais TOUTE l'API, pas
   // seulement /api/me/**. Un client connecté mais pas encore équipé recevait
-  // donc 403 2fa_required ici (POST /api/quote_requests exige un Bearer
-  // valide, jamais un autre motif de 403) — alors qu'anonyme, la même
-  // soumission passait. On retombe en anonyme plutôt que de bloquer l'envoi :
-  // la demande n'est juste pas rattachée au compte.
+  // donc 403 2fa_required ici, alors qu'anonyme, la même soumission passait.
+  // On retombe en anonyme plutôt que de bloquer l'envoi : la demande n'est
+  // juste pas rattachée au compte.
   return apiPost("/quote_requests", payload, {});
 }
 
