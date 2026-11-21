@@ -23,14 +23,14 @@ export async function registerCollaborator(
   if (!parsed.success) return invalidInput;
 
   const payload: CollaboratorRegistrationPayload = {
-    email: answers.email,
-    fullName: answers.name,
-    plainPassword: answers.password,
-    agreeTerms: answers.agreeTerms,
-    specialties: answers.specialties.length > 0 ? answers.specialties : undefined,
-    availability: answers.availability || undefined,
-    portfolioUrl: answers.portfolioUrl || undefined,
-    bio: answers.bio || undefined,
+    email: parsed.data.email,
+    fullName: parsed.data.name,
+    plainPassword: parsed.data.password,
+    agreeTerms: parsed.data.agreeTerms,
+    specialties: parsed.data.specialties && parsed.data.specialties.length > 0 ? parsed.data.specialties : undefined,
+    availability: parsed.data.availability || undefined,
+    portfolioUrl: parsed.data.portfolioUrl || undefined,
+    bio: parsed.data.bio || undefined,
   };
 
   return apiPost("/collaborator_registrations", payload);

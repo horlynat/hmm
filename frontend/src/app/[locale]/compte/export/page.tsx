@@ -21,7 +21,12 @@ export default async function ExportPage({
       <SettingsSectionGroup>
         <SettingsSection>
           <p className="mb-4 text-sm opacity-70">{t("contentHint")}</p>
-          <a href="/api/me/export" download className="btn-primary w-fit gap-2">
+          {/* Pas d'attribut `download` : le téléchargement vient de
+              Content-Disposition: attachment, et une redirection (2FA à
+              activer) doit pouvoir mener à une vraie page plutôt qu'être
+              enregistrée comme fichier. `locale` : la route /api n'a pas de
+              préfixe de langue pour construire cette redirection. */}
+          <a href={`/api/me/export?locale=${encodeURIComponent(locale)}`} className="btn-primary w-fit gap-2">
             <Download size={16} aria-hidden="true" />
             {t("downloadButton")}
           </a>

@@ -22,11 +22,11 @@ export async function registerClient(
   if (!parsed.success) return invalidInput;
 
   const payload: ClientRegistrationPayload = {
-    email: answers.email,
-    fullName: answers.name,
-    phone: answers.phone || undefined,
-    plainPassword: answers.password,
-    agreeTerms: answers.agreeTerms,
+    email: parsed.data.email,
+    fullName: parsed.data.name,
+    phone: parsed.data.phone || undefined,
+    plainPassword: parsed.data.password,
+    agreeTerms: parsed.data.agreeTerms,
   };
 
   return apiPost("/client_registrations", payload);

@@ -1,3 +1,4 @@
+import "server-only";
 import { apiFetch, extractCollection, pickLocalized } from "./client";
 import type { Course } from "@/lib/types";
 

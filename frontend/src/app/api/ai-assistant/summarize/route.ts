@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { API_URL } from "@/lib/auth/config";
+import { visitorHeadersFrom } from "@/lib/http/visitor";
 import { rateLimit } from "@/lib/rate-limit";
 import type { AiContentSummaryPayload } from "@/lib/types";
 
@@ -22,8 +23,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "invalid_input" }, { status: 400 });
   }
 
-  const forwardedFor =
-    request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "";
+  // IP résolue (CF-Connecting-IP / dernier maillon de confiance) et UA du
+  // visiteur — jamais la chaîne X-Forwarded-For brute, dont le premier
+  // élément est forgeable (cf. src/lib/http/client-ip.ts).
+  const visitorHeaders = visitorHeadersFrom(request.headers);
 
   try {
     const res = await fetch(`${API_URL}/assistant/summarize`, {
@@ -31,14 +34,14 @@ export async function POST(request: NextRequest) {
       headers: {
         "Content-Type": "application/ld+json",
         Accept: "application/ld+json",
-        ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
+        ...visitorHeaders,
       },
       body: JSON.stringify({
         slug: body.slug,
         contentType: body.contentType === "project" ? "project" : "article",
         question: typeof body.question === "string" ? body.question : "",
         history: Array.isArray(body.history) ? body.history : [],
-        locale: body.locale ?? "fr",
+        locale: body.locale === "en" ? "en" : "fr",
       }),
       cache: "no-store",
       // Doit couvrir le timeout backend (30s, cf. App\Service\ClaudeClient) +

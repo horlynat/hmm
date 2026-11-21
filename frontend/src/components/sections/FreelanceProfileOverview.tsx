@@ -1,7 +1,6 @@
 import { CheckCircle2, Circle, ExternalLink, MapPin, Briefcase, Link2, CodeXml } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { Badge, Card } from "@/components/ui";
-import { getAvatarUrl } from "@/lib/media";
+import { Badge, Card, Avatar } from "@/components/ui";
 import { FREELANCE_PROFILE_FIELD_KEYS, FREELANCE_PROFILE_FIELD_LABEL_KEYS } from "@/lib/profileFields";
 import type { SessionUser } from "@/lib/types";
 
@@ -18,12 +17,7 @@ export async function FreelanceProfileOverview({ user, locale }: { user: Session
   return (
     <Card variant="soft" className="overflow-hidden p-0">
       <div className="flex flex-wrap items-start gap-4 p-5">
-        {/* eslint-disable-next-line @next/next/no-img-element -- avatar externe (ui-avatars.com) ou média backend */}
-        <img
-          src={getAvatarUrl(user)}
-          alt=""
-          className="h-16 w-16 shrink-0 rounded-full border border-(--border-neutral) object-cover"
-        />
+        <Avatar user={user} className="h-16 w-16 border border-(--border-neutral)" textClassName="text-lg" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-lg font-semibold" style={{ fontFamily: "var(--font-heading)" }}>

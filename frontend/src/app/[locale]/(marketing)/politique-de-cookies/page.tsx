@@ -42,7 +42,7 @@ export default async function CookiePolicyPage({
               <p>{t("essentialText")}</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <CookieRow
-                  name="hmm_token"
+                  name="__Host-hmm_token"
                   purpose={t("sessionCookiePurpose")}
                   duration={t("sessionCookieDuration")}
                 />

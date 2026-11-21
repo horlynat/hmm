@@ -1,6 +1,17 @@
 import "server-only";
 import sanitizeHtml from "sanitize-html";
 
+/** Classes autorisées dans le HTML riche (alignement/indentation/code de Quill, cf. `.article-body` dans globals.css). */
+export const ARTICLE_ALLOWED_CLASSES = [
+  "ql-align-center",
+  "ql-align-right",
+  "ql-align-justify",
+  ...Array.from({ length: 8 }, (_, i) => `ql-indent-${i + 1}`),
+  "ql-syntax",
+  "ql-code-block",
+  "ql-code-block-container",
+];
+
 /**
  * Sanitise le HTML des contenus rédigés côté admin Symfony (éditeur riche —
  * cf. assets/controllers/rich_text_controller.js) avant injection via
@@ -30,7 +41,15 @@ export function sanitizeArticleHtml(dirty: string): string {
     allowedAttributes: {
       a: ["href", "title"],
       img: ["src", "alt", "title", "width", "height", "loading"],
-      "*": ["class"],
+    },
+    // `class` n'est plus libre : seules les classes produites par l'éditeur
+    // (Quill, cf. backend assets/controllers/rich_text_controller.js) et
+    // stylées par `.article-body` passent. Une classe arbitraire permettait
+    // d'habiller du contenu avec n'importe quel utilitaire Tailwind/du site
+    // (`fixed inset-0 z-50…`) — superposition trompeuse / clickjacking
+    // interne, faux éléments d'interface.
+    allowedClasses: {
+      "*": ARTICLE_ALLOWED_CLASSES,
     },
     // Schémas d'URL autorisés (bloque javascript:, data: sur les liens, etc.).
     allowedSchemes: ["http", "https", "mailto", "tel"],
