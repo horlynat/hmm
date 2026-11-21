@@ -98,6 +98,12 @@ final class MediaUploaderSvgTest extends TestCase
         yield 'foreignObject with HTML' => ["<svg $ns><foreignObject><body xmlns=\"http://www.w3.org/1999/xhtml\"><iframe src=\"javascript:alert(1)\"></iframe></body></foreignObject></svg>", self::NEUTRALISED, ['<iframe', 'javascript:', 'foreignObject']];
         yield '<use> of a data: SVG' => ["<svg $ns><use href=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnPjxzY3JpcHQ+YWxlcnQoMSk8L3NjcmlwdD48L3N2Zz4=#x\"/></svg>", self::NEUTRALISED, ['data:']];
         yield 'PHP open tag' => ["<svg $ns><?php system('id'); ?><circle r=\"4\"/></svg>", self::NEUTRALISED, ['<?php', 'system(']];
+        // Contre-audit rétroactif #147 : vecteurs bloqués par la bibliothèque
+        // mais non verrouillés par un test (régression silencieuse possible).
+        yield 'xml-stylesheet (XSLT)' => ["<?xml version=\"1.0\"?><?xml-stylesheet type=\"text/xsl\" href=\"https://evil.example/x.xsl\"?><svg $ns><circle r=\"4\"/></svg>", self::NEUTRALISED, ['xml-stylesheet', 'evil.example']];
+        yield 'data:text/html in <a href>' => ["<svg $ns><a href=\"data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==\"><circle r=\"4\"/></a></svg>", self::NEUTRALISED, ['data:']];
+        yield 'renamed xlink prefix' => ["<svg $ns xmlns:z=\"http://www.w3.org/1999/xlink\"><a z:href=\"javascript:alert(1)\"><circle r=\"4\"/></a></svg>", self::NEUTRALISED, ['javascript:', 'alert(']];
+        yield 'CSS-escaped url() in <style>' => ["<svg $ns><style>rect{fill:u\\72l(https://evil.example/x)}</style><rect width=\"4\" height=\"4\"/></svg>", self::NEUTRALISED, ['evil.example']];
 
         // --- Références distantes (pixel espion / exfiltration / SSRF au rendu) ---
         yield 'remote <image>' => ["<svg $ns $xlink><image xlink:href=\"https://evil.example/p.png\"/></svg>", self::NEUTRALISED, ['evil.example']];

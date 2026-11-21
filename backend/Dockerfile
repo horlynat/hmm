@@ -12,7 +12,7 @@
 # vendor/composer/platform_check.php refuse en plus de démarrer l'app sous
 # 8.4.27 (borne basse seulement : un 8.5.0–8.5.11 n'y est pas détecté, seul
 # le `composer install` du build l'arrête).
-ARG FRANKENPHP_IMAGE=dunglas/frankenphp:1.13.6-php8.4.28-alpine
+ARG FRANKENPHP_IMAGE=dunglas/frankenphp:1.13.6-php8.4.28-alpine@sha256:bacc982b5c926a5adee882cd245fc96fb79c316fe9ea8d845e2e3f3863113adb
 
 # ---- Stage 1 : dépendances Composer (prod, sans dev) ----
 # Même PHP que la prod (et non l'image composer:2, dont le PHP embarqué suit
@@ -20,7 +20,7 @@ ARG FRANKENPHP_IMAGE=dunglas/frankenphp:1.13.6-php8.4.28-alpine
 # officielle, à version figée.
 FROM ${FRANKENPHP_IMAGE} AS vendor
 USER root
-COPY --from=composer:2.9.8 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2.9.8@sha256:b09bccd91a78fe8a9ab4b33d707b862e8fe54fec17782e32683ad2a69c46867d /usr/bin/composer /usr/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
 WORKDIR /build
 # ext-xsl : requis par twig/inky-extra (templates email). ext-bcmath : requis
@@ -47,7 +47,7 @@ RUN composer dump-autoload --optimize --no-dev --classmap-authoritative \
 # et @symfony/ux-turbo en dépendances npm "file:vendor/symfony/.../assets"
 # (pont Composer -> npm des bundles Symfony UX) — npm ci échoue sans vendor/
 # déjà présent.
-FROM node:22-alpine AS assets
+FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a AS assets
 WORKDIR /app
 COPY --from=vendor /build/vendor ./vendor
 COPY package.json package-lock.json ./

@@ -545,7 +545,7 @@ services:
       #    force brute non limitée sur le htpasswd) ;
       #  - admin-basicauth : 2ᵉ barrière d'identité À L'ORIGINE (htpasswd,
       #    secrets/admin_basicauth) — contrairement à dark.horlynat.com (auth
-      #    applicative Symfony complète) et mailadmin (whitelist IP), Adminer
+      #    applicative Symfony complète) et mailadmin (basic-auth DBG), Adminer
       #    n'a AUCUN contrôle d'accès propre : sans ça, la seule barrière est
       #    Cloudflare Access, configuré hors de ce dépôt et donc invérifiable
       #    ici. Le basic-auth garantit un mot de passe même si la politique
