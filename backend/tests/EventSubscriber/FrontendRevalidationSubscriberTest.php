@@ -10,6 +10,7 @@ use App\Entity\Course;
 use App\Entity\Experience;
 use App\Entity\HomeContent;
 use App\Entity\Media;
+use App\Entity\Offer;
 use App\Entity\Project;
 use App\Entity\ProjectInfo;
 use App\Entity\Skill;
@@ -74,6 +75,7 @@ final class FrontendRevalidationSubscriberTest extends TestCase
         yield 'AboutContent' => [new AboutContent(), ['about-content']];
         yield 'AiAssistantSettings' => [new AiAssistantSettings(), ['ai-assistant']];
         yield 'AiAssistantEntry' => [new AiAssistantEntry(), ['ai-assistant']];
+        yield 'Offer' => [new Offer(), ['offers']];
         yield 'Media rattaché à un Project' => [(new Media())->setProject(new Project()), ['projects']];
         yield 'Media rattaché à un Article' => [(new Media())->setArticle(new Article()), ['articles']];
         yield 'Media rattaché à un Testimonial' => [(new Media())->setTestimonial(new Testimonial()), ['testimonials']];
