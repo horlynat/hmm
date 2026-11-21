@@ -61,7 +61,7 @@ COMPOSE=(docker compose --env-file .env.prod -f docker-compose.prod.yml)
 
 # Passerelle éphémère du build frontend (service api-build-gateway, profil
 # `build`, cf. docker-compose.prod.yml) : publiée sur l'IP de docker0 et
-# jointe par les RUN du build sous le nom `backend`. Même valeur par défaut
+# jointe par les RUN du build sous le nom `hmm-backend`. Même valeur par défaut
 # que dans le compose ; surcharger les deux via .env.prod si docker0 n'est
 # pas en 172.17.0.1.
 BUILD_GATEWAY_BIND="$(sed -n 's/^HMM_BUILD_GATEWAY_BIND=//p' .env.prod 2>/dev/null | tail -n1 | tr -d "\"' ")"
@@ -143,7 +143,7 @@ up_with_retry messenger-worker
 # fenêtre de quelques secondes de backend froid faisait échouer tout le
 # déploiement (constaté en prod : run 33173366683, "Contenu de la page
 # d'accueil indisponible" au prerender de /en). On sonde donc ici, via la
-# même passerelle que le build (api-build-gateway, Host `backend` comme les
+# même passerelle que le build (api-build-gateway, Host `hmm-backend` comme les
 # RUN du build -- accepté par framework.trusted_hosts), jusqu'à ce que les
 # endpoints critiques répondent réellement -- ce qui les laisse aussi chauds
 # pour le build qui suit.
@@ -213,7 +213,11 @@ up_with_retry frontend
 # Frontend non-root : un secret illisible (groupe/droits du fichier sur
 # l'hôte) n'empêche pas le démarrage mais désactive en silence la
 # revalidation — on rend l'échec visible.
-if "${COMPOSE[@]}" logs --no-log-prefix frontend 2>&1 | grep -q '\[entrypoint\] AVERTISSEMENT'; then
+# Capture d'abord : `logs | grep -q` sous pipefail pouvait rater la ligne
+# (SIGPIPE de l'écrivain -> pipeline en échec -> if faux), et un échec de
+# `compose logs` lui-même fait ici échouer le script (set -e).
+fe_logs="$("${COMPOSE[@]}" logs --no-log-prefix frontend 2>&1)"
+if grep -qF '[entrypoint] AVERTISSEMENT' <<<"$fe_logs"; then
   echo "Frontend démarré SANS un de ses secrets (cf. logs frontend) -- vérifier HMM_SECRETS_GID et les droits de infra/secrets/." >&2
   exit 1
 fi

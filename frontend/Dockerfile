@@ -52,12 +52,12 @@ COPY . .
 # Ce RUN tourne sur le réseau bridge PAR DÉFAUT (plus de `--network=host`,
 # qui donnait à TOUT le build — y compris les scripts postinstall des
 # dépendances — la pile réseau complète de l'hôte, services tiers du VPS
-# compris). Le backend est joint via le nom `backend`, résolu par
+# compris). Le backend est joint via le nom `hmm-backend`, résolu par
 # `extra_hosts: ["hmm-backend:host-gateway"]` posé sur le SERVICE `frontend`
 # dans docker-compose.prod.yml (pas par ce Dockerfile) vers la passerelle
 # éphémère `api-build-gateway` (socat sur l'IP de docker0, port 8000,
 # démarrée par infra/scripts/deploy-remote.sh le temps du build) — cf.
-# docker-compose.prod.yml et infra/README.md "Build en deux temps". `backend`
+# docker-compose.prod.yml et infra/README.md "Build en deux temps". `hmm-backend`
 # est le même Host qu'à l'exécution, accepté par SYMFONY_TRUSTED_HOSTS.
 # API_URL doit donc valoir `http://hmm-backend:8000/api` pendant ce build (fourni
 # en `args:` par compose) — PAS `http://127.0.0.1:8000/api` (plus joignable
