@@ -1,0 +1,59 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Offres du site{% endblock %}
+
+{% block body %}
+	{% set n = offers|length %}
+	<twig:PageHeader title="Offres" :subtitle="n ~ ' offre' ~ (n > 1 ? 's' : '') ~ ' — accueil et pages « Offres » du site public.'" icon="ti-tag">
+		<a href="{{ path('admin_offer_create') }}" class="btn btn-primary gap-2">
+			<span class="ti ti-plus" aria-hidden="true"></span>
+			<span>Ajouter une offre</span>
+		</a>
+	</twig:PageHeader>
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Liste des offres</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="w-16">Ordre</th>
+					<th scope="col">Offre</th>
+					<th scope="col" class="w-40">Prix</th>
+					<th scope="col" class="w-32">État</th>
+					<th scope="col" class="w-32 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for offer in offers %}
+					<tr>
+						<td class="font-mono text-xs opacity-50">{{ offer.position }}</td>
+						<td>
+							<div class="font-bold truncate text-(--color-brand-dark)">{{ offer.title }}</div>
+							<div class="text-xs opacity-70 mt-0.5 font-mono">/offres/{{ offer.slug }}{% if offer.heroPosition %} · carrousel n° {{ offer.heroPosition }}{% endif %}{% if offer.featured %} · vedette{% endif %}</div>
+						</td>
+						<td class="text-xs whitespace-nowrap">{{ offer.priceOnce ? 'Prix unique' : 'À partir de' }} {{ offer.price|number_format(0, ',', ' ') }} FCFA</td>
+						<td>
+							{% if offer.published %}
+								<span class="badge badge-success">Publiée</span>
+							{% else %}
+								<span class="badge badge-warning">Brouillon</span>
+							{% endif %}
+						</td>
+						<td>
+							<div class="flex items-center justify-end gap-1">
+								<a href="{{ path('admin_offer_update', {'id': offer.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ offer.title }}">
+									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
+								</a>
+								<twig:DeleteModal :id="offer.id" :action="path('admin_offer_delete', {id: offer.id})" :token="csrf_token('delete_offer' ~ offer.id)" :label="offer.title" entity="cette offre" />
+							</div>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="5"><twig:EmptyState text="Aucune offre pour le moment." icon="ti-tag" /></td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock %}

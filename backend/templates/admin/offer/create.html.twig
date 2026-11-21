@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ajouter une offre{% endblock %}
+
+{% block body %}
+	<twig:PageHeader title="Nouvelle offre" subtitle="Visible sur le site une fois cochée « Publiée »." icon="ti-tag">
+		<a href="{{ path('admin_offer_index') }}" class="btn btn-secondary gap-2">
+			<span class="ti ti-arrow-left" aria-hidden="true"></span>
+			<span>Retour à la liste</span>
+		</a>
+	</twig:PageHeader>
+
+	{{ include('admin/offer/_form.html.twig', {'button_label': 'Créer l\'offre'}) }}
+{% endblock %}
