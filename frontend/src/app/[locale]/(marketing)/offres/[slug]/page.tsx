@@ -10,6 +10,8 @@ import { formatFcfa } from "@/lib/format/fcfa";
 import { whatsappLink } from "@/lib/whatsapp";
 import { resolveOgLocale, SITE_URL } from "@/lib/metadata";
 import { siteConfig } from "@/config/site";
+import { getPathname } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
 
 export const dynamic = "force-static";
 
@@ -30,12 +32,22 @@ export async function generateMetadata({
   if (!offer) return {};
 
   const image = `${SITE_URL}/${locale}/opengraph-image`;
+  // Canonical et hreflang propres à la fiche : sans eux, la page hérite de
+  // ceux du layout racine (l'accueil) et les moteurs la traitent comme un
+  // doublon de l'accueil, donc ne l'indexent pas.
+  const href = { pathname: "/offres/[slug]" as const, params: { slug: offer.slug } };
+  const url = `${SITE_URL}${getPathname({ locale, href })}`;
+  const languages = Object.fromEntries(
+    routing.locales.map((l) => [l, `${SITE_URL}${getPathname({ locale: l, href })}`]),
+  );
   return {
     title: offer.title,
     description: offer.cardText,
+    alternates: { canonical: url, languages },
     openGraph: {
       title: offer.title,
       description: offer.cardText,
+      url,
       type: "website",
       siteName: siteConfig.name,
       locale: resolveOgLocale(locale),
