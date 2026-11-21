@@ -1187,7 +1187,9 @@
         "confirmPrompt": "Are you sure? This action cannot be undone.",
         "confirmButton": "Yes, delete permanently",
         "confirmPending": "Deleting…",
-        "cancelButton": "Cancel"
+        "cancelButton": "Cancel",
+        "passwordLabel": "Current password",
+        "passwordRequired": "Enter your current password to confirm."
       },
       "overview": {
         "completeBadge": "Complete profile",

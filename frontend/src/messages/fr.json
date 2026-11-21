@@ -1187,7 +1187,9 @@
         "confirmPrompt": "Êtes-vous sûr ? Cette action ne peut pas être annulée.",
         "confirmButton": "Oui, supprimer définitivement",
         "confirmPending": "Suppression…",
-        "cancelButton": "Annuler"
+        "cancelButton": "Annuler",
+        "passwordLabel": "Mot de passe actuel",
+        "passwordRequired": "Saisissez votre mot de passe actuel pour confirmer."
       },
       "overview": {
         "completeBadge": "Profil complet",
