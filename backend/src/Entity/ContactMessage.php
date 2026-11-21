@@ -47,7 +47,12 @@ class ContactMessage
 
     /** Requis uniquement si `channel` n'est pas l'email — cf. validatePhoneForChannel(). */
     #[ORM\Column(length: 20, nullable: true)]
-    #[Assert\Regex(pattern: "/^\+?[0-9\s\-]{7,20}$/", message: "Le numéro de téléphone n'est pas valide.")]
+    // Contre-audit B3 : la regex seule laissait passer 21 caractères (`+` et
+    // 20 chiffres) alors que la colonne en compte 20 — un anonyme obtenait une
+    // 500 (« Data too long »), et chaque 500 déclenche un e-mail d'alerte.
+    // `\s` et `$` sans `D` acceptaient aussi tabulation et saut de ligne final.
+    #[Assert\Length(max: 20)]
+    #[Assert\Regex(pattern: "/^\+?[0-9 \-]{7,20}$/D", message: "Le numéro de téléphone n'est pas valide.")]
     #[Groups(["api_public", "api_admin"])]
     private ?string $phone = null;
 

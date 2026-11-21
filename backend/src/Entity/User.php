@@ -186,7 +186,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     #[Groups(["api_user", "api_admin", "collaborator_signup", "client_signup"])]
     #[Assert\Length(min: 7, max: 20, minMessage: "Le numéro doit contenir au moins {{ limit }} caractères.")]
     #[Assert\Regex(
-        pattern: '/^[0-9+\-\s\(\)]+$/',
+        // `$` sans `D` et `\s` acceptaient un saut de ligne final et des
+        // tabulations (stockés tels quels) — contre-audit B3.
+        pattern: '/^[0-9+\- ()]+$/D',
         message: "Le numéro de téléphone contient des caractères invalides."
     )]
     private ?string $phone = null;

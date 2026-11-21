@@ -97,6 +97,53 @@ final class PublicEntityLengthGuardTest extends WebTestCase
         self::assertResponseStatusCodeSame(422);
     }
 
+    /**
+     * Contre-audit B3 : la regex du téléphone laissait passer `+` suivi de
+     * 20 chiffres (21 caractères, colonne de 20) -> 500 anonyme ; `\s` et `$`
+     * sans `D` acceptaient aussi tabulation et saut de ligne final.
+     *
+     * @return iterable<string, array{string, string}>
+     */
+    public static function invalidPhones(): iterable
+    {
+        foreach (['/api/contact_messages' => 'contact', '/api/quote_requests' => 'devis'] as $uri => $label) {
+            yield "$label : 21 caractères" => [$uri, '+'.str_repeat('1', 20)];
+            yield "$label : saut de ligne final" => [$uri, str_repeat('1', 10)."\n"];
+            yield "$label : tabulation" => [$uri, "0612\t345678"];
+        }
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('invalidPhones')]
+    public function testInvalidPhoneIsA422NeverA500(string $uri, string $phone): void
+    {
+        $payload = '/api/contact_messages' === $uri
+            ? ['source' => 'contact', 'name' => 'Nom', 'email' => 'p-'.bin2hex(random_bytes(4)).'@example.test', 'subject' => 'Sujet', 'message' => 'Bonjour, ceci est un message.', 'channel' => 'whatsapp', 'phone' => $phone]
+            : ['name' => 'Nom', 'email' => 'p-'.bin2hex(random_bytes(4)).'@example.test', 'category' => 'Web', 'channel' => 'whatsapp', 'message' => 'Un projet de site.', 'phone' => $phone];
+
+        $client = static::createClient();
+        $client->request('POST', $uri, server: [
+            'CONTENT_TYPE' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/ld+json',
+            'REMOTE_ADDR' => sprintf('2001:db8:%x::1', random_int(1, 0xFFFF)),
+        ], content: (string) json_encode($payload));
+
+        self::assertResponseStatusCodeSame(422, "Téléphone invalide sur $uri : 422 attendu, jamais 500 ni 201.");
+        $fields = array_map(static fn (array $v): string => $v['propertyPath'] ?? '', json_decode((string) $client->getResponse()->getContent(), true)['violations'] ?? []);
+        self::assertContains('phone', $fields);
+    }
+
+    public function testValidPhoneIsStillAccepted(): void
+    {
+        $client = static::createClient();
+        $client->request('POST', '/api/contact_messages', server: [
+            'CONTENT_TYPE' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/ld+json',
+            'REMOTE_ADDR' => sprintf('2001:db8:%x::1', random_int(1, 0xFFFF)),
+        ], content: (string) json_encode(['source' => 'contact', 'name' => 'Nom', 'email' => 'ok-'.bin2hex(random_bytes(4)).'@example.test', 'subject' => 'Sujet', 'message' => 'Bonjour, ceci est un message.', 'channel' => 'whatsapp', 'phone' => '+33 6 12 34 56 78']));
+
+        self::assertResponseStatusCodeSame(201, (string) $client->getResponse()->getContent());
+    }
+
     public function testValidContactMessageIsStillAccepted(): void
     {
         // Non-régression : les plafonds ajoutés ne doivent pas bloquer un envoi légitime.
