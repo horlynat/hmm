@@ -1,6 +1,27 @@
+import { routing } from "@/i18n/routing";
+
+/**
+ * Chemins EXTERNES (tels que tapés dans la barre d'adresse) servis avec la
+ * CSP stricte par nonce (cf. src/proxy.ts) : /contact, et tout l'espace
+ * compte — /fr/compte/** et son équivalent anglais /en/account/**
+ * (routing.pathnames). Ces pages sont toutes rendues dynamiquement
+ * (`force-dynamic` sur /contact et sur le layout /compte), condition pour
+ * qu'un nonce par requête puisse y être injecté. Les variantes « croisées »
+ * (/en/compte, /fr/account) sont redirigées par next-intl : elles reçoivent
+ * aussi la CSP stricte, sans effet sur une 3xx.
+ */
+const STRICT_SECTIONS = ["contact", "compte", "account"];
+const strictNoncePathPattern = new RegExp(
+  `^/(?:${routing.locales.join("|")})/(?:${STRICT_SECTIONS.join("|")})(?:/.*)?$`,
+);
+
+export function needsStrictCsp(pathname: string): boolean {
+  return strictNoncePathPattern.test(pathname);
+}
+
 interface BuildCspOptions {
   isDev: boolean;
-  /** Présent uniquement sur les routes forcées en dynamique (ex. /contact). */
+  /** Présent uniquement sur les routes forcées en dynamique (/contact, /compte/**). */
   nonce?: string;
 }
 

@@ -4,6 +4,7 @@ import { ArrowLeft, FolderCheck, ArrowRight } from "lucide-react";
 import { Badge, ButtonLink, Card, SettingsSection, SettingsSectionGroup, Breadcrumb, SectionHeading } from "@/components/ui";
 import { getMyQuote } from "@/lib/auth/session";
 import { quoteStatusVariant } from "@/lib/status";
+import { parseRouteId } from "@/lib/api/path";
 
 export default async function CompteQuoteDetailPage({
   params,
@@ -11,8 +12,9 @@ export default async function CompteQuoteDetailPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { locale, id } = await params;
-  const quoteId = Number(id);
-  if (!Number.isInteger(quoteId)) {
+  // Entier décimal strictement positif uniquement (cf. parseRouteId).
+  const quoteId = parseRouteId(id);
+  if (quoteId === null) {
     notFound();
   }
 

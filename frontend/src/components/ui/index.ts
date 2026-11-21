@@ -20,3 +20,4 @@ export { Chip } from "./Chip";
 export { Logo } from "./Logo";
 export { InlineScript } from "./InlineScript";
 export { LegalLink } from "./LegalLink";
+export { Avatar } from "./Avatar";

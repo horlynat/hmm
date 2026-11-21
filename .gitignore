@@ -1,0 +1,33 @@
+# Garde-fou global : aucun secret, dump ou journal ne doit jamais être
+# commité, quel que soit le dossier (cf. infra/.gitignore pour le détail
+# côté déploiement).
+
+# Fichiers d'environnement réels (les modèles *.example restent versionnés)
+.env.prod
+.env.prod.*
+!.env.prod.example
+.env.local
+.env.*.local
+
+# Dumps et sauvegardes de base de données
+*.sql
+*.sql.gz
+*.sql.age
+*.dump
+backups/
+
+# Journaux
+logs/
+*.log
+
+# Clés et certificats
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+
+# Systèmes / éditeurs
+.DS_Store
+Thumbs.db

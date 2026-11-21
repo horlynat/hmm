@@ -29,6 +29,10 @@ on:
       - ".github/workflows/frontend-ci.yml"
   workflow_dispatch:
 
+# Moindre privilège : ce job ne fait que lire le dépôt.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -37,9 +41,11 @@ jobs:
         working-directory: frontend
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22"
           cache: npm
@@ -49,8 +55,14 @@ jobs:
       # même piège que dans le Dockerfile (npm 10 embarqué dans node:22
       # résout mal ce lockfile généré avec npm 11 : "Missing:
       # @swc/helpers@... from lock file").
-      - run: npm install -g npm@11
-      - run: npm ci
+      # Version EXACTE, identique à frontend/Dockerfile.
+      - run: npm install -g npm@11.21.2
+      # `--ignore-scripts` : aucun script install/postinstall de dépendance
+      # n'est exécuté (mêmes raisons et même inventaire que frontend/Dockerfile).
+      - run: npm ci --ignore-scripts
+      # Échec sur toute vulnérabilité connue de sévérité ≥ high dans les
+      # dépendances livrées en production.
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npm run type-check
       - run: npm run test

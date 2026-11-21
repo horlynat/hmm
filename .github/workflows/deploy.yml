@@ -9,6 +9,18 @@ name: Deploy production
 # (cf. frontend-ci.yml) — il continue d'être construit sur le VPS pendant le
 # déploiement, comme documenté en README §6. Seul le backend (qui n'a pas
 # cette contrainte) passe par une image testée et versionnée sur GHCR.
+#
+# Sécurité (cf. infra/README.md §11) :
+#  - toutes les actions sont épinglées par SHA (tag en commentaire) — un tag
+#    déplacé par un tiers ne change rien ici ; Dependabot (.github/
+#    dependabot.yml) propose les montées de version ;
+#  - permissions minimales : lecture seule partout, `packages: write`
+#    uniquement sur le job qui pousse l'image ;
+#  - aucune expression `${{ }}` n'est interpolée dans un script shell :
+#    entrées et secrets passent par `env:` puis sont validés ;
+#  - DEPLOY_SSH_KEY / DEPLOY_HOST sont des secrets de l'ENVIRONNEMENT
+#    `production` (approbation manuelle + branche main uniquement), jamais
+#    des secrets de dépôt lisibles par n'importe quel workflow.
 on:
   push:
     branches: [main]
@@ -20,53 +32,128 @@ on:
   workflow_dispatch:
     inputs:
       backend_tag:
-        description: "Tag de l'image backend à déployer (rollback) — vide = build depuis ce commit"
+        description: "Tag de l'image backend à déployer (rollback : sha hex 7-40 car. ou 'latest') — vide = build depuis ce commit"
         required: false
         default: ""
 
 permissions:
   contents: read
-  packages: write
+
+# Un seul déploiement à la fois : deux runs concurrents (merge rapproché +
+# rollback manuel) entrelaçaient rsync et `docker compose up` sur le VPS.
+# Pas d'annulation du run en cours (un déploiement coupé à mi-chemin est
+# pire qu'un déploiement en file d'attente).
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
-  build-backend-image:
-    if: ${{ github.event.inputs.backend_tag == '' }}
+  # Valide l'entrée manuelle AVANT tout usage. Seul ce job lit
+  # `inputs.backend_tag`, et uniquement via `env:` (jamais interpolée dans le
+  # script) ; les jobs suivants ne consomment que la sortie validée.
+  resolve-tag:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      build: ${{ steps.tag.outputs.build }}
     steps:
-      - uses: actions/checkout@v7
+      - name: Valider backend_tag
+        id: tag
+        env:
+          INPUT_TAG: ${{ inputs.backend_tag }}
+          COMMIT_SHA: ${{ github.sha }}
+          GIT_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          # Un workflow_dispatch lancé depuis une autre branche construirait
+          # et pousserait `:latest` AVANT la porte d'approbation `production`
+          # (et déploierait l'infra/ de cette branche) : main uniquement.
+          if [[ "${GIT_REF}" != "refs/heads/main" ]]; then
+            echo "::error::Déploiement refusé hors de main (${GIT_REF})."
+            exit 1
+          fi
+          if [[ -z "${INPUT_TAG}" ]]; then
+            echo "tag=${COMMIT_SHA}" >> "$GITHUB_OUTPUT"
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          elif [[ "${INPUT_TAG}" =~ ^([0-9a-f]{7,40}|latest)$ ]]; then
+            echo "tag=${INPUT_TAG}" >> "$GITHUB_OUTPUT"
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::backend_tag invalide (attendu : sha hexadécimal de 7 à 40 caractères, ou 'latest')."
+            exit 1
+          fi
 
-      - uses: docker/login-action@v4
+  build-backend-image:
+    needs: resolve-tag
+    if: ${{ needs.resolve-tag.outputs.build == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/horlynat/hmm-backend
+      TAG: ${{ needs.resolve-tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # Même Dockerfile pour backend ET messenger-worker (seule la commande
+      # diffère, cf. docker-compose.prod.yml) — une seule image suffit aux
+      # deux services. Construite et CHARGÉE localement d'abord (pas
+      # poussée) : la vérification PHP ci-dessous doit pouvoir bloquer
+      # avant que `latest` ne bouge sur le registre.
+      - name: Build (sans push)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ./backend
+          push: false
+          load: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ env.TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Garde-fou PHP2Shell (CVE-2026-109618/109619) : jamais d'image en
+      # prod sous PHP 8.4.27 (branche 8.4) / 8.5.12 (branche 8.5).
+      - name: Vérifier la version de PHP embarquée
+        run: |
+          set -euo pipefail
+          docker run --rm --entrypoint php "${IMAGE}:${TAG}" -r '
+            $v = PHP_VERSION;
+            $ok = (version_compare($v, "8.4.27", ">=") && version_compare($v, "8.5.0", "<"))
+               || version_compare($v, "8.5.12", ">=");
+            fwrite(STDOUT, "PHP ".$v.($ok ? " : OK" : " : VULNERABLE (PHP2Shell)")."\n");
+            exit($ok ? 0 : 1);'
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/setup-buildx-action@v4
-
-      # Même Dockerfile pour backend ET messenger-worker (seule la commande
-      # diffère, cf. docker-compose.prod.yml) — une seule image suffit aux
-      # deux services.
-      - uses: docker/build-push-action@v7
-        with:
-          context: ./backend
-          push: true
-          tags: |
-            ghcr.io/horlynat/hmm-backend:latest
-            ghcr.io/horlynat/hmm-backend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Push
+        run: |
+          set -euo pipefail
+          docker push "${IMAGE}:${TAG}"
+          docker push "${IMAGE}:latest"
 
   deploy:
-    needs: build-backend-image
-    if: ${{ !failure() && !cancelled() }}
+    needs: [resolve-tag, build-backend-image]
+    # build-backend-image est sauté lors d'un rollback (backend_tag fourni) :
+    # on déploie quand même, mais jamais si la validation du tag a échoué.
+    if: ${{ !failure() && !cancelled() && needs.resolve-tag.result == 'success' }}
     runs-on: ubuntu-latest
     environment: production
     env:
-      # Rollback manuel : workflow_dispatch avec backend_tag=<sha> déploie
-      # cette image existante sans en reconstruire une nouvelle.
-      BACKEND_IMAGE_TAG: ${{ github.event.inputs.backend_tag || github.sha }}
+      BACKEND_IMAGE_TAG: ${{ needs.resolve-tag.outputs.tag }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Clé SSH de déploiement
         # DEPLOY_SSH_KEY est stockée encodée en base64 sur une seule ligne
@@ -74,11 +161,44 @@ jobs:
         # multi-lignes dans le champ "secret" de GitHub corrompait des sauts
         # de ligne (erreur "error in libcrypto" au chargement côté runner,
         # constaté en prod). Le base64 élimine toute ambiguïté de collage.
+        #
+        # Secrets passés par `env:` (jamais `${{ secrets.* }}` dans le
+        # script : une valeur contenant `"` ou `$(...)` y serait exécutée).
+        # DEPLOY_HOST : secret d'environnement `production` ; repli sur
+        # l'ancienne variable de dépôt le temps de la bascule (cf. README §11).
+        # DEPLOY_SSH_PORT : port sshd du VPS (2222 une fois --lock-ssh
+        # appliqué, cf. scripts/01-base-hardening.sh) ; 22 par défaut.
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST || vars.DEPLOY_HOST }}
+          DEPLOY_SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" | base64 -d > ~/.ssh/deploy_key
+          set -euo pipefail
+          if [[ -z "${DEPLOY_SSH_KEY}" || -z "${DEPLOY_HOST}" || -z "${DEPLOY_KNOWN_HOSTS}" ]]; then
+            echo "::error::DEPLOY_SSH_KEY / DEPLOY_HOST / DEPLOY_KNOWN_HOSTS manquant(s) (environnement production)."
+            exit 1
+          fi
+          # Ces deux valeurs finissent dans ~/.ssh/config : refuser tout
+          # caractère qui permettrait d'y injecter une directive.
+          [[ "${DEPLOY_HOST}" =~ ^[A-Za-z0-9.:-]+$ ]] || { echo "::error::DEPLOY_HOST invalide"; exit 1; }
+          [[ "${DEPLOY_SSH_PORT}" =~ ^[0-9]{1,5}$ ]] || { echo "::error::DEPLOY_SSH_PORT invalide"; exit 1; }
+          install -d -m 700 ~/.ssh
+          printf '%s' "${DEPLOY_SSH_KEY}" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "${{ vars.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          printf '%s\n' "${DEPLOY_KNOWN_HOSTS}" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host hmm-vps
+            HostName ${DEPLOY_HOST}
+            Port ${DEPLOY_SSH_PORT}
+            User deploy
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            UserKnownHostsFile ~/.ssh/known_hosts
+            StrictHostKeyChecking yes
+            BatchMode yes
+          EOF
+          chmod 600 ~/.ssh/config
 
       # Synchronise infra/ (compose, Traefik, scripts) et frontend/ (buildé
       # sur le VPS, cf. infra/scripts/deploy-remote.sh) — jamais backend/,
@@ -96,6 +216,10 @@ jobs:
       # les droits pour les supprimer) plutôt que de les effacer
       # silencieusement — sans cette exclusion, le déploiement entier
       # échouait (rsync exit 23).
+      #
+      # Destination identique avec ou sans la commande forcée côté VPS
+      # (infra/scripts/deploy-ssh-gate.sh, cf. README §11) : la passerelle
+      # n'accepte qu'un rsync en écriture seule vers exactement /opt/hmm/.
       - name: Rsync infra/ + frontend/ vers le VPS
         # --omit-dir-times --no-perms : la propriété de infra/ et frontend/
         # sur le VPS reste `ubuntu` par choix explicite (cf. README §11),
@@ -107,7 +231,7 @@ jobs:
         # explicitement en tout début de deploy-remote.sh.
         run: |
           rsync -az --delete --omit-dir-times --no-perms \
-            -e "ssh -i ~/.ssh/deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts" \
+            -e "ssh -F $HOME/.ssh/config" \
             --exclude infra/secrets \
             --exclude infra/certs \
             --exclude infra/logs \
@@ -116,10 +240,19 @@ jobs:
             --exclude frontend/node_modules \
             --exclude frontend/.next \
             infra frontend \
-            deploy@${{ vars.DEPLOY_HOST }}:/opt/hmm/
+            hmm-vps:/opt/hmm/
 
       - name: Déploiement (backend -> migrations -> worker -> frontend)
+        # Le tag est passé en ARGUMENT (plus en préfixe VAR=...), validé une
+        # 2e fois et échappé (`printf %q`) : la chaîne envoyée à ssh est
+        # interprétée par un shell distant. Forme exacte attendue par la
+        # commande forcée côté VPS (deploy-ssh-gate.sh).
         run: |
-          ssh -i ~/.ssh/deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts \
-            deploy@${{ vars.DEPLOY_HOST }} \
-            "BACKEND_IMAGE_TAG=${BACKEND_IMAGE_TAG} bash /opt/hmm/infra/scripts/deploy-remote.sh"
+          set -euo pipefail
+          [[ "${BACKEND_IMAGE_TAG}" =~ ^([0-9a-f]{7,40}|latest)$ ]] || { echo "::error::tag invalide"; exit 1; }
+          remote_cmd="bash /opt/hmm/infra/scripts/deploy-remote.sh $(printf '%q' "${BACKEND_IMAGE_TAG}")"
+          ssh -F "$HOME/.ssh/config" hmm-vps "${remote_cmd}"
+
+      - name: Nettoyage de la clé
+        if: ${{ always() }}
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/config

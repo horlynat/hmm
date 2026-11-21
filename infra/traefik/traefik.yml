@@ -1,6 +1,8 @@
 # Config statique Traefik — point d'entrée public unique (guide hardening
-# portfolio §2). Pas de dashboard exposé, pas d'API non plus : surface
-# minimale.
+# portfolio §2). Aucun port dédié à l'API ni au dashboard (`insecure: false`,
+# :8080 non publié) ; le dashboard n'est servi que par le routeur DBG décrit
+# dans la section `api` ci-dessous — aucun routeur du portfolio ne vise
+# api@internal.
 
 entryPoints:
   web:

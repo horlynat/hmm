@@ -2,6 +2,25 @@
 # (structure attendue : main/backend, main/frontend, main/infra — celui-ci).
 # Aucun service applicatif ne publie de port : Traefik est le seul point
 # d'entrée public (guide hardening portfolio §2).
+#
+# ⚠️ Traefik, ses fichiers (traefik/), le service postfixadmin et les réseaux
+# sont PARTAGÉS avec un autre projet hébergé sur le même VPS : ce fichier ne
+# durcit que les services propres au portfolio (frontend, backend,
+# messenger-worker, database, adminer, api-build-gateway). Cf. README §13.
+#
+# Durcissement des services du portfolio :
+#  - images épinglées (version exacte + digest) : une image retaguée
+#    localement ou repoussée sous le même tag n'est jamais utilisée ;
+#    montées de version proposées par Dependabot (écosystème docker-compose) ;
+#  - no-new-privileges + cap_drop ALL, cap_add au strict nécessaire
+#    (justifié service par service, validé en local) ; read_only + tmpfs
+#    quand l'image le permet ; pids_limit contre les fork-bombs.
+
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
 
 services:
   traefik:
@@ -50,23 +69,58 @@ services:
       dockerfile: Dockerfile
       # Beaucoup de pages font des fetch server-side vers l'API PENDANT le
       # build (génération statique/ISR, cf. Dockerfile) — le build a donc
-      # besoin d'atteindre `backend`. BuildKit ne supporte pas un réseau
-      # bridge nommé pour les étapes RUN ; on utilise le mode `host` (le RUN
-      # de build partage alors la pile réseau de l'hôte) et on atteint
-      # `backend` via son port publié en loopback ci-dessous. Implique un
+      # besoin d'atteindre `backend`. BuildKit ne supporte ni un réseau
+      # bridge nommé pour les RUN (« network mode not supported by
+      # buildkit », testé), ni l'accès au loopback de l'hôte hors mode
+      # `host`. Plus de `network: host` : il donnait à TOUT le build (`npm ci`
+      # et les scripts postinstall des dépendances compris) la pile réseau de
+      # l'hôte — services en 127.0.0.1 (MariaDB, Netdata...), ceux de l'autre
+      # projet du VPS inclus. Les RUN tournent désormais sur le bridge par
+      # défaut et joignent le backend via la passerelle ÉPHÉMÈRE
+      # `api-build-gateway` (ci-dessous), publiée sur l'IP de docker0 le seul
+      # temps du build (cf. scripts/deploy-remote.sh). Implique toujours un
       # déploiement en deux temps (cf. README "Build en deux temps") :
       # backend démarré AVANT `docker compose build frontend`.
-      network: host
+      # Nom `hmm-backend` : même Host qu'à l'exécution, accepté par
+      # framework.trusted_hosts (SYMFONY_TRUSTED_HOSTS) côté Symfony.
+      # host-gateway = IP de docker0 (172.17.0.1 par défaut) — doit valoir
+      # HMM_BUILD_GATEWAY_BIND ci-dessous.
+      # ⚠️ Nécessite que frontend/Dockerfile n'utilise plus
+      # `RUN --network=host` (sinon : « network.host is not allowed »).
+      extra_hosts:
+        - "hmm-backend:host-gateway"
       args:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
         NEXT_PUBLIC_MEDIA_URL: ${NEXT_PUBLIC_MEDIA_URL}
-        API_URL: http://127.0.0.1:8000/api
+        API_URL: http://hmm-backend:8000/api
+    <<: *hardening
+    # Aucune capacité : l'image tourne entièrement en non-root (USER nextjs,
+    # uid/gid 1001 — entrypoint, node et healthcheck compris, cf.
+    # frontend/Dockerfile) ; plus de lecture des secrets en root ni de
+    # su-exec. Les secrets sont lus via le bit groupe (group_add ci-dessous).
+    # Pas de read_only : Next.js (ISR) réécrit les pages régénérées et son
+    # cache dans .next/ à l'exécution.
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    pids_limit: 512
+    # Conteneur non-root (USER nextjs, uid/gid 1001, cf. frontend/Dockerfile) :
+    # les secrets montés gardent les droits du fichier hôte
+    # (ubuntu:hmmsecrets 640, cf. README §4). Ajout du GID de `hmmsecrets`
+    # comme groupe supplémentaire du processus : lecture via le bit groupe,
+    # sans chgrp par fichier ni capacité. 5002 = GID de `hmmsecrets` sur le
+    # VPS (vérifié) ; surcharger HMM_SECRETS_GID dans .env.prod s'il diffère
+    # (`getent group hmmsecrets`).
+    group_add:
+      - "${HMM_SECRETS_GID:-5002}"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
       # Appel interne conteneur-à-conteneur, jamais via le domaine public
-      # (cf. _config.frontend.md "100% server-side") :
-      - API_URL=http://backend:80/api
+      # (cf. _config.frontend.md "100% server-side"). `hmm-backend` = alias
+      # propre au portfolio sur edge-net (réseau PARTAGÉ avec un autre projet
+      # qui emploie aussi des noms génériques comme `backend` : le DNS Docker
+      # répartirait alors les appels — JWT, mots de passe — entre les deux).
+      - API_URL=http://hmm-backend:80/api
     secrets:
       - revalidate_secret
     networks:
@@ -80,11 +134,26 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=edge-net
-      - traefik.http.routers.frontend.rule=Host(`horlynat.com`) || Host(`www.horlynat.com`)
-      - traefik.http.routers.frontend.entrypoints=websecure
-      - traefik.http.routers.frontend.tls=true
-      - traefik.http.routers.frontend.middlewares=cloudflare-only@file,security-headers@file,ratelimit-standard@file
-      - traefik.http.services.frontend.loadbalancer.server.port=3000
+      # Préfixe hmm- sur tous les identifiants de routeur/service (et non
+      # les simples labels traefik.enable/traefik.docker.network, qui restent
+      # locaux au conteneur) : ce Traefik est PARTAGÉ avec un autre projet du
+      # VPS (DBG) dont les conteneurs utilisent les MÊMES noms génériques
+      # (`backend`, `api`, `web`...) — confirmé en test local avec les vrais
+      # conteneurs du VPS : Traefik logue alors « HTTP router defined
+      # multiple times with different configurations » et NE CRÉE AUCUN DES
+      # DEUX routeurs (ni le nôtre, ni celui de l'autre projet), 404 silencieux
+      # des deux côtés. Un nom de service Docker (`frontend`, `backend`...)
+      # peut rester identique ; seul l'identifiant de routeur/service Traefik
+      # (portée globale à toute l'instance, tous projets confondus) doit être
+      # unique. Risque pré-existant à ce lot (noms déjà `api`/`backend`/
+      # `dark`/`dbadmin` avant ces changements) — corrigé içi pour tous les
+      # routeurs du portfolio ; `mailadmin` (postfixadmin, hors périmètre de
+      # ce lot) non renommé, à vérifier séparément.
+      - traefik.http.routers.hmm-frontend.rule=Host(`horlynat.com`) || Host(`www.horlynat.com`)
+      - traefik.http.routers.hmm-frontend.entrypoints=websecure
+      - traefik.http.routers.hmm-frontend.tls=true
+      - traefik.http.routers.hmm-frontend.middlewares=cloudflare-only@file,security-headers@file,ratelimit-standard@file
+      - traefik.http.services.hmm-frontend.loadbalancer.server.port=3000
 
   backend:
     # Image poussée par le workflow deploy.yml (build + tests PHPStan/PHPUnit
@@ -97,13 +166,26 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile
+    <<: *hardening
+    # CHOWN/DAC_OVERRIDE : l'entrypoint (root) lit les secrets montés et
+    # écrit /app/.env.local pour www-data ; SETUID/SETGID : su-exec root ->
+    # www-data ; NET_BIND_SERVICE : le binaire frankenphp porte la capacité
+    # de fichier cap_net_bind_service — absente de l'ensemble limitant,
+    # execve() échouerait (EPERM). Avec no-new-privileges, www-data ne
+    # l'acquiert jamais (le port 80 est lié grâce à
+    # net.ipv4.ip_unprivileged_port_start=0, posé par Docker).
+    # Pas de read_only : l'entrypoint écrit /app/.env.local et Symfony son
+    # cache dans /app/var (amélioration possible côté image, cf. README §13).
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE
+    pids_limit: 512
     restart: unless-stopped
-    ports:
-      # Loopback uniquement (jamais 0.0.0.0) — sert au build `frontend` en
-      # mode réseau `host` ci-dessus (SSG/ISR au build). Ne contourne pas
-      # "Traefik seul point d'entrée public" : ce port n'est routable que
-      # depuis l'hôte lui-même, jamais depuis l'extérieur.
-      - "127.0.0.1:8000:80"
+    # Plus de port publié : l'ancien 127.0.0.1:8000 ne servait qu'au build
+    # frontend en réseau `host` — remplacé par api-build-gateway (éphémère).
     environment:
       - APP_ENV=prod
       - APP_DEBUG=0
@@ -119,12 +201,16 @@ services:
       # PublicApiHostRestrictionSubscriber) — même liste que le routeur
       # Traefik `api`, en défense en profondeur.
       - PUBLIC_API_HOSTS=${PUBLIC_API_HOSTS:-api.horlynat.com}
-      # Liste blanche des Host acceptés par Symfony (400 sinon). `backend` =
-      # appels serveur du frontend (API_URL=http://backend:80/api) ;
-      # 127.0.0.1 = build du frontend et scripts/deploy-remote.sh via le port
-      # publié 127.0.0.1:8000. `$$` = `$` littéral pour compose ; PAS
+      # Liste blanche des Host acceptés par Symfony (400 sinon). `hmm-backend`
+      # = appels serveur du frontend (API_URL=http://hmm-backend:80/api) ; le
+      # build du frontend passe aussi par ce nom (api-build-gateway +
+      # extra_hosts hmm-backend:host-gateway). `^backend$` gardé le temps de
+      # la bascule (l'ancien frontend l'emploie jusqu'à son remplacement en
+      # fin de déploiement) — à retirer au lot suivant. Plus de 127.0.0.1 : le port publié
+      # 127.0.0.1:8000 a disparu, et la sonde de santé vise l'admin Caddy
+      # (:2019), pas Symfony. `$$` = `$` littéral pour compose ; PAS
       # d'apostrophes (elles entreraient dans la regex -> 400 partout).
-      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^backend$$,^127\.0\.0\.1$$}
+      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^hmm-backend$$,^backend$$}
       # IP/plage du conteneur traefik (réseau edge-net) ET plages Cloudflare
       # (cf. cloudflare-ips.txt) — Symfony doit faire confiance aux DEUX pour
       # lire correctement les en-têtes X-Forwarded-* : Traefik restaure l'IP
@@ -176,8 +262,11 @@ services:
       database:
         condition: service_healthy
     networks:
-      - edge-net
-      - data-net
+      edge-net:
+        # Nom non ambigu pour les appels internes (cf. API_URL du frontend).
+        aliases:
+          - hmm-backend
+      data-net: {}
     volumes:
       # Logs lisibles depuis l'hôte pour fail2ban (jail symfony-security,
       # cf. scripts/01-base-hardening.sh) — tant que Monolog n'a pas de
@@ -210,13 +299,30 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=edge-net
-      - traefik.http.services.backend.loadbalancer.server.port=80
-      # api.horlynat.com — surface publique la plus large (guide §4)
-      - traefik.http.routers.api.rule=Host(`api.horlynat.com`)
-      - traefik.http.routers.api.entrypoints=websecure
-      - traefik.http.routers.api.tls=true
-      - traefik.http.routers.api.service=backend
-      - traefik.http.routers.api.middlewares=cloudflare-only@file,security-headers@file,ratelimit-standard@file
+      - traefik.http.services.hmm-backend.loadbalancer.server.port=80
+      # api.horlynat.com — surface publique : UNIQUEMENT ce que le site
+      # public et les clients mail consomment réellement :
+      #  - /api/...        : API Platform + /api/login_check ;
+      #  - /uploads/...    : médias (NEXT_PUBLIC_MEDIA_URL, optimiseur
+      #                      d'images Next — remotePatterns /uploads/**) ;
+      #  - /newsletter/... : liens de confirmation/désinscription cliqués
+      #                      depuis un client mail (NewsletterConfirmation
+      #                      Controller, liens générés sur DEFAULT_URI).
+      # Tout le reste (/login, /admin, /2fa, /_components, /build, /bundles,
+      # /profile, /projects, /...) n'est servi QUE par dark.horlynat.com,
+      # derrière Cloudflare Access + ratelimit-strict : sur api., Traefik ne
+      # trouve aucun routeur et répond 404 sans jamais toucher le backend
+      # (auparavant : back-office complet joignable par api. sans Access).
+      # Path(`/api`) + PathPrefix(`/api/`) plutôt que PathPrefix(`/api`), qui
+      # accepterait aussi /api-xxx, /apixxx...
+      # /build et /bundles volontairement absents : seul le back-office en a
+      # besoin, la page newsletter est autonome (styles en ligne) et la doc
+      # API Platform (autre consommatrice de /bundles) est désactivée en prod.
+      - traefik.http.routers.hmm-api.rule=Host(`api.horlynat.com`) && (Path(`/api`) || PathPrefix(`/api/`) || PathPrefix(`/uploads/`) || PathPrefix(`/newsletter/`))
+      - traefik.http.routers.hmm-api.entrypoints=websecure
+      - traefik.http.routers.hmm-api.tls=true
+      - traefik.http.routers.hmm-api.service=hmm-backend
+      - traefik.http.routers.hmm-api.middlewares=cloudflare-only@file,security-headers@file,ratelimit-standard@file
       # dark.horlynat.com — back-office, protection maximale (guide §3).
       # Pas de whitelist IP perso (admin-ipwhitelist@file, cf. traefik/
       # dynamic.yml) : IP non stable (connexions depuis des réseaux
@@ -226,11 +332,36 @@ services:
       # (code email, cf. dashboard Cloudflare Zero Trust) fait office de
       # vrai contrôle d'identité en amont de la connexion applicative —
       # renforçable côté Cloudflare (MFA, session courte) sans toucher ici.
-      - traefik.http.routers.dark.rule=Host(`dark.horlynat.com`)
-      - traefik.http.routers.dark.entrypoints=websecure
-      - traefik.http.routers.dark.tls=true
-      - traefik.http.routers.dark.service=backend
-      - traefik.http.routers.dark.middlewares=cloudflare-only@file,security-headers@file,ratelimit-strict@file
+      - traefik.http.routers.hmm-dark.rule=Host(`dark.horlynat.com`)
+      - traefik.http.routers.hmm-dark.entrypoints=websecure
+      - traefik.http.routers.hmm-dark.tls=true
+      - traefik.http.routers.hmm-dark.service=hmm-backend
+      - traefik.http.routers.hmm-dark.middlewares=cloudflare-only@file,security-headers@file,ratelimit-strict@file
+
+  api-build-gateway:
+    # Passerelle TCP ÉPHÉMÈRE vers hmm-backend:80, utilisée UNIQUEMENT pendant
+    # `docker compose build frontend` (profil `build` : jamais démarrée par
+    # un `up` normal). deploy-remote.sh la démarre juste avant le build et la
+    # supprime juste après (échec compris). Publiée sur l'IP de docker0 —
+    # pas 0.0.0.0 ; pas 127.0.0.1 non plus, injoignable depuis un RUN de
+    # build hors mode `host`. Le trafic public n'y arrive jamais (DOCKER-USER
+    # ne laisse passer vers les conteneurs que 80/443 depuis Cloudflare).
+    # À ajuster via HMM_BUILD_GATEWAY_BIND si docker0 n'est pas en
+    # 172.17.0.1 (`ip -4 addr show docker0`).
+    image: alpine/socat:1.8.1.3@sha256:71131702f671a88b3808a70b7330f9679cd9b9933adcafadc191508edfe55bba
+    profiles: ["build"]
+    <<: *hardening
+    user: "65534:65534"
+    read_only: true
+    # socat forke un processus par connexion ; next build en ouvre beaucoup
+    # en parallèle (keep-alive) — 64 pouvait faire échouer le build.
+    pids_limit: 256
+    command: ["TCP-LISTEN:8000,fork,reuseaddr", "TCP:hmm-backend:80"]
+    ports:
+      - "${HMM_BUILD_GATEWAY_BIND:-172.17.0.1}:8000:8000"
+    networks:
+      - edge-net
+    mem_limit: 32m
 
   messenger-worker:
     # Même image que le service backend ci-dessus (seule la commande
@@ -239,6 +370,15 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile
+    <<: *hardening
+    # Mêmes besoins que backend (entrypoint root -> su-exec www-data), sans
+    # NET_BIND_SERVICE (aucune écoute réseau, frankenphp jamais lancé).
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+    pids_limit: 256
     restart: unless-stopped
     # Pas de "docker-entrypoint.sh" ici : c'est l'ENTRYPOINT du Dockerfile
     # (hérité, jamais surchargé par `command:`) — le redéclarer double son
@@ -257,6 +397,9 @@ services:
       # SendEmailHandler tourne ici (transport async) — même contrainte que
       # le service backend (cf. commentaire là-bas).
       - APP_DEFAULT_SENDER=${APP_DEFAULT_SENDER}
+      # Liens e-mail générés hors requête HTTP (cf. backend).
+      - DEFAULT_URI=https://api.horlynat.com
+      - BACKOFFICE_URL=${BACKOFFICE_URL:-https://dark.horlynat.com}
       # AiAssistantIngestMessageHandler (ingestion RAG) tourne ici — a besoin
       # de Gemini, pas de Claude (le conversationnel temps réel reste sur le
       # service backend ci-dessus).
@@ -274,7 +417,7 @@ services:
       - DEFAULT_URI=https://api.horlynat.com
       - BACKOFFICE_URL=${BACKOFFICE_URL:-https://dark.horlynat.com}
       - PUBLIC_API_HOSTS=${PUBLIC_API_HOSTS:-api.horlynat.com}
-      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^backend$$,^127\.0\.0\.1$$}
+      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^hmm-backend$$,^backend$$}
     secrets:
       - app_secret
       - database_url
@@ -313,7 +456,27 @@ services:
     # sont écrites en dialecte MySQL (AUTO_INCREMENT) et échouent sur Postgres
     # (testé) — cf. README §4. C'est le moteur qui ne demande aucun changement
     # de code applicatif.
-    image: mysql:8.0
+    # Version exacte + digest. MySQL 8.0 est en fin de vie (avril 2026,
+    # 8.0.46 = dernière publication) : montée vers 8.4 LTS à planifier
+    # (procédure en README §8.5) — hors de ce lot.
+    image: mysql:8.0.46@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+    <<: *hardening
+    # L'entrypoint officiel tourne en root : lit le secret (DAC_OVERRIDE,
+    # fichier d'un autre utilisateur de l'hôte), chown du datadir et du
+    # dossier du socket (CHOWN), puis bascule sur l'utilisateur mysql via
+    # gosu (SETUID/SETGID). Système de fichiers en lecture seule : seuls le
+    # volume de données et deux tmpfs (socket/pid, fichiers temporaires)
+    # sont inscriptibles (validé en local : init + redémarrage + migrations).
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+      - /var/run/mysqld:size=8m,mode=1777
+    pids_limit: 512
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
@@ -334,7 +497,9 @@ services:
       - data-net
     mem_limit: 2g
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER -p\"$$(cat /run/secrets/database_password)\" --silent"]
+      # Mot de passe via MYSQL_PWD (environnement du seul processus de
+      # sonde), plus en argument `-p...` visible dans `ps` sur l'hôte.
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$(cat /run/secrets/database_password)\" mysqladmin ping -h 127.0.0.1 -u \"$$MYSQL_USER\" --silent"]
       timeout: 5s
       retries: 5
       start_period: 30s
@@ -348,7 +513,17 @@ services:
     # stockés côté conteneur) — on se connecte avec le même compte `app` que
     # le backend (cf. secrets/database_password), aucun secret supplémentaire
     # à provisionner.
-    image: adminer:latest
+    # 6.3.0 : PHP 8.4.28 embarqué (la prod tournait sur adminer:latest
+    # vieux de 3 mois, PHP 8.4.24, vulnérable PHP2Shell). Épinglé version +
+    # digest, mis à jour par Dependabot et tiré à chaque déploiement.
+    image: adminer:6.3.0@sha256:037125c2bc4836b4917d4fd08a16f817eac2848778c4e9aab87a8340aef08dfd
+    <<: *hardening
+    # Aucune capacité : l'image tourne déjà en utilisateur `adminer` sur le
+    # port 8080 ; seules les sessions PHP s'écrivent (dans /tmp).
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    pids_limit: 64
     restart: unless-stopped
     environment:
       - ADMINER_DEFAULT_SERVER=database
@@ -371,24 +546,28 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=edge-net
-      # Protection en couches (guide §3) :
+      # Protection en couches (guide §3), DANS CET ORDRE :
       #  - cloudflare-only : interdit tout accès qui ne transite pas par Cloudflare ;
+      #  - security-headers : en-têtes aussi sur les réponses 401/429 ;
+      #  - ratelimit-strict AVANT admin-basicauth : chaque essai de mot de
+      #    passe est compté, échecs compris (dans l'ordre inverse, le
+      #    basic-auth répondait 401 avant que le limiteur ne voie la requête :
+      #    force brute non limitée sur le htpasswd) ;
       #  - admin-basicauth : 2ᵉ barrière d'identité À L'ORIGINE (htpasswd,
       #    secrets/admin_basicauth) — contrairement à dark.horlynat.com (auth
-      #    applicative Symfony complète) et mailadmin (whitelist IP), Adminer
+      #    applicative Symfony complète) et mailadmin (basic-auth DBG), Adminer
       #    n'a AUCUN contrôle d'accès propre : sans ça, la seule barrière est
       #    Cloudflare Access, configuré hors de ce dépôt et donc invérifiable
       #    ici. Le basic-auth garantit un mot de passe même si la politique
       #    Access est désactivée ou mal configurée ;
       #  - Cloudflare Access (Zero Trust -> Access -> Applications, dashboard)
-      #    reste la barrière principale recommandée, en amont ;
-      #  - ratelimit-strict : anti-bruteforce.
+      #    reste la barrière principale recommandée, en amont.
       # Pas de admin-ipwhitelist@file (IP non stable, cf. dark.horlynat.com).
-      - traefik.http.routers.dbadmin.rule=Host(`db.horlynat.com`)
-      - traefik.http.routers.dbadmin.entrypoints=websecure
-      - traefik.http.routers.dbadmin.tls=true
-      - traefik.http.routers.dbadmin.middlewares=cloudflare-only@file,admin-basicauth@file,security-headers@file,ratelimit-strict@file
-      - traefik.http.services.dbadmin.loadbalancer.server.port=8080
+      - traefik.http.routers.hmm-dbadmin.rule=Host(`db.horlynat.com`)
+      - traefik.http.routers.hmm-dbadmin.entrypoints=websecure
+      - traefik.http.routers.hmm-dbadmin.tls=true
+      - traefik.http.routers.hmm-dbadmin.middlewares=cloudflare-only@file,security-headers@file,ratelimit-strict@file,admin-basicauth@file
+      - traefik.http.services.hmm-dbadmin.loadbalancer.server.port=8080
 
   postfixadmin:
     # Panneau de gestion des comptes mail (Postfix/Dovecot natifs sur l'hôte,

@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { apiPost, apiPostWithData, type ApiPostResult } from "@/lib/api/client";
 import { getToken } from "@/lib/auth/session";
 import { rateLimit } from "@/lib/rate-limit";
@@ -21,19 +22,19 @@ export async function submitQuoteRequest(
   if (!parsed.success) return invalidInput;
 
   const payload: QuoteRequestPayload = {
-    name: answers.name,
-    email: answers.email,
-    phone: answers.phone || undefined,
-    category: answers.type,
-    categoryDetail: answers.categoryDetail || undefined,
-    source: answers.source || undefined,
-    budget: answers.budget ? `${answers.budget}` : undefined,
-    currency: answers.currency || undefined,
-    timeline: answers.delai || undefined,
-    channel: answers.canal,
-    attachmentName: answers.fileName || undefined,
-    clarifications: answers.clarifications.length > 0 ? answers.clarifications : undefined,
-    message: answers.description || "(aucune description fournie)",
+    name: parsed.data.name,
+    email: parsed.data.email,
+    phone: parsed.data.phone || undefined,
+    category: parsed.data.type,
+    categoryDetail: parsed.data.categoryDetail || undefined,
+    source: parsed.data.source || undefined,
+    budget: parsed.data.budget ? `${parsed.data.budget}` : undefined,
+    currency: parsed.data.currency || undefined,
+    timeline: parsed.data.delai || undefined,
+    channel: parsed.data.canal,
+    attachmentName: parsed.data.fileName || undefined,
+    clarifications: parsed.data.clarifications.length > 0 ? parsed.data.clarifications : undefined,
+    message: parsed.data.description || "(aucune description fournie)",
   };
 
   // Si l'auteur est connecté au moment de l'envoi, on rattache la demande à
@@ -68,11 +69,14 @@ export async function qualifyQuoteRequest(
   }
 
   const parsed = quoteQualifyAnswersSchema.safeParse(answers);
-  if (!parsed.success) return { ok: false, error: "invalid_input" };
+  // Locale bornée à la liste fermée du site : une valeur libre atteindrait
+  // le backend (colonne de 5 caractères du journal de coût IA).
+  const parsedLocale = z.enum(["fr", "en"]).safeParse(locale);
+  if (!parsed.success || !parsedLocale.success) return { ok: false, error: "invalid_input" };
 
   const result = await apiPostWithData<{ questions: string[] }>(
     "/quote/qualify",
-    { ...parsed.data, locale },
+    { ...parsed.data, locale: parsedLocale.data },
     // Couvre le timeout de 30s côté App\Service\ClaudeClient + marge — même
     // arbitrage que la route proxy de l'assistant IA (src/app/api/ai-assistant/chat/route.ts).
     { timeoutMs: 35_000 },

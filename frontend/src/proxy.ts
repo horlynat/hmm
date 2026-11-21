@@ -1,86 +1,63 @@
 import createMiddleware from "next-intl/middleware";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextRequest, type NextResponse } from "next/server";
 import { routing } from "@/i18n/routing";
-import { buildCsp } from "@/lib/csp";
+import { buildCsp, needsStrictCsp } from "@/lib/csp";
 
 const intlMiddleware = createMiddleware(routing);
 const isDev = process.env.NODE_ENV === "development";
 
-// /contact n'a pas de traduction de chemin (routing.pathnames), donc une
-// requête déjà bien formée (/fr/contact, /en/contact) ne déclenche ni
-// redirect ni rewrite côté next-intl — seul ce cas permet d'injecter le
-// nonce dans les request headers avant le rendu de la page (cf. plus bas).
-const strictNoncePathPattern = new RegExp(`^/(${routing.locales.join("|")})/contact/?$`);
-
 /**
  * CSP par requête (cf. src/lib/csp.ts) : posée ici plutôt que dans
- * next.config.ts pour pouvoir varier — nonce strict sur /contact (rendu
- * dynamique, cf. `force-dynamic` sur cette page), CSP par défaut ailleurs.
+ * next.config.ts pour pouvoir varier — nonce strict sur les routes
+ * dynamiques sensibles, CSP par défaut (`'unsafe-inline'`, compatible
+ * SSG/ISR) ailleurs.
+ *
+ * Le nonce doit être lisible par le layout via `headers()` ET par Next.js,
+ * qui lit la CSP des *request* headers pour noncer ses propres scripts : on
+ * passe donc à next-intl une requête dont les en-têtes portent déjà
+ * `x-nonce` + `Content-Security-Policy`. next-intl recopie TOUS les en-têtes
+ * de la requête dans son override (`NextResponse.next/rewrite({ request:
+ * { headers } })`), ce qui couvre aussi bien le pass-through (/fr/compte)
+ * que la réécriture des chemins traduits (/en/account → /en/compte).
+ *
+ * Toute valeur `x-nonce` / `Content-Security-Policy` fournie par le CLIENT
+ * est supprimée au préalable, sur toutes les routes : un nonce choisi par
+ * l'attaquant ne doit jamais atteindre le rendu.
  */
-export function proxy(request: NextRequest) {
-  const intlResponse = intlMiddleware(request);
-  const isRedirectOrRewrite =
-    (intlResponse.status >= 300 && intlResponse.status < 400) ||
-    intlResponse.headers.has("x-middleware-rewrite");
-
-  const needsStrictCsp =
-    !isRedirectOrRewrite && strictNoncePathPattern.test(request.nextUrl.pathname);
-
-  if (!needsStrictCsp) {
-    intlResponse.headers.set("Content-Security-Policy", buildCsp({ isDev }));
-    return intlResponse;
-  }
-
-  // Le nonce doit être lisible côté layout via `headers()` — il faut donc
-  // qu'il arrive dans les *request* headers vus par le rendu de la page, pas
-  // seulement dans la réponse. Next.js lit lui-même le nonce qu'il applique à
-  // ses propres scripts depuis le header CSP des *request* headers (pas la
-  // réponse) — la CSP doit donc être posée sur les deux (cf. doc officielle).
-  // On reconstruit la réponse next-intl (ici un simple pass-through, cf.
-  // commentaire ci-dessus) en conservant ses effets (cookie de locale) mais
-  // avec les request headers modifiés.
-  
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const cspHeader = buildCsp({ isDev, nonce });
+export function proxy(request: NextRequest): NextResponse {
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
-  requestHeaders.set("Content-Security-Policy", cspHeader);
+  requestHeaders.delete("x-nonce");
+  requestHeaders.delete("content-security-policy");
 
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  const strict = needsStrictCsp(request.nextUrl.pathname);
+  let cspHeader: string;
 
-  // `NextResponse.next({ request: { headers } })` encode ses changements de
-  // *request* headers dans `x-middleware-override-headers` (liste des noms) +
-  // `x-middleware-request-<nom>` (valeurs) — next-intl produit sa propre
-  // liste (locale, cookie...). Un simple `.set()` par-dessus écraserait cette
-  // liste au lieu de la fusionner, et Next.js ignorerait alors silencieusement
-  // les request headers qu'on vient d'ajouter (nonce, CSP) car absents de la
-  // liste effective.
-
-  const overrideNames = new Set(
-    (response.headers.get("x-middleware-override-headers") ?? "")
-      .split(",")
-      .map((n) => n.trim())
-      .filter(Boolean),
-  );
-  intlResponse.headers.forEach((value, key) => {
-    const lowerKey = key.toLowerCase();
-    if (lowerKey === "content-security-policy") return;
-    if (lowerKey === "x-middleware-override-headers") {
-      value.split(",").forEach((n) => overrideNames.add(n.trim()));
-      return;
-    }
-    response.headers.set(key, value);
-  });
-  if (overrideNames.size > 0) {
-    response.headers.set("x-middleware-override-headers", [...overrideNames].join(","));
+  if (strict) {
+    const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+    cspHeader = buildCsp({ isDev, nonce });
+    requestHeaders.set("x-nonce", nonce);
+    requestHeaders.set("Content-Security-Policy", cspHeader);
+  } else {
+    cspHeader = buildCsp({ isDev });
   }
 
-  intlResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+  // Requête reconstruite à partir de l'URL + en-têtes seulement (sans
+  // corps) : next-intl ne lit que l'URL, les en-têtes et les cookies, et
+  // cloner un corps de Server Action (POST) pourrait verrouiller son flux.
+  const intlRequest = new NextRequest(request.url, { method: request.method, headers: requestHeaders });
+  const response = intlMiddleware(intlRequest);
   response.headers.set("Content-Security-Policy", cspHeader);
-
   return response;
 }
 
+/**
+ * Exclut uniquement les vraies ressources statiques (extension connue en fin
+ * de chemin), plus `api/`, `_next/` et `_vercel/`. L'ancien motif `.*\..*`
+ * excluait tout chemin contenant un point — un slug « nextjs-16.4 » ou
+ * « /fr/compte/x.y » échappait alors à la CSP et au routage i18n.
+ */
 export const config = {
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  matcher: [
+    "/((?!(?:api|_next|_vercel)(?:/|$)|.*\\.(?:ico|png|jpe?g|gif|webp|avif|svg|txt|xml|json|webmanifest|woff2?|ttf|otf|eot|map|js|mjs|css|pdf|mp4|webm)$).*)",
+  ],
 };

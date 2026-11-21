@@ -8,6 +8,7 @@ import { getCurrentUser, getMyProject, getProjectComments } from "@/lib/auth/ses
 import { getMediaUrl } from "@/lib/media";
 import { projectStatusVariant, invoiceStatusVariant } from "@/lib/status";
 import { sanitizeArticleHtml } from "@/lib/sanitize";
+import { parseRouteId } from "@/lib/api/path";
 
 /** Nombre de jours entre aujourd'hui et la deadline (négatif si dépassée) — comparaison sur la seule date, pas l'heure. */
 function daysUntil(deadline: string): number {
@@ -24,8 +25,9 @@ export default async function CompteProjectDetailPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { locale, id } = await params;
-  const projectId = Number(id);
-  if (!Number.isInteger(projectId)) {
+  // Entier décimal strictement positif uniquement (cf. parseRouteId).
+  const projectId = parseRouteId(id);
+  if (projectId === null) {
     notFound();
   }
 

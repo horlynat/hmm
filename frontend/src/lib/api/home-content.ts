@@ -1,3 +1,4 @@
+import "server-only";
 import { apiFetch, extractCollection, pickLocalized, pickLocalizedList } from "./client";
 import type { HomeContent } from "@/lib/types";
 

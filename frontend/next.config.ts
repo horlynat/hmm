@@ -69,6 +69,17 @@ const nextConfig: NextConfig = {
     // n'est pas défini et retombe sur 127.0.0.1:8000 ; jamais activé en prod, où
     // l'origine media est un vrai domaine public.
     dangerouslyAllowLocalIP: isDev,
+    // Risque SVG (avis critique « RCE Image Optimization avec SVG », corrigé
+    // en 16.4.1) : le backend stocke des SVG sous /uploads/**, autorisé
+    // ci-dessus. Défense en profondeur, explicitement plutôt que par défaut :
+    //  - jamais d'optimisation de SVG par /_next/image (servis tels quels
+    //    par `<img>` / `unoptimized` le cas échéant) ;
+    //  - toute réponse de l'optimiseur est un téléchargement (pas un document
+    //    navigable dans l'origine du site) et porte une CSP qui interdit tout
+    //    script et isole le contenu (sandbox), même si un SVG passait.
+    dangerouslyAllowSVG: false,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; frame-src 'none'; sandbox;",
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
