@@ -234,6 +234,16 @@ final class OfferTest extends FunctionalTestCase
         yield 'titre avec contrôle bidi' => [['offer[title]' => "Offre \u{202E}etsuj"]];
         yield 'accroche avec espace de largeur nulle' => [['offer[leadText]' => "ab\u{200B}cd"]];
         yield 'élément avec BOM' => [['offer[includes]' => "x\u{FEFF}y"]];
+        // Lot de suivi R1 n° 2 : invisibles encore admis après 65a3b52.
+        foreach (['U+061C' => "\u{061C}", 'U+2028' => "\u{2028}", 'U+2029' => "\u{2029}", 'U+2060' => "\u{2060}", 'U+206F' => "\u{206F}", 'U+00AD' => "\u{00AD}", 'U+3164' => "\u{3164}", 'U+115F' => "\u{115F}", 'U+FFF9' => "\u{FFF9}"] as $label => $char) {
+            yield "titre avec $label" => [['offer[title]' => "a{$char}b"]];
+            // U+2028/2029 sont des fins de ligne pour \R : dans une liste ils
+            // séparent deux éléments propres (rien d'invisible n'est stocké).
+            if (!\in_array($label, ['U+2028', 'U+2029'], true)) {
+                yield "élément avec $label" => [['offer[includes]' => "a{$char}b"]];
+            }
+        }
+        yield 'titre avec tabulation' => [['offer[title]' => "a\tb"]];
     }
 
     /**
@@ -282,6 +292,97 @@ final class OfferTest extends FunctionalTestCase
 
         self::assertSame(422, $this->client->getResponse()->getStatusCode());
         self::assertSame(0, (int) $this->em()->getConnection()->fetchOne('SELECT COUNT(*) FROM offer WHERE slug = ?', [$slug]));
+    }
+
+    public function testTabulationIsAcceptedInTextAreas(): void
+    {
+        $values = $this->submitCreate(['offer[leadText]' => "Colonne\tcollée depuis un tableur"]);
+        self::assertResponseRedirects('/admin/offer/index');
+        $offer = $this->em()->getRepository(Offer::class)->findOneBy(['slug' => $values['offer[slug]']]);
+        self::assertInstanceOf(Offer::class, $offer);
+        $this->created[] = (int) $offer->getId();
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function formFields(): iterable
+    {
+        foreach (['slug', 'published', 'position', 'heroPosition', 'featured', 'category', 'icon', 'previewType', 'situation', 'proofProjectSlug', 'price', 'priceOnce',
+            'title', 'titleEn', 'shortTitle', 'shortTitleEn', 'pain', 'painEn', 'headline', 'headlineEn', 'leadText', 'leadTextEn', 'cardText', 'cardTextEn',
+            'audience', 'audienceEn', 'clientNeeds', 'clientNeedsEn', 'delay', 'delayEn', 'includes', 'includesEn', 'beforeItems', 'beforeItemsEn',
+            'afterItems', 'afterItemsEn', 'calendar', 'calendarEn', 'pack', 'packEn'] as $field) {
+            yield $field => [$field];
+        }
+    }
+
+    /**
+     * Lot de suivi R1 n° 2 : chaque champ retiré de la soumission, AVEC un
+     * jeton valide — jamais de 500 (le 65a3b52 n'était testé que sans jeton).
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('formFields')]
+    public function testEachMissingFieldIsNeverA500(string $field): void
+    {
+        $this->client->loginUser($this->createUser(['ROLE_ADMIN'], twoFactor: true), 'main');
+        $crawler = $this->client->request('GET', '/admin/offer/create');
+        $token = (string) $crawler->filter('input[name="offer[_token]"]')->attr('value');
+        $data = [
+            '_token' => $token, 'slug' => $this->slug(), 'title' => 'T', 'shortTitle' => 'T', 'pain' => 'P', 'headline' => 'H',
+            'leadText' => 'L', 'cardText' => 'C', 'audience' => 'A', 'clientNeeds' => 'N', 'delay' => 'D', 'price' => '1',
+            'position' => '0', 'heroPosition' => '1', 'includes' => 'Un', 'category' => 'dev', 'icon' => 'web', 'previewType' => 'chat',
+            'situation' => 'clients', 'published' => '1', 'featured' => '1', 'priceOnce' => '1', 'proofProjectSlug' => 'projet',
+        ];
+        unset($data[$field]);
+        $this->client->request('POST', '/admin/offer/create', ['offer' => $data]);
+
+        $status = $this->client->getResponse()->getStatusCode();
+        self::assertContains($status, [303, 422], "Champ « $field » absent : $status");
+        if (303 === $status && isset($data['slug'])) {
+            $this->created[] = (int) $this->em()->getConnection()->fetchOne('SELECT id FROM offer WHERE slug = ?', [$data['slug']]);
+        }
+    }
+
+    /**
+     * Lot de suivi R1 n° 2 : course sur le slug, reproduite. Un listener
+     * onFlush insère en SQL brut une offre de même slug juste avant
+     * l'écriture : l'index unique doit donner une erreur de formulaire, pas
+     * une 500, et la requête suivante doit fonctionner normalement.
+     */
+    public function testSlugRaceBecomesAFormError(): void
+    {
+        $slug = $this->slug();
+        $conn = $this->em()->getConnection();
+        $inserted = false;
+        $listener = new class($conn, $slug, $inserted) {
+            public function __construct(private \Doctrine\DBAL\Connection $conn, private string $slug, private bool &$inserted) {}
+
+            public function onFlush(\Doctrine\ORM\Event\OnFlushEventArgs $args): void
+            {
+                if ($this->inserted) {
+                    return;
+                }
+                foreach ($args->getObjectManager()->getUnitOfWork()->getScheduledEntityInsertions() as $entity) {
+                    if ($entity instanceof Offer && $entity->getSlug() === $this->slug) {
+                        $this->inserted = true;
+                        $this->conn->executeStatement("INSERT INTO offer (slug, position, published, featured, category, icon, preview_type, situation, price, price_once, title, short_title, pain, headline, lead_text, card_text, audience, client_needs, delay, includes, before_items, after_items, calendar, pack, created_at) VALUES (?, 0, 0, 0, 'dev', 'web', 'chat', 'clients', 1, 0, 'T', 'T', 'P', 'H', 'L', 'C', 'A', 'N', 'D', '[\"x\"]', '[]', '[]', '[]', '[]', NOW())", [$this->slug]);
+                    }
+                }
+            }
+        };
+        $this->em()->getEventManager()->addEventListener(\Doctrine\ORM\Events::onFlush, $listener);
+
+        try {
+            $this->submitCreate(['offer[slug]' => $slug]);
+            self::assertTrue($inserted, 'La course doit avoir été simulée.');
+            self::assertSame(422, $this->client->getResponse()->getStatusCode());
+            self::assertStringContainsString('déjà utilisé', (string) $this->client->getResponse()->getContent());
+        } finally {
+            $this->em()->getEventManager()->removeEventListener(\Doctrine\ORM\Events::onFlush, $listener);
+            $this->created[] = (int) $conn->fetchOne('SELECT id FROM offer WHERE slug = ?', [$slug]);
+        }
+
+        $this->client->request('GET', '/admin/offer/index');
+        self::assertResponseIsSuccessful('Après une course, la requête suivante doit fonctionner normalement.');
     }
 
     public function testLegitimateUnicodeIsAccepted(): void

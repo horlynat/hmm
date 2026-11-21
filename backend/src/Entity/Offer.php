@@ -46,12 +46,14 @@ class Offer
     /**
      * Texte sur une ligne : ni caractère de contrôle (NUL, sauts de ligne…),
      * ni caractère invisible détournable (contrôles bidi qui inversent
-     * l'affichage, espaces de largeur nulle, BOM). Le liant des emoji
-     * composés (U+200D) reste permis. Contre-audit R1.
+     * l'affichage dont U+061C, espaces et séparateurs invisibles U+2028/2029,
+     * U+2060–206F, trait d'union conditionnel, remplissages Hangul qui
+     * donnent un texte d'apparence vide, BOM). Restent permis : U+200C
+     * (ZWNJ, nécessaire au persan) et U+200D (emoji composés). Contre-audits R1.
      */
-    public const SAFE_LINE = '/^[^\p{Cc}\x{200B}\x{200E}\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}\x{FEFF}]*$/uD';
-    /** Même règle, sauts de ligne (\n, \r) permis : zones de texte. */
-    public const SAFE_TEXT = '/^[^\x{0}-\x{9}\x{B}\x{C}\x{E}-\x{1F}\x{7F}-\x{9F}\x{200B}\x{200E}\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}\x{FEFF}]*$/uD';
+    public const SAFE_LINE = '/^[^\p{Cc}\p{Zl}\p{Zp}\x{00AD}\x{034F}\x{061C}\x{115F}\x{1160}\x{180E}\x{200B}\x{200E}\x{200F}\x{202A}-\x{202E}\x{2060}-\x{2064}\x{2066}-\x{206F}\x{3164}\x{FEFF}\x{FFA0}\x{FFF9}-\x{FFFB}]*$/uD';
+    /** Même règle, mais tabulation et sauts de ligne (\t, \n, \r) permis : zones de texte. */
+    public const SAFE_TEXT = '/^[^\x{0}-\x{8}\x{B}\x{C}\x{E}-\x{1F}\x{7F}-\x{9F}\p{Zl}\p{Zp}\x{00AD}\x{034F}\x{061C}\x{115F}\x{1160}\x{180E}\x{200B}\x{200E}\x{200F}\x{202A}-\x{202E}\x{2060}-\x{2064}\x{2066}-\x{206F}\x{3164}\x{FEFF}\x{FFA0}\x{FFF9}-\x{FFFB}]*$/uD';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
