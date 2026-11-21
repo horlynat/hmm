@@ -3,11 +3,13 @@ import { routing } from "@/i18n/routing";
 import { getPathname } from "@/i18n/navigation";
 import { getProjects } from "@/lib/api/projects";
 import { getArticles } from "@/lib/api/articles";
+import { getOfferSlugs } from "@/lib/api/offers";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://horlynat.com";
 
 const STATIC_PATHNAMES = [
   "/",
+  "/offres",
   "/a-propos",
   "/competences",
   "/realisations",
@@ -24,9 +26,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Seul `.slug` est utilisé ci-dessous (identique quelle que soit la
   // locale) : la locale par défaut suffit, pas besoin de résoudre la vraie
   // locale courante (ce fichier génère les URLs de TOUTES les locales).
-  const [projects, articles] = await Promise.all([
+  const [projects, articles, offerSlugs] = await Promise.all([
     getProjects(routing.defaultLocale),
     getArticles(routing.defaultLocale),
+    getOfferSlugs(),
   ]);
 
   // Pas de `lastModified` : ni l'API projets/articles ni ces pages statiques
@@ -61,5 +64,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   );
 
-  return [...staticEntries, ...projectEntries, ...articleEntries];
+  const offerEntries: MetadataRoute.Sitemap = offerSlugs.flatMap((slug) =>
+    routing.locales.map((locale) => ({
+      url: `${SITE_URL}${getPathname({
+        locale,
+        href: { pathname: "/offres/[slug]", params: { slug } },
+      })}`,
+    })),
+  );
+
+  return [...staticEntries, ...offerEntries, ...projectEntries, ...articleEntries];
 }

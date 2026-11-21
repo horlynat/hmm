@@ -11,6 +11,7 @@ export const siteConfig = {
 /** Routes statiques uniquement (sans segment dynamique) — utilisées pour la nav/footer. */
 export type NavHref =
   | "/"
+  | "/offres"
   | "/a-propos"
   | "/competences"
   | "/realisations"
@@ -26,7 +27,12 @@ export type NavHref =
 // "/aide" reste une route valide (centre d'aide public, accessible depuis
 // l'espace client — cf. AccountNav.tsx — ou un lien direct/email de support)
 // mais n'apparaît plus ici : plus dans le menu ni le footer du site vitrine.
+//
+// "/offres" (R4) en première position : c'est désormais la page que
+// l'accueil met le plus en avant (hero, besoins, grille), elle doit être
+// atteignable depuis n'importe quelle autre page sans repasser par l'accueil.
 export const navItems: { key: string; href: NavHref }[] = [
+  { key: "offres", href: "/offres" },
   { key: "apropos", href: "/a-propos" },
   { key: "competences", href: "/competences" },
   { key: "realisations", href: "/realisations" },

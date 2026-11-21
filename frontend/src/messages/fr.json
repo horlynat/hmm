@@ -44,6 +44,7 @@
     "passwordMismatch": "Les deux mots de passe ne correspondent pas."
   },
   "nav": {
+    "offres": "Offres",
     "apropos": "À propos",
     "competences": "Compétences",
     "realisations": "Réalisations",
@@ -546,6 +547,48 @@
       "linkText": "Voir mes compétences",
       "proposeLinkText": "Proposer mon projet"
     }
+  },
+  "offers": {
+    "eyebrow": "Offres",
+    "title": "Un prix annoncé,",
+    "titleAccent": "un délai tenu.",
+    "sub": "Chaque offre indique ce que vous recevez, à partir de combien et en combien de temps — assistant WhatsApp, sites et applications sur mesure, audits de sécurité.",
+    "filterLabel": "Filtrer les offres par situation",
+    "filterAll": "Toutes les situations",
+    "filters": {
+      "clients": "Je veux plus de clients",
+      "appli": "Mon application doit évoluer",
+      "secu": "Je veux me protéger des pirates",
+      "assur": "Je veux vérifier mes assurances"
+    },
+    "featured": "Offre vedette",
+    "for": "Pour :",
+    "priceFrom": "À partir de",
+    "priceOnce": "Prix unique",
+    "readyIn": "Prêt en {delay}",
+    "seeDetail": "Voir la fiche complète",
+    "empty": "Les offres seront affichées ici très bientôt. En attendant, écrivez-moi sur WhatsApp.",
+    "noMatch": "Aucune offre ne correspond à cette situation pour le moment.",
+    "detail": {
+      "backLabel": "Offres",
+      "includesTitle": "Ce que vous recevez",
+      "needsTitle": "Ce dont j'ai besoin de votre part",
+      "beforeTitle": "Aujourd'hui",
+      "afterTitle": "Avec cette offre",
+      "calendarTitle": "Calendrier",
+      "packTitle": "Ce que comprend le pack",
+      "proofLabel": "Preuve",
+      "proofCta": "Voir la réalisation",
+      "orderCta": "Commander sur WhatsApp",
+      "orderMessage": "Bonjour Horlynat, je suis intéressé par l'offre « {title} ».",
+      "nextOffer": "Offre suivante"
+    },
+    "cta": {
+      "title": "Une question avant de commander ?",
+      "sub": "Écrivez-moi sur WhatsApp : je réponds avec le détail exact pour votre cas, avant le moindre engagement.",
+      "linkText": "Voir toutes les offres"
+    },
+    "activeCount": "Offres actives"
   },
   "blog": {
     "eyebrow": "Blog",

@@ -44,6 +44,7 @@
     "passwordMismatch": "The two passwords do not match."
   },
   "nav": {
+    "offres": "Offers",
     "apropos": "About",
     "competences": "Skills",
     "realisations": "Projects",
@@ -546,6 +547,48 @@
       "linkText": "See my skills",
       "proposeLinkText": "Suggest my project"
     }
+  },
+  "offers": {
+    "eyebrow": "Offers",
+    "title": "A price announced upfront,",
+    "titleAccent": "a deadline kept.",
+    "sub": "Each offer shows what you get, starting from how much, and in how long — WhatsApp assistant, custom sites and applications, security audits.",
+    "filterLabel": "Filter offers by situation",
+    "filterAll": "All situations",
+    "filters": {
+      "clients": "I want more customers",
+      "appli": "My application needs to evolve",
+      "secu": "I want to protect myself from hackers",
+      "assur": "I want to check my insurance"
+    },
+    "featured": "Featured offer",
+    "for": "For:",
+    "priceFrom": "From",
+    "priceOnce": "One-time price",
+    "readyIn": "Ready in {delay}",
+    "seeDetail": "See the full details",
+    "empty": "Offers will be shown here very soon. In the meantime, write to me on WhatsApp.",
+    "noMatch": "No offer matches this situation at the moment.",
+    "detail": {
+      "backLabel": "Offers",
+      "includesTitle": "What you get",
+      "needsTitle": "What I need from you",
+      "beforeTitle": "Today",
+      "afterTitle": "With this offer",
+      "calendarTitle": "Timeline",
+      "packTitle": "What the pack includes",
+      "proofLabel": "Proof",
+      "proofCta": "See the project",
+      "orderCta": "Order on WhatsApp",
+      "orderMessage": "Hello Horlynat, I'm interested in the “{title}” offer.",
+      "nextOffer": "Next offer"
+    },
+    "cta": {
+      "title": "A question before ordering?",
+      "sub": "Write to me on WhatsApp: I'll answer with the exact details for your case, before any commitment.",
+      "linkText": "See all offers"
+    },
+    "activeCount": "Active offers"
   },
   "blog": {
     "eyebrow": "Blog",
