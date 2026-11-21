@@ -69,7 +69,15 @@ final class CloudflareAccessVerifier
         $domain = strtolower(trim((string) $teamDomain));
         $domain = (string) preg_replace('#^https?://#', '', $domain);
         $this->teamDomain = rtrim($domain, '/');
-        $this->audiences = array_values(array_filter(array_map('trim', explode(',', (string) $audiences))));
+        // Filtre explicite : array_filter() sans callback retire aussi "0" —
+        // une audience « 0 » donnait une liste vide (Cloudflare Access refusé
+        // en bloc) alors que le contrôle de déploiement la comptait
+        // renseignée (contre-audit B2, 9e passe). Même règle que
+        // PublicApiHostRestrictionSubscriber::parseHostList().
+        $this->audiences = array_values(array_filter(
+            array_map('trim', explode(',', (string) $audiences)),
+            static fn (string $aud): bool => '' !== $aud,
+        ));
     }
 
     public function isEnabled(): bool
@@ -173,7 +181,9 @@ final class CloudflareAccessVerifier
             // plus absorbée qu'à l'expiration du cache (jusqu'à 1 h de 403).
             // Au plus toutes les 5 minutes : visible durablement, sans qu'un
             // kid aléatoire par requête puisse inonder les logs.
-            if (time() - self::$lastLockWarningAt >= self::LOCK_WARNING_INTERVAL) {
+            // abs() : un recul d'horloge (saut NTP) ne doit pas faire taire
+            // l'alerte pendant toute la durée du recul.
+            if (abs(time() - self::$lastLockWarningAt) >= self::LOCK_WARNING_INTERVAL) {
                 self::$lastLockWarningAt = time();
                 $this->logger->warning('Cloudflare Access : verrou de relecture des clés inaccessible, relecture forcée désactivée.', ['path' => $lockPath]);
             }

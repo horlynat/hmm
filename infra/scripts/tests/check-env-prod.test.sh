@@ -61,6 +61,7 @@ t KO "équipe réduite à https:// (= vide pour PHP)" $'CF_ACCESS_HOSTS=dark.hor
 t KO "AUD réduit à des virgules (= vide pour PHP)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=" , "'
 t KO "blanc interne dans l'équipe" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN="t.com /"\nCF_ACCESS_AUD=abc'
 t OK "plusieurs AUD séparés par des virgules" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=abc, def'
+t OK "audience « 0 » (gardée aussi par PHP)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0'
 t KO "dernière affectation retire hmm-backend" $'PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend\nPUBLIC_API_HOSTS=api.horlynat.com'
 
 bash "$CHECK" "$T/absent" "$COMPOSE" >/dev/null 2>&1 && { echo "FAIL fichier absent accepté"; fail=1; } || echo "PASS KO fichier absent"
@@ -79,6 +80,25 @@ out="$(bash "$CHECK" "$T/env" "$COMPOSE" 2>&1)" && { echo "FAIL \$ non échappé
 
 printf 'APP_ENV=prod\n' > "$T/env"
 bash "$CHECK" "$T/env" "$COMPOSE" >/dev/null 2>&1 && { echo "FAIL variable exigée absente acceptée"; fail=1; } || echo "PASS KO variable exigée par le compose absente"
+
+# 9e passe : une future version de Compose formulant autrement son
+# avertissement doit aussi être refusée (faux `docker` en tête du PATH).
+mkdir -p "$T/bin"
+cat > "$T/bin/docker" <<'SHIM'
+#!/usr/bin/env bash
+echo 'time="2030-01-01" level=warning msg="Unresolved variable reference s3cr in value"' >&2
+echo '{"services":{"backend":{"environment":{"PUBLIC_API_HOSTS":"api.horlynat.com,hmm-backend,backend"}}}}'
+SHIM
+chmod +x "$T/bin/docker"
+printf '%s\n' "$BASE" > "$T/env"
+out="$(PATH="$T/bin:$PATH" bash "$CHECK" "$T/env" "$COMPOSE" 2>&1)" && { echo "FAIL avertissement reformulé accepté"; fail=1; } \
+  || { grep -q 's3cr' <<<"$out" && { echo "FAIL fragment affiché (reformulé)"; fail=1; } || echo "PASS KO avertissement « variable » reformulé, refusé sans fragment"; }
+cat > "$T/bin/docker" <<'SHIM'
+#!/usr/bin/env bash
+echo 'level=warning msg="docker-compose version attribute is obsolete"' >&2
+echo '{"services":{"backend":{"environment":{"PUBLIC_API_HOSTS":"api.horlynat.com,hmm-backend,backend"}}}}'
+SHIM
+PATH="$T/bin:$PATH" bash "$CHECK" "$T/env" "$COMPOSE" >/dev/null 2>&1 && echo "PASS OK avertissement sans rapport avec les variables" || { echo "FAIL avertissement anodin refusé"; fail=1; }
 
 # Aucune valeur de .env.prod ne doit apparaître dans la sortie d'erreur
 # (elle finit dans les logs GitHub Actions, publics) — contre-audit B2.

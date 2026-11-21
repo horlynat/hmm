@@ -49,7 +49,10 @@ fi
 # « The "etPart" variable is not set » — un fragment de la valeur dans les
 # logs publics. On refuse donc ici, sans citer aucun nom (il peut provenir de
 # la valeur elle-même).
-if grep -q 'variable is not set' "$compose_err"; then
+# Repérage large (contre-audit B2, 9e passe) : le texte exact de compose-go
+# peut changer d'une version à l'autre — tout avertissement qui parle d'une
+# variable est refusé, pas seulement la formulation actuelle.
+if grep -qiE 'variable is not set|level=warn[a-z]*.*variable' "$compose_err"; then
   echo "==> check-env-prod : variable non définie dans la configuration résolue — déploiement annulé." >&2
   echo "    Cause probable : un \$ non échappé dans une valeur de $ENV_FILE (écrire \$\$), ou une variable du compose absente." >&2
   echo "    Détail (sur le VPS uniquement, jamais dans un log partagé) :" >&2

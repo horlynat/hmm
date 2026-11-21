@@ -221,6 +221,27 @@ final class CloudflareAccessVerifierTest extends TestCase
         $reflection->setValue(null, 0);
     }
 
+    /**
+     * Contre-audit B2 (9e passe) : array_filter() sans callback retirait
+     * l'audience "0" — Cloudflare Access désactivé (403 en bloc) alors que le
+     * contrôle de déploiement la comptait renseignée.
+     */
+    public function testAudienceZeroIsKept(): void
+    {
+        $real = $this->newKey();
+        $verifier = new CloudflareAccessVerifier(
+            new MockHttpClient(static fn (): MockResponse => new MockResponse(json_encode(['keys' => [$real['jwk']]], \JSON_THROW_ON_ERROR))),
+            new ArrayAdapter(),
+            new NullLogger(),
+            self::TEAM,
+            '0',
+        );
+
+        self::assertTrue($verifier->isEnabled());
+        $claims = ['iss' => 'https://'.self::TEAM, 'aud' => ['0'], 'exp' => time() + 300, 'iat' => time()];
+        self::assertTrue($verifier->verify(JWT::encode($claims, $real['private'], 'RS256', $real['jwk']['kid'])));
+    }
+
     public function testFetchFailureIsCachedBrieflyAndRejects(): void
     {
         $calls = 0;
