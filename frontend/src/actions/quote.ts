@@ -42,8 +42,18 @@ export async function submitQuoteRequest(
   // App\State\QuoteRequestCreateProcessor) pour qu'elle apparaisse dans « Mes
   // devis » sans intervention manuelle d'un admin. Reste anonyme sinon.
   const token = await getToken();
+  if (!token) return apiPost("/quote_requests", payload, {});
 
-  return apiPost("/quote_requests", payload, token ? { token } : {});
+  const result = await apiPost("/quote_requests", payload, { token });
+  if (result.ok || result.error !== "HTTP 403") return result;
+
+  // Contre-audit B2 : la 2FA obligatoire couvre désormais TOUTE l'API, pas
+  // seulement /api/me/**. Un client connecté mais pas encore équipé recevait
+  // donc 403 2fa_required ici (POST /api/quote_requests exige un Bearer
+  // valide, jamais un autre motif de 403) — alors qu'anonyme, la même
+  // soumission passait. On retombe en anonyme plutôt que de bloquer l'envoi :
+  // la demande n'est juste pas rattachée au compte.
+  return apiPost("/quote_requests", payload, {});
 }
 
 export type QualifyQuoteResult = { ok: true; questions: string[] } | { ok: false; error: string };

@@ -132,11 +132,26 @@ final class AdminUsersController extends AbstractController
 
         $this->denyAccessUnlessGranted(UserVoter::EDIT, $user);
 
+        // AVANT handleRequest() (contre-audit B2, M2) : un Form Symfony lie
+        // les données soumises sur l'entité dès la soumission, avant toute
+        // validation — getEmail() vaudrait déjà la nouvelle adresse une fois
+        // dans le bloc isValid().
+        $oldEmail = $user->getEmail();
+
         $form = $this->createForm(UserType::class, $user, ['context' => 'client']);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $this->handlePassword($user, $form);
+
+            if ($oldEmail !== $user->getEmail()) {
+                // Changer l'identifiant de connexion d'un compte est aussi
+                // sensible qu'un changement de mot de passe (P1 #8) : toute
+                // session/JWT antérieur tombe, et l'ancienne adresse ne doit
+                // plus authentifier personne via remember-me.
+                $this->userSessionRevoker->revokeAll($user);
+                $this->userSessionRevoker->purgeRememberMeFor($oldEmail);
+            }
 
             $user->setUpdatedAt(new \DateTimeImmutable());
             $auditLogger->log(User::class, $user->getId(), $user->getEmail(), 'updated');
@@ -171,6 +186,10 @@ final class AdminUsersController extends AbstractController
 
         if ($this->isCsrfTokenValid('delete'.$user->getId(), $request->request->get('_token'))) {
             $auditLogger->log(User::class, $user->getId(), $user->getEmail(), 'deleted');
+            // Contre-audit B2 (M2) : les remember-me sont stockés par adresse,
+            // sans clé étrangère — un remove() seul les laissait valables
+            // contre quiconque reprendrait cette adresse.
+            $this->userSessionRevoker->revokeAll($user);
             $this->entityManager->remove($user);
             $this->entityManager->flush();
 

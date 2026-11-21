@@ -40,6 +40,16 @@ use Symfony\Component\HttpFoundation\RequestStack;
  *
  * N'effectue PAS le flush de l'EntityManager : laissé à l'appelant, pour
  * permettre de grouper plusieurs révocations dans une seule écriture.
+ *
+ * Contre-audit B2 (M2) : revokeAll() purge les remember-me de l'IDENTIFIANT
+ * COURANT de $user. Si l'appelant a déjà changé l'e-mail en base avant
+ * d'appeler revokeAll() (cas d'un Form Symfony, qui lie les données
+ * soumises dès `handleRequest()`, avant toute validation), les lignes de
+ * l'ANCIENNE adresse ne sont plus atteintes par cette requête et restent
+ * valables : un cookie remember-me volé authentifierait alors le titulaire
+ * suivant de cette adresse. purgeRememberMeFor() permet de viser
+ * explicitement l'ancienne adresse, capturée par l'appelant avant le
+ * changement.
  */
 final class UserSessionRevoker
 {
@@ -95,6 +105,20 @@ final class UserSessionRevoker
         $currentSession?->set(SessionTokenVersionSubscriber::SESSION_KEY, $user->getTokenVersion());
 
         return $killed;
+    }
+
+    /**
+     * Purge les remember-me d'un e-mail qui n'est PLUS (ou pas encore) celui
+     * d'aucun compte vivant à cette identité — typiquement l'ancienne
+     * adresse d'un compte dont l'e-mail vient de changer en base avant cet
+     * appel. revokeAll(), lui, ne vise que l'identifiant COURANT de $user.
+     */
+    public function purgeRememberMeFor(string $email): void
+    {
+        $this->connection->executeStatement(
+            'DELETE FROM rememberme_token WHERE username = :email',
+            ['email' => $email],
+        );
     }
 
     private function currentSessionOf(User $user): ?\Symfony\Component\HttpFoundation\Session\SessionInterface

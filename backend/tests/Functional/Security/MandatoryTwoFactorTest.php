@@ -192,6 +192,29 @@ final class MandatoryTwoFactorTest extends FunctionalTestCase
         self::assertSame(0, preg_match('#^/api(/|$)#', '/apix'));
     }
 
+    /**
+     * Contre-audit B2 (B1, 2e passe) : `%61pi` (= "api") et `%2F` passent le
+     * pare-feu et le routeur (tous deux comparent rawurldecode($pathinfo)),
+     * mais échappaient à ce subscriber quand il comparait l'URL encodée.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function encodedBypassAttempts(): iterable
+    {
+        yield 'lettre encodée (%61pi)' => ['/%61pi/me/activity'];
+        yield 'slash encodé (%2F)' => ['/api%2Fme%2Factivity'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('encodedBypassAttempts')]
+    public function testEncodedPathCannotBypassTheMandate(string $rawUri): void
+    {
+        $admin = $this->createUser(['ROLE_ADMIN']);
+        $response = $this->jsonRequest('GET', $rawUri, null, $this->jwtFor($admin));
+
+        self::assertSame(403, $response->getStatusCode(), $rawUri.' : '.$response->getContent());
+        self::assertSame(['code' => '2fa_required'], $this->json($response));
+    }
+
     public function testClientWithTwoFactorIsNotBlocked(): void
     {
         $client = $this->createUser(['ROLE_USER'], twoFactor: true);

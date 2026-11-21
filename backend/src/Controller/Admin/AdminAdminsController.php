@@ -118,6 +118,9 @@ final class AdminAdminsController extends AbstractController
 
         $wasAdmin = \in_array('ROLE_ADMIN', $user->getRoles(), true) || \in_array('ROLE_SUPER_ADMIN', $user->getRoles(), true);
 
+        // AVANT handleRequest() : le Form lie les données soumises sur
+        // l'entité dès la soumission (contre-audit B2, M2).
+        $oldEmail = $user->getEmail();
         $form = $this->createForm(UserType::class, $user, ['context' => 'admin']);
         $form->handleRequest($request);
 
@@ -131,6 +134,13 @@ final class AdminAdminsController extends AbstractController
             }
 
             $this->handlePassword($user, $form);
+            if ($oldEmail !== $user->getEmail()) {
+                // Contre-audit B2 (M2) : changer l'identifiant de connexion
+                // revient à changer le mot de passe (P1 #8) — et l'ancienne
+                // adresse ne doit plus rien authentifier via remember-me.
+                $this->userSessionRevoker->revokeAll($user);
+                $this->userSessionRevoker->purgeRememberMeFor($oldEmail);
+            }
             $user->setUpdatedAt(new \DateTimeImmutable());
             $auditLogger->log(User::class, $user->getId(), $user->getEmail(), 'updated');
             $this->entityManager->flush();
@@ -173,6 +183,10 @@ final class AdminAdminsController extends AbstractController
 
         if ($this->isCsrfTokenValid('admin_admins_delete_'.$user->getId(), $request->request->get('_token'))) {
             $auditLogger->log(User::class, $user->getId(), $user->getEmail(), 'deleted');
+            // Contre-audit B2 (M2) : remember-me stockés par adresse, sans clé
+            // étrangère — un remove() seul les laissait valables contre
+            // quiconque reprendrait cette adresse.
+            $this->userSessionRevoker->revokeAll($user);
             $this->entityManager->remove($user);
             $this->entityManager->flush();
 

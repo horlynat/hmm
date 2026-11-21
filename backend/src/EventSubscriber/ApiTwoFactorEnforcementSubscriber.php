@@ -40,6 +40,12 @@ use Symfony\Component\HttpKernel\KernelEvents;
  *
  * `kernel.request`, après le firewall (qui résout déjà l'utilisateur pour un
  * firewall stateless comme `api`).
+ *
+ * Contre-audit (2) : `getPathInfo()` garde l'URL encodée (`%2F`, `%61`…),
+ * alors que le pare-feu (PathRequestMatcher) et le routeur (UrlMatcher)
+ * comparent tous deux `rawurldecode($pathinfo)` — `GET /%61pi/me/activity`
+ * passait donc le pare-feu et le routeur sans jamais matcher `#^/api#` ici.
+ * Même décodage unique qu'eux, pour rester sur le chemin réellement servi.
  */
 final class ApiTwoFactorEnforcementSubscriber implements EventSubscriberInterface
 {
@@ -64,7 +70,7 @@ final class ApiTwoFactorEnforcementSubscriber implements EventSubscriberInterfac
         }
 
         $request = $event->getRequest();
-        $path = $request->getPathInfo();
+        $path = rawurldecode($request->getPathInfo());
 
         if (1 !== preg_match(self::IN_SCOPE_PATTERN, $path) || 1 === preg_match(self::EXEMPT_PATTERN, $path)) {
             return;
