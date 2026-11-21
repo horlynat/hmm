@@ -63,29 +63,42 @@ t KO "blanc interne dans l'équipe" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCE
 t OK "plusieurs AUD séparés par des virgules" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef, fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210'
 t KO "audience « 0 » (format Cloudflare invalide)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0'
 # 10e passe — noms internes acceptés par Symfony mais pas limités à /api
-t KO "backend accepté par les hôtes de confiance, absent de PUBLIC_API_HOSTS" $'SYMFONY_TRUSTED_HOSTS=^(api|dark)\\.horlynat\\.com$$,^hmm-backend$$,^backend$$\nPUBLIC_API_HOSTS=api.horlynat.com,hmm-backend'
-t OK "backend accepté ET limité à /api" $'SYMFONY_TRUSTED_HOSTS=^(api|dark)\\.horlynat\\.com$$,^hmm-backend$$,^backend$$\nPUBLIC_API_HOSTS=api.horlynat.com,hmm-backend,backend'
-t KO "localhost accepté (motif trop large)" $'SYMFONY_TRUSTED_HOSTS=^(api|dark)\\.horlynat\\.com$$,^hmm-backend$$,^localhost$$'
+t KO "backend accepté par les hôtes de confiance, absent de PUBLIC_API_HOSTS" $'SYMFONY_TRUSTED_HOSTS=^api\\.horlynat\\.com$$,^dark\\.horlynat\\.com$$,^hmm-backend$$,^backend$$\nPUBLIC_API_HOSTS=api.horlynat.com,hmm-backend'
+t OK "backend accepté ET limité à /api" $'SYMFONY_TRUSTED_HOSTS=^api\\.horlynat\\.com$$,^dark\\.horlynat\\.com$$,^hmm-backend$$,^backend$$\nPUBLIC_API_HOSTS=api.horlynat.com,hmm-backend,backend'
+t KO "localhost accepté (motif trop large)" $'SYMFONY_TRUSTED_HOSTS=^api\\.horlynat\\.com$$,^dark\\.horlynat\\.com$$,^hmm-backend$$,^localhost$$'
 t KO "motif qui accepte tout" $'SYMFONY_TRUSTED_HOSTS=.*'
 t KO "casse : ^BACKEND$ accepte backend (Symfony ignore la casse)" $'SYMFONY_TRUSTED_HOSTS=^hmm-backend$$,^BACKEND$$\nPUBLIC_API_HOSTS=api.horlynat.com,hmm-backend'
 t KO "motif illisible" $'SYMFONY_TRUSTED_HOSTS=^(api$$'
 t KO "AUD tronqué (63 caractères)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde'
 t KO "AUD non hexadécimal" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdez'
 # 11e passe — C1 : élément vide = motif qui accepte tout côté Symfony
-t KO "virgule finale dans SYMFONY_TRUSTED_HOSTS" $'SYMFONY_TRUSTED_HOSTS=^(api|dark)\\.horlynat\\.com$$,^hmm-backend$$,'
-t KO "double virgule dans SYMFONY_TRUSTED_HOSTS" $'SYMFONY_TRUSTED_HOSTS=^(api|dark)\\.horlynat\\.com$$,,^hmm-backend$$'
-t KO "élément blanc dans SYMFONY_TRUSTED_HOSTS" $'SYMFONY_TRUSTED_HOSTS=^(api|dark)\\.horlynat\\.com$$, ,^hmm-backend$$'
+t KO "virgule finale dans SYMFONY_TRUSTED_HOSTS" $'SYMFONY_TRUSTED_HOSTS=^api\\.horlynat\\.com$$,^dark\\.horlynat\\.com$$,^hmm-backend$$,'
+t KO "double virgule dans SYMFONY_TRUSTED_HOSTS" $'SYMFONY_TRUSTED_HOSTS=^api\\.horlynat\\.com$$,^dark\\.horlynat\\.com$$,,^hmm-backend$$'
+t KO "élément blanc dans SYMFONY_TRUSTED_HOSTS" $'SYMFONY_TRUSTED_HOSTS=^api\\.horlynat\\.com$$,^dark\\.horlynat\\.com$$, ,^hmm-backend$$'
 # C2 : motifs que Python et PCRE liraient différemment -> hors grammaire
 t KO "quantificateur {1,20}" $'SYMFONY_TRUSTED_HOSTS=^[a-z-]{1,20}$$'
 t KO "classe POSIX [[:alnum:]]" $'SYMFONY_TRUSTED_HOSTS=^[[:alnum:]-]+$$'
 # C3 : tout hôte accepté doit être API, Cloudflare ou le back-office
-t KO "www accepté sans être API ni Cloudflare" $'SYMFONY_TRUSTED_HOSTS=^(api|dark|www)\\.horlynat\\.com$$,^hmm-backend$$'
+t KO "www accepté sans être API ni Cloudflare" $'SYMFONY_TRUSTED_HOSTS=^api\\.horlynat\\.com$$,^dark\\.horlynat\\.com$$,^www\\.horlynat\\.com$$,^hmm-backend$$'
 t KO "préfixe IP ^172\\." $'SYMFONY_TRUSTED_HOSTS=^172\\.$$'
 t KO "nom de conteneur par préfixe ^infra-" $'SYMFONY_TRUSTED_HOSTS=^infra-'
-t OK "valeur par défaut de prod (api, dark = back-office, hmm-backend)" $'SYMFONY_TRUSTED_HOSTS=^(api|dark)\\.horlynat\\.com$$,^hmm-backend$$'
-t OK "groupes imbriqués, tous couverts" $'SYMFONY_TRUSTED_HOSTS=^(api|(dark))\\.horlynat\\.com$$,^hmm-backend$$'
-t OK "back-office protégé par Cloudflare" $'SYMFONY_TRUSTED_HOSTS=^(api|dark)\\.horlynat\\.com$$,^hmm-backend$$\nCF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
-t KO "back-office déplacé, ancien hôte resté accepté" $'BACKOFFICE_URL=https://bo.horlynat.com\nSYMFONY_TRUSTED_HOSTS=^(api|dark|bo)\\.horlynat\\.com$$,^hmm-backend$$'
+t OK "valeur par défaut de prod (api, dark = back-office, hmm-backend)" $'SYMFONY_TRUSTED_HOSTS=^api\\.horlynat\\.com$$,^dark\\.horlynat\\.com$$,^hmm-backend$$'
+t KO "groupe (a|b) refusé : Symfony fusionne les motifs non exacts" $'SYMFONY_TRUSTED_HOSTS=^(api|dark)\\.horlynat\\.com$$,^hmm-backend$$'
+t OK "back-office protégé par Cloudflare" $'SYMFONY_TRUSTED_HOSTS=^api\\.horlynat\\.com$$,^dark\\.horlynat\\.com$$,^hmm-backend$$\nCF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+t KO "back-office déplacé, ancien hôte resté accepté" $'BACKOFFICE_URL=https://bo.horlynat.com\nSYMFONY_TRUSTED_HOSTS=^api\\.horlynat\\.com$$,^dark\\.horlynat\\.com$$,^bo\\.horlynat\\.com$$,^hmm-backend$$'
+# 12e passe — B1 : alternative au premier niveau (`^a|b$` = commence par a OU finit par b)
+t KO "alternative non ancrée ^a|b$" $'SYMFONY_TRUSTED_HOSTS=^hmm-backend|api\\.horlynat\\.com$$'
+t KO "alternative vide ^|a$ + PUBLIC_API_HOSTS avec virgule finale" $'SYMFONY_TRUSTED_HOSTS=^|hmm-backend$$\nPUBLIC_API_HOSTS=api.horlynat.com,hmm-backend,backend,'
+# B2 : parenthèse mal placée, rendue valide par la fusion avec le motif voisin
+t KO "parenthèse mal placée fusionnée au voisin" $'SYMFONY_TRUSTED_HOSTS=^hmm-backend$$,^dark\\.horlynat\\.com)|(m$$'
+t KO "parenthèses dans le désordre" $'SYMFONY_TRUSTED_HOSTS=^)(a$$,^hmm-backend$$'
+# M1 : Cloudflare actif -> le back-office DOIT être protégé
+t KO "Cloudflare actif, back-office hors CF_ACCESS_HOSTS" $'BACKOFFICE_URL=https://admin.horlynat.com\nSYMFONY_TRUSTED_HOSTS=^api\\.horlynat\\.com$$,^admin\\.horlynat\\.com$$,^hmm-backend$$\nCF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+# F1 : BACKOFFICE_URL validé avant de servir de référence
+t KO "BACKOFFICE_URL avec identifiants (hôte réel = evil)" $'BACKOFFICE_URL=https://dark.horlynat.com@evil\nSYMFONY_TRUSTED_HOSTS=^api\\.horlynat\\.com$$,^evil$$,^hmm-backend$$'
+t KO "BACKOFFICE_URL avec port" $'BACKOFFICE_URL=https://dark.horlynat.com:8443'
+t KO "BACKOFFICE_URL en http" $'BACKOFFICE_URL=http://dark.horlynat.com'
+t OK "noms exacts, majuscules acceptées comme Symfony" $'SYMFONY_TRUSTED_HOSTS=^API\\.horlynat\\.com$$,^dark\\.horlynat\\.com$$,^HMM-backend$$'
 t KO "dernière affectation retire hmm-backend" $'PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend\nPUBLIC_API_HOSTS=api.horlynat.com'
 
 bash "$CHECK" "$T/absent" "$COMPOSE" >/dev/null 2>&1 && { echo "FAIL fichier absent accepté"; fail=1; } || echo "PASS KO fichier absent"
@@ -111,7 +124,7 @@ mkdir -p "$T/bin"
 cat > "$T/bin/docker" <<'SHIM'
 #!/usr/bin/env bash
 echo 'time="2030-01-01" level=warning msg="Unresolved variable reference s3cr in value"' >&2
-echo '{"services":{"backend":{"environment":{"PUBLIC_API_HOSTS":"api.horlynat.com,hmm-backend,backend","SYMFONY_TRUSTED_HOSTS":"^(api|dark)\\.horlynat\\.com$,^hmm-backend$","BACKOFFICE_URL":"https://dark.horlynat.com"}}}}'
+echo '{"services":{"backend":{"environment":{"PUBLIC_API_HOSTS":"api.horlynat.com,hmm-backend,backend","SYMFONY_TRUSTED_HOSTS":"^api\\.horlynat\\.com$,^dark\\.horlynat\\.com$,^hmm-backend$","BACKOFFICE_URL":"https://dark.horlynat.com"}}}}'
 SHIM
 chmod +x "$T/bin/docker"
 printf '%s\n' "$BASE" > "$T/env"
@@ -120,7 +133,7 @@ out="$(PATH="$T/bin:$PATH" bash "$CHECK" "$T/env" "$COMPOSE" 2>&1)" && { echo "F
 cat > "$T/bin/docker" <<'SHIM'
 #!/usr/bin/env bash
 echo 'level=warning msg="docker-compose version attribute is obsolete"' >&2
-echo '{"services":{"backend":{"environment":{"PUBLIC_API_HOSTS":"api.horlynat.com,hmm-backend,backend","SYMFONY_TRUSTED_HOSTS":"^(api|dark)\\.horlynat\\.com$,^hmm-backend$","BACKOFFICE_URL":"https://dark.horlynat.com"}}}}'
+echo '{"services":{"backend":{"environment":{"PUBLIC_API_HOSTS":"api.horlynat.com,hmm-backend,backend","SYMFONY_TRUSTED_HOSTS":"^api\\.horlynat\\.com$,^dark\\.horlynat\\.com$,^hmm-backend$","BACKOFFICE_URL":"https://dark.horlynat.com"}}}}'
 SHIM
 PATH="$T/bin:$PATH" bash "$CHECK" "$T/env" "$COMPOSE" >/dev/null 2>&1 && echo "PASS OK avertissement sans rapport avec les variables" || { echo "FAIL avertissement anodin refusé"; fail=1; }
 

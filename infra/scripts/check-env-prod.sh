@@ -160,53 +160,31 @@ if "hmm-backend" not in hosts:
         "api.horlynat.com,hmm-backend,backend"
     )
 
-# Contre-audit B2 (11e passe, C1-C3) — invariant : TOUT hôte accepté par
+# Contre-audit B2 (11e et 12e passes) — invariant : TOUT hôte accepté par
 # Symfony (SYMFONY_TRUSTED_HOSTS) doit être limité à /api (PUBLIC_API_HOSTS),
-# protégé par Cloudflare (CF_ACCESS_HOSTS) ou être l hôte du back-office
-# (BACKOFFICE_URL). Un voisin du réseau Docker choisit librement son en-tête
-# Host : tout autre nom accepté servirait le back-office sans Cloudflare.
-#  - Découpage IDENTIQUE à Symfony (Kernel::boot) et `$$` de Compose annulé ;
-#    un élément VIDE est refusé : Symfony en fait un motif qui accepte tout
-#    (une simple virgule en trop suffisait).
-#  - Grammaire FERMÉE (`^…$`, lettres, chiffres, `-`, `\.`, groupes `(a|b)`) :
-#    Python et PCRE la lisent forcément pareil, et chaque motif se développe
-#    en une liste FINIE d hôtes, comparée à l invariant.
+# protégé par Cloudflare (CF_ACCESS_HOSTS) ou — tant que Cloudflare Access
+# n’est pas activé — être l’hôte du back-office (BACKOFFICE_URL). Un voisin du
+# réseau Docker choisit librement son en-tête Host.
+#
+# NOMS EXACTS UNIQUEMENT (`^api\.horlynat\.com$`) : Symfony les compare par
+# simple table de correspondance (Request::setTrustedHosts, chemin
+# « littéraux »), sans regex. Tout autre motif est FUSIONNÉ par Symfony avec
+# ses voisins en une seule regex (compileHostPatterns) : `^a|b$` (« commence
+# par a OU finit par b ») ou une parenthèse mal placée rendue valide par le
+# motif voisin pouvaient accepter n’importe quel Host — impossible à vérifier
+# de façon sûre, donc refusé.
 from urllib.parse import urlsplit
 
 def split_like_symfony(raw):
     return re.split(r"\s*,\s*(?![^{]*\})", raw)
 
-GRAMMAR = re.compile(r"\^(?:[a-z0-9-]|\\\.|[()|])+\$", re.IGNORECASE)
+LITERAL = re.compile(r"\^([a-z0-9-]+(?:\\\.[a-z0-9-]+)*)\$", re.IGNORECASE)
+HOSTNAME = re.compile(r"[a-z0-9-]+(?:\.[a-z0-9-]+)*", re.IGNORECASE)
 
-def expand(body, pos=0, depth=0):
-    # Développe body[pos:] jusqu à `)` ou fin ; renvoie (liste, position).
-    if depth > 5:
-        raise ValueError("imbrication")
-    alternatives, current = [], [""]
-    while pos < len(body):
-        c = body[pos]
-        if c == "\\":
-            current = [x + "." for x in current]
-            pos += 2
-        elif c == "(":
-            sub, pos = expand(body, pos + 1, depth + 1)
-            current = [x + y for x in current for y in sub]
-            pos += 1  # `)`
-        elif c == ")":
-            break
-        elif c == "|":
-            alternatives += current
-            current = [""]
-            pos += 1
-        else:
-            current = [x + c.lower() for x in current]
-            pos += 1
-        if len(current) + len(alternatives) > 500:
-            raise ValueError("trop de variantes")
-    return alternatives + current, pos
-
+api_hosts = {h for h in hosts if h}
 raw_trusted = value("SYMFONY_TRUSTED_HOSTS").replace("$$", "$")
 trusted = [t.strip(ASCII_WS) for t in split_like_symfony(raw_trusted)] if raw_trusted else []
+accepted = None
 if not trusted:
     errors.append(
         "SYMFONY_TRUSTED_HOSTS effectif vide : Symfony accepterait n’importe quel Host, y compris les noms "
@@ -220,39 +198,54 @@ elif any(t == "" for t in trusted):
 else:
     accepted = set()
     for t in trusted:
-        if not GRAMMAR.fullmatch(t) or t.count("(") != t.count(")"):
+        m = LITERAL.fullmatch(t)
+        if m is None:
             errors.append(
-                "SYMFONY_TRUSTED_HOSTS : motif hors de la forme vérifiable (^nom$, lettres, chiffres, -, \\., "
-                "groupes (a|b)). Quantificateurs, classes [ ] et jokers sont refusés : impossible de prouver "
-                "quels hôtes ils acceptent."
+                "SYMFONY_TRUSTED_HOSTS : seuls des noms exacts sont acceptés, un par élément, sous la forme "
+                "^nom\\.domaine$ (lettres, chiffres, -, \\.). Groupes, alternatives | et jokers sont refusés : "
+                "Symfony les fusionne en une seule regex, impossible à vérifier de façon sûre."
             )
             accepted = None
             break
-        try:
-            names, _ = expand(t[1:-1])
-        except (ValueError, IndexError):
-            errors.append("SYMFONY_TRUSTED_HOSTS : motif trop complexe pour être vérifié.")
-            accepted = None
-            break
-        accepted.update(n.rstrip(".") for n in names)
-    if accepted is not None:
-        cf_hosts = set(effective["CF_ACCESS_HOSTS"]) if len(cf) == 3 else set()
-        bo_host = (urlsplit(value("BACKOFFICE_URL")).hostname or "").lower().rstrip(".")
-        allowed = set(hosts) | cf_hosts | ({bo_host} if bo_host else set())
-        exposed = sorted(h for h in accepted if h not in allowed)
-        if exposed:
-            errors.append(
-                "Hôte(s) accepté(s) par SYMFONY_TRUSTED_HOSTS sans être limité(s) à /api (PUBLIC_API_HOSTS) ni "
-                "protégé(s) par Cloudflare (CF_ACCESS_HOSTS) ni être le back-office (BACKOFFICE_URL) : %s — "
-                "ils serviraient tout le back-office sans passer par Cloudflare." % ", ".join(exposed)
-            )
-        if bo_host and bo_host not in cf_hosts:
-            print(
-                "    Avertissement : le back-office (%s) n’est pas protégé par Cloudflare Access côté application "
-                "(CF_ACCESS_* vides) — un conteneur du réseau Docker partagé peut l’atteindre directement "
-                "(compte, mot de passe et 2FA restent exigés)." % bo_host,
-                file=sys.stderr,
-            )
+        accepted.add(m.group(1).replace("\\.", ".").lower())
+
+# BACKOFFICE_URL : validé avant de servir de référence (F1) — pas d’identifiants
+# (`https://dark@evil` donnerait l’hôte « evil »), pas de port, https.
+bo_raw = value("BACKOFFICE_URL")
+bo_host = ""
+if bo_raw:
+    parts = urlsplit(bo_raw)
+    host = (parts.hostname or "").rstrip(".")
+    if parts.scheme != "https" or parts.username is not None or parts.password is not None \
+            or parts.port is not None or not host or not HOSTNAME.fullmatch(host) or parts.netloc.lower().rstrip(".") != host.lower():
+        errors.append("BACKOFFICE_URL invalide : attendu https://nom.domaine (sans identifiants, sans port).")
+    else:
+        bo_host = host.lower()
+
+if accepted is not None:
+    cf_active = len(cf) == 3
+    cf_hosts = set(effective["CF_ACCESS_HOSTS"]) if cf_active else set()
+    if cf_active and bo_host and bo_host not in cf_hosts:
+        # M1 : avec Cloudflare actif, l’hôte du back-office DOIT être protégé.
+        errors.append(
+            "Cloudflare Access actif mais l’hôte du back-office (%s) n’est pas dans CF_ACCESS_HOSTS : il "
+            "servirait le back-office sans passer par Access." % bo_host
+        )
+    allowed = api_hosts | cf_hosts | ({bo_host} if bo_host and not cf_active else set())
+    exposed = sorted(h for h in accepted if h not in allowed)
+    if exposed:
+        errors.append(
+            "Hôte(s) accepté(s) par SYMFONY_TRUSTED_HOSTS sans être limité(s) à /api (PUBLIC_API_HOSTS) ni "
+            "protégé(s) par Cloudflare (CF_ACCESS_HOSTS) ni être le back-office (BACKOFFICE_URL) : %s — "
+            "ils serviraient tout le back-office sans passer par Cloudflare." % ", ".join(exposed)
+        )
+    if bo_host and not cf_active:
+        print(
+            "    Avertissement : le back-office (%s) n’est pas protégé par Cloudflare Access côté application "
+            "(CF_ACCESS_* vides) — un conteneur du réseau Docker partagé peut l’atteindre directement "
+            "(compte, mot de passe et 2FA restent exigés)." % bo_host,
+            file=sys.stderr,
+        )
 
 if errors:
     print("==> Variables de sécurité incohérentes, déploiement annulé avant toute action :", file=sys.stderr)

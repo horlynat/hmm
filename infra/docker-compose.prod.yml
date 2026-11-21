@@ -216,7 +216,7 @@ services:
       # 127.0.0.1:8000 a disparu, et la sonde de santé vise l'admin Caddy
       # (:2019), pas Symfony. `$$` = `$` littéral pour compose ; PAS
       # d'apostrophes (elles entreraient dans la regex -> 400 partout).
-      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^hmm-backend$$}
+      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^api\.horlynat\.com$$,^dark\.horlynat\.com$$,^hmm-backend$$}
       # Cloudflare Access côté Symfony (App\Security\CloudflareAccessVerifier,
       # CloudflareAccessSubscriber) : vide = inactif. À activer ensemble —
       # CF_ACCESS_HOSTS seul (sans équipe ni AUD) REFUSE tout sur ces hôtes
@@ -430,7 +430,7 @@ services:
       - DEFAULT_URI=https://api.horlynat.com
       - BACKOFFICE_URL=${BACKOFFICE_URL:-https://dark.horlynat.com}
       - PUBLIC_API_HOSTS=${PUBLIC_API_HOSTS:-api.horlynat.com,hmm-backend,backend}
-      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^hmm-backend$$}
+      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^api\.horlynat\.com$$,^dark\.horlynat\.com$$,^hmm-backend$$}
     secrets:
       - app_secret
       - database_url
