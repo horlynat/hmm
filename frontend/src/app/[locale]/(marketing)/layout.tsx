@@ -21,8 +21,15 @@ export default async function MarketingLayout({
     getAiAssistantEntries(locale),
   ]);
 
+  // Refonte 2026-11 : site vitrine en thème SOMBRE UNIQUEMENT (décision de
+  // l'utilisateur), quel que soit le choix enregistré ou la préférence
+  // système — l'espace compte (/compte, layout distinct) garde son bouton de
+  // thème. La classe `dark` posée ici fait basculer les variables CSS (.dark
+  // dans globals.css) et les variantes `dark:` pour tout le sous-arbre ; le
+  // conteneur peint lui-même son fond (bg-bg-default) car <body>, au-dessus,
+  // resterait clair si la préférence enregistrée est « clair ».
   return (
-    <>
+    <div className="dark flex min-h-full flex-1 flex-col bg-bg-default text-brand-dark" style={{ colorScheme: "dark" }}>
       <Header />
       <main id="main-content" className="flex-1">
         {children}
@@ -35,6 +42,6 @@ export default async function MarketingLayout({
       {aiAssistantSettings && (
         <AiAssistantWidget settings={aiAssistantSettings} entries={aiAssistantEntries} />
       )}
-    </>
+    </div>
   );
 }

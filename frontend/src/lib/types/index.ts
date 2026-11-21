@@ -116,6 +116,54 @@ export interface Testimonial {
   media: Media[];
 }
 
+/** Une étape du calendrier d'une offre (ex. { day: "J1", text: "Échange..." }). */
+export interface OfferCalendarStep {
+  day: string;
+  text: string;
+}
+
+/** Un bloc du "pack" d'une offre (ex. { title: "Répondre", items: [...] }). */
+export interface OfferPackBlock {
+  title: string;
+  items: string[];
+}
+
+/**
+ * Offre commerciale du site public — miroir de App\Entity\Offer (refonte
+ * 2026-11). Déjà résolue dans la langue courante côté API layer (cf.
+ * src/lib/api/offers.ts) : pas de champs `*En` ici. Seules les offres
+ * publiées sont exposées par l'API (App\Doctrine\PublishedOfferExtension) :
+ * `published` n'est pas exposé côté API, inutile ici.
+ */
+export interface Offer {
+  id: number;
+  slug: string;
+  position: number;
+  heroPosition: number | null;
+  featured: boolean;
+  category: "dev" | "aud";
+  icon: string;
+  previewType: string;
+  situation: "clients" | "appli" | "secu" | "assur";
+  proofProjectSlug: string | null;
+  price: number;
+  priceOnce: boolean;
+  title: string;
+  shortTitle: string;
+  pain: string;
+  headline: string;
+  leadText: string;
+  cardText: string;
+  audience: string;
+  clientNeeds: string;
+  delay: string;
+  includes: string[];
+  beforeItems: string[];
+  afterItems: string[];
+  calendar: OfferCalendarStep[];
+  pack: OfferPackBlock[];
+}
+
 /**
  * Contenu narratif de la page d'accueil — miroir de App\Entity\HomeContent
  * (ligne unique en base, éditable en back-office). Déjà résolu dans la

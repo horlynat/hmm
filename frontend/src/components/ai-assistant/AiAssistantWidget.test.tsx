@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { AiAssistantWidget } from "./AiAssistantWidget";
+import { AI_ASSISTANT_OPEN_EVENT, consumeAiAssistantOpenRequest, requestAiAssistantOpen } from "@/lib/aiAssistantOpen";
 import type { AiAssistantEntry, AiAssistantSettings } from "@/lib/types";
 
 vi.mock("next-intl", () => ({
@@ -40,6 +41,8 @@ function mockChatResponse(body: { ok: true; answer: string; suggestions: string[
 describe("AiAssistantWidget", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    // Isolation : aucune demande d'ouverture ne déborde sur le test suivant.
+    consumeAiAssistantOpenRequest();
   });
 
   it("affiche les puces de démarrage dès l'ouverture, avant toute frappe (zéro friction au premier clic)", () => {
@@ -147,5 +150,64 @@ describe("AiAssistantWidget", () => {
 
     expect(screen.getByRole("button", { name: "Suggestion A ?" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Suggestion B ?" })).toBeInTheDocument();
+  });
+
+  /**
+   * Refonte R3 : le CTA « Discuter avec l'assistant » de la démo WhatsApp de
+   * l'accueil ouvre ce widget via un évènement DOM (aucun contexte React ne
+   * les relie, cf. AiAssistantWidget.tsx).
+   */
+  it("s'ouvre sur demande (requestAiAssistantOpen)", () => {
+    render(<AiAssistantWidget settings={settings} entries={entries} />);
+
+    expect(screen.getByRole("dialog")).toHaveClass("hidden");
+
+    act(() => requestAiAssistantOpen());
+
+    expect(screen.getByRole("dialog")).toHaveClass("flex");
+    expect(screen.getByRole("dialog")).not.toHaveClass("hidden");
+  });
+
+  /**
+   * Le widget est chargé en différé (next/dynamic) : un clic sur le CTA avant
+   * son chargement ne doit pas être perdu.
+   */
+  it("rattrape au montage une demande faite avant son chargement", () => {
+    act(() => requestAiAssistantOpen());
+
+    render(<AiAssistantWidget settings={settings} entries={entries} />);
+
+    // `flex` figure aussi dans les classes de base du panneau fermé : seule
+    // l'absence de `hidden` prouve qu'il est ouvert.
+    expect(screen.getByRole("dialog")).not.toHaveClass("hidden");
+  });
+
+  it("une demande n'est consommée qu'une fois (pas de réouverture au remontage)", () => {
+    act(() => requestAiAssistantOpen());
+    const { unmount } = render(<AiAssistantWidget settings={settings} entries={entries} />);
+    unmount();
+
+    render(<AiAssistantWidget settings={settings} entries={entries} />);
+
+    expect(screen.getByRole("dialog")).toHaveClass("hidden");
+  });
+
+  it("un évènement brut, sans demande enregistrée, ne l'ouvre pas", () => {
+    render(<AiAssistantWidget settings={settings} entries={entries} />);
+
+    fireEvent(window, new Event(AI_ASSISTANT_OPEN_EVENT));
+    fireEvent(window, new Event("unrelated-event"));
+
+    expect(screen.getByRole("dialog")).toHaveClass("hidden");
+  });
+
+  it("retire son écouteur au démontage", () => {
+    const { unmount } = render(<AiAssistantWidget settings={settings} entries={entries} />);
+    unmount();
+
+    // Échoue seulement si l'écouteur survit au démontage et touche un
+    // composant détruit ; la demande restée en attente est purgée ensuite.
+    expect(() => act(() => requestAiAssistantOpen())).not.toThrow();
+    consumeAiAssistantOpenRequest();
   });
 });

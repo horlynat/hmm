@@ -1,11 +1,9 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Badge, ButtonLink, Card, Reveal } from "@/components/ui";
-import { PageHero } from "@/components/sections/PageHero";
 import { ProjectCard } from "@/components/sections/ProjectCard";
 import { ArticleCard } from "@/components/sections/ArticleCard";
 import { TestimonialCard } from "@/components/sections/TestimonialCard";
-import { RoleRotator } from "@/components/sections/RoleRotator";
 import { SkillsByCategory } from "@/components/sections/SkillsByCategory";
 import {
   DevicesIcon,
@@ -22,6 +20,15 @@ import { getSkills } from "@/lib/api/skills";
 import { getHomeContent } from "@/lib/api/home-content";
 import { getAboutContent } from "@/lib/api/about-content";
 import { HOME_FEATURED_SKILL_CATEGORIES } from "@/lib/skills/featuredCategories";
+import { getOffers, heroOffers } from "@/lib/api/offers";
+import { HomeHero } from "@/components/home/HomeHero";
+import { TrustBar } from "@/components/home/TrustBar";
+import { NeedsSection } from "@/components/home/NeedsSection";
+import { OffersSection } from "@/components/home/OffersSection";
+import { AiDemoSection } from "@/components/home/AiDemoSection";
+import { getAiAssistantSettings } from "@/lib/api/ai-assistant";
+import { StepsSection } from "@/components/home/StepsSection";
+import { FaqSection } from "@/components/home/FaqSection";
 
 export const dynamic = "force-static";
 
@@ -66,80 +73,9 @@ function TargetIcon() {
   );
 }
 
-function MiniStat({ num, label }: { num: string; label: string }) {
-  return (
-    <div>
-      <div
-        className="text-xl font-extrabold text-brand-dark"
-        style={{ fontFamily: "var(--font-heading)" }}
-      >
-        {num}
-      </div>
-      <div className="mt-0.5 font-mono text-[0.68rem] uppercase tracking-wide text-[var(--color-muted)]">
-        {label}
-      </div>
-    </div>
-  );
-}
 
-function BriefcaseIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 20 20" width="14" height="14" className="shrink-0">
-      <rect x="2.5" y="6" width="15" height="10" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M7 6V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V6" fill="none" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M2.5 10h15" stroke="currentColor" strokeWidth="1.4" />
-    </svg>
-  );
-}
 
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-}
 
-function ArchitectureDiagram({ caption }: { caption: string }) {
-  return (
-    <div>
-      <svg viewBox="0 0 420 380" width="100%" role="img" aria-label={caption}>
-        <defs>
-          <marker id="archArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M0,0 L10,5 L0,10 z" fill="var(--color-brand-accent)" />
-          </marker>
-        </defs>
-        <rect x="30" y="30" width="120" height="60" rx="10" fill="var(--color-bg-default)" stroke="var(--border-soft)" strokeWidth="1.5" />
-        <text x="90" y="56" textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--color-brand-dark)">Symfony</text>
-        <text x="90" y="74" textAnchor="middle" fontSize="9" fill="var(--color-brand-primary)">Backend admin</text>
-
-        <rect x="270" y="30" width="120" height="60" rx="10" fill="var(--color-bg-default)" stroke="var(--border-soft)" strokeWidth="1.5" />
-        <text x="330" y="56" textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--color-brand-dark)">Next.js</text>
-        <text x="330" y="74" textAnchor="middle" fontSize="9" fill="var(--color-brand-primary)">Frontend public</text>
-
-        <rect x="150" y="150" width="120" height="60" rx="10" fill="none" stroke="var(--color-brand-accent)" strokeWidth="2" className="arch-pulse-ring" />
-        <rect x="150" y="150" width="120" height="60" rx="10" fill="var(--color-bg-default)" stroke="var(--color-brand-accent)" strokeWidth="2" />
-        <text x="210" y="176" textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--color-brand-dark)">API Platform</text>
-        <text x="210" y="194" textAnchor="middle" fontSize="9" fill="var(--color-brand-primary)">Couche API</text>
-
-        <rect x="150" y="270" width="120" height="60" rx="10" fill="var(--color-bg-default)" stroke="var(--border-soft)" strokeWidth="1.5" />
-        <text x="210" y="296" textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--color-brand-dark)">Assistant IA</text>
-        <text x="210" y="314" textAnchor="middle" fontSize="9" fill="var(--color-brand-primary)">Profil · Qualification</text>
-
-        {/* Symfony alimente l'API ; l'API dispatche ensuite les données au frontend et à l'IA — le sens des flèches suit ce flux réel, pas une simple symétrie visuelle. */}
-        <path d="M90 90 C90 150, 150 150, 150 180" fill="none" stroke="var(--border-soft)" strokeWidth="1.4" />
-        <path d="M270 180 C270 150, 330 150, 330 90" fill="none" stroke="var(--border-soft)" strokeWidth="1.4" />
-        <path d="M210 210 L210 270" fill="none" stroke="var(--border-soft)" strokeWidth="1.4" />
-
-        <path d="M90 90 C90 150, 150 150, 150 180" fill="none" stroke="var(--color-brand-accent)" strokeWidth="1.6" opacity="0.6" className="arch-flow" markerEnd="url(#archArrow)" style={{ animationDelay: "0s" }} />
-        <path d="M270 180 C270 150, 330 150, 330 90" fill="none" stroke="var(--color-brand-accent)" strokeWidth="1.6" opacity="0.6" className="arch-flow" markerEnd="url(#archArrow)" style={{ animationDelay: "0.3s" }} />
-        <path d="M210 210 L210 270" fill="none" stroke="var(--color-brand-accent)" strokeWidth="1.6" opacity="0.6" className="arch-flow" markerEnd="url(#archArrow)" style={{ animationDelay: "0.6s" }} />
-      </svg>
-      <p className="mt-3 text-center font-mono text-xs text-[var(--color-muted)]">{caption}</p>
-    </div>
-  );
-}
 
 export default async function HomePage({
   params,
@@ -150,13 +86,18 @@ export default async function HomePage({
   const t = await getTranslations({ locale, namespace: "home" });
   const tc = await getTranslations({ locale, namespace: "common" });
 
-  const [content, aboutContent, projects, articles, testimonials, skills] = await Promise.all([
+  const [content, aboutContent, projects, articles, testimonials, skills, offers, aiAssistantSettings] = await Promise.all([
     getHomeContent(locale),
     getAboutContent(locale),
     getProjects(locale),
     getArticles(locale),
     getTestimonials(locale),
     getSkills(locale),
+    getOffers(locale),
+    // Même requête (et même cache) que MarketingLayout, qui ne monte le widget
+    // IA que si ces réglages existent : sans eux, le bouton « Discuter avec
+    // mon assistant IA » de la démo n'aurait rien à ouvrir.
+    getAiAssistantSettings(locale),
   ]);
 
   // Contenu narratif piloté par le back-office (App\Entity\HomeContent) : la
@@ -171,86 +112,24 @@ export default async function HomePage({
   // vers /realisations plutôt que d'allonger la home indéfiniment.
   const homeProjects = sortProjectsForDisplay(projects).slice(0, 6);
 
+  // Refonte 2026-11 : les offres (back-office, publiées seulement) pilotent le
+  // hero et la grille. Sans offre publiée — état initial après déploiement,
+  // les 7 offres de la migration étant en brouillon — le hero se replie sur
+  // un message fixe et les sections « besoins »/« offres » sont masquées
+  // plutôt que d'afficher une grille vide.
+  const carouselOffers = heroOffers(offers);
+  const assistantOffer = offers.find((offer) => offer.previewType === "chat") ?? null;
+
   return (
     <>
-      <PageHero
-        eyebrow={<RoleRotator roles={content.heroRoles} />}
-        eyebrowExtra={
-          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-muted)]">
-            <BriefcaseIcon />
-            {content.founderBadge}
-          </span>
-        }
-        title={content.heroTitle}
-        titleAccent={content.heroTitleAccent}
-        titleAccentOnNewLine
-        subtitle={content.heroSub}
-        aside={
-          <Card variant="soft" className="hero-in p-6" style={{ animationDelay: "0.16s" }}>
-            <ArchitectureDiagram caption={content.diagramCaption} />
-          </Card>
-        }
-        footer={
-          <div className="relative mx-auto mt-16 max-w-3xl">
-            <Card
-              variant="soft"
-              className="hero-in p-6 sm:p-8"
-              style={{ animationDelay: "0.4s" }}
-            >
-              <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5 text-center sm:gap-x-14">
-                <MiniStat num="10" label={t("stats.experience")} />
-                <span aria-hidden="true" className="hidden h-10 w-px bg-[var(--border-softer)] sm:block" />
-                <MiniStat num="15+" label={t("stats.projects")} />
-                <span aria-hidden="true" className="hidden h-10 w-px bg-[var(--border-softer)] sm:block" />
-                <MiniStat num={t("stats.open")} label={t("stats.freelance")} />
-              </div>
-              {testimonials[0] && (
-                <div className="mt-6 flex flex-col items-center gap-3 border-t border-[var(--border-softer)] pt-6 text-center">
-                  <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                    style={{
-                      fontFamily: "var(--font-heading)",
-                      background:
-                        "linear-gradient(135deg, var(--cta-gradient-from), var(--cta-gradient-to))",
-                    }}
-                  >
-                    {getInitials(testimonials[0].author)}
-                  </div>
-                  <p className="max-w-[52ch] text-sm italic opacity-80">
-                    &ldquo;{testimonials[0].content}&rdquo;
-                  </p>
-                  <p className="text-xs font-semibold uppercase tracking-wide opacity-60">
-                    {testimonials[0].author}
-                  </p>
-                </div>
-              )}
-            </Card>
-          </div>
-        }
-      >
-        <div
-          className="hero-in mb-7 flex flex-wrap items-center gap-x-6 gap-y-3"
-          style={{ animationDelay: "0.24s" }}
-        >
-          <ButtonLink href="/contact">{tc("ctaConfierProjet")}</ButtonLink>
-          <a
-            href="#freelance"
-            className="text-sm font-semibold text-brand-primary hover:underline"
-          >
-            {t("ctaFreelance")} →
-          </a>
-        </div>
-        <div
-          className="hero-in flex flex-wrap gap-2.5"
-          style={{ animationDelay: "0.32s" }}
-        >
-          <Badge variant="accent">Symfony</Badge>
-          <Badge variant="accent">API Platform</Badge>
-          <Badge variant="accent">Next.js</Badge>
-          <Badge variant="outline">Assistant IA</Badge>
-          <Badge variant="outline">Cybersécurité</Badge>
-        </div>
-      </PageHero>
+      <HomeHero locale={locale} offers={carouselOffers} />
+      <TrustBar locale={locale} />
+      {offers.length > 0 && (
+        <>
+          <NeedsSection locale={locale} />
+          <OffersSection offers={offers} />
+        </>
+      )}
 
       <section className="border-y border-[var(--border-softer)] bg-bg-card px-6 py-20">
         <div className="mx-auto grid max-w-[1120px] gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
@@ -329,6 +208,8 @@ export default async function HomePage({
         </div>
       </section>
 
+      <AiDemoSection locale={locale} offer={assistantOffer} assistantAvailable={aiAssistantSettings !== null} />
+
       <section className="px-6 py-20">
         <div className="mx-auto max-w-[1120px]">
           <Reveal delay={0}>
@@ -385,6 +266,8 @@ export default async function HomePage({
         </div>
       </section>
 
+      <StepsSection locale={locale} />
+
       <section className="border-y border-[var(--border-softer)] bg-bg-card px-6 py-20">
         <div className="mx-auto max-w-[1120px] text-center">
           <Badge className="mb-3.5">{t("testimonials.eyebrow")}</Badge>
@@ -411,6 +294,8 @@ export default async function HomePage({
           )}
         </div>
       </section>
+
+      <FaqSection locale={locale} />
 
       <section className="px-6 py-20">
         <div className="mx-auto max-w-[1120px]">
