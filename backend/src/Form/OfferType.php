@@ -41,6 +41,9 @@ final class OfferType extends AbstractType
     {
         $choices = static fn (array $values): array => array_combine($values, $values);
 
+        // Champ absent de la soumission => null transmis au setter : les champs
+        // texte ont un `empty_data`, les listes à choix des setters qui
+        // acceptent null (cf. Offer::setCategory) — sinon 500 (contre-audit R1).
         $builder
             ->add('slug', TextType::class, ['label' => 'Slug (adresse de la page)', 'empty_data' => '', 'help' => 'Ex. assistant-whatsapp — minuscules, chiffres et tirets.'])
             ->add('published', CheckboxType::class, ['label' => 'Publiée sur le site', 'required' => false])

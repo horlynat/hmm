@@ -132,6 +132,7 @@ final class OfferTest extends FunctionalTestCase
         yield 'utilisateur' => [['ROLE_USER']];
         yield 'éditeur' => [['ROLE_EDITOR']];
         yield 'modérateur' => [['ROLE_MODERATOR']];
+        yield 'manager' => [['ROLE_MANAGER']];
     }
 
     /**
@@ -141,10 +142,13 @@ final class OfferTest extends FunctionalTestCase
     public function testNonAdminsCannotReachTheBackOffice(array $roles): void
     {
         $this->client->loginUser($this->createUser($roles, twoFactor: true), 'main');
-        foreach (['/admin/offer/index', '/admin/offer/create'] as $uri) {
+        $offer = $this->offer($this->slug(), false);
+        foreach (['/admin/offer/index', '/admin/offer/create', '/admin/offer/'.$offer->getId().'/update'] as $uri) {
             $this->client->request('GET', $uri);
             self::assertContains($this->client->getResponse()->getStatusCode(), [302, 403], "$uri doit être refusé à ".implode(',', $roles));
         }
+        $this->client->request('POST', '/admin/offer/'.$offer->getId().'/delete', ['_token' => 'x']);
+        self::assertSame(1, (int) $this->em()->getConnection()->fetchOne('SELECT COUNT(*) FROM offer WHERE id = ?', [$offer->getId()]));
     }
 
     public function testAnonymousIsRedirectedToLogin(): void
@@ -222,6 +226,14 @@ final class OfferTest extends FunctionalTestCase
         yield 'prix non numérique' => [['offer[price]' => 'gratuit']];
         yield 'titre trop long' => [['offer[title]' => str_repeat('a', 121)]];
         yield 'texte énorme' => [['offer[includes]' => str_repeat("a\n", 15000)]];
+        // Lot de suivi R1 : l'UTF-8 invalide vidait la liste en silence (303).
+        yield 'calendrier en UTF-8 invalide' => [['offer[calendar]' => "J1 | x\xC3\x28"]];
+        yield 'pack en UTF-8 invalide' => [['offer[pack]' => "Répondre : x\xC3\x28"]];
+        yield 'liste anglaise en UTF-8 invalide' => [['offer[includesEn]' => "x\xC3\x28"]];
+        yield 'titre avec NUL' => [['offer[title]' => "a\0b"]];
+        yield 'titre avec contrôle bidi' => [['offer[title]' => "Offre \u{202E}etsuj"]];
+        yield 'accroche avec espace de largeur nulle' => [['offer[leadText]' => "ab\u{200B}cd"]];
+        yield 'élément avec BOM' => [['offer[includes]' => "x\u{FEFF}y"]];
     }
 
     /**
@@ -272,13 +284,98 @@ final class OfferTest extends FunctionalTestCase
         self::assertSame(0, (int) $this->em()->getConnection()->fetchOne('SELECT COUNT(*) FROM offer WHERE slug = ?', [$slug]));
     }
 
+    public function testLegitimateUnicodeIsAccepted(): void
+    {
+        $values = $this->submitCreate([
+            'offer[title]' => 'Prise de rendez‑vous 👨‍💻 — « ça marche »',
+            'offer[leadText]' => "Première ligne.\nSeconde ligne.",
+        ]);
+        self::assertResponseRedirects('/admin/offer/index');
+        $offer = $this->em()->getRepository(Offer::class)->findOneBy(['slug' => $values['offer[slug]']]);
+        self::assertInstanceOf(Offer::class, $offer);
+        $this->created[] = (int) $offer->getId();
+    }
+
+    /**
+     * Lot de suivi R1 : un titre de bloc avec « : » ou un élément avec « ; »
+     * (écrit hors formulaire) était défiguré au premier enregistrement.
+     *
+     * @return iterable<string, array{list<array{title: string, items: list<string>}>}>
+     */
+    public static function packsBreakingTheRoundTrip(): iterable
+    {
+        yield 'deux-points dans le titre' => [[['title' => 'A: B', 'items' => ['x']]]];
+        yield 'point-virgule dans un élément' => [[['title' => 'A', 'items' => ['x ; y']]]];
+    }
+
+    /**
+     * @param list<array{title: string, items: list<string>}> $pack
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('packsBreakingTheRoundTrip')]
+    public function testPackSeparatorsAreRejectedByTheEntity(array $pack): void
+    {
+        /** @var \Symfony\Component\Validator\Validator\ValidatorInterface $validator */
+        $validator = static::getContainer()->get(\Symfony\Component\Validator\Validator\ValidatorInterface::class);
+        self::assertGreaterThan(0, \count($validator->validateProperty((new Offer())->setPack($pack), 'pack')));
+    }
+
+    public function testCalendarDayCannotContainThePipeSeparator(): void
+    {
+        /** @var \Symfony\Component\Validator\Validator\ValidatorInterface $validator */
+        $validator = static::getContainer()->get(\Symfony\Component\Validator\Validator\ValidatorInterface::class);
+        self::assertGreaterThan(0, \count($validator->validateProperty((new Offer())->setCalendar([['day' => 'J1|J2', 'text' => 'x']]), 'calendar')));
+    }
+
+    public function testEverySeededOfferStillValidatesAndRoundTripsUnchanged(): void
+    {
+        // Les 7 offres de la migration doivent rester valides sous les
+        // nouvelles règles, et l'enregistrement sans modification par le
+        // formulaire ne doit rien altérer (aller-retour fidèle).
+        $this->client->loginUser($this->createUser(['ROLE_ADMIN'], twoFactor: true), 'main');
+        $conn = $this->em()->getConnection();
+        $ids = $conn->fetchFirstColumn("SELECT id FROM offer WHERE created_at = '2026-11-21 14:00:00'");
+        self::assertCount(7, $ids);
+        $columns = 'slug, title, includes, before_items, after_items, calendar, pack, price, hero_position, published';
+
+        foreach ($ids as $id) {
+            $before = $conn->fetchAssociative("SELECT $columns FROM offer WHERE id = ?", [$id]);
+            $crawler = $this->client->request('GET', "/admin/offer/$id/update");
+            self::assertResponseIsSuccessful();
+            $this->client->submit($crawler->filter('form[name="offer"]')->form());
+            self::assertResponseRedirects('/admin/offer/index', null, "L'offre $id doit rester valide.");
+            self::assertSame($before, $conn->fetchAssociative("SELECT $columns FROM offer WHERE id = ?", [$id]), "L'offre $id ne doit pas être altérée.");
+        }
+    }
+
+    public function testUpdateRequiresAValidCsrfToken(): void
+    {
+        $offer = $this->offer($this->slug(), false);
+        $id = $offer->getId();
+        $title = $offer->getTitle(); // lu AVANT : le formulaire modifie l'objet en mémoire (noyau partagé)
+        $this->client->loginUser($this->createUser(['ROLE_ADMIN'], twoFactor: true), 'main');
+        $this->client->request('POST', '/admin/offer/'.$id.'/update', ['offer' => ['_token' => 'faux', 'title' => 'Piraté']]);
+
+        self::assertSame(422, $this->client->getResponse()->getStatusCode());
+        self::assertSame($title, $this->em()->getConnection()->fetchOne('SELECT title FROM offer WHERE id = ?', [$id]), 'Rien ne doit être écrit en base sans jeton CSRF valide.');
+    }
+
+    public function testAdminWithoutTwoFactorIsSentToTwoFactorSetup(): void
+    {
+        $this->client->loginUser($this->createUser(['ROLE_ADMIN']), 'main');
+        foreach (['/admin/offer/index', '/admin/offer/create'] as $uri) {
+            $this->client->request('GET', $uri);
+            self::assertResponseRedirects();
+            self::assertStringContainsString('2fa', (string) $this->client->getResponse()->headers->get('Location'));
+        }
+    }
+
     public function testCreateWithoutCsrfTokenIsRejected(): void
     {
         $this->client->loginUser($this->createUser(['ROLE_ADMIN'], twoFactor: true), 'main');
         $slug = $this->slug();
         $this->client->request('POST', '/admin/offer/create', ['offer' => ['slug' => $slug, 'title' => 'T', 'includes' => 'Un', 'price' => '1']]);
 
-        self::assertNotSame(302, $this->client->getResponse()->getStatusCode());
+        self::assertSame(422, $this->client->getResponse()->getStatusCode(), 'Sans jeton CSRF : formulaire réaffiché, rien d\'enregistré.');
         self::assertSame(0, (int) $this->em()->getConnection()->fetchOne('SELECT COUNT(*) FROM offer WHERE slug = ?', [$slug]));
     }
 

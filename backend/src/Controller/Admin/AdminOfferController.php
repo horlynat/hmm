@@ -6,7 +6,10 @@ use App\Entity\Offer;
 use App\Form\OfferType;
 use App\Repository\OfferRepository;
 use App\Service\AuditLogger;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Form\FormError;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -39,16 +42,16 @@ final class AdminOfferController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($offer);
-            $entityManager->flush();
-            $auditLogger->log(Offer::class, $offer->getId(), $offer->getTitle(), 'created');
-            $entityManager->flush();
+            if ($this->flushOrFlagDuplicateSlug($entityManager, $form)) {
+                $auditLogger->log(Offer::class, $offer->getId(), $offer->getTitle(), 'created');
+                $entityManager->flush();
+                $this->addFlash('success', 'L\'offre a été créée.');
 
-            $this->addFlash('success', 'L\'offre a été créée.');
-
-            return $this->redirectToRoute('admin_offer_index', [], Response::HTTP_SEE_OTHER);
+                return $this->redirectToRoute('admin_offer_index', [], Response::HTTP_SEE_OTHER);
+            }
         }
 
-        return $this->render('admin/offer/create.html.twig', ['offer' => $offer, 'form' => $form]);
+        return $this->render('admin/offer/create.html.twig', ['offer' => $offer, 'form' => $form], $form->isSubmitted() ? new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY) : null);
     }
 
     #[Route('/{id}/update', name: 'update', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
@@ -59,13 +62,14 @@ final class AdminOfferController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $auditLogger->log(Offer::class, $offer->getId(), $offer->getTitle(), 'updated');
-            $entityManager->flush();
-            $this->addFlash('success', 'L\'offre a été mise à jour.');
+            if ($this->flushOrFlagDuplicateSlug($entityManager, $form)) {
+                $this->addFlash('success', 'L\'offre a été mise à jour.');
 
-            return $this->redirectToRoute('admin_offer_index', [], Response::HTTP_SEE_OTHER);
+                return $this->redirectToRoute('admin_offer_index', [], Response::HTTP_SEE_OTHER);
+            }
         }
 
-        return $this->render('admin/offer/update.html.twig', ['offer' => $offer, 'form' => $form]);
+        return $this->render('admin/offer/update.html.twig', ['offer' => $offer, 'form' => $form], $form->isSubmitted() ? new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY) : null);
     }
 
     #[Route('/{id}/delete', name: 'delete', requirements: ['id' => '\d+'], methods: ['POST'])]
@@ -83,5 +87,23 @@ final class AdminOfferController extends AbstractController
         $this->addFlash('success', 'L\'offre a été supprimée.');
 
         return $this->redirectToRoute('admin_offer_index', [], Response::HTTP_SEE_OTHER);
+    }
+
+    /**
+     * UniqueEntity ne protège pas d'une course entre deux enregistrements du
+     * même slug : l'index unique lève alors une exception, qui donnait une
+     * 500. On la ramène à une erreur sur le champ (contre-audit R1).
+     */
+    private function flushOrFlagDuplicateSlug(EntityManagerInterface $entityManager, FormInterface $form): bool
+    {
+        try {
+            $entityManager->flush();
+
+            return true;
+        } catch (UniqueConstraintViolationException) {
+            $form->get('slug')->addError(new FormError('Ce slug est déjà utilisé par une autre offre.'));
+
+            return false;
+        }
     }
 }

@@ -64,8 +64,15 @@ final class OfferLinesTransformer implements DataTransformerInterface
             throw new TransformationFailedException('Texte trop long.');
         }
 
+        // preg_split renvoie false sur de l'UTF-8 invalide : l'ancien `?: []`
+        // vidait alors la liste en silence (contre-audit R1).
+        $lines = preg_split('/\R/u', $value);
+        if (false === $lines) {
+            throw new TransformationFailedException('Texte invalide (encodage).');
+        }
+
         $rows = [];
-        foreach (preg_split('/\R/u', $value) ?: [] as $n => $line) {
+        foreach ($lines as $n => $line) {
             $line = trim($line);
             if ('' === $line) {
                 continue;

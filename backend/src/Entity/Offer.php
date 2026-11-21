@@ -43,6 +43,16 @@ class Offer
     public const MAX_PRICE = 1_000_000_000;
     public const LIST_ITEM_MAX = 200;
 
+    /**
+     * Texte sur une ligne : ni caractère de contrôle (NUL, sauts de ligne…),
+     * ni caractère invisible détournable (contrôles bidi qui inversent
+     * l'affichage, espaces de largeur nulle, BOM). Le liant des emoji
+     * composés (U+200D) reste permis. Contre-audit R1.
+     */
+    public const SAFE_LINE = '/^[^\p{Cc}\x{200B}\x{200E}\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}\x{FEFF}]*$/uD';
+    /** Même règle, sauts de ligne (\n, \r) permis : zones de texte. */
+    public const SAFE_TEXT = '/^[^\x{0}-\x{9}\x{B}\x{C}\x{E}-\x{1F}\x{7F}-\x{9F}\x{200B}\x{200E}\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}\x{FEFF}]*$/uD';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -119,11 +129,13 @@ class Offer
     #[ORM\Column(length: 120)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 120)]
+    #[Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private string $title = '';
 
     #[ORM\Column(length: 120, nullable: true)]
     #[Assert\Length(max: 120)]
+    #[Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private ?string $titleEn = null;
 
@@ -131,11 +143,13 @@ class Offer
     #[ORM\Column(length: 40)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 40)]
+    #[Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private string $shortTitle = '';
 
     #[ORM\Column(length: 40, nullable: true)]
     #[Assert\Length(max: 40)]
+    #[Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private ?string $shortTitleEn = null;
 
@@ -143,11 +157,13 @@ class Offer
     #[ORM\Column(length: 200)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 200)]
+    #[Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private string $pain = '';
 
     #[ORM\Column(length: 200, nullable: true)]
     #[Assert\Length(max: 200)]
+    #[Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private ?string $painEn = null;
 
@@ -155,11 +171,13 @@ class Offer
     #[ORM\Column(length: 200)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 200)]
+    #[Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private string $headline = '';
 
     #[ORM\Column(length: 200, nullable: true)]
     #[Assert\Length(max: 200)]
+    #[Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private ?string $headlineEn = null;
 
@@ -167,11 +185,13 @@ class Offer
     #[ORM\Column(length: 500)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 500)]
+    #[Assert\Regex(pattern: self::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private string $leadText = '';
 
     #[ORM\Column(length: 500, nullable: true)]
     #[Assert\Length(max: 500)]
+    #[Assert\Regex(pattern: self::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private ?string $leadTextEn = null;
 
@@ -179,11 +199,13 @@ class Offer
     #[ORM\Column(length: 300)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 300)]
+    #[Assert\Regex(pattern: self::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private string $cardText = '';
 
     #[ORM\Column(length: 300, nullable: true)]
     #[Assert\Length(max: 300)]
+    #[Assert\Regex(pattern: self::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private ?string $cardTextEn = null;
 
@@ -191,11 +213,13 @@ class Offer
     #[ORM\Column(length: 200)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 200)]
+    #[Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private string $audience = '';
 
     #[ORM\Column(length: 200, nullable: true)]
     #[Assert\Length(max: 200)]
+    #[Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private ?string $audienceEn = null;
 
@@ -203,11 +227,13 @@ class Offer
     #[ORM\Column(length: 400)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 400)]
+    #[Assert\Regex(pattern: self::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private string $clientNeeds = '';
 
     #[ORM\Column(length: 400, nullable: true)]
     #[Assert\Length(max: 400)]
+    #[Assert\Regex(pattern: self::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private ?string $clientNeedsEn = null;
 
@@ -215,11 +241,13 @@ class Offer
     #[ORM\Column(length: 40)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 40)]
+    #[Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private string $delay = '';
 
     #[ORM\Column(length: 40, nullable: true)]
     #[Assert\Length(max: 40)]
+    #[Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['offer_public'])]
     private ?string $delayEn = null;
 
@@ -232,7 +260,7 @@ class Offer
     #[ORM\Column(type: Types::JSON)]
     #[Assert\Type('list')]
     #[Assert\Count(min: 1, max: 12)]
-    #[Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX)])])]
+    #[Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')])])]
     #[Groups(['offer_public'])]
     private array $includes = [];
 
@@ -240,7 +268,7 @@ class Offer
     #[ORM\Column(type: Types::JSON, nullable: true)]
     #[Assert\Type('list')]
     #[Assert\Count(max: 12)]
-    #[Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX)])])]
+    #[Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')])])]
     #[Groups(['offer_public'])]
     private ?array $includesEn = null;
 
@@ -248,7 +276,7 @@ class Offer
     #[ORM\Column(type: Types::JSON)]
     #[Assert\Type('list')]
     #[Assert\Count(max: 6)]
-    #[Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX)])])]
+    #[Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')])])]
     #[Groups(['offer_public'])]
     private array $beforeItems = [];
 
@@ -256,7 +284,7 @@ class Offer
     #[ORM\Column(type: Types::JSON, nullable: true)]
     #[Assert\Type('list')]
     #[Assert\Count(max: 6)]
-    #[Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX)])])]
+    #[Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')])])]
     #[Groups(['offer_public'])]
     private ?array $beforeItemsEn = null;
 
@@ -264,7 +292,7 @@ class Offer
     #[ORM\Column(type: Types::JSON)]
     #[Assert\Type('list')]
     #[Assert\Count(max: 6)]
-    #[Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX)])])]
+    #[Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')])])]
     #[Groups(['offer_public'])]
     private array $afterItems = [];
 
@@ -272,7 +300,7 @@ class Offer
     #[ORM\Column(type: Types::JSON, nullable: true)]
     #[Assert\Type('list')]
     #[Assert\Count(max: 6)]
-    #[Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX)])])]
+    #[Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')])])]
     #[Groups(['offer_public'])]
     private ?array $afterItemsEn = null;
 
@@ -281,8 +309,8 @@ class Offer
     #[Assert\Type('list')]
     #[Assert\Count(max: 12)]
     #[Assert\All([new Assert\Sequentially([new Assert\Type('array'), new Assert\Collection(fields: [
-        'day' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: 10)]),
-        'text' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX)]),
+        'day' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: 10), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.'), new Assert\Regex(pattern: '/\\|/', match: false, message: 'Le caractère « | » est réservé au format de saisie.')]),
+        'text' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]),
     ])])])]
     #[Groups(['offer_public'])]
     private array $calendar = [];
@@ -292,8 +320,8 @@ class Offer
     #[Assert\Type('list')]
     #[Assert\Count(max: 12)]
     #[Assert\All([new Assert\Sequentially([new Assert\Type('array'), new Assert\Collection(fields: [
-        'day' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: 10)]),
-        'text' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX)]),
+        'day' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: 10), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.'), new Assert\Regex(pattern: '/\\|/', match: false, message: 'Le caractère « | » est réservé au format de saisie.')]),
+        'text' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]),
     ])])])]
     #[Groups(['offer_public'])]
     private ?array $calendarEn = null;
@@ -303,8 +331,8 @@ class Offer
     #[Assert\Type('list')]
     #[Assert\Count(max: 5)]
     #[Assert\All([new Assert\Sequentially([new Assert\Type('array'), new Assert\Collection(fields: [
-        'title' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: 60)]),
-        'items' => new Assert\Sequentially([new Assert\Type('list'), new Assert\Count(min: 1, max: 8), new Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX)])])]),
+        'title' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: 60), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.'), new Assert\Regex(pattern: '/:/', match: false, message: 'Le caractère « : » est réservé au format de saisie.')]),
+        'items' => new Assert\Sequentially([new Assert\Type('list'), new Assert\Count(min: 1, max: 8), new Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.'), new Assert\Regex(pattern: '/;/', match: false, message: 'Le caractère « ; » est réservé au format de saisie.')])])]),
     ])])])]
     #[Groups(['offer_public'])]
     private array $pack = [];
@@ -314,8 +342,8 @@ class Offer
     #[Assert\Type('list')]
     #[Assert\Count(max: 5)]
     #[Assert\All([new Assert\Sequentially([new Assert\Type('array'), new Assert\Collection(fields: [
-        'title' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: 60)]),
-        'items' => new Assert\Sequentially([new Assert\Type('list'), new Assert\Count(min: 1, max: 8), new Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX)])])]),
+        'title' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: 60), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.'), new Assert\Regex(pattern: '/:/', match: false, message: 'Le caractère « : » est réservé au format de saisie.')]),
+        'items' => new Assert\Sequentially([new Assert\Type('list'), new Assert\Count(min: 1, max: 8), new Assert\All([new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: self::LIST_ITEM_MAX), new Assert\Regex(pattern: self::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.'), new Assert\Regex(pattern: '/;/', match: false, message: 'Le caractère « ; » est réservé au format de saisie.')])])]),
     ])])])]
     #[Groups(['offer_public'])]
     private ?array $packEn = null;
@@ -337,17 +365,19 @@ class Offer
     public function isFeatured(): bool { return $this->featured; }
     public function setFeatured(bool $featured): static { $this->featured = $featured; return $this; }
 
+    // Setters des listes à choix : null (champ absent de la soumission) est
+    // stocké '' puis refusé par Assert\Choice en 422, au lieu d'un TypeError.
     public function getCategory(): string { return $this->category; }
-    public function setCategory(string $category): static { $this->category = $category; return $this; }
+    public function setCategory(?string $category): static { $this->category = $category ?? ''; return $this; }
 
     public function getIcon(): string { return $this->icon; }
-    public function setIcon(string $icon): static { $this->icon = $icon; return $this; }
+    public function setIcon(?string $icon): static { $this->icon = $icon ?? ''; return $this; }
 
     public function getPreviewType(): string { return $this->previewType; }
-    public function setPreviewType(string $previewType): static { $this->previewType = $previewType; return $this; }
+    public function setPreviewType(?string $previewType): static { $this->previewType = $previewType ?? ''; return $this; }
 
     public function getSituation(): string { return $this->situation; }
-    public function setSituation(string $situation): static { $this->situation = $situation; return $this; }
+    public function setSituation(?string $situation): static { $this->situation = $situation ?? ''; return $this; }
 
     public function getProofProjectSlug(): ?string { return $this->proofProjectSlug; }
     public function setProofProjectSlug(?string $slug): static { $this->proofProjectSlug = $slug; return $this; }
