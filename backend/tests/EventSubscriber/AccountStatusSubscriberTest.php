@@ -158,6 +158,28 @@ final class AccountStatusSubscriberTest extends TestCase
         $this->assertSame('/admin/compte-bloque?reason=disabled', $response->headers->get('Location'));
     }
 
+    /**
+     * Contre-audit B2 (11e passe) : `/%61dmin/…` est servi par le routeur
+     * comme /admin/… — la redirection « compte bloqué » doit s'appliquer.
+     */
+    public function testEncodedAdminPathIsStillInScope(): void
+    {
+        $security = $this->createSecurity($this->createUser(false, true, ['ROLE_EDITOR']), editorArea: true);
+        $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator->expects($this->once())
+            ->method('generate')
+            ->with('admin_account_blocked', ['reason' => 'disabled'])
+            ->willReturn('/admin/compte-bloque?reason=disabled');
+
+        $subscriber = new AccountStatusSubscriber($security, $urlGenerator, $this->createMandatePolicy());
+        $event = $this->createEvent('/%61dmin/dashboard');
+
+        $subscriber->onKernelController($event);
+
+        $response = ($event->getController())();
+        $this->assertSame('/admin/compte-bloque?reason=disabled', $response->headers->get('Location'));
+    }
+
     public function testDisabledNonAdminUserIsRedirectedToProfileBlockedPage(): void
     {
         $security = $this->createSecurity($this->createUser(false, true, ['ROLE_USER']), editorArea: false);

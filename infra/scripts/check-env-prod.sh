@@ -96,7 +96,7 @@ def value(name):
 
 errors = []
 # Contre-audit B2 (6e passe) : un caractère hors ASCII (espace insécable,
-# signe Kelvin à la place d un K…) est normalisé différemment par Python et
+# signe Kelvin à la place d’un K…) est normalisé différemment par Python et
 # par PHP — le contrôle passait alors que PHP ne reconnaissait plus
 # hmm-backend. On refuse donc tout caractère hors [A-Za-z0-9.,-_] et blancs.
 def checked(name):
@@ -133,7 +133,7 @@ effective = {
 for name, vals in effective.items():
     for v in vals:
         if any(c in ASCII_WS for c in v):
-            errors.append("%s contient un blanc à l intérieur d une valeur : la valeur lue par PHP serait inutilisable." % name)
+            errors.append("%s contient un blanc à l’intérieur d’une valeur : la valeur lue par PHP serait inutilisable." % name)
             break
 
 # Format réel des AUD Cloudflare Access : 64 caractères hexadécimaux. Une
@@ -160,32 +160,98 @@ if "hmm-backend" not in hosts:
         "api.horlynat.com,hmm-backend,backend"
     )
 
-# Contre-audit B2 (10e passe, constat 1) : exiger hmm-backend ne suffit pas.
-# TOUT nom interne joignable sur le réseau Docker sans passer par Cloudflare
-# et accepté par Symfony (SYMFONY_TRUSTED_HOSTS) doit être limité à /api
-# (PUBLIC_API_HOSTS) — sinon `Host: backend` (ancien .env.prod.example) ou
-# `Host: localhost` servirait tout le back-office. Symfony compare chaque
-# motif en `{motif}i` (Request::setTrustedHosts).
-INTERNAL_NAMES = ("hmm-backend", "backend", "localhost", "127.0.0.1", "frontend", "database", "traefik", "adminer")
-trusted = [t for t in (p.strip(ASCII_WS) for p in value("SYMFONY_TRUSTED_HOSTS").split(",")) if t]
+# Contre-audit B2 (11e passe, C1-C3) — invariant : TOUT hôte accepté par
+# Symfony (SYMFONY_TRUSTED_HOSTS) doit être limité à /api (PUBLIC_API_HOSTS),
+# protégé par Cloudflare (CF_ACCESS_HOSTS) ou être l hôte du back-office
+# (BACKOFFICE_URL). Un voisin du réseau Docker choisit librement son en-tête
+# Host : tout autre nom accepté servirait le back-office sans Cloudflare.
+#  - Découpage IDENTIQUE à Symfony (Kernel::boot) et `$$` de Compose annulé ;
+#    un élément VIDE est refusé : Symfony en fait un motif qui accepte tout
+#    (une simple virgule en trop suffisait).
+#  - Grammaire FERMÉE (`^…$`, lettres, chiffres, `-`, `\.`, groupes `(a|b)`) :
+#    Python et PCRE la lisent forcément pareil, et chaque motif se développe
+#    en une liste FINIE d hôtes, comparée à l invariant.
+from urllib.parse import urlsplit
+
+def split_like_symfony(raw):
+    return re.split(r"\s*,\s*(?![^{]*\})", raw)
+
+GRAMMAR = re.compile(r"\^(?:[a-z0-9-]|\\\.|[()|])+\$", re.IGNORECASE)
+
+def expand(body, pos=0, depth=0):
+    # Développe body[pos:] jusqu à `)` ou fin ; renvoie (liste, position).
+    if depth > 5:
+        raise ValueError("imbrication")
+    alternatives, current = [], [""]
+    while pos < len(body):
+        c = body[pos]
+        if c == "\\":
+            current = [x + "." for x in current]
+            pos += 2
+        elif c == "(":
+            sub, pos = expand(body, pos + 1, depth + 1)
+            current = [x + y for x in current for y in sub]
+            pos += 1  # `)`
+        elif c == ")":
+            break
+        elif c == "|":
+            alternatives += current
+            current = [""]
+            pos += 1
+        else:
+            current = [x + c.lower() for x in current]
+            pos += 1
+        if len(current) + len(alternatives) > 500:
+            raise ValueError("trop de variantes")
+    return alternatives + current, pos
+
+raw_trusted = value("SYMFONY_TRUSTED_HOSTS").replace("$$", "$")
+trusted = [t.strip(ASCII_WS) for t in split_like_symfony(raw_trusted)] if raw_trusted else []
 if not trusted:
     errors.append(
-        "SYMFONY_TRUSTED_HOSTS effectif vide : Symfony accepterait n importe quel Host, y compris les noms "
+        "SYMFONY_TRUSTED_HOSTS effectif vide : Symfony accepterait n’importe quel Host, y compris les noms "
         "internes du réseau Docker, qui serviraient le back-office sans Cloudflare."
     )
+elif any(t == "" for t in trusted):
+    errors.append(
+        "SYMFONY_TRUSTED_HOSTS contient un élément vide (virgule en trop) : Symfony en ferait un motif qui "
+        "accepte n’importe quel Host."
+    )
 else:
-    try:
-        patterns = [re.compile(t, re.IGNORECASE) for t in trusted]
-    except re.error:
-        patterns = None
-        errors.append("SYMFONY_TRUSTED_HOSTS contient un motif illisible : impossible de vérifier quels hôtes sont acceptés.")
-    if patterns is not None:
-        exposed = [n for n in INTERNAL_NAMES if any(p.search(n) for p in patterns) and n not in hosts]
+    accepted = set()
+    for t in trusted:
+        if not GRAMMAR.fullmatch(t) or t.count("(") != t.count(")"):
+            errors.append(
+                "SYMFONY_TRUSTED_HOSTS : motif hors de la forme vérifiable (^nom$, lettres, chiffres, -, \\., "
+                "groupes (a|b)). Quantificateurs, classes [ ] et jokers sont refusés : impossible de prouver "
+                "quels hôtes ils acceptent."
+            )
+            accepted = None
+            break
+        try:
+            names, _ = expand(t[1:-1])
+        except (ValueError, IndexError):
+            errors.append("SYMFONY_TRUSTED_HOSTS : motif trop complexe pour être vérifié.")
+            accepted = None
+            break
+        accepted.update(n.rstrip(".") for n in names)
+    if accepted is not None:
+        cf_hosts = set(effective["CF_ACCESS_HOSTS"]) if len(cf) == 3 else set()
+        bo_host = (urlsplit(value("BACKOFFICE_URL")).hostname or "").lower().rstrip(".")
+        allowed = set(hosts) | cf_hosts | ({bo_host} if bo_host else set())
+        exposed = sorted(h for h in accepted if h not in allowed)
         if exposed:
             errors.append(
-                "Nom(s) interne(s) accepté(s) par SYMFONY_TRUSTED_HOSTS mais absent(s) de PUBLIC_API_HOSTS : %s — "
-                "ils serviraient tout le back-office sans passer par Cloudflare. Les ajouter à PUBLIC_API_HOSTS "
-                "ou les retirer de SYMFONY_TRUSTED_HOSTS." % ", ".join(exposed)
+                "Hôte(s) accepté(s) par SYMFONY_TRUSTED_HOSTS sans être limité(s) à /api (PUBLIC_API_HOSTS) ni "
+                "protégé(s) par Cloudflare (CF_ACCESS_HOSTS) ni être le back-office (BACKOFFICE_URL) : %s — "
+                "ils serviraient tout le back-office sans passer par Cloudflare." % ", ".join(exposed)
+            )
+        if bo_host and bo_host not in cf_hosts:
+            print(
+                "    Avertissement : le back-office (%s) n’est pas protégé par Cloudflare Access côté application "
+                "(CF_ACCESS_* vides) — un conteneur du réseau Docker partagé peut l’atteindre directement "
+                "(compte, mot de passe et 2FA restent exigés)." % bo_host,
+                file=sys.stderr,
             )
 
 if errors:

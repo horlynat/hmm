@@ -78,7 +78,9 @@ final class AccountStatusSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $path = $event->getRequest()->getPathInfo();
+        // Chemin décodé, comme le pare-feu et le routeur (contre-audit B2,
+        // 11e passe) : `/%61dmin/…` échappait à la redirection « compte bloqué ».
+        $path = rawurldecode($event->getRequest()->getPathInfo());
         if (1 !== preg_match(self::IN_SCOPE_PATTERN, $path) || 1 === preg_match(self::SKIP_PATTERN, $path)) {
             return;
         }

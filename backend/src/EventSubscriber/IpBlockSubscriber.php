@@ -74,6 +74,10 @@ final class IpBlockSubscriber implements EventSubscriberInterface
      */
     public static function isProtectedLoginAttempt(string $method, string $pathInfo): bool
     {
-        return 'POST' === strtoupper($method) && in_array($pathInfo, self::PROTECTED_PATHS, true);
+        // Chemin DÉCODÉ, comme HttpUtils::checkRequestPath() qui décide si la
+        // requête est une tentative de connexion (contre-audit B2, 11e passe) :
+        // `POST /api/login_chec%6b` était authentifié par le pare-feu mais
+        // échappait au blocage d'IP.
+        return 'POST' === strtoupper($method) && in_array(rawurldecode($pathInfo), self::PROTECTED_PATHS, true);
     }
 }
