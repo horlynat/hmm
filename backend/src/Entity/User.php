@@ -36,6 +36,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     #[Groups(["api_user", "api_admin", "collaborator_signup", "client_signup"])]
     #[Assert\NotBlank(message: "L'email est obligatoire.")]
     #[Assert\Email(message: "Veuillez entrer un email valide.")]
+    #[\App\Validator\MailerAddress] // contre-audit B3 : même règle que le mailer, sinon 500 après écriture
     // Contre-audit B3 : sans borne, un e-mail valide de plus de 180 caractères
     // envoyé à l'inscription publique donnait une 500 (« Data too long »).
     #[Assert\Length(max: 180, maxMessage: "L'email ne peut pas dépasser {{ limit }} caractères.")]
@@ -206,11 +207,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     // Contre-audit B3 : JSON libre à l'inscription publique — un objet imbriqué
     // passait (warning « Array to string conversion » dans l'alerte admin).
     // Bornes et non liste fermée : le formulaire envoie le libellé traduit.
+    // `list` : un objet JSON ({"x":"Backend"}) passait et cassait les `.map()` côté frontend.
+    #[Assert\Type('list', message: "Les spécialités doivent être une liste.")]
     #[Assert\Count(max: 10, maxMessage: "Vous ne pouvez pas indiquer plus de {{ limit }} spécialités.")]
+    // Sequentially : le type d'abord — `trim()` sur un non-string serait un TypeError (500).
     #[Assert\All([
-        new Assert\Type('string'),
-        new Assert\NotBlank(),
-        new Assert\Length(max: 50),
+        new Assert\Sequentially([
+            new Assert\Type('string'),
+            new Assert\NotBlank(normalizer: 'trim'),
+            new Assert\Length(max: 50),
+        ]),
     ])]
     private ?array $specialties = null;
 

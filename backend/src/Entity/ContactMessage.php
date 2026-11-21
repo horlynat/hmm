@@ -42,6 +42,7 @@ class ContactMessage
     #[Groups(["api_public", "api_admin"])]
     #[Assert\NotBlank(message: "L'email est obligatoire")]
     #[Assert\Email]
+    #[\App\Validator\MailerAddress] // contre-audit B3 : même règle que le mailer, sinon 500 après écriture
     #[Assert\Length(max: 150)]
     private string $email = '';
 

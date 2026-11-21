@@ -43,6 +43,7 @@ class NewsletterSubscriber
     #[Groups(['api_public', 'api_admin'])]
     #[Assert\NotBlank(message: "L'adresse e-mail est obligatoire.")]
     #[Assert\Email(message: "L'adresse e-mail n'est pas valide.")]
+    #[\App\Validator\MailerAddress] // contre-audit B3 : même règle que le mailer, sinon 500 après écriture
     #[Assert\Length(max: 180, maxMessage: "L'adresse e-mail ne peut pas dépasser {{ limit }} caractères.")]
     private string $email = '';
 

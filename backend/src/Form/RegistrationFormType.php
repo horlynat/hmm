@@ -25,6 +25,7 @@ class RegistrationFormType extends AbstractType
                 'constraints' => [
                     new NotBlank(message: 'Veuillez entrer une adresse email'),
                     new Email(message: 'Veuillez entrer une adresse email valide'),
+                    new \App\Validator\MailerAddress(),
                 ],
             ])
             ->add('agreeTerms', CheckboxType::class, [
@@ -45,6 +46,8 @@ class RegistrationFormType extends AbstractType
                         minMessage: 'Votre mot de passe doit contenir au moins {{ limit }} caractères',
                         max: 4096,
                     ),
+                    // Contre-audit B3 : le hacheur plafonne à 4096 octets.
+                    new Length(max: 4096, countUnit: Length::COUNT_BYTES, maxMessage: 'Le mot de passe est trop long.'),
                     new Regex(
                         pattern: '/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).+$/',
                         message: 'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial.'

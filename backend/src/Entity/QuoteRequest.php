@@ -29,6 +29,7 @@ class QuoteRequest
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: "L'email est obligatoire.")]
     #[Assert\Email]
+    #[\App\Validator\MailerAddress] // contre-audit B3 : même règle que le mailer, sinon 500 après écriture
     #[Assert\Length(max: 100)]
     #[Groups(['api_public', 'api_admin'])]
     private string $email = '';

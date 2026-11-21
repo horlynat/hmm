@@ -308,6 +308,7 @@ final class MeController extends AbstractController
 
             $violations = $this->validator->validate($newPassword, [
                 new \Symfony\Component\Validator\Constraints\Length(min: 8, max: 4096, minMessage: 'Votre mot de passe doit contenir au moins {{ limit }} caractères.'),
+                new \Symfony\Component\Validator\Constraints\Length(max: 4096, countUnit: \Symfony\Component\Validator\Constraints\Length::COUNT_BYTES, maxMessage: 'Le mot de passe est trop long.'), // contre-audit B3 : plafond du hacheur en octets
                 new \Symfony\Component\Validator\Constraints\Regex(
                     pattern: '/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).+$/',
                     message: 'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial.',

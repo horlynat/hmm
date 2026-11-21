@@ -40,6 +40,8 @@ class CollaboratorRegistrationApiResource extends User
 {
     #[Assert\NotBlank(message: "Veuillez entrer un mot de passe.")]
     #[Assert\Length(min: 8, max: 4096, minMessage: "Votre mot de passe doit contenir au moins {{ limit }} caractères.")]
+    // Contre-audit B3 : le hacheur plafonne à 4096 OCTETS ; 4096 caractères multi-octets donnaient une 500.
+    #[Assert\Length(max: 4096, countUnit: Assert\Length::COUNT_BYTES, maxMessage: "Le mot de passe est trop long.")]
     #[Assert\Regex(
         pattern: '/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).+$/',
         message: "Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial.",

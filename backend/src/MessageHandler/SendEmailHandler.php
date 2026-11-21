@@ -9,7 +9,9 @@ use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Exception\RfcComplianceException;
 
 #[AsMessageHandler]
 class SendEmailHandler
@@ -34,6 +36,11 @@ class SendEmailHandler
 
             $this->logger->info('Email envoyé', ['to' => $message->to, 'subject' => $message->subject]);
 
+        } catch (RfcComplianceException $e) {
+            // Contre-audit B3 : adresse que le mailer ne pourra jamais accepter
+            // — inutile de retenter (sinon retries puis file `failed`).
+            $this->logger->warning('Adresse e-mail non conforme, envoi abandonné : ' . $e->getMessage(), ['subject' => $message->subject]);
+            throw new UnrecoverableMessageHandlingException($e->getMessage(), 0, $e);
         } catch (\Throwable $e) {
             $this->logger->error('Échec envoi email : ' . $e->getMessage(), ['to' => $message->to]);
             throw $e;
