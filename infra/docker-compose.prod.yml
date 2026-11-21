@@ -459,7 +459,7 @@ services:
     # Version exacte + digest. MySQL 8.0 est en fin de vie (avril 2026,
     # 8.0.46 = dernière publication) : montée vers 8.4 LTS à planifier
     # (procédure en README §8.5) — hors de ce lot.
-    image: mysql:8.0.46@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+    image: mysql:26.10.0@sha256:3819b2b23835c4a73c8b022fafc33c8095c0f81c929a8b7a84613d2fba6c52f5
     <<: *hardening
     # L'entrypoint officiel tourne en root : lit le secret (DAC_OVERRIDE,
     # fichier d'un autre utilisateur de l'hôte), chown du datadir et du
