@@ -1,33 +1,17 @@
-"use client";
-
-import { useEffect, useState, type ReactNode } from "react";
-import { useReducedMotion } from "@/lib/useReducedMotion";
+import type { ReactNode } from "react";
 
 /**
- * Transition d'entrée à chaque navigation (fade léger). Un `template.tsx` est
- * remonté à chaque changement de route, contrairement au `layout.tsx`.
- * Neutralisé si l'utilisateur préfère des animations réduites.
+ * Transition d'entrée à chaque navigation (fondu léger). Un `template.tsx` est
+ * remonté à chaque changement de route, contrairement au `layout.tsx` : le
+ * nouvel élément rejoue donc l'animation.
  *
- * CSS pur (pas de `motion`) : évite de charger cette lib sur chaque page pour
- * un simple fondu.
+ * Animation CSS pure (`.page-fade-in`, globals.css), et non un état React
+ * basculé après hydratation : l'ancienne version rendait toute la page à
+ * `opacity: 0` dans le HTML serveur jusqu'à l'exécution du JavaScript —
+ * page noire plusieurs secondes sur mobile lent, invisible si le JS échoue.
+ * Les animations réduites sont respectées par la règle globale
+ * prefers-reduced-motion.
  */
-export default function LocaleTemplate({ children }: { children: ReactNode }) {
-  const [visible, setVisible] = useState(false);
-  const reduce = useReducedMotion();
-
-  useEffect(() => {
-    if (reduce) return;
-    // Différé au frame suivant plutôt qu'un `setState` synchrone dans
-    // l'effet (cascading render) : cf. règle react-hooks/set-state-in-effect.
-    const raf = requestAnimationFrame(() => setVisible(true));
-    return () => cancelAnimationFrame(raf);
-  }, [reduce]);
-
-  if (reduce) return <>{children}</>;
-
-  return (
-    <div style={{ opacity: visible ? 1 : 0, transition: "opacity 0.3s ease-out" }}>
-      {children}
-    </div>
-  );
+export default function MarketingTemplate({ children }: { children: ReactNode }) {
+  return <div className="page-fade-in">{children}</div>;
 }
