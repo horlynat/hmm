@@ -169,6 +169,50 @@ final class CloudflareAccessVerifierTest extends TestCase
         self::assertFalse($verifier->verify($hs256));
     }
 
+    /**
+     * Contre-audit B2 (7e passe, C6) : verrou de relecture inaccessible ->
+     * avertissement visible, émis une seule fois même sous une rafale de kid
+     * aléatoires ; la clé déjà en cache reste acceptée.
+     */
+    public function testUnreachableLockIsLoggedOnceAndKeepsCachedKeys(): void
+    {
+        $real = $this->newKey();
+        $logger = new class extends \Psr\Log\AbstractLogger {
+            /** @var list<string> */
+            public array $warnings = [];
+
+            public function log($level, \Stringable|string $message, array $context = []): void
+            {
+                if ('warning' === $level && str_contains((string) $message, 'verrou')) {
+                    $this->warnings[] = (string) $message;
+                }
+            }
+        };
+        $reflection = new \ReflectionProperty(CloudflareAccessVerifier::class, 'lockWarningLogged');
+        $reflection->setValue(null, false);
+
+        $verifier = new CloudflareAccessVerifier(
+            new MockHttpClient(static fn (): MockResponse => new MockResponse(json_encode(['keys' => [$real['jwk']]], \JSON_THROW_ON_ERROR))),
+            new ArrayAdapter(),
+            $logger,
+            self::TEAM,
+            self::AUD,
+            '/nonexistent-'.bin2hex(random_bytes(4)),
+        );
+
+        self::assertTrue($verifier->verify($this->token($real)));
+        $attacker = $this->newKey();
+        for ($i = 0; $i < 10; ++$i) {
+            $jwk = $attacker['jwk'];
+            $jwk['kid'] = 'kid-'.bin2hex(random_bytes(6));
+            self::assertFalse($verifier->verify($this->token(['private' => $attacker['private'], 'jwk' => $jwk])));
+        }
+
+        self::assertCount(1, $logger->warnings, 'Un seul avertissement, pas un par requête.');
+        self::assertTrue($verifier->verify($this->token($real)));
+        $reflection->setValue(null, false);
+    }
+
     public function testFetchFailureIsCachedBrieflyAndRejects(): void
     {
         $calls = 0;

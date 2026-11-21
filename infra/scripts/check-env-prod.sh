@@ -30,9 +30,16 @@ compose_err="$(mktemp)"
 trap 'rm -f "$compose_err"' EXIT
 if ! resolved="$(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" config --format json 2>"$compose_err")"; then
   echo "==> check-env-prod : docker compose ne peut pas résoudre la configuration ($ENV_FILE) — déploiement annulé." >&2
-  # Les avertissements (variables non définies…) ne sont montrés qu'en cas
-  # d'échec, avec la cause réelle.
-  tail -n 5 "$compose_err" | sed 's/^/    /' >&2
+  # JAMAIS le texte brut de Compose (contre-audit B2, 7e passe) : ses
+  # messages citent la valeur fautive (« unterminated quoted value "<mot de
+  # passe> », « Invalid template: "…${…" »), et cette sortie finit dans les
+  # logs GitHub Actions — PUBLICS sur ce dépôt. Seuls la nature de l'erreur
+  # et le numéro de ligne sont repris — pas même un nom de variable : dans
+  # `${X:?…}`, ce « nom » vient du texte de la valeur elle-même.
+  cause="$(grep -oE 'line [0-9]+: (unterminated quoted value|key cannot contain a space|unexpected character)|Invalid template|required variable' "$compose_err" | head -n1 || true)"
+  echo "    Cause : ${cause:-erreur de syntaxe ou de configuration}." >&2
+  echo "    Détail (sur le VPS uniquement, jamais dans un log partagé) :" >&2
+  echo "    cd /opt/hmm/infra && docker compose --env-file .env.prod -f docker-compose.prod.yml config -q" >&2
   exit 1
 fi
 
@@ -43,7 +50,11 @@ env = (json.load(sys.stdin).get("services", {}).get("backend", {}) or {}).get("e
 if isinstance(env, list):  # forme « KEY=VAL » selon les versions de Compose
     env = dict(item.split("=", 1) if "=" in item else (item, "") for item in env)
 
-ASCII_WS = " \t\r\n\x0b\x0c"
+# EXACTEMENT les blancs retirés par trim() côté PHP : " \t\n\r\0\x0B".
+# PAS \x0c (saut de page) : PHP le garde, Python strip() le retirait — le
+# contrôle passait alors que PHP ne reconnaissait plus hmm-backend
+# (contre-audit B2, 7e passe). \0 est impossible dans une variable d env.
+ASCII_WS = " \t\n\r\x0b"
 ALLOWED = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,-_" + ASCII_WS)
 
 def value(name):
@@ -58,8 +69,21 @@ errors = []
 # signe Kelvin à la place d un K…) est normalisé différemment par Python et
 # par PHP — le contrôle passait alors que PHP ne reconnaissait plus
 # hmm-backend. On refuse donc tout caractère hors [A-Za-z0-9.,-_] et blancs.
+def checked(name):
+    v = value(name)
+    if name == "CF_ACCESS_TEAM_DOMAIN":
+        # Même tolérance que CloudflareAccessVerifier::__construct() :
+        # schéma https?:// et barre finale retirés.
+        low = v.lower()
+        for prefix in ("https://", "http://"):
+            if low.startswith(prefix):
+                v = v[len(prefix):]
+                break
+        v = v.rstrip("/")
+    return v
+
 for name in ("CF_ACCESS_HOSTS", "CF_ACCESS_TEAM_DOMAIN", "CF_ACCESS_AUD", "PUBLIC_API_HOSTS"):
-    bad = sorted({c for c in value(name) if c not in ALLOWED})
+    bad = sorted({c for c in checked(name) if c not in ALLOWED})
     if bad:
         errors.append("%s contient des caractères non autorisés (%s) : seuls lettres ASCII, chiffres, « . , - _ » sont acceptés." % (name, " ".join("U+%04X" % ord(c) for c in bad)))
 

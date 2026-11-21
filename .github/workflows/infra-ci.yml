@@ -40,5 +40,6 @@ jobs:
       - name: Banc — passerelle SSH de la clé de déploiement
         run: |
           set -euo pipefail
-          command -v rrsync || { echo "::error::rrsync absent du runner (paquet rsync)"; exit 1; }
+          # Même chemin que le banc et que la passerelle (HMM_RRSYNC par défaut).
+          test -x /usr/bin/rrsync || { echo "::error::/usr/bin/rrsync absent du runner (paquet rsync)"; exit 1; }
           bash infra/scripts/tests/deploy-ssh-gate.test.sh

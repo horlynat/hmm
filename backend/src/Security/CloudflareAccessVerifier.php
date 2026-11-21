@@ -37,6 +37,9 @@ final class CloudflareAccessVerifier
     private const JWKS_CACHE_TTL = 3600;
     private const JWKS_FAILURE_TTL = 30;
     private const JWKS_MIN_REFRESH_INTERVAL = 60;
+
+    /** Avertissement « verrou inaccessible » émis au plus une fois par processus. */
+    private static bool $lockWarningLogged = false;
     /** Tolérance d'horloge (secondes) sur exp/nbf/iat. */
     private const LEEWAY = 30;
 
@@ -52,6 +55,9 @@ final class CloudflareAccessVerifier
         ?string $teamDomain,
         #[Autowire('%env(default::CF_ACCESS_AUD)%')]
         ?string $audiences,
+        // Dossier du verrou de relecture (défaut : dossier temporaire du
+        // système). Paramétrable pour les tests.
+        private readonly ?string $lockDir = null,
     ) {
         $domain = strtolower(trim((string) $teamDomain));
         $domain = (string) preg_replace('#^https?://#', '', $domain);
@@ -153,12 +159,17 @@ final class CloudflareAccessVerifier
         // aussi (1 à 4 relectures sur 80 processus simultanés). Verrou de
         // fichier non bloquant : un seul processus vérifie PUIS pose la
         // réservation ; les autres repartent aussitôt, sans attendre.
-        $lockPath = sys_get_temp_dir().'/'.$this->cacheKey().'.lock';
+        $lockPath = rtrim($this->lockDir ?? sys_get_temp_dir(), '/').'/'.$this->cacheKey().'.lock';
         $handle = @fopen($lockPath, 'c');
         if (false === $handle) {
             // Jamais silencieux : sans ce verrou, une rotation de clés n'est
             // plus absorbée qu'à l'expiration du cache (jusqu'à 1 h de 403).
-            $this->logger->warning('Cloudflare Access : verrou de relecture des clés inaccessible, relecture forcée désactivée.', ['path' => $lockPath]);
+            // Une seule fois par processus : un kid aléatoire par requête ne
+            // doit pas pouvoir inonder les logs.
+            if (!self::$lockWarningLogged) {
+                self::$lockWarningLogged = true;
+                $this->logger->warning('Cloudflare Access : verrou de relecture des clés inaccessible, relecture forcée désactivée.', ['path' => $lockPath]);
+            }
 
             return false;
         }

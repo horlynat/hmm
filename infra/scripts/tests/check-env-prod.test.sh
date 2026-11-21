@@ -47,6 +47,9 @@ t OK "Cloudflare complet en « X = y »" $'CF_ACCESS_HOSTS = dark.horlynat.com\n
 t KO "espace insécable après hmm-backend" $'PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend\u00a0,backend'
 t KO "signe Kelvin à la place d'un K" $'PUBLIC_API_HOSTS=api.horlynat.com,hmm-bac\u212aend,backend'
 t KO "caractère non ASCII dans l'AUD" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=ab\u00e9'
+t KO "saut de page (\\f) après hmm-backend" $'PUBLIC_API_HOSTS="api.horlynat.com,hmm-backend\\f,backend"'
+t OK "tabulation verticale (\\v) retirée des deux côtés" $'PUBLIC_API_HOSTS="api.horlynat.com,hmm-backend\\v,backend"'
+t OK "équipe Cloudflare avec https:// et / final (toléré par PHP)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=https://x.cloudflareaccess.com/\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 t KO "dernière affectation retire hmm-backend" $'PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend\nPUBLIC_API_HOSTS=api.horlynat.com'
 
 bash "$CHECK" "$T/absent" "$COMPOSE" >/dev/null 2>&1 && { echo "FAIL fichier absent accepté"; fail=1; } || echo "PASS KO fichier absent"
@@ -56,5 +59,13 @@ bash "$CHECK" "$T/env" "$T/absent.yml" >/dev/null 2>&1 && { echo "FAIL compose a
 printf 'APP_ENV=prod\n' > "$T/env"
 CF_ACCESS_HOSTS=dark.horlynat.com bash "$CHECK" "$T/env" "$COMPOSE" >/dev/null 2>&1 \
   && { echo "FAIL variable du shell ignorée"; fail=1; } || echo "PASS KO Cloudflare partiel via l'environnement du shell"
+
+# Aucune valeur de .env.prod ne doit apparaître dans la sortie d'erreur
+# (elle finit dans les logs GitHub Actions, publics) — contre-audit B2.
+for leak in 'DB_PASS="S3cr3tLeak' 'API_KEY=abc${S3cr3tLeak' 'MAILER=x${S3cr3tLeak:?S3cr3tLeak}'; do
+  printf '%s\n' "$leak" > "$T/env"
+  out="$(bash "$CHECK" "$T/env" "$COMPOSE" 2>&1)" && { echo "FAIL fichier invalide accepté : $leak"; fail=1; continue; }
+  if grep -q 'S3cr3tLeak' <<<"$out"; then echo "FAIL valeur secrète affichée : $leak"; fail=1; else echo "PASS KO erreur sans valeur secrète ($leak)"; fi
+done
 
 exit $fail
