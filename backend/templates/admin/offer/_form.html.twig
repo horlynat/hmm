@@ -1,0 +1,51 @@
+{# templates/admin/offer/_form.html.twig #}
+<twig:LocaleToggle />
+
+{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+	<div class="lg:col-span-2 space-y-6">
+		<div class="card space-y-6">
+			<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">Textes</h3>
+			{% for field in ['title', 'shortTitle', 'pain', 'headline', 'audience', 'delay'] %}
+				<twig:FieldPair :fr="form[field]" :en="form[field ~ 'En']" />
+			{% endfor %}
+			{% for field in ['leadText', 'cardText', 'clientNeeds'] %}
+				<twig:FieldPair :fr="form[field]" :en="form[field ~ 'En']" :isTextarea="true" />
+			{% endfor %}
+		</div>
+
+		<div class="card space-y-6">
+			<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2">Contenu de la page offre</h3>
+			{% for field in ['includes', 'beforeItems', 'afterItems', 'calendar', 'pack'] %}
+				<twig:FieldPair :fr="form[field]" :en="form[field ~ 'En']" :isTextarea="true" />
+			{% endfor %}
+		</div>
+	</div>
+
+	<div class="space-y-6">
+		<div class="card space-y-4">
+			<h3 class="text-xs font-bold uppercase tracking-wider opacity-40 border-b border-gray-100 pb-2 flex items-center gap-2">
+				<span class="ti ti-settings text-sm" aria-hidden="true"></span>
+				Paramètres
+			</h3>
+			{% for field in ['slug', 'published', 'position', 'heroPosition', 'featured', 'category', 'icon', 'previewType', 'situation', 'proofProjectSlug', 'price', 'priceOnce'] %}
+				<div class="field">
+					{{ form_label(form[field], null, {'label_attr': {'class': 'field-label'}}) }}
+					{{ form_widget(form[field], {'attr': {'class': form[field].vars.block_prefixes[1] == 'checkbox' ? '' : 'input w-full text-sm'}}) }}
+					{% if form[field].vars.help %}<p class="text-[11px] opacity-40 mt-1">{{ form[field].vars.help }}</p>{% endif %}
+					{{ form_errors(form[field], {'attr': {'class': 'field-error'}}) }}
+				</div>
+			{% endfor %}
+
+			<div class="pt-2">
+				<button type="submit" class="btn btn-primary w-full gap-2">
+					<span class="ti ti-device-floppy text-sm" aria-hidden="true"></span>
+					<span>{{ button_label|default('Enregistrer') }}</span>
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+{{ form_end(form) }}

@@ -40,9 +40,10 @@
 {% set canViewCourses = is_granted('ROLE_EDITOR') %}
 {% set canViewExperiences = is_granted('ROLE_ADMIN') %}
 {% set canViewHomeContent = is_granted('ROLE_ADMIN') %}
+{% set canViewOffers = is_granted('ROLE_ADMIN') %}
 {% set canViewAboutContent = is_granted('ROLE_ADMIN') %}
 {% set canViewAiAssistant = is_granted('ROLE_ADMIN') %}
-{% set canViewContenuSection = canViewSkills or canViewSkillCategories or canViewArticles or canViewTags or canViewCourses or canViewExperiences or canViewHomeContent or canViewAboutContent or canViewAiAssistant %}
+{% set canViewContenuSection = canViewSkills or canViewSkillCategories or canViewArticles or canViewTags or canViewCourses or canViewExperiences or canViewHomeContent or canViewOffers or canViewAboutContent or canViewAiAssistant %}
 
 {% set canViewAdmins = is_granted('ROLE_ADMIN') %}
 {% set canViewCollaborators = is_granted('ROLE_ADMIN') %}
@@ -306,6 +307,12 @@
 						<a href="{{ path('admin_experience_index') }}" class="group flex items-center gap-2 py-[6px] px-2.5 rounded-md text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_experience' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
 							<i class="ti ti-history text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
 							Expériences
+						</a>
+					{% endif %}
+					{% if canViewOffers %}
+						<a href="{{ path('admin_offer_index') }}" class="group flex items-center gap-2 py-[6px] px-2.5 rounded-md text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_offer' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-tag text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
+							Offres
 						</a>
 					{% endif %}
 					{% if canViewHomeContent %}
