@@ -93,3 +93,28 @@ export function heroOffers(offers: Offer[]): Offer[] {
     .filter((offer): offer is Offer & { heroPosition: number } => typeof offer.heroPosition === "number")
     .sort((a, b) => a.heroPosition - b.heroPosition);
 }
+
+/**
+ * Offre unique par slug (page de détail `/offres/[slug]`) — filtre sur la
+ * collection plutôt qu'un GET direct : comme `Project`
+ * (App\ApiResource\ProjectApiResource), `OfferApiResource` n'expose qu'une
+ * seule opération GetCollection, l'identifiant de la ressource est `id`,
+ * aucune route /offers/{slug} n'existe côté backend.
+ */
+export async function getOfferBySlug(slug: string, locale: string): Promise<Offer | null> {
+  const offers = await getOffers(locale);
+  return offers.find((offer) => offer.slug === slug) ?? null;
+}
+
+/**
+ * Slugs uniquement, indépendant de la locale — pour `generateStaticParams`
+ * (exécuté au build, sans contexte de requête). Mêmes slugs quelle que soit
+ * la langue.
+ */
+export async function getOfferSlugs(): Promise<string[]> {
+  const payload = await apiFetch<unknown>("/offers", {
+    tags: ["offers"],
+    revalidate: OFFERS_REVALIDATE_SECONDS,
+  });
+  return extractCollection<{ slug: string }>(payload).map((offer) => offer.slug);
+}

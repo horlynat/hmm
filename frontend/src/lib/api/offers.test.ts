@@ -6,7 +6,7 @@ vi.mock("./client", async (importActual) => ({
   apiFetch: (...args: unknown[]) => apiFetch(...args),
 }));
 
-const { getOffers, heroOffers } = await import("./offers");
+const { getOffers, heroOffers, getOfferBySlug, getOfferSlugs } = await import("./offers");
 
 /** Offre telle que l'API la renvoie réellement (champs NULL omis). */
 function raw(slug: string, position: number, heroPosition?: number) {
@@ -61,5 +61,30 @@ describe("offres de l'API", () => {
     apiFetch.mockResolvedValue(null);
 
     expect(await getOffers("fr")).toEqual([]);
+  });
+
+  it("getOfferBySlug trouve l'offre demandée, et renvoie null sinon", async () => {
+    apiFetch.mockResolvedValue({ member: [raw("a", 1), raw("b", 2)] });
+
+    expect((await getOfferBySlug("b", "fr"))?.slug).toBe("b");
+    expect(await getOfferBySlug("inconnu", "fr")).toBeNull();
+  });
+
+  it("getOfferBySlug : API en panne → null (pas d'exception)", async () => {
+    apiFetch.mockResolvedValue(null);
+
+    expect(await getOfferBySlug("a", "fr")).toBeNull();
+  });
+
+  it("getOfferSlugs renvoie les slugs, indépendamment de la locale", async () => {
+    apiFetch.mockResolvedValue({ member: [raw("a", 1), raw("b", 2)] });
+
+    expect(await getOfferSlugs()).toEqual(["a", "b"]);
+  });
+
+  it("getOfferSlugs : API en panne → liste vide (pas d'exception, pas de 500 au build)", async () => {
+    apiFetch.mockResolvedValue(null);
+
+    expect(await getOfferSlugs()).toEqual([]);
   });
 });

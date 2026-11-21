@@ -1,5 +1,6 @@
+import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { OfferHeroCarousel } from "./OfferHeroCarousel";
 import { makeOffer } from "./testOffers";
 
@@ -7,6 +8,16 @@ vi.mock("next-intl", () => ({
   useTranslations: () => (key: string, values?: Record<string, unknown>) =>
     values ? `${key}:${JSON.stringify(values)}` : key,
   useLocale: () => "fr",
+}));
+
+// Évite de dépendre du contexte de routing next-intl pour le lien « Voir
+// l'offre » (/offres/[slug]).
+vi.mock("@/i18n/navigation", () => ({
+  Link: ({ href, children, ...props }: { href: unknown; children: ReactNode }) => (
+    <a href={typeof href === "string" ? href : JSON.stringify(href)} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 let reducedMotion = false;
@@ -21,9 +32,11 @@ const offers = [
 function slides() {
   return screen.getAllByRole("group", { hidden: true }).filter((el) => el.getAttribute("aria-roledescription") === "slide");
 }
+function activeSlide() {
+  return slides().find((s) => !s.hasAttribute("inert"));
+}
 function activeHeadline() {
-  const active = slides().find((s) => !s.hasAttribute("inert"));
-  return active?.querySelector("h2")?.textContent;
+  return activeSlide()?.querySelector("h2")?.textContent;
 }
 
 describe("OfferHeroCarousel", () => {
@@ -112,6 +125,17 @@ describe("OfferHeroCarousel", () => {
     fireEvent.click(screen.getByRole("button", { name: "B" }));
     expect(activeHeadline()).toBe("Titre B");
     expect(screen.getByRole("button", { name: "B" })).toHaveAttribute("aria-current", "true");
+  });
+
+  /**
+   * R4 : « Voir l'offre » menait vers une ancre en page (#offre-<slug>)
+   * avant que la fiche dédiée n'existe. Elle y renvoie désormais.
+   */
+  it("« Voir l'offre » pointe vers la fiche dédiée de l'offre active", () => {
+    render(<OfferHeroCarousel offers={offers} />);
+    const link = within(activeSlide()!).getByRole("link", { name: "seeOffer" });
+    expect(link.getAttribute("href")).toContain('"slug":"a"');
+    expect(link.getAttribute("href")).not.toMatch(/^#/);
   });
 
   it("sans contrôles ni défilement avec une seule offre", () => {

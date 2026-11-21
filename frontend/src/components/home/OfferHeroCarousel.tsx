@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import clsx from "clsx";
 import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import type { Offer } from "@/lib/types";
 import { whatsappLink } from "@/lib/whatsapp";
 import { formatFcfa } from "@/lib/format/fcfa";
@@ -112,9 +113,14 @@ export function OfferHeroCarousel({ offers }: { offers: Offer[] }) {
                     <WhatsappIcon />
                     {t("order")}
                   </a>
-                  <a className="btn-secondary" href={`#offre-${offer.slug}`}>
+                  {/* Fiche dédiée (R4, /offres/[slug]) plutôt que l'ancre
+                      en page `#offre-${slug}` utilisée avant sa création. */}
+                  <Link
+                    className="btn-secondary"
+                    href={{ pathname: "/offres/[slug]", params: { slug: offer.slug } }}
+                  >
                     {t("seeOffer")}
-                  </a>
+                  </Link>
                 </div>
               </div>
 
