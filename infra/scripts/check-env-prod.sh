@@ -43,6 +43,20 @@ if ! resolved="$(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" config
   exit 1
 fi
 
+# Contre-audit B2 (8e passe, F1) : un `$` non échappé dans une valeur
+# (`A=s3cr$etPart`) ne fait pas échouer Compose, mais TRONQUE la valeur et
+# fait afficher à chaque commande Compose suivante (pull, up, build…)
+# « The "etPart" variable is not set » — un fragment de la valeur dans les
+# logs publics. On refuse donc ici, sans citer aucun nom (il peut provenir de
+# la valeur elle-même).
+if grep -q 'variable is not set' "$compose_err"; then
+  echo "==> check-env-prod : variable non définie dans la configuration résolue — déploiement annulé." >&2
+  echo "    Cause probable : un \$ non échappé dans une valeur de $ENV_FILE (écrire \$\$), ou une variable du compose absente." >&2
+  echo "    Détail (sur le VPS uniquement, jamais dans un log partagé) :" >&2
+  echo "    cd /opt/hmm/infra && docker compose --env-file .env.prod -f docker-compose.prod.yml config -q" >&2
+  exit 1
+fi
+
 printf '%s' "$resolved" | python3 -I -c '
 import json, sys
 
@@ -87,7 +101,26 @@ for name in ("CF_ACCESS_HOSTS", "CF_ACCESS_TEAM_DOMAIN", "CF_ACCESS_AUD", "PUBLI
     if bad:
         errors.append("%s contient des caractères non autorisés (%s) : seuls lettres ASCII, chiffres, « . , - _ » sont acceptés." % (name, " ".join("U+%04X" % ord(c) for c in bad)))
 
-cf = [n for n in ("CF_ACCESS_HOSTS", "CF_ACCESS_TEAM_DOMAIN", "CF_ACCESS_AUD") if value(n)]
+# Contre-audit B2 (8e passe, F2) : « renseigné » se juge sur ce que PHP LIRA,
+# pas sur la valeur brute — `CF_ACCESS_HOSTS=,` donne une liste vide côté
+# PHP (PublicApiHostRestrictionSubscriber::parseHostList) : Cloudflare
+# Access désactivé en silence alors que le contrôle comptait 3/3.
+def items(name):
+    parts = [p.strip(ASCII_WS) for p in value(name).split(",")]
+    return [p for p in parts if p]
+
+effective = {
+    "CF_ACCESS_HOSTS": [h.lower().rstrip(".") for h in items("CF_ACCESS_HOSTS") if h.rstrip(".")],
+    "CF_ACCESS_TEAM_DOMAIN": [checked("CF_ACCESS_TEAM_DOMAIN")] if checked("CF_ACCESS_TEAM_DOMAIN") else [],
+    "CF_ACCESS_AUD": items("CF_ACCESS_AUD"),
+}
+for name, vals in effective.items():
+    for v in vals:
+        if any(c in ASCII_WS for c in v):
+            errors.append("%s contient un blanc à l intérieur d une valeur : la valeur lue par PHP serait inutilisable." % name)
+            break
+
+cf = [n for n, vals in effective.items() if vals]
 if len(cf) not in (0, 3):
     errors.append(
         "Cloudflare Access partiel : CF_ACCESS_HOSTS, CF_ACCESS_TEAM_DOMAIN et CF_ACCESS_AUD "

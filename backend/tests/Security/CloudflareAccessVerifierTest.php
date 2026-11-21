@@ -188,8 +188,8 @@ final class CloudflareAccessVerifierTest extends TestCase
                 }
             }
         };
-        $reflection = new \ReflectionProperty(CloudflareAccessVerifier::class, 'lockWarningLogged');
-        $reflection->setValue(null, false);
+        $reflection = new \ReflectionProperty(CloudflareAccessVerifier::class, 'lastLockWarningAt');
+        $reflection->setValue(null, 0);
 
         $verifier = new CloudflareAccessVerifier(
             new MockHttpClient(static fn (): MockResponse => new MockResponse(json_encode(['keys' => [$real['jwk']]], \JSON_THROW_ON_ERROR))),
@@ -208,9 +208,17 @@ final class CloudflareAccessVerifierTest extends TestCase
             self::assertFalse($verifier->verify($this->token(['private' => $attacker['private'], 'jwk' => $jwk])));
         }
 
-        self::assertCount(1, $logger->warnings, 'Un seul avertissement, pas un par requête.');
+        self::assertCount(1, $logger->warnings, 'Un seul avertissement par période, pas un par requête.');
         self::assertTrue($verifier->verify($this->token($real)));
-        $reflection->setValue(null, false);
+
+        // 5 minutes plus tard (simulé), le problème toujours présent doit être
+        // signalé à nouveau — il ne disparaît pas des logs jusqu'au redémarrage.
+        $reflection->setValue(null, time() - 301);
+        $jwk = $attacker['jwk'];
+        $jwk['kid'] = 'kid-'.bin2hex(random_bytes(6));
+        self::assertFalse($verifier->verify($this->token(['private' => $attacker['private'], 'jwk' => $jwk])));
+        self::assertCount(2, $logger->warnings, 'Le problème durable doit être signalé à nouveau après 5 minutes.');
+        $reflection->setValue(null, 0);
     }
 
     public function testFetchFailureIsCachedBrieflyAndRejects(): void

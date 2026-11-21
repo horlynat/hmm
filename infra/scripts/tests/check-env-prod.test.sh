@@ -7,8 +7,13 @@ COMPOSE="$(cd "$(dirname "$0")/../.." && pwd)/docker-compose.prod.yml"
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 fail=0
 
+# Variables que le compose de prod exige toujours (comme un vrai .env.prod) :
+# sans elles, Compose signale « variable is not set » et le contrôle refuse
+# (à juste titre, cf. 8e passe F1) — chaque cas part donc de cette base.
+BASE=$'APP_DEFAULT_SENDER=no-reply@example.test\nNEXT_PUBLIC_SITE_URL=https://example.test\nNEXT_PUBLIC_MEDIA_URL=https://api.example.test'
+
 t() { local exp=$1 label=$2 content=$3 rc
-  printf '%s\n' "$content" > "$T/env"
+  printf '%s\n%s\n' "$BASE" "$content" > "$T/env"
   env -u CF_ACCESS_HOSTS -u CF_ACCESS_TEAM_DOMAIN -u CF_ACCESS_AUD -u PUBLIC_API_HOSTS \
     bash "$CHECK" "$T/env" "$COMPOSE" >/dev/null 2>&1; rc=$?
   if { [[ $exp == OK ]] && ((rc == 0)); } || { [[ $exp == KO ]] && ((rc != 0)); }; then
@@ -50,20 +55,35 @@ t KO "caractère non ASCII dans l'AUD" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_A
 t KO "saut de page (\\f) après hmm-backend" $'PUBLIC_API_HOSTS="api.horlynat.com,hmm-backend\\f,backend"'
 t OK "tabulation verticale (\\v) retirée des deux côtés" $'PUBLIC_API_HOSTS="api.horlynat.com,hmm-backend\\v,backend"'
 t OK "équipe Cloudflare avec https:// et / final (toléré par PHP)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=https://x.cloudflareaccess.com/\nCF_ACCESS_AUD=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+# 8e passe — F2 : valeurs dégénérées jugées comme PHP les lit
+t KO "hôte Cloudflare réduit à une virgule (= vide pour PHP)" $'CF_ACCESS_HOSTS=,\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=abc'
+t KO "équipe réduite à https:// (= vide pour PHP)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=https://\nCF_ACCESS_AUD=abc'
+t KO "AUD réduit à des virgules (= vide pour PHP)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=" , "'
+t KO "blanc interne dans l'équipe" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN="t.com /"\nCF_ACCESS_AUD=abc'
+t OK "plusieurs AUD séparés par des virgules" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=abc, def'
 t KO "dernière affectation retire hmm-backend" $'PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend\nPUBLIC_API_HOSTS=api.horlynat.com'
 
 bash "$CHECK" "$T/absent" "$COMPOSE" >/dev/null 2>&1 && { echo "FAIL fichier absent accepté"; fail=1; } || echo "PASS KO fichier absent"
 printf 'A=1\n' > "$T/env"
 bash "$CHECK" "$T/env" "$T/absent.yml" >/dev/null 2>&1 && { echo "FAIL compose absent accepté"; fail=1; } || echo "PASS KO compose absent"
 # Variable du shell : Compose la fait passer AVANT .env.prod — le contrôle la voit aussi.
-printf 'APP_ENV=prod\n' > "$T/env"
+printf '%s\nAPP_ENV=prod\n' "$BASE" > "$T/env"
 CF_ACCESS_HOSTS=dark.horlynat.com bash "$CHECK" "$T/env" "$COMPOSE" >/dev/null 2>&1 \
   && { echo "FAIL variable du shell ignorée"; fail=1; } || echo "PASS KO Cloudflare partiel via l'environnement du shell"
+
+# 8e passe — F1 : `$` non échappé = valeur tronquée + fragment affiché par
+# chaque commande Compose suivante ; refusé sans citer le fragment.
+printf '%s\nA=s3cr$etPartXYZ\n' "$BASE" > "$T/env"
+out="$(bash "$CHECK" "$T/env" "$COMPOSE" 2>&1)" && { echo "FAIL \$ non échappé accepté"; fail=1; } \
+  || { grep -q 'etPartXYZ' <<<"$out" && { echo "FAIL fragment de valeur affiché"; fail=1; } || echo "PASS KO \$ non échappé refusé, sans fragment"; }
+
+printf 'APP_ENV=prod\n' > "$T/env"
+bash "$CHECK" "$T/env" "$COMPOSE" >/dev/null 2>&1 && { echo "FAIL variable exigée absente acceptée"; fail=1; } || echo "PASS KO variable exigée par le compose absente"
 
 # Aucune valeur de .env.prod ne doit apparaître dans la sortie d'erreur
 # (elle finit dans les logs GitHub Actions, publics) — contre-audit B2.
 for leak in 'DB_PASS="S3cr3tLeak' 'API_KEY=abc${S3cr3tLeak' 'MAILER=x${S3cr3tLeak:?S3cr3tLeak}'; do
-  printf '%s\n' "$leak" > "$T/env"
+  printf '%s\n%s\n' "$BASE" "$leak" > "$T/env"
   out="$(bash "$CHECK" "$T/env" "$COMPOSE" 2>&1)" && { echo "FAIL fichier invalide accepté : $leak"; fail=1; continue; }
   if grep -q 'S3cr3tLeak' <<<"$out"; then echo "FAIL valeur secrète affichée : $leak"; fail=1; else echo "PASS KO erreur sans valeur secrète ($leak)"; fi
 done

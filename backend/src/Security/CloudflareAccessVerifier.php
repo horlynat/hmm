@@ -38,8 +38,15 @@ final class CloudflareAccessVerifier
     private const JWKS_FAILURE_TTL = 30;
     private const JWKS_MIN_REFRESH_INTERVAL = 60;
 
-    /** Avertissement « verrou inaccessible » émis au plus une fois par processus. */
-    private static bool $lockWarningLogged = false;
+    /**
+     * Avertissement « verrou inaccessible » au plus toutes les 5 minutes par
+     * processus (contre-audit B2, 8e passe) : une seule alerte par worker
+     * FrankenPHP — qui vit des jours — rendait un problème durable invisible
+     * après rotation des logs ; une alerte par requête, elle, permettait
+     * d'inonder les logs avec des kid aléatoires.
+     */
+    private const LOCK_WARNING_INTERVAL = 300;
+    private static int $lastLockWarningAt = 0;
     /** Tolérance d'horloge (secondes) sur exp/nbf/iat. */
     private const LEEWAY = 30;
 
@@ -164,10 +171,10 @@ final class CloudflareAccessVerifier
         if (false === $handle) {
             // Jamais silencieux : sans ce verrou, une rotation de clés n'est
             // plus absorbée qu'à l'expiration du cache (jusqu'à 1 h de 403).
-            // Une seule fois par processus : un kid aléatoire par requête ne
-            // doit pas pouvoir inonder les logs.
-            if (!self::$lockWarningLogged) {
-                self::$lockWarningLogged = true;
+            // Au plus toutes les 5 minutes : visible durablement, sans qu'un
+            // kid aléatoire par requête puisse inonder les logs.
+            if (time() - self::$lastLockWarningAt >= self::LOCK_WARNING_INTERVAL) {
+                self::$lastLockWarningAt = time();
                 $this->logger->warning('Cloudflare Access : verrou de relecture des clés inaccessible, relecture forcée désactivée.', ['path' => $lockPath]);
             }
 
