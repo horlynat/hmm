@@ -37,7 +37,23 @@ if [ -d /run/secrets ]; then
         }
         file_put_contents("/app/.env.local", $out);
     '
-    chown www-data:www-data /app/.env.local
+    # root:www-data 0640 : lisible par l'application, jamais modifiable par
+    # elle (le code applicatif est root:root en lecture seule, cf. Dockerfile).
+    chown root:www-data /app/.env.local
+    chmod 0640 /app/.env.local
+fi
+
+# Préchauffage du cache Symfony AVANT de servir (en www-data, propriétaire de
+# var/) : sans lui, la première requête d'un conteneur neuf compilait le
+# conteneur de services, les templates, les proxies Doctrine… dans le worker
+# PHP et finissait en 500 après ~30 s (max_execution_time), alors que le
+# healthcheck — qui interrogeait l'API admin Caddy — annonçait déjà le
+# conteneur sain. Fait ici et non au build : il doit voir l'environnement
+# réel (secrets ci-dessus, variables compose). Un échec fait échouer le
+# démarrage (redémarrage par Docker) plutôt que de servir des 500.
+# SKIP_CACHE_WARMUP=1 pour une commande ponctuelle qui n'en a pas besoin.
+if [ "${SKIP_CACHE_WARMUP:-0}" != "1" ]; then
+    su-exec www-data php /app/bin/console cache:warmup --no-interaction
 fi
 
 exec su-exec www-data "$@"

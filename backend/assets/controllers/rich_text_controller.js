@@ -38,6 +38,24 @@ export default class extends Controller {
         this.quill = new Quill(this.editorTarget, {
             theme: 'snow',
             placeholder: this.hasPlaceholderValue ? this.placeholderValue : '',
+            // Restreint les formats réellement enregistrés à ceux de la barre
+            // d'outils ci-dessous. Sans cette liste, le build complet de
+            // Quill ("quill" npm, par opposition à "quill/core") enregistre
+            // aussi 'formula' et 'video' par défaut — AUCUN bouton ne les
+            // expose ici, mais leurs blots restent insérables (API Quill,
+            // ou un éventuel appariement du presse-papiers sur du HTML
+            // collé/rechargé) et leur méthode html() construit du HTML par
+            // interpolation de chaîne SANS échappement (GHSA-v3m3-f69x-jf25,
+            // présente aussi bien en 2.0.2 qu'en 2.0.3 — vérifié : code
+            // identique sur les deux tags upstream, aucun correctif publié ;
+            // épingler 2.0.2 n'aurait donc rien changé). Exclure ces deux
+            // formats rend le code vulnérable tout bonnement inatteignable
+            // dans cet éditeur, indépendamment du sort de l'avis amont. Même
+            // sans ça, toute sortie de getSemanticHTML() repasse par le
+            // sanitiseur HTML serveur (liste blanche stricte, aucun attribut
+            // on*, cf. config/packages/html_sanitizer.yaml) avant stockage —
+            // défense en profondeur, pas le seul filet.
+            formats: ['header', 'bold', 'italic', 'underline', 'strike', 'blockquote', 'code-block', 'list', 'align', 'link', 'image'],
             modules: {
                 toolbar: {
                     container: [

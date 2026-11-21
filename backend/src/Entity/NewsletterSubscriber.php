@@ -43,6 +43,7 @@ class NewsletterSubscriber
     #[Groups(['api_public', 'api_admin'])]
     #[Assert\NotBlank(message: "L'adresse e-mail est obligatoire.")]
     #[Assert\Email(message: "L'adresse e-mail n'est pas valide.")]
+    #[\App\Validator\MailerAddress] // contre-audit B3 : même règle que le mailer, sinon 500 après écriture
     #[Assert\Length(max: 180, maxMessage: "L'adresse e-mail ne peut pas dépasser {{ limit }} caractères.")]
     private string $email = '';
 
@@ -117,10 +118,18 @@ class NewsletterSubscriber
         return $this;
     }
 
-    /** Re-soumettre le formulaire avec un e-mail déjà désinscrit vaut consentement explicite — cf. NewsletterSubscriberCreateProcessor. */
+    /**
+     * Ré-inscription d'une adresse désinscrite : le consentement donné à
+     * l'origine ne vaut plus (RGPD) — retour à l'état « en attente » du
+     * double opt-in, un nouveau lien de confirmation doit être cliqué
+     * (cf. NewsletterSubscriberCreateProcessor). Sans ça, n'importe qui
+     * pouvait réabonner une adresse tierce en la saisissant dans le
+     * formulaire, sans aucune confirmation de son titulaire.
+     */
     public function resubscribe(): static
     {
         $this->unsubscribedAt = null;
+        $this->confirmedAt = null;
 
         return $this;
     }

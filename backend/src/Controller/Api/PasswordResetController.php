@@ -120,6 +120,7 @@ final class PasswordResetController extends AbstractController
 
         $violations = $validator->validate($plainPassword, [
             new Assert\Length(min: 8, max: 4096, minMessage: 'Votre mot de passe doit contenir au moins {{ limit }} caractères.'),
+            new Assert\Length(max: 4096, countUnit: Assert\Length::COUNT_BYTES, maxMessage: 'Le mot de passe est trop long.'), // contre-audit B3 : plafond du hacheur en octets
             new Assert\Regex(
                 pattern: '/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).+$/',
                 message: 'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial.',

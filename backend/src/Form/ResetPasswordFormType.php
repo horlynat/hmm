@@ -25,6 +25,8 @@ class ResetPasswordFormType extends AbstractType
                         minMessage: 'Votre mot de passe doit contenir au moins {{ limit }} caractères.',
                         max: 4096,
                     ),
+                    // Contre-audit B3 : le hacheur plafonne à 4096 octets.
+                    new Length(max: 4096, countUnit: Length::COUNT_BYTES, maxMessage: 'Le mot de passe est trop long.'),
                     new PasswordStrength(
                         minScore: PasswordStrength::STRENGTH_MEDIUM,
                         message: 'Votre mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial.',

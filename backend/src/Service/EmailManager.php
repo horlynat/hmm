@@ -10,6 +10,7 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Exception\ExceptionInterface as MimeException;
 
 /**
  * Service central unifié pour la gestion des emails.
@@ -76,6 +77,17 @@ class EmailManager
         } catch (TransportExceptionInterface $e) {
             $this->logger->error('Échec envoi email synchrone : ' . $e->getMessage(), [
                 'to'      => $to,
+                'subject' => $subject,
+            ]);
+
+            return false;
+        }
+        // Contre-audit B3 : une adresse refusée par Symfony Mime remontait en
+        // 500 (et en e-mail d'alerte) alors que l'écriture en base était déjà
+        // faite. La validation (App\Validator\MailerAddress) la bloque en
+        // amont ; ceci couvre les adresses déjà stockées avant ce correctif.
+        catch (MimeException $e) { // RfcCompliance + InvalidArgument (caractère de contrôle)
+            $this->logger->warning('Adresse e-mail non conforme, envoi abandonné : ' . $e->getMessage(), [
                 'subject' => $subject,
             ]);
 

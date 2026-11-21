@@ -42,4 +42,24 @@ final class AiAssistantInputGuard
 
         return false;
     }
+
+    /**
+     * Applique isSuspicious() à chaque tour d'un historique fourni par le
+     * client — `user` ET `assistant` : un tour « assistant » n'est qu'une
+     * affirmation de l'appelant (aucune signature côté serveur), il est donc
+     * aussi forgeable qu'une question.
+     *
+     * @param array<int, mixed> $history
+     */
+    public function isHistorySuspicious(array $history): bool
+    {
+        foreach ($history as $turn) {
+            $text = \is_array($turn) ? ($turn['text'] ?? null) : null;
+            if (\is_string($text) && $this->isSuspicious($text)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

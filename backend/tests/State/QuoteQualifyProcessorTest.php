@@ -4,6 +4,13 @@ namespace App\Tests\State;
 
 use ApiPlatform\Metadata\Post;
 use App\ApiResource\QuoteQualifyApiResource;
+use App\Entity\AiAssistantConversationLog;
+use App\Repository\AiAssistantConversationLogRepository;
+use App\Service\AdminAlertNotifier;
+use App\Service\AiAssistantBudgetGuard;
+use App\Service\AiAssistantUsageRecorder;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Notifier\Notifier;
 use App\Service\AiAssistantInputGuard;
 use App\Service\AiAssistantOutputSanitizer;
 use App\Service\ClaudeClient;
@@ -57,10 +64,45 @@ final class QuoteQualifyProcessorTest extends TestCase
         );
     }
 
-    private function processor(MockHttpClient $httpClient, ?PublicSubmissionThrottler $throttler = null): QuoteQualifyProcessor
+    /**
+     * Journaux persistés par le recorder.
+     *
+     * @var AiAssistantConversationLog[]
+     */
+    private array $persisted = [];
+
+    private function budgetGuard(float $spent = 0.0, float $budget = 20.0): AiAssistantBudgetGuard
+    {
+        $repository = $this->createStub(AiAssistantConversationLogRepository::class);
+        $repository->method('sumCostThisMonth')->willReturn($spent);
+        $limiter = static fn (string $id): RateLimiterFactory => new RateLimiterFactory(
+            ['id' => $id, 'policy' => 'fixed_window', 'limit' => 1, 'interval' => '1 day'],
+            new InMemoryStorage(),
+        );
+
+        return new AiAssistantBudgetGuard($repository, new AdminAlertNotifier(new Notifier([]), new NullLogger()), $limiter('a'), $limiter('b'), $budget, 0.0);
+    }
+
+    private function usageRecorder(): AiAssistantUsageRecorder
+    {
+        $this->persisted = [];
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function (object $entity): void {
+            \assert($entity instanceof AiAssistantConversationLog);
+            $this->persisted[] = $entity;
+        });
+        $requestStack = new RequestStack();
+        $requestStack->push(Request::create('/'));
+
+        return new AiAssistantUsageRecorder($em, $requestStack, new NullLogger(), 'secret');
+    }
+
+    private function processor(MockHttpClient $httpClient, ?PublicSubmissionThrottler $throttler = null, ?AiAssistantBudgetGuard $budgetGuard = null): QuoteQualifyProcessor
     {
         return new QuoteQualifyProcessor(
             $throttler ?? $this->throttler(),
+            $budgetGuard ?? $this->budgetGuard(),
+            $this->usageRecorder(),
             new AiAssistantInputGuard(),
             new AiAssistantOutputSanitizer(),
             $this->claudeClient($httpClient),
@@ -181,5 +223,47 @@ final class QuoteQualifyProcessorTest extends TestCase
         self::assertSame(['Question A ?'], $first->getQuestions());
         self::assertSame([], $second->getQuestions());
         self::assertSame(1, $calls);
+    }
+
+    public function testBudgetExceededSkipsClaudeEntirely(): void
+    {
+        $httpClient = new MockHttpClient(function () {
+            self::fail('Plafond mensuel atteint : aucun appel Claude ne doit partir.');
+        });
+
+        $result = $this->process($this->processor($httpClient, budgetGuard: $this->budgetGuard(spent: 25.0, budget: 20.0)), $this->resource());
+
+        self::assertSame([], $result->getQuestions());
+        self::assertCount(1, $this->persisted);
+        self::assertTrue($this->persisted[0]->isBlocked());
+        self::assertNull($this->persisted[0]->getCostUsd());
+    }
+
+    public function testEachClaudeCallIsLoggedWithItsCost(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(json_encode([
+            'content' => [['type' => 'text', 'text' => '["Question A ?"]']],
+            'usage' => ['input_tokens' => 1_000_000, 'output_tokens' => 0],
+        ])));
+
+        $this->process($this->processor($httpClient), $this->resource());
+
+        self::assertCount(1, $this->persisted);
+        self::assertFalse($this->persisted[0]->isBlocked());
+        self::assertSame('2.000000', $this->persisted[0]->getCostUsd());
+    }
+
+    public function testMalformedResponseIsStillCounted(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(json_encode([
+            'content' => [['type' => 'text', 'text' => 'pas du JSON']],
+            'usage' => ['input_tokens' => 10, 'output_tokens' => 10],
+        ])));
+
+        $result = $this->process($this->processor($httpClient), $this->resource());
+
+        self::assertSame([], $result->getQuestions());
+        self::assertCount(1, $this->persisted);
+        self::assertNotNull($this->persisted[0]->getCostUsd());
     }
 }

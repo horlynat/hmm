@@ -60,10 +60,10 @@ nelmio_security:
                 - 'self'
                 - 'data:'
                 - 'https://fonts.gstatic.com'
+            # ui-avatars.com retiré : avatars = initiales locales (components/Avatar).
             img-src:
                 - 'self'
                 - 'data:'
-                - 'https://ui-avatars.com'
             connect-src:
                 - 'self'
             object-src:

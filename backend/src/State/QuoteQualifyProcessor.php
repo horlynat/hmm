@@ -5,8 +5,10 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\QuoteQualifyApiResource;
+use App\Service\AiAssistantBudgetGuard;
 use App\Service\AiAssistantInputGuard;
 use App\Service\AiAssistantOutputSanitizer;
+use App\Service\AiAssistantUsageRecorder;
 use App\Service\ClaudeClient;
 use App\Service\PublicSubmissionThrottler;
 use Psr\Log\LoggerInterface;
@@ -23,10 +25,15 @@ use Psr\Log\LoggerInterface;
  * suspecte, Claude injoignable, réponse mal formée) se résout silencieusement
  * par un tableau vide plutôt qu'une exception — le frontend retombe alors sur
  * ses questions codées en dur (computeIaQuestions) sans jamais bloquer le
- * client. Pas de journalisation persistée (pas d'équivalent
- * AiAssistantConversationLog) ni de AiAssistantBudgetGuard : hors périmètre
- * volontaire pour cette première version, le rate limiter dédié
- * (limiter.quote_qualify) est le seul garde-coût.
+ * client.
+ *
+ * Garde-coût : rate limiter dédié (limiter.quote_qualify) ET plafond
+ * mensuel partagé de l'assistant (AiAssistantBudgetGuard) — l'endpoint est
+ * public et appelle Sonnet : hors budget, il permettait de dépenser sans
+ * limite globale (audit 2026-11-20, P1 #11). Chaque appel Claude est
+ * journalisé avec son coût (AiAssistantUsageRecorder), pour qu'il compte
+ * dans ce même plafond ; budget dépassé = repli silencieux, comme toute
+ * autre panne.
  *
  * @implements ProcessorInterface<mixed, QuoteQualifyApiResource>
  */
@@ -36,6 +43,8 @@ final class QuoteQualifyProcessor implements ProcessorInterface
 
     public function __construct(
         private readonly PublicSubmissionThrottler $throttler,
+        private readonly AiAssistantBudgetGuard $budgetGuard,
+        private readonly AiAssistantUsageRecorder $usageRecorder,
         private readonly AiAssistantInputGuard $inputGuard,
         private readonly AiAssistantOutputSanitizer $outputSanitizer,
         private readonly ClaudeClient $claudeClient,
@@ -58,6 +67,14 @@ final class QuoteQualifyProcessor implements ProcessorInterface
         try {
             $this->throttler->assertQuoteQualifyAllowed();
 
+            $locale = $data->getLocale() ?: 'fr';
+
+            if ($this->budgetGuard->isBudgetExceeded()) {
+                $this->usageRecorder->recordBlocked($locale, 0, 'quote_budget_exceeded');
+
+                return [];
+            }
+
             foreach ([$data->getDescription(), $data->getCategoryDetail()] as $freeText) {
                 if ('' !== trim($freeText) && $this->inputGuard->isSuspicious($freeText)) {
                     $this->logger->warning('QuoteQualifyProcessor : entrée suspecte, appel Claude ignoré.');
@@ -66,11 +83,20 @@ final class QuoteQualifyProcessor implements ProcessorInterface
                 }
             }
 
-            $locale = $data->getLocale() ?: 'fr';
             $systemPrompt = $this->buildSystemPrompt($locale);
             $userMessage = $this->buildUserMessage($data);
 
+            $startedAt = microtime(true);
             $result = $this->claudeClient->ask($systemPrompt, [], $userMessage, useSonnet: true, maxTokens: 300);
+            // Coût enregistré AVANT toute analyse de la réponse : une sortie
+            // mal formée (repli client) a quand même été payée.
+            $this->usageRecorder->recordCall(
+                $result,
+                $locale,
+                mb_strlen($userMessage),
+                mb_strlen($result['text']),
+                (int) round((microtime(true) - $startedAt) * 1000),
+            );
 
             return \array_slice(
                 $this->outputSanitizer->sanitizeSuggestions($this->parseQuestions($result['text'])),

@@ -1,0 +1,14 @@
+{#
+   Composant : avatar utilisateur — photo de profil si présente, sinon
+   initiales générées localement (filtre `initials`, App\Twig\AppExtension).
+   Remplace ui-avatars.com : aucun nom ni email n'est plus envoyé à un tiers
+   (RGPD, audit 2026-11-20 P2) et l'hôte a quitté la CSP img-src.
+   Usage :
+     <twig:Avatar :name="user.fullName ?? user.email" :image="user.profileImage" size="h-16 w-16 rounded-full text-lg" />
+#}
+{% props name, image = null, size = 'h-9 w-9 rounded-full text-xs' %}
+{%- if image -%}
+	<img class="{{ size }} object-cover" src="{{ image }}" alt="{{ name }}">
+{%- else -%}
+	<span class="{{ size }} inline-flex shrink-0 items-center justify-center bg-gray-100 border border-gray-200 font-semibold text-brand-dark/70 select-none" role="img" aria-label="{{ name }}">{{ name|initials }}</span>
+{%- endif -%}

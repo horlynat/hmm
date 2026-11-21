@@ -30,6 +30,7 @@ class EmailChangeRequestType extends AbstractType
                 'constraints' => [
                     new NotBlank(message: "Veuillez entrer une adresse e-mail."),
                     new Email(message: 'Veuillez entrer une adresse e-mail valide.'),
+                    new \App\Validator\MailerAddress(),
                     new Length(max: 180, maxMessage: "L'adresse e-mail ne peut pas dépasser {{ limit }} caractères."),
                 ],
             ])

@@ -5,6 +5,7 @@ namespace App\ApiResource;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
 use App\State\AiContentSummaryProcessor;
+use App\Validator\ConversationHistory;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -83,6 +84,7 @@ class AiContentSummaryApiResource
 
     /** @var array<int, array{role: string, text: string}> */
     #[Assert\Count(max: 8, maxMessage: "L'historique ne peut pas dépasser {{ limit }} échanges.")]
+    #[ConversationHistory]
     #[Assert\All([
         new Assert\Collection(
             fields: [
@@ -96,6 +98,10 @@ class AiContentSummaryApiResource
     #[Groups(['summarize_input'])]
     private array $history = [];
 
+    // Liste fermée : la colonne `locale` du journal fait 5 caractères ; une
+    // valeur libre faisait échouer l'écriture du coût APRÈS l'appel Claude
+    // (plafond budgétaire contourné, audit 2026-11-20 P1 #11).
+    #[Assert\Choice(choices: ['fr', 'en'], message: 'Langue non prise en charge.')]
     #[Groups(['summarize_input'])]
     private string $locale = 'fr';
 

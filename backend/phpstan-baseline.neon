@@ -109,24 +109,6 @@ parameters:
 			path: src/Entity/ProjectInfo.php
 
 		-
-			message: '#^Method App\\Entity\\QuoteRequest\:\:getClarifications\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Entity/QuoteRequest.php
-
-		-
-			message: '#^Method App\\Entity\\QuoteRequest\:\:setClarifications\(\) has parameter \$clarifications with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Entity/QuoteRequest.php
-
-		-
-			message: '#^Property App\\Entity\\QuoteRequest\:\:\$clarifications type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Entity/QuoteRequest.php
-
-		-
 			message: '#^Method App\\Entity\\User\:\:freelanceProfileFields\(\) should return list\<string\> but returns array\{fullName\: string\|null, bio\: string\|null, specialties\: ''1''\|null, availability\: string\|null, portfolioUrl\: string\|null, yearsOfExperience\: decimal\-int\-string\|null, city\: string\|null, professionalLinks\: ''1''\|null, \.\.\.\}\.$#'
 			identifier: return.type
 			count: 1

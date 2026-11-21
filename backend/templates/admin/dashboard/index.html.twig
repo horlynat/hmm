@@ -244,7 +244,7 @@
 				<div class="divide-y divide-gray-100 max-h-[360px] overflow-y-auto scrollbar-none">
 					{% for contact in recentContacts %}
 						<a href="{{ path('admin_contact_read', {id: contact.id}) }}" class="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0 hover:opacity-70 transition">
-							<img class="h-9 w-9 rounded-xl border border-gray-100 shadow-sm" src="https://ui-avatars.com/api/?background=eaeaea&color=333&name={{ contact.name|url_encode }}" alt="{{ contact.name }}">
+							<twig:Avatar :name="contact.name" size="h-9 w-9 rounded-xl shadow-sm text-xs" />
 							<div class="flex-1 min-w-0">
 								<h4 class="font-medium text-sm truncate">{{ contact.name }}</h4>
 								<p class="text-xs text-brand-dark/50 truncate mt-0.5">{{ contact.subject }}</p>
@@ -491,7 +491,7 @@
 				<div class="divide-y divide-gray-100">
 					{% for user in activeUsers %}
 						<a href="{{ path('admin_users_read', {id: user.id}) }}" class="flex items-center gap-3 py-3 first:pt-0 hover:opacity-70 transition">
-							<img class="h-9 w-9 rounded-xl border border-gray-100 shadow-sm" src="https://ui-avatars.com/api/?background=eaeaea&color=333&name={{ (user.fullName ?? user.email)|url_encode }}" alt="">
+							<twig:Avatar :name="user.fullName ?? user.email" size="h-9 w-9 rounded-xl shadow-sm text-xs" />
 							<div class="flex-1 min-w-0">
 								<h4 class="font-medium text-sm truncate">{{ user.fullName ?? user.email }}</h4>
 								<p class="text-xs text-brand-dark/50 truncate">{{ user.ownedProjects|length }} projet{{ user.ownedProjects|length > 1 ? 's' : '' }}</p>

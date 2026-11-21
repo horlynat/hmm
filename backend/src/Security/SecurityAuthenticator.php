@@ -54,7 +54,8 @@ class SecurityAuthenticator extends AbstractLoginFormAuthenticator
             throw new BadCredentialsException('Email ou mot de passe manquant.');
         }
 
-        $limiter = $this->loginLimiter->create($request->getClientIp());
+        // Clé par préfixe IPv6 /64, cf. ClientIpRateLimitKey.
+        $limiter = $this->loginLimiter->create(ClientIpRateLimitKey::fromIp($request->getClientIp()));
         if (false === $limiter->consume(1)->isAccepted()) {
             throw new CustomUserMessageAuthenticationException('Trop de tentatives, réessayez plus tard.');
         }

@@ -106,7 +106,10 @@ class AiAssistantConversationLog
 
     public function setLocale(string $locale): static
     {
-        $this->locale = $locale;
+        // Tronqué à la colonne (VARCHAR 5) : une valeur trop longue faisait
+        // échouer le flush APRÈS l'appel Claude, coût jamais compté (cf.
+        // App\Service\AiAssistantUsageRecorder).
+        $this->locale = mb_substr($locale, 0, 5);
 
         return $this;
     }
@@ -156,7 +159,7 @@ class AiAssistantConversationLog
 
     public function setModel(?string $model): static
     {
-        $this->model = $model;
+        $this->model = null === $model ? null : mb_substr($model, 0, 50);
 
         return $this;
     }
@@ -228,7 +231,7 @@ class AiAssistantConversationLog
 
     public function setBlockReason(?string $blockReason): static
     {
-        $this->blockReason = $blockReason;
+        $this->blockReason = null === $blockReason ? null : mb_substr($blockReason, 0, 50);
 
         return $this;
     }

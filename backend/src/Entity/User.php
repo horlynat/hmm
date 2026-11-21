@@ -36,6 +36,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     #[Groups(["api_user", "api_admin", "collaborator_signup", "client_signup"])]
     #[Assert\NotBlank(message: "L'email est obligatoire.")]
     #[Assert\Email(message: "Veuillez entrer un email valide.")]
+    #[\App\Validator\MailerAddress] // contre-audit B3 : même règle que le mailer, sinon 500 après écriture
+    // Contre-audit B3 : sans borne, un e-mail valide de plus de 180 caractères
+    // envoyé à l'inscription publique donnait une 500 (« Data too long »).
+    #[Assert\Length(max: 180, maxMessage: "L'email ne peut pas dépasser {{ limit }} caractères.")]
     // protected (pas private) : UniqueEntityValidator reflète l'objet réellement
     // validé (potentiellement une sous-classe ApiResource comme
     // CollaboratorRegistrationApiResource) — une propriété private du parent est
@@ -186,7 +190,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
     #[Groups(["api_user", "api_admin", "collaborator_signup", "client_signup"])]
     #[Assert\Length(min: 7, max: 20, minMessage: "Le numéro doit contenir au moins {{ limit }} caractères.")]
     #[Assert\Regex(
-        pattern: '/^[0-9+\-\s\(\)]+$/',
+        // `$` sans `D` et `\s` acceptaient un saut de ligne final et des
+        // tabulations (stockés tels quels) — contre-audit B3.
+        pattern: '/^[0-9+\- ()]+$/D',
         message: "Le numéro de téléphone contient des caractères invalides."
     )]
     private ?string $phone = null;
@@ -198,19 +204,40 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, TotpTwo
      */
     #[ORM\Column(type: Types::JSON, nullable: true)]
     #[Groups(["api_user", "api_admin", "collaborator_signup"])]
+    // Contre-audit B3 : JSON libre à l'inscription publique — un objet imbriqué
+    // passait (warning « Array to string conversion » dans l'alerte admin).
+    // Bornes et non liste fermée : le formulaire envoie le libellé traduit.
+    // `list` : un objet JSON ({"x":"Backend"}) passait et cassait les `.map()` côté frontend.
+    #[Assert\Type('list', message: "Les spécialités doivent être une liste.")]
+    #[Assert\Count(max: 10, maxMessage: "Vous ne pouvez pas indiquer plus de {{ limit }} spécialités.")]
+    // Sequentially : le type d'abord — `trim()` sur un non-string serait un TypeError (500).
+    #[Assert\All([
+        new Assert\Sequentially([
+            new Assert\Type('string'),
+            new Assert\NotBlank(normalizer: 'trim'),
+            new Assert\Length(max: 50),
+        ]),
+    ])]
     private ?array $specialties = null;
 
     #[ORM\Column(length: 100, nullable: true)]
     #[Groups(["api_user", "api_admin", "collaborator_signup"])]
+    // Contre-audit B3 : 101 caractères à l'inscription publique → 500.
+    #[Assert\Length(max: 100, maxMessage: "La disponibilité ne peut pas dépasser {{ limit }} caractères.")]
     private ?string $availability = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(["api_user", "api_admin", "collaborator_signup"])]
+    // Contre-audit B3 : une URL valide de plus de 255 caractères → 500.
+    #[Assert\Length(max: 255, maxMessage: "Le lien portfolio ne peut pas dépasser {{ limit }} caractères.")]
     #[Assert\Url(message: "Le lien portfolio doit être une URL valide.")]
     private ?string $portfolioUrl = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(["api_user", "api_admin", "collaborator_signup"])]
+    // Contre-audit B3 : aucune borne à l'inscription (70 000 caractères acceptés).
+    // Même plafond que le profil (MeController) et le formulaire frontend.
+    #[Assert\Length(max: 2000, maxMessage: "La présentation ne peut pas dépasser {{ limit }} caractères.")]
     private ?string $bio = null;
 
     #[ORM\Column(type: Types::SMALLINT, nullable: true)]

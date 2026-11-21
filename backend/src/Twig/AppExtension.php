@@ -25,6 +25,10 @@ class AppExtension extends AbstractExtension
             // ce filtre est le filet pour les lignes enregistrées avant ce
             // correctif — même liste blanche (cf. config/packages/html_sanitizer.yaml).
             new TwigFilter('sanitize_rich_html', [$this, 'sanitizeRichHtml'], ['is_safe' => ['html']]),
+            // Initiales d'avatar générées localement (cf. components/Avatar) —
+            // remplace ui-avatars.com, à qui chaque affichage envoyait le nom
+            // ou l'email d'un client (RGPD, audit 2026-11-20 P2).
+            new TwigFilter('initials', [$this, 'initials']),
         ];
     }
 
@@ -50,5 +54,27 @@ class AppExtension extends AbstractExtension
         }
 
         return $this->richTextSanitizer->sanitize($html);
+    }
+
+    /**
+     * « Jean-Paul Dupont » → « JD », « alice.martin@ex.fr » → « AM »,
+     * « bob » → « B ». Deux lettres max, jamais vide (« ? »).
+     */
+    public function initials(?string $name): string
+    {
+        $name = trim((string) $name);
+        if (str_contains($name, '@')) {
+            $name = (string) strstr($name, '@', true);
+        }
+
+        $words = preg_split('/[\s._\-]+/u', $name, -1, \PREG_SPLIT_NO_EMPTY) ?: [];
+        $letters = '';
+        foreach ([reset($words), \count($words) > 1 ? end($words) : false] as $word) {
+            if (\is_string($word) && preg_match('/\p{L}|\p{N}/u', $word, $m)) {
+                $letters .= mb_strtoupper($m[0]);
+            }
+        }
+
+        return '' !== $letters ? $letters : '?';
     }
 }

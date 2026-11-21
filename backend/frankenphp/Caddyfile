@@ -2,7 +2,14 @@
 	frankenphp {
 		{$FRANKENPHP_CONFIG}
 	}
-	admin 0.0.0.0:2019
+	# API d'administration Caddy (rechargement/modification de config à
+	# chaud, SANS authentification) : boucle locale uniquement. Elle écoutait
+	# sur 0.0.0.0:2019, donc joignable depuis tout conteneur d'edge-net
+	# (adminer, postfixadmin…) → réécriture de la config du serveur web
+	# (audit 2026-11-20, P1 #15). Le healthcheck n'en dépend plus (cf.
+	# frankenphp/healthcheck.sh) ; un `wget http://127.0.0.1:2019/config/`
+	# depuis le conteneur lui-même fonctionne toujours.
+	admin localhost:2019
 	order php_server before file_server
 	# Le TLS et les vraies IP visiteurs sont gérés par Traefik en amont (edge) —
 	# ce conteneur n'écoute qu'en HTTP interne et fait confiance au proxy interne
@@ -25,11 +32,31 @@ encode zstd gzip
 
 root * /app/public
 
-php_server {
-	worker {
-		file ./public/index.php
-		num {$FRANKENPHP_NUM_THREADS:4}
+# Fichiers déposés (App\Service\MediaUploader, volume uploads_data) : servis
+# en statique UNIQUEMENT, jamais par PHP — `handle` est exclusif, une requête
+# /uploads/… n'atteint donc jamais php_server, même pour un fichier .php qui
+# s'y retrouverait (remplace public/uploads/.htaccess, sans effet sous Caddy).
+# En-têtes :
+# - CSP `sandbox` + `default-src 'none'` : un SVG (ou HTML) ouvert
+#   directement est rendu dans une origine opaque, sans script ni requête
+#   sortante — un SVG piégé ne peut plus exécuter de JS sur ce domaine ;
+#   `style-src 'unsafe-inline'` garde les styles internes des SVG légitimes.
+# - nosniff : le navigateur respecte le Content-Type (déduit de l'extension),
+#   jamais de « devinette » vers text/html.
+@uploads path /uploads/*
+handle @uploads {
+	header {
+		Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+		X-Content-Type-Options "nosniff"
 	}
+	file_server
 }
 
-file_server
+handle {
+	php_server {
+		worker {
+			file ./public/index.php
+			num {$FRANKENPHP_NUM_THREADS:4}
+		}
+	}
+}

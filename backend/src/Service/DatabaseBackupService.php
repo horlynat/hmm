@@ -26,6 +26,21 @@ use Symfony\Component\Process\Process;
  * create() — la sauvegarde locale, elle, a déjà réussi. Se désactive
  * proprement (log, pas d'erreur) tant qu'AGE_RECIPIENT ou le provider S3 ne
  * sont pas configurés.
+ *
+ * Droits des dumps (audit 2026-11-20, P1 #15) : un dump est un export complet
+ * de la base en clair (emails, hashs de mot de passe, secrets TOTP chiffrés…).
+ * Ils étaient créés en 0644 (umask par défaut) dans un bind mount de l'hôte,
+ * donc lisibles par tout compte du VPS. Désormais :
+ * - dossier créé en 0700 ;
+ * - mysqldump et age sont lancés sous umask 0077 → fichiers en 0600 ;
+ * - AUCUN chmod explicite ensuite : un chmod 0600 remettrait à zéro le
+ *   masque ACL et couperait l'accès en lecture accordé par une ACL par
+ *   défaut côté hôte (cf. docs/backup-permissions.md : c'est ainsi que
+ *   infra/scripts/pull-backups.sh, qui lit en tant que `ubuntu`, garde
+ *   l'accès). Sous ACL par défaut, l'umask est ignoré et seule l'ACL décide.
+ * Le umask est un attribut du PROCESSUS (partagé par tous les threads du
+ * worker FrankenPHP) : il n'est abaissé que le temps de créer le processus
+ * fils (Process::start), jamais pendant toute la durée du dump.
  */
 final class DatabaseBackupService
 {
@@ -52,7 +67,7 @@ final class DatabaseBackupService
         // se désactive proprement tant qu'elle n'est pas configurée.
         private readonly string $ageRecipient = '',
     ) {
-        if (!is_dir($this->backupDir) && !mkdir($this->backupDir, 0775, true) && !is_dir($this->backupDir)) {
+        if (!is_dir($this->backupDir) && !mkdir($this->backupDir, 0700, true) && !is_dir($this->backupDir)) {
             throw new \RuntimeException(sprintf('Impossible de créer le répertoire de sauvegardes "%s".', $this->backupDir));
         }
     }
@@ -76,7 +91,7 @@ final class DatabaseBackupService
         ]);
         $process->setEnv(['MYSQL_PWD' => (string) ($params['password'] ?? '')]);
         $process->setTimeout(300);
-        $process->run();
+        $this->runWithPrivateUmask($process);
 
         if (!$process->isSuccessful()) {
             if (is_file($filepath)) {
@@ -159,7 +174,7 @@ final class DatabaseBackupService
             $encPath = $gzPath . '.age';
             $process = new Process(['age', '-r', $this->ageRecipient, '-o', $encPath, $gzPath]);
             $process->setTimeout(120);
-            $process->run();
+            $this->runWithPrivateUmask($process);
 
             if (!$process->isSuccessful()) {
                 throw new ProcessFailedException($process);
@@ -263,6 +278,23 @@ final class DatabaseBackupService
             'Base de données restaurée',
             sprintf('La base de données a été restaurée depuis "%s".', $filename),
         );
+    }
+
+    /**
+     * Lance le processus fils sous umask 0077 (il en hérite à sa création :
+     * ses fichiers sont créés en 0600/0700), puis restaure immédiatement
+     * l'umask du worker — cf. docblock de classe.
+     */
+    private function runWithPrivateUmask(Process $process): void
+    {
+        $previous = umask(0077);
+        try {
+            $process->start();
+        } finally {
+            umask($previous);
+        }
+
+        $process->wait();
     }
 
     /**
