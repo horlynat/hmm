@@ -2,105 +2,80 @@
 
 namespace App\Tests\Controller\Admin;
 
-use App\Entity\User;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Functional\FunctionalTestCase;
 
 /**
  * AdminCurrencyController::set() (audit 2026-11-20, Info) : CSRF + open
  * redirect chaîné via le Referer réinjecté tel quel.
+ *
+ * Admin AVEC 2FA (FunctionalTestCase::createUser) : depuis le lot B2, un
+ * admin sans 2FA est redirigé vers sa mise en place avant tout écran du
+ * back-office — sans 2FA, ces tests vérifiaient la redirection 2FA et non le
+ * CSRF ni l'anti open-redirect.
  */
-final class AdminCurrencyControllerTest extends WebTestCase
+final class AdminCurrencyControllerTest extends FunctionalTestCase
 {
-    private function admin(EntityManagerInterface $em): User
+    private function dashboardToken(): string
     {
-        $user = (new User())
-            ->setEmail('currency-'.bin2hex(random_bytes(4)).'@example.test')
-            ->setRoles(['ROLE_ADMIN'])
-            ->setIsVerified(true);
-        $user->setPassword('!');
-        $em->persist($user);
-        $em->flush();
+        $crawler = $this->client->request('GET', '/admin/dashboard/');
+        self::assertResponseIsSuccessful('Le tableau de bord doit s’afficher pour un admin équipé de la 2FA.');
 
-        return $user;
+        $token = (string) $crawler->filter('form[action$="/admin/currency/set"] input[name="_token"]')->attr('value');
+        self::assertNotSame('', $token);
+
+        return $token;
     }
 
     public function testRequestWithoutCsrfTokenDoesNotSetTheCookie(): void
     {
-        $client = static::createClient();
-        $em = static::getContainer()->get(EntityManagerInterface::class);
-        $user = $this->admin($em);
+        $this->client->loginUser($this->createUser(['ROLE_ADMIN'], twoFactor: true), 'main');
+        // Le tableau de bord s'affiche bien : la redirection observée ensuite
+        // vient du refus CSRF, pas de la 2FA obligatoire.
+        $this->dashboardToken();
 
-        try {
-            $client->loginUser($user, 'main');
-            $client->request('POST', '/admin/currency/set', ['currency' => 'USD'], server: [
-                'HTTP_REFERER' => 'https://dark.horlynat.com/admin/dashboard',
-            ]);
+        $this->client->request('POST', '/admin/currency/set', ['currency' => 'USD'], server: [
+            'HTTP_REFERER' => 'https://dark.horlynat.com/admin/dashboard',
+        ]);
 
-            self::assertResponseRedirects();
-            self::assertNull($client->getResponse()->headers->getCookies()[0] ?? null, 'Sans jeton CSRF valide, aucun cookie ne doit être posé.');
-        } finally {
-            $em->remove($em->find(User::class, $user->getId()));
-            $em->flush();
-        }
+        self::assertResponseRedirects();
+        self::assertNull($this->client->getResponse()->headers->getCookies()[0] ?? null, 'Sans jeton CSRF valide, aucun cookie ne doit être posé.');
     }
 
     public function testForeignRefererIsNeverFollowed(): void
     {
-        $client = static::createClient();
-        $em = static::getContainer()->get(EntityManagerInterface::class);
-        $user = $this->admin($em);
+        $this->client->loginUser($this->createUser(['ROLE_ADMIN'], twoFactor: true), 'main');
+        $token = $this->dashboardToken();
 
-        try {
-            $client->loginUser($user, 'main');
-            $crawler = $client->request('GET', '/admin/dashboard/');
-            $token = (string) $crawler->filter('form[action$="/admin/currency/set"] input[name="_token"]')->attr('value');
-            self::assertNotSame('', $token);
+        // Un attaquant forge le Referer : tente de rediriger l'admin vers un site tiers (phishing).
+        $this->client->request('POST', '/admin/currency/set', [
+            '_token' => $token,
+            'currency' => 'USD',
+        ], server: [
+            'HTTP_REFERER' => 'https://evil.example/phishing',
+        ]);
 
-            // Un attaquant forge le Referer : tente de rediriger l'admin vers un site tiers (phishing).
-            $client->request('POST', '/admin/currency/set', [
-                '_token' => $token,
-                'currency' => 'USD',
-            ], server: [
-                'HTTP_REFERER' => 'https://evil.example/phishing',
-            ]);
-
-            self::assertResponseRedirects();
-            $location = $client->getResponse()->headers->get('Location');
-            self::assertNotNull($location);
-            self::assertStringNotContainsString('evil.example', $location, 'Le Referer forgé ne doit jamais devenir la cible de redirection.');
-        } finally {
-            $em->remove($em->find(User::class, $user->getId()));
-            $em->flush();
-        }
+        self::assertResponseRedirects();
+        $location = $this->client->getResponse()->headers->get('Location');
+        self::assertNotNull($location);
+        self::assertStringNotContainsString('evil.example', $location, 'Le Referer forgé ne doit jamais devenir la cible de redirection.');
     }
 
     public function testValidRequestWithSameHostRefererSetsCookieAndRedirectsBack(): void
     {
-        $client = static::createClient();
-        $em = static::getContainer()->get(EntityManagerInterface::class);
-        $user = $this->admin($em);
+        $this->client->loginUser($this->createUser(['ROLE_ADMIN'], twoFactor: true), 'main');
+        $token = $this->dashboardToken();
 
-        try {
-            $client->loginUser($user, 'main');
-            $crawler = $client->request('GET', '/admin/dashboard/');
-            $token = (string) $crawler->filter('form[action$="/admin/currency/set"] input[name="_token"]')->attr('value');
+        $this->client->request('POST', '/admin/currency/set', [
+            '_token' => $token,
+            'currency' => 'USD',
+        ], server: [
+            'HTTP_REFERER' => 'http://localhost/admin/dashboard',
+        ]);
 
-            $client->request('POST', '/admin/currency/set', [
-                '_token' => $token,
-                'currency' => 'USD',
-            ], server: [
-                'HTTP_REFERER' => 'http://localhost/admin/dashboard',
-            ]);
-
-            self::assertResponseRedirects('http://localhost/admin/dashboard');
-            $cookies = $client->getResponse()->headers->getCookies();
-            self::assertNotEmpty($cookies);
-            self::assertSame('display_currency', $cookies[0]->getName());
-            self::assertSame('USD', $cookies[0]->getValue());
-        } finally {
-            $em->remove($em->find(User::class, $user->getId()));
-            $em->flush();
-        }
+        self::assertResponseRedirects('http://localhost/admin/dashboard');
+        $cookies = $this->client->getResponse()->headers->getCookies();
+        self::assertNotEmpty($cookies);
+        self::assertSame('display_currency', $cookies[0]->getName());
+        self::assertSame('USD', $cookies[0]->getValue());
     }
 }
