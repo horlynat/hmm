@@ -3,12 +3,14 @@
 # Usage : bash infra/scripts/tests/check-env-prod.test.sh
 set -uo pipefail
 CHECK="$(cd "$(dirname "$0")/.." && pwd)/check-env-prod.sh"
+COMPOSE="$(cd "$(dirname "$0")/../.." && pwd)/docker-compose.prod.yml"
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 fail=0
 
 t() { local exp=$1 label=$2 content=$3 rc
   printf '%s\n' "$content" > "$T/env"
-  bash "$CHECK" "$T/env" >/dev/null 2>&1; rc=$?
+  env -u CF_ACCESS_HOSTS -u CF_ACCESS_TEAM_DOMAIN -u CF_ACCESS_AUD -u PUBLIC_API_HOSTS \
+    bash "$CHECK" "$T/env" "$COMPOSE" >/dev/null 2>&1; rc=$?
   if { [[ $exp == OK ]] && ((rc == 0)); } || { [[ $exp == KO ]] && ((rc != 0)); }; then
     echo "PASS $exp $label"
   else echo "FAIL $exp rc=$rc $label"; fail=1; fi; }
@@ -29,9 +31,26 @@ t KO "2/3 avec guillemets" $'CF_ACCESS_HOSTS="dark.horlynat.com"\nCF_ACCESS_TEAM
 t KO "dernière affectation vide l'AUD" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=abc\nCF_ACCESS_AUD='
 t KO "PUBLIC_API_HOSTS sans hmm-backend" "PUBLIC_API_HOSTS=api.horlynat.com"
 t KO "PUBLIC_API_HOSTS nom piège" "PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend-evil"
-t KO "PUBLIC_API_HOSTS vide" "PUBLIC_API_HOSTS="
+# `${PUBLIC_API_HOSTS:-défaut}` : une valeur VIDE prend le défaut (sûr)
+t OK "PUBLIC_API_HOSTS vide = défaut du compose" "PUBLIC_API_HOSTS="
+t OK "PUBLIC_API_HOSTS vide entre guillemets" 'PUBLIC_API_HOSTS=""'
+t OK "PUBLIC_API_HOSTS avec point final" "PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend.,backend"
+
+# Formats acceptés par Compose que l'ancienne lecture manuelle ratait (C3)
+t KO "espaces autour du = (PUBLIC_API_HOSTS)" "PUBLIC_API_HOSTS = api.horlynat.com"
+t KO "syntaxe deux-points (PUBLIC_API_HOSTS)" "PUBLIC_API_HOSTS: api.horlynat.com"
+t KO "espaces autour du = (CF hôte seul)" "CF_ACCESS_HOSTS = dark.horlynat.com"
+t KO "équipe + AUD en « X = y », sans hôte" $'CF_ACCESS_TEAM_DOMAIN = x.cloudflareaccess.com\nCF_ACCESS_AUD = abc'
+t KO "AUD = \${NOPE} (vide une fois résolu)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=${NOPE}'
+t OK "Cloudflare complet en « X = y »" $'CF_ACCESS_HOSTS = dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN = x.cloudflareaccess.com\nCF_ACCESS_AUD = abc'
 t KO "dernière affectation retire hmm-backend" $'PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend\nPUBLIC_API_HOSTS=api.horlynat.com'
 
-bash "$CHECK" "$T/absent" >/dev/null 2>&1 && { echo "FAIL fichier absent accepté"; fail=1; } || echo "PASS KO fichier absent"
+bash "$CHECK" "$T/absent" "$COMPOSE" >/dev/null 2>&1 && { echo "FAIL fichier absent accepté"; fail=1; } || echo "PASS KO fichier absent"
+printf 'A=1\n' > "$T/env"
+bash "$CHECK" "$T/env" "$T/absent.yml" >/dev/null 2>&1 && { echo "FAIL compose absent accepté"; fail=1; } || echo "PASS KO compose absent"
+# Variable du shell : Compose la fait passer AVANT .env.prod — le contrôle la voit aussi.
+printf 'APP_ENV=prod\n' > "$T/env"
+CF_ACCESS_HOSTS=dark.horlynat.com bash "$CHECK" "$T/env" "$COMPOSE" >/dev/null 2>&1 \
+  && { echo "FAIL variable du shell ignorée"; fail=1; } || echo "PASS KO Cloudflare partiel via l'environnement du shell"
 
 exit $fail

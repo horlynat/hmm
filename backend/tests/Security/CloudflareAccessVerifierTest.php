@@ -118,6 +118,57 @@ final class CloudflareAccessVerifierTest extends TestCase
         self::assertTrue($verifier->verify($this->token($real)), 'Le jeton légitime doit rester accepté pendant la panne.');
     }
 
+    /**
+     * Contre-audit B2 (5e passe, C2) : une clé malformée mêlée aux bonnes ne
+     * doit ni remplacer le cache par un jeu inutilisable, ni faire refuser
+     * les jetons légitimes.
+     */
+    public function testMalformedKeyMixedWithGoodOnesIsIgnored(): void
+    {
+        $real = $this->newKey();
+        $verifier = $this->verifier(static fn (): MockResponse => new MockResponse(json_encode(['keys' => [
+            ['kid' => 'broken', 'use' => 'sig'], // sans kty
+            ['kty' => 'RSA', 'kid' => 'half', 'n' => 'AQAB'], // sans e
+            $real['jwk'],
+        ]], \JSON_THROW_ON_ERROR)));
+
+        self::assertTrue($verifier->verify($this->token($real)));
+    }
+
+    public function testInvalidKeySetDuringARefreshKeepsTheValidKeys(): void
+    {
+        $real = $this->newKey();
+        $cloudflare = new \ArrayObject(['broken' => false]);
+        $verifier = $this->verifier(function () use ($real, $cloudflare): MockResponse {
+            $keys = true === $cloudflare['broken'] ? [['kid' => 'x', 'use' => 'sig']] : [$real['jwk']];
+
+            return new MockResponse(json_encode(['keys' => $keys], \JSON_THROW_ON_ERROR));
+        });
+
+        self::assertTrue($verifier->verify($this->token($real)));
+        $cloudflare['broken'] = true; // Cloudflare sert un jeu inutilisable
+
+        self::assertFalse($verifier->verify($this->token($this->newKey())), 'kid inconnu -> relecture (jeu invalide)');
+        self::assertTrue($verifier->verify($this->token($real)), 'Les clés valides doivent rester en cache.');
+    }
+
+    /**
+     * Contre-audit B2 (5e passe, C2) : `parseKeySet(…, 'RS256')` n'impose
+     * RS256 qu'aux clés SANS `alg` — une clé symétrique déclarée HS256 dans
+     * le JWKS faisait accepter un jeton HS256.
+     */
+    public function testSymmetricKeyInTheKeySetIsNeverAccepted(): void
+    {
+        $secret = random_bytes(32);
+        $b64 = static fn (string $bin): string => rtrim(strtr(base64_encode($bin), '+/', '-_'), '=');
+        $verifier = $this->verifier(static fn (): MockResponse => new MockResponse(json_encode(['keys' => [
+            ['kty' => 'oct', 'alg' => 'HS256', 'kid' => 'sym', 'k' => $b64($secret)],
+        ]], \JSON_THROW_ON_ERROR)));
+
+        $hs256 = JWT::encode($this->claims(), $secret, 'HS256', 'sym');
+        self::assertFalse($verifier->verify($hs256));
+    }
+
     public function testFetchFailureIsCachedBrieflyAndRejects(): void
     {
         $calls = 0;

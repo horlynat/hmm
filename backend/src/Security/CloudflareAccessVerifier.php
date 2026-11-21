@@ -148,17 +148,42 @@ final class CloudflareAccessVerifier
      */
     private function refreshKeySet(): bool
     {
-        $token = bin2hex(random_bytes(8));
-        $claimed = $this->cache->get($this->cacheKey().'_refresh', function (ItemInterface $item) use ($token): string {
-            $item->expiresAfter(self::JWKS_MIN_REFRESH_INTERVAL);
-
-            return $token;
-        });
-
-        if ($claimed !== $token) {
+        // Contre-audit B2 (5e passe, C1) : sans verrou, une requête qui lisait
+        // « pas de réservation » juste avant l'écriture du gagnant la gagnait
+        // aussi (1 à 4 relectures sur 80 processus simultanés). Verrou de
+        // fichier non bloquant : un seul processus vérifie PUIS pose la
+        // réservation ; les autres repartent aussitôt, sans attendre.
+        $handle = @fopen(sys_get_temp_dir().'/'.$this->cacheKey().'.lock', 'c');
+        if (false === $handle) {
             return false;
         }
 
+        try {
+            if (!flock($handle, \LOCK_EX | \LOCK_NB)) {
+                return false;
+            }
+
+            $won = false;
+            $this->cache->get($this->cacheKey().'_refresh', function (ItemInterface $item) use (&$won): bool {
+                $item->expiresAfter(self::JWKS_MIN_REFRESH_INTERVAL);
+                $won = true;
+
+                return true;
+            });
+
+            if (!$won) {
+                return false;
+            }
+
+            return $this->replaceKeySet();
+        } finally {
+            flock($handle, \LOCK_UN);
+            fclose($handle);
+        }
+    }
+
+    private function replaceKeySet(): bool
+    {
         $keys = $this->fetchKeys();
         if (null === $keys) {
             return false;
@@ -175,7 +200,17 @@ final class CloudflareAccessVerifier
     }
 
     /**
-     * @return list<array<string, mixed>>|null null si la récupération échoue
+     * Récupère et VALIDE le jeu de clés avant toute mise en cache.
+     *
+     * Contre-audit B2 (5e passe, C2) :
+     * - seules les clés RSA dont `alg` est absent ou vaut RS256 sont gardées :
+     *   JWK::parseKeySet(…, 'RS256') n'impose RS256 qu'aux clés SANS `alg` —
+     *   une clé `oct` déclarée HS256 faisait accepter un jeton HS256 ;
+     * - le jeu est décodé ici (parseKeySet) : une clé malformée mêlée aux
+     *   bonnes remplaçait le cache et faisait refuser tous les jetons pendant
+     *   1 h. Désormais, rien de valide = échec (les anciennes clés restent).
+     *
+     * @return list<array<string, mixed>>|null null si la récupération ou la validation échoue
      */
     private function fetchKeys(): ?array
     {
@@ -186,11 +221,31 @@ final class CloudflareAccessVerifier
             ]);
 
             $data = $response->toArray();
-            if (!isset($data['keys']) || !\is_array($data['keys']) || [] === $data['keys']) {
-                throw new \RuntimeException('JWKS Cloudflare Access vide.');
+            if (!isset($data['keys']) || !\is_array($data['keys'])) {
+                throw new \RuntimeException('JWKS Cloudflare Access invalide.');
             }
 
-            return array_values($data['keys']);
+            $keys = [];
+            foreach ($data['keys'] as $jwk) {
+                if (!\is_array($jwk) || 'RSA' !== ($jwk['kty'] ?? null) || !\is_string($jwk['kid'] ?? null)) {
+                    continue;
+                }
+                if (isset($jwk['alg']) && 'RS256' !== $jwk['alg']) {
+                    continue;
+                }
+                try {
+                    JWK::parseKeySet(['keys' => [$jwk]], 'RS256');
+                } catch (\Throwable) {
+                    continue;
+                }
+                $keys[] = $jwk;
+            }
+
+            if ([] === $keys) {
+                throw new \RuntimeException('JWKS Cloudflare Access : aucune clé RS256 valide.');
+            }
+
+            return $keys;
         } catch (\Throwable $e) {
             $this->logger->error('Cloudflare Access : récupération des clés impossible.', ['reason' => $e->getMessage()]);
 
@@ -221,7 +276,9 @@ final class CloudflareAccessVerifier
             throw new \RuntimeException('JWKS Cloudflare Access indisponible.');
         }
 
-        // RS256 imposé : jamais l'algorithme annoncé par le jeton lui-même.
+        // RS256 imposé : seules des clés RSA sans `alg` ou en RS256 sont
+        // mises en cache (fetchKeys), et RS256 est la valeur par défaut des
+        // clés sans `alg` — jamais l'algorithme annoncé par le jeton.
         return JWK::parseKeySet(['keys' => $jwks['keys']], 'RS256');
     }
 }
