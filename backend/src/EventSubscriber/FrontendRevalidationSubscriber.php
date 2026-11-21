@@ -10,6 +10,7 @@ use App\Entity\Course;
 use App\Entity\Experience;
 use App\Entity\HomeContent;
 use App\Entity\Media;
+use App\Entity\Offer;
 use App\Entity\Project;
 use App\Entity\ProjectInfo;
 use App\Entity\Skill;
@@ -147,6 +148,7 @@ class FrontendRevalidationSubscriber implements EventSubscriber
             $entity instanceof Course => 'courses',
             $entity instanceof AboutContent => 'about-content',
             $entity instanceof AiAssistantSettings, $entity instanceof AiAssistantEntry => 'ai-assistant',
+            $entity instanceof Offer => 'offers',
             default => null,
         };
 

@@ -131,6 +131,217 @@
     "contactCta": {
       "title": "Un projet en tête ?",
       "sub": "Discutons de ce que vous voulez construire, ou laissez mon assistant qualifier votre demande en quelques questions."
+    },
+    "hero": {
+      "carouselLabel": "Offres",
+      "slideLabel": "{index} sur {total}",
+      "chooseOffer": "Choisir une offre",
+      "previous": "Offre précédente",
+      "next": "Offre suivante",
+      "pause": "Mettre le défilement en pause",
+      "play": "Reprendre le défilement",
+      "priceFrom": "À partir de",
+      "priceOnce": "Prix unique",
+      "readyIn": "Prêt en {delay}",
+      "order": "Commander sur WhatsApp",
+      "seeOffer": "Voir l'offre",
+      "orderMessage": "Bonjour Horlynat, je suis intéressé par l'offre « {title} ».",
+      "byName": "Horlynat Mampassi Mbama",
+      "byRole1": "Ingénieur et architecte logiciel",
+      "byRole2": "Cybersécurité · Gestion et management des risques",
+      "fallbackTitle": "Des solutions numériques claires, à prix annoncés.",
+      "fallbackLead": "Assistant WhatsApp IA, sites, audits de sécurité et applications : vous savez ce que vous recevez, à combien et en combien de temps.",
+      "fallbackCta": "Écrire sur WhatsApp"
+    },
+    "trust": {
+      "label": "Garanties",
+      "price": "Prix annoncé avant de commencer",
+      "payment": "Paiement par Mobile Money",
+      "proposal": "Proposition sous 48 h",
+      "security": "Sécurité incluse",
+      "followUp": "Suivi après livraison"
+    },
+    "needs": {
+      "eyebrow": "Votre besoin",
+      "title": "Quel problème voulez-vous régler ?",
+      "lede": "Choisissez votre situation, je vous montre la solution adaptée.",
+      "seeSolution": "Voir les solutions",
+      "items": {
+        "clients": {
+          "domain": "Ingénierie logicielle",
+          "title": "Je perds des ventes parce que je ne réponds pas assez vite",
+          "desc": "Un assistant IA répond à vos clients sur WhatsApp, jour et nuit."
+        },
+        "appli": {
+          "domain": "Architecture logicielle",
+          "title": "Mon application ralentit ou plante quand l'activité grandit",
+          "desc": "Je trouve ce qui bloque et comment évoluer sans tout refaire."
+        },
+        "secu": {
+          "domain": "Cybersécurité",
+          "title": "J'ai peur d'être piraté ou de perdre mes données",
+          "desc": "Je trouve vos failles avant les pirates et je vous aide à les corriger."
+        },
+        "assur": {
+          "domain": "Gestion des risques",
+          "title": "Je suis assuré, mais suis-je vraiment couvert ?",
+          "desc": "Je vérifie ce que vos contrats couvrent vraiment, avant un sinistre."
+        }
+      }
+    },
+    "offers": {
+      "eyebrow": "Offres",
+      "title": "Choisissez ce dont vous avez besoin",
+      "lede": "Chaque offre indique ce que vous recevez, à partir de combien et en combien de temps.",
+      "filterLabel": "Filtrer les offres par situation",
+      "filterAll": "Toutes les situations",
+      "filters": {
+        "clients": "Je veux plus de clients",
+        "appli": "Mon application doit évoluer",
+        "secu": "Je veux me protéger des pirates",
+        "assur": "Je veux vérifier mes assurances"
+      },
+      "featured": "Offre vedette",
+      "for": "Pour :",
+      "details": "Voir le détail",
+      "includesTitle": "Ce que vous recevez",
+      "needsTitle": "Ce dont j'ai besoin de votre part",
+      "beforeTitle": "Aujourd'hui",
+      "afterTitle": "Avec cette offre",
+      "calendarTitle": "Calendrier",
+      "empty": "Les offres seront affichées ici très bientôt. En attendant, écrivez-moi sur WhatsApp.",
+      "noMatch": "Aucune offre ne correspond à cette situation pour le moment.",
+      "commitments": {
+        "one": {
+          "title": "Un seul interlocuteur",
+          "desc": "du premier message au suivi"
+        },
+        "two": {
+          "title": "Délai annoncé",
+          "desc": "et tenu, étape par étape"
+        },
+        "three": {
+          "title": "Paiement en deux temps",
+          "desc": "un acompte, puis le solde à la livraison"
+        }
+      }
+    },
+    "aiDemo": {
+      "eyebrow": "Offre vedette",
+      "title": "Votre assistant WhatsApp, en action",
+      "lede": "Voici ce que vit votre client, et ce que vous recevez de votre côté. Pour essayer un vrai assistant IA, discutez avec le mien.",
+      "exampleBadge": "Exemple",
+      "shopName": "Boutique Ndinga",
+      "shopSub": "Boutique d'exemple · assistant IA",
+      "chat": [
+        {
+          "who": "bot",
+          "text": "Bonjour ! Bienvenue à la Boutique Ndinga. Que puis-je faire pour vous ?"
+        },
+        {
+          "who": "user",
+          "text": "Vous avez du riz parfumé ?"
+        },
+        {
+          "who": "bot",
+          "text": "Oui : sac de 5 kg à 6 500 FCFA, sac de 25 kg à 29 000 FCFA. Je vous en réserve un ?"
+        },
+        {
+          "who": "user",
+          "text": "Un sac de 25 kg, livré demain."
+        },
+        {
+          "who": "bot",
+          "text": "C'est noté ! Commande transmise à la boutique, vous serez livré demain matin."
+        }
+      ],
+      "dashboardTitle": "Votre tableau de bord",
+      "dashboardToday": "Aujourd'hui",
+      "kpiMessages": "Messages traités",
+      "kpiOrders": "Commandes",
+      "kpiHandedOver": "Transmises à vous",
+      "steps": [
+        {
+          "title": "Vous m'envoyez vos produits et vos prix",
+          "desc": "Une simple liste suffit."
+        },
+        {
+          "title": "Je configure et je teste avec vous",
+          "desc": "Le ton et les réponses de votre maison."
+        },
+        {
+          "title": "Vos clients sont servis",
+          "desc": "Jour et nuit, dès la mise en service."
+        }
+      ],
+      "orderCta": "Commander mon assistant",
+      "orderMessage": "Bonjour Horlynat, je veux un assistant IA sur mon WhatsApp.",
+      "tryCta": "Discuter avec mon assistant IA"
+    },
+    "steps": {
+      "eyebrow": "Comment ça se passe",
+      "title": "Six étapes claires, sans surprise",
+      "lede": "Vous savez à chaque moment où en est votre projet et ce qui vient ensuite.",
+      "items": [
+        {
+          "title": "Premier échange",
+          "desc": "Sur WhatsApp ou par appel, vous m'expliquez votre besoin. Gratuit et sans engagement."
+        },
+        {
+          "title": "Proposition écrite",
+          "desc": "Sous 48 h : ce que vous recevez, le prix et le délai."
+        },
+        {
+          "title": "Lancement",
+          "desc": "Vous validez, vous versez l'acompte, le calendrier est fixé."
+        },
+        {
+          "title": "Réalisation",
+          "desc": "Des points réguliers et des versions à tester à chaque étape."
+        },
+        {
+          "title": "Livraison",
+          "desc": "Mise en service, prise en main par votre équipe, puis le solde."
+        },
+        {
+          "title": "Suivi",
+          "desc": "Je reste disponible pour les corrections et les évolutions."
+        }
+      ]
+    },
+    "faq": {
+      "eyebrow": "Questions fréquentes",
+      "title": "Ce que l'on me demande souvent",
+      "items": [
+        {
+          "q": "Je ne suis pas technicien, est-ce un problème ?",
+          "a": "Pas du tout. J'explique chaque étape simplement, et vous décidez. Vous n'avez besoin de connaître que votre activité."
+        },
+        {
+          "q": "Les prix affichés sont-ils définitifs ?",
+          "a": "Ce sont des prix de départ. Après un court échange, vous recevez une proposition précise sous 48 h, sans frais cachés."
+        },
+        {
+          "q": "Comment se fait le paiement ?",
+          "a": "Un acompte au lancement, le solde à la livraison, par Mobile Money ou virement. Les modalités exactes figurent dans la proposition écrite."
+        },
+        {
+          "q": "Mes données sont-elles protégées ?",
+          "a": "Oui. Elles servent uniquement à vous répondre et à réaliser votre projet, ne sont jamais vendues, et restent confidentielles."
+        },
+        {
+          "q": "Travaillez-vous à distance ?",
+          "a": "Oui. Je travaille depuis Brazzaville avec des clients partout, par WhatsApp, appel ou visioconférence."
+        },
+        {
+          "q": "Et après la livraison ?",
+          "a": "Je reste disponible pour le suivi, les corrections et les évolutions de votre outil."
+        }
+      ],
+      "privacyLink": "Lire la politique de confidentialité",
+      "more": "Une autre question ?",
+      "moreCta": "Posez-la sur WhatsApp",
+      "moreMessage": "Bonjour Horlynat, j'ai une question."
     }
   },
   "about": {

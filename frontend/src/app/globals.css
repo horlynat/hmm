@@ -239,6 +239,21 @@
     @apply inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] px-5 py-3 text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-brand-dark/5 text-brand-dark border border-[var(--border-soft)] hover:bg-brand-dark/10 dark:bg-white/5 dark:hover:bg-white/10;
     font-family: var(--font-heading);
   }
+  /* Bouton WhatsApp (refonte 2026-11) : vert WhatsApp, texte vert très foncé —
+     du blanc sur #25D366 n'atteint que ~2:1 (échec AA), le #052e16 dépasse 7:1. */
+  .btn-whatsapp {
+    @apply inline-flex items-center justify-center gap-2 rounded-[var(--radius-sm)] px-5 py-3 text-sm font-semibold transition-all cursor-pointer bg-[#25D366] text-[#052e16] shadow-sm hover:-translate-y-0.5 hover:shadow-md;
+    font-family: var(--font-heading);
+  }
+  /* Contrôles du carrousel d'offres (pause, précédent, suivant). */
+  .carousel-ctl {
+    @apply flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-soft)] text-sm text-brand-dark transition-colors hover:border-brand-accent hover:text-brand-accent;
+  }
+  /* Entrée d'une diapositive du carrousel — figée par la règle globale
+     prefers-reduced-motion (cf. @layer base). */
+  .hero-slide-in {
+    animation: hero-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
   .card {
     @apply rounded-[var(--radius-md)] bg-bg-card border border-[var(--border-softer)] shadow-sm p-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-brand-accent/30;
   }
@@ -342,6 +357,22 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  /* Fondu d'entrée des pages vitrine ((marketing)/template.tsx). CSS pur :
+     il joue dès le premier paint, sans attendre l'hydratation — une page ne
+     doit jamais rester invisible si le JavaScript tarde ou échoue. Neutralisé
+     par la règle globale prefers-reduced-motion (@layer base). */
+  .page-fade-in {
+    animation: page-fade-in 0.3s ease-out both;
+  }
+  @keyframes page-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
     }
   }
 

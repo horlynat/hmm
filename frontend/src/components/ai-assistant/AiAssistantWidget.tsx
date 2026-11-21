@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import clsx from "clsx";
 import { Send, Sparkles, X } from "lucide-react";
 import type { AiAssistantChatResult, AiAssistantEntry, AiAssistantSettings } from "@/lib/types";
+import { AI_ASSISTANT_OPEN_EVENT, consumeAiAssistantOpenRequest } from "@/lib/aiAssistantOpen";
 
 interface Message {
   who: "bot" | "user";
@@ -61,6 +62,22 @@ export function AiAssistantWidget({ settings, entries }: AiAssistantWidgetProps)
   const [pending, setPending] = useState(false);
   const [suggestions, setSuggestions] = useState<string[] | null>(null);
   const [hasExchanged, setHasExchanged] = useState(false);
+
+  // Ouverture programmatique depuis une autre page/section (ex. le CTA « Discuter
+  // avec l'assistant » de la démo WhatsApp sur l'accueil) — un évènement DOM
+  // plutôt qu'un contexte React : ce widget est monté une seule fois, loin de
+  // l'arbre des pages qui veulent l'ouvrir (cf. MarketingLayout), et c'est le
+  // seul canal de communication qui ne demande aucune refonte de l'arbre.
+  // Une demande émise avant le chargement (différé) du widget est rattrapée
+  // au montage — cf. src/lib/aiAssistantOpen.ts.
+  useEffect(() => {
+    function onOpenRequest() {
+      if (consumeAiAssistantOpenRequest()) setOpen(true);
+    }
+    window.addEventListener(AI_ASSISTANT_OPEN_EVENT, onOpenRequest);
+    onOpenRequest();
+    return () => window.removeEventListener(AI_ASSISTANT_OPEN_EVENT, onOpenRequest);
+  }, []);
 
   function addMessage(text: string, who: Message["who"]) {
     setMessages((prev) => [...prev, { who, text }]);

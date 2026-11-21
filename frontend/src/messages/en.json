@@ -131,6 +131,217 @@
     "contactCta": {
       "title": "Got a project in mind?",
       "sub": "Let's talk about what you want to build, or let my assistant qualify your request in a few questions."
+    },
+    "hero": {
+      "carouselLabel": "Offers",
+      "slideLabel": "{index} of {total}",
+      "chooseOffer": "Choose an offer",
+      "previous": "Previous offer",
+      "next": "Next offer",
+      "pause": "Pause the slideshow",
+      "play": "Resume the slideshow",
+      "priceFrom": "From",
+      "priceOnce": "One-off price",
+      "readyIn": "Ready in {delay}",
+      "order": "Order on WhatsApp",
+      "seeOffer": "See the offer",
+      "orderMessage": "Hello Horlynat, I'm interested in the “{title}” offer.",
+      "byName": "Horlynat Mampassi Mbama",
+      "byRole1": "Software engineer and architect",
+      "byRole2": "Cybersecurity · Risk management",
+      "fallbackTitle": "Clear digital solutions, with upfront prices.",
+      "fallbackLead": "AI WhatsApp assistant, websites, security audits and applications: you know what you get, how much it costs and how long it takes.",
+      "fallbackCta": "Message me on WhatsApp"
+    },
+    "trust": {
+      "label": "Guarantees",
+      "price": "Price agreed before we start",
+      "payment": "Mobile Money payment",
+      "proposal": "Proposal within 48 h",
+      "security": "Security included",
+      "followUp": "Support after delivery"
+    },
+    "needs": {
+      "eyebrow": "Your need",
+      "title": "Which problem do you want to solve?",
+      "lede": "Pick your situation, I'll show you the right solution.",
+      "seeSolution": "See the solutions",
+      "items": {
+        "clients": {
+          "domain": "Software engineering",
+          "title": "I lose sales because I don't reply fast enough",
+          "desc": "An AI assistant answers your customers on WhatsApp, day and night."
+        },
+        "appli": {
+          "domain": "Software architecture",
+          "title": "My application slows down or crashes as business grows",
+          "desc": "I find what's blocking and how to scale without rebuilding everything."
+        },
+        "secu": {
+          "domain": "Cybersecurity",
+          "title": "I'm afraid of being hacked or losing my data",
+          "desc": "I find your weaknesses before attackers do and help you fix them."
+        },
+        "assur": {
+          "domain": "Risk management",
+          "title": "I'm insured, but am I really covered?",
+          "desc": "I check what your contracts really cover, before a claim."
+        }
+      }
+    },
+    "offers": {
+      "eyebrow": "Offers",
+      "title": "Choose what you need",
+      "lede": "Each offer shows what you get, its starting price and how long it takes.",
+      "filterLabel": "Filter offers by situation",
+      "filterAll": "All situations",
+      "filters": {
+        "clients": "I want more customers",
+        "appli": "My application needs to evolve",
+        "secu": "I want to protect myself from hackers",
+        "assur": "I want to check my insurance"
+      },
+      "featured": "Featured offer",
+      "for": "For:",
+      "details": "See details",
+      "includesTitle": "What you get",
+      "needsTitle": "What I need from you",
+      "beforeTitle": "Today",
+      "afterTitle": "With this offer",
+      "calendarTitle": "Schedule",
+      "empty": "Offers will be listed here very soon. In the meantime, message me on WhatsApp.",
+      "noMatch": "No offer matches this situation for now.",
+      "commitments": {
+        "one": {
+          "title": "One single contact",
+          "desc": "from the first message to follow-up"
+        },
+        "two": {
+          "title": "Announced deadline",
+          "desc": "and kept, step by step"
+        },
+        "three": {
+          "title": "Two-step payment",
+          "desc": "a deposit, then the balance on delivery"
+        }
+      }
+    },
+    "aiDemo": {
+      "eyebrow": "Featured offer",
+      "title": "Your WhatsApp assistant, in action",
+      "lede": "Here is what your customer sees, and what you get on your side. To try a real AI assistant, chat with mine.",
+      "exampleBadge": "Example",
+      "shopName": "Ndinga Shop",
+      "shopSub": "Sample shop · AI assistant",
+      "chat": [
+        {
+          "who": "bot",
+          "text": "Hello! Welcome to Ndinga Shop. How can I help you?"
+        },
+        {
+          "who": "user",
+          "text": "Do you have fragrant rice?"
+        },
+        {
+          "who": "bot",
+          "text": "Yes: 5 kg bag at 6,500 FCFA, 25 kg bag at 29,000 FCFA. Shall I reserve one for you?"
+        },
+        {
+          "who": "user",
+          "text": "One 25 kg bag, delivered tomorrow."
+        },
+        {
+          "who": "bot",
+          "text": "Done! Your order has been passed to the shop, you'll be delivered tomorrow morning."
+        }
+      ],
+      "dashboardTitle": "Your dashboard",
+      "dashboardToday": "Today",
+      "kpiMessages": "Messages handled",
+      "kpiOrders": "Orders",
+      "kpiHandedOver": "Handed over to you",
+      "steps": [
+        {
+          "title": "You send me your products and prices",
+          "desc": "A simple list is enough."
+        },
+        {
+          "title": "I set it up and test it with you",
+          "desc": "Your own tone and answers."
+        },
+        {
+          "title": "Your customers are served",
+          "desc": "Day and night, as soon as it goes live."
+        }
+      ],
+      "orderCta": "Order my assistant",
+      "orderMessage": "Hello Horlynat, I want an AI assistant on my WhatsApp.",
+      "tryCta": "Chat with my AI assistant"
+    },
+    "steps": {
+      "eyebrow": "How it works",
+      "title": "Six clear steps, no surprises",
+      "lede": "You always know where your project stands and what comes next.",
+      "items": [
+        {
+          "title": "First conversation",
+          "desc": "On WhatsApp or by phone, you explain your need. Free and with no commitment."
+        },
+        {
+          "title": "Written proposal",
+          "desc": "Within 48 h: what you get, the price and the deadline."
+        },
+        {
+          "title": "Kick-off",
+          "desc": "You approve, you pay the deposit, the schedule is set."
+        },
+        {
+          "title": "Build",
+          "desc": "Regular check-ins and versions to test at every step."
+        },
+        {
+          "title": "Delivery",
+          "desc": "Go-live, handover to your team, then the balance."
+        },
+        {
+          "title": "Follow-up",
+          "desc": "I remain available for fixes and improvements."
+        }
+      ]
+    },
+    "faq": {
+      "eyebrow": "Frequently asked questions",
+      "title": "What people often ask me",
+      "items": [
+        {
+          "q": "I'm not technical, is that a problem?",
+          "a": "Not at all. I explain every step simply, and you decide. You only need to know your business."
+        },
+        {
+          "q": "Are the displayed prices final?",
+          "a": "They are starting prices. After a short conversation, you get a precise proposal within 48 h, with no hidden fees."
+        },
+        {
+          "q": "How does payment work?",
+          "a": "A deposit at kick-off, the balance on delivery, by Mobile Money or bank transfer. The exact terms are set out in the written proposal."
+        },
+        {
+          "q": "Is my data protected?",
+          "a": "Yes. It is only used to answer you and deliver your project, is never sold, and stays confidential."
+        },
+        {
+          "q": "Do you work remotely?",
+          "a": "Yes. I work from Brazzaville with clients everywhere, via WhatsApp, phone or video call."
+        },
+        {
+          "q": "What happens after delivery?",
+          "a": "I remain available for follow-up, fixes and improvements to your tool."
+        }
+      ],
+      "privacyLink": "Read the privacy policy",
+      "more": "Another question?",
+      "moreCta": "Ask it on WhatsApp",
+      "moreMessage": "Hello Horlynat, I have a question."
     }
   },
   "about": {
