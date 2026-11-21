@@ -3,6 +3,7 @@
 namespace App\Tests\Entity;
 
 use App\Entity\User;
+use App\Security\SuperAdminElevationContext;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -13,6 +14,11 @@ use PHPUnit\Framework\TestCase;
  */
 final class UserPrivilegeElevationTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        SuperAdminElevationContext::reset();
+    }
+
     public function testGetRolesExcludesSuperAdminWhenNotElevated(): void
     {
         $user = new User();
@@ -25,10 +31,36 @@ final class UserPrivilegeElevationTest extends TestCase
     public function testGetRolesIncludesSuperAdminWhileElevationWindowIsActive(): void
     {
         $user = new User();
+        $user->setEmail('sa@test.invalid');
         $user->setRoles(['ROLE_ADMIN', 'ROLE_SUPER_ADMIN']);
-        $user->setSuperAdminElevatedUntil(new \DateTimeImmutable('+30 minutes'));
+        $until = new \DateTimeImmutable('+30 minutes');
+        $user->setSuperAdminElevatedUntil($until);
+        // Élévation liée à la session courante (cf. SuperAdminElevationContext).
+        SuperAdminElevationContext::grant('sa@test.invalid', $until->getTimestamp());
 
         self::assertContains('ROLE_SUPER_ADMIN', $user->getRoles());
+    }
+
+    /**
+     * P2 — l'élévation n'est jamais accordée hors de la session qui l'a
+     * demandée : JWT, autre session, CLI (aucun contexte), ou contexte
+     * portant un autre compte / une élévation antérieure.
+     */
+    public function testElevationIsIgnoredWithoutMatchingSessionContext(): void
+    {
+        $user = new User();
+        $user->setEmail('sa@test.invalid');
+        $user->setRoles(['ROLE_ADMIN', 'ROLE_SUPER_ADMIN']);
+        $until = new \DateTimeImmutable('+30 minutes');
+        $user->setSuperAdminElevatedUntil($until);
+
+        self::assertNotContains('ROLE_SUPER_ADMIN', $user->getRoles(), 'aucun contexte (JWT, CLI)');
+
+        SuperAdminElevationContext::grant('other@test.invalid', $until->getTimestamp());
+        self::assertNotContains('ROLE_SUPER_ADMIN', $user->getRoles(), 'contexte d\'un autre compte');
+
+        SuperAdminElevationContext::grant('sa@test.invalid', $until->getTimestamp() - 60);
+        self::assertNotContains('ROLE_SUPER_ADMIN', $user->getRoles(), 'marqueur d\'une élévation antérieure');
     }
 
     public function testGetRolesExcludesSuperAdminOncePastElevationWindow(): void

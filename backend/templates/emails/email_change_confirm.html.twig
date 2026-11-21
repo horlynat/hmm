@@ -1,0 +1,35 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block title %}Confirmez votre nouvelle adresse e-mail{% endblock %}
+{% block preheader %}Cliquez pour confirmer le changement d'adresse e-mail de votre compte.{% endblock %}
+{% block badge_label %}Sécurité{% endblock %}
+{% block badge_color %}#fef3c7{% endblock %}
+{% block badge_text_color %}#92400e{% endblock %}
+
+{% block body %}
+	<h1 style="margin:0 0 16px; font-size:20px; color:#03045e;">Confirmez votre nouvelle adresse e-mail</h1>
+
+	<p style="margin:0 0 16px;">Bonjour <strong>{{ fullName }}</strong>,</p>
+	<p style="margin:0 0 24px;">
+		Vous avez demandé à utiliser cette adresse comme nouvel identifiant de connexion de votre compte. Cliquez sur le bouton ci-dessous pour confirmer :
+	</p>
+
+	<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+		<tr>
+			<td align="center" bgcolor="#0077b6" style="background-color:#0077b6; border-radius:6px;">
+				<a href="{{ confirmUrl }}" style="display:inline-block; padding:14px 28px; color:#ffffff; font-size:15px; font-weight:bold; text-decoration:none; font-family:Arial, Helvetica, sans-serif;">
+					Confirmer cette adresse
+				</a>
+			</td>
+		</tr>
+	</table>
+
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8fa; border:1px solid #d0d7de; border-radius:8px;">
+		<tr>
+			<td style="padding:14px 16px; font-size:13px; color:#57606a; line-height:1.6;">
+				<strong style="color:#03045e;">⏳ Ce lien expire dans 1 heure</strong>, ou dès qu'il aura été utilisé une fois. Votre adresse actuelle reste active jusqu'à cette confirmation.<br><br>
+				Vous n'êtes pas à l'origine de cette demande ? Ignorez simplement cet e-mail : votre adresse de connexion ne change pas tant que ce lien n'a pas été cliqué.
+			</td>
+		</tr>
+	</table>
+{% endblock %}

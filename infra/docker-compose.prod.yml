@@ -199,18 +199,31 @@ services:
       - BACKOFFICE_URL=${BACKOFFICE_URL:-https://dark.horlynat.com}
       # Hôte(s) où seuls /api, /uploads, /newsletter répondent (P0 #4,
       # PublicApiHostRestrictionSubscriber) — même liste que le routeur
-      # Traefik `api`, en défense en profondeur.
-      - PUBLIC_API_HOSTS=${PUBLIC_API_HOSTS:-api.horlynat.com}
+      # Traefik `api`, en défense en profondeur. Les noms INTERNES y
+      # figurent aussi (contre-audit B2, M3) : joignables sans passer par
+      # Cloudflare (réseau edge-net, passerelle de build), ils ne doivent
+      # jamais servir le back-office — seul dark.horlynat.com le sert,
+      # derrière Cloudflare Access. `backend` n'est plus accepté par
+      # SYMFONY_TRUSTED_HOSTS (400) ; il reste ici pour le cas où un
+      # .env.prod le réintroduirait (refusé sinon par check-env-prod.sh).
+      - PUBLIC_API_HOSTS=${PUBLIC_API_HOSTS:-api.horlynat.com,hmm-backend,backend}
       # Liste blanche des Host acceptés par Symfony (400 sinon). `hmm-backend`
       # = appels serveur du frontend (API_URL=http://hmm-backend:80/api) ; le
       # build du frontend passe aussi par ce nom (api-build-gateway +
-      # extra_hosts hmm-backend:host-gateway). `^backend$` gardé le temps de
-      # la bascule (l'ancien frontend l'emploie jusqu'à son remplacement en
-      # fin de déploiement) — à retirer au lot suivant. Plus de 127.0.0.1 : le port publié
+      # extra_hosts hmm-backend:host-gateway). `^backend$` retiré : le
+      # frontend en prod emploie `hmm-backend` depuis la PR #150. Plus de
+      # 127.0.0.1 : le port publié
       # 127.0.0.1:8000 a disparu, et la sonde de santé vise l'admin Caddy
       # (:2019), pas Symfony. `$$` = `$` littéral pour compose ; PAS
       # d'apostrophes (elles entreraient dans la regex -> 400 partout).
-      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^hmm-backend$$,^backend$$}
+      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^api\.horlynat\.com$$,^dark\.horlynat\.com$$,^hmm-backend$$}
+      # Cloudflare Access côté Symfony (App\Security\CloudflareAccessVerifier,
+      # CloudflareAccessSubscriber) : vide = inactif. À activer ensemble —
+      # CF_ACCESS_HOSTS seul (sans équipe ni AUD) REFUSE tout sur ces hôtes
+      # (fail-closed), il ne se désactive plus en silence.
+      - CF_ACCESS_HOSTS=${CF_ACCESS_HOSTS:-}
+      - CF_ACCESS_TEAM_DOMAIN=${CF_ACCESS_TEAM_DOMAIN:-}
+      - CF_ACCESS_AUD=${CF_ACCESS_AUD:-}
       # IP/plage du conteneur traefik (réseau edge-net) ET plages Cloudflare
       # (cf. cloudflare-ips.txt) — Symfony doit faire confiance aux DEUX pour
       # lire correctement les en-têtes X-Forwarded-* : Traefik restaure l'IP
@@ -416,8 +429,8 @@ services:
       # (repli sur http://localhost du .env).
       - DEFAULT_URI=https://api.horlynat.com
       - BACKOFFICE_URL=${BACKOFFICE_URL:-https://dark.horlynat.com}
-      - PUBLIC_API_HOSTS=${PUBLIC_API_HOSTS:-api.horlynat.com}
-      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^hmm-backend$$,^backend$$}
+      - PUBLIC_API_HOSTS=${PUBLIC_API_HOSTS:-api.horlynat.com,hmm-backend,backend}
+      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^api\.horlynat\.com$$,^dark\.horlynat\.com$$,^hmm-backend$$}
     secrets:
       - app_secret
       - database_url

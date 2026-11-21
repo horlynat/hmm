@@ -4,7 +4,9 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\ProfileType;
-use App\Form\ResetPasswordFormType;
+use App\Form\ChangePasswordFormType;
+use App\Security\PasswordConfirmationGuard;
+use App\Service\UserSessionRevoker;
 use App\Repository\UserSessionRepository;
 use App\Service\DeviceParser;
 use App\Service\GeolocationService;
@@ -64,11 +66,19 @@ class MemberProfileController extends AbstractController
         ]);
     }
 
+    /**
+     * Toujours une auto-édition dans cet espace (pas de paramètre {id}) —
+     * le mot de passe ACTUEL est donc exigé pour en définir un nouveau
+     * (P1 #7) : une session volée ne doit pas suffire à verrouiller le
+     * titulaire légitime hors de son propre compte.
+     */
     #[Route('/modifier', name: 'update', methods: ['GET', 'POST'])]
     public function update(
         Request $request,
         EntityManagerInterface $entityManager,
         UserPasswordHasherInterface $passwordHasher,
+        PasswordConfirmationGuard $passwordConfirmationGuard,
+        UserSessionRevoker $userSessionRevoker,
     ): Response {
         $user = $this->currentUser();
 
@@ -82,26 +92,30 @@ class MemberProfileController extends AbstractController
             $confirmPassword = $form->get('confirmPassword')->getData();
 
             if (!empty($plainPassword)) {
-                if ($plainPassword === $confirmPassword) {
-                    $hashedPassword = $passwordHasher->hashPassword($user, $plainPassword);
-                    $user->setPassword($hashedPassword);
-                    $user->setPasswordChangedAt(new \DateTimeImmutable());
-                } else {
+                if ($plainPassword !== $confirmPassword) {
                     $form->get('plainPassword')->addError(new \Symfony\Component\Form\FormError('Les mots de passe ne correspondent pas.'));
-
-                    return $this->render('member/profile/update.html.twig', [
-                        'user' => $user,
-                        'form' => $form->createView(),
-                    ]);
+                } else {
+                    $check = $passwordConfirmationGuard->check($user, $form->get('currentPassword')->getData());
+                    if (PasswordConfirmationGuard::THROTTLED === $check) {
+                        $form->get('currentPassword')->addError(new \Symfony\Component\Form\FormError('Trop de tentatives. Patientez avant de réessayer.'));
+                    } elseif (PasswordConfirmationGuard::OK !== $check) {
+                        $form->get('currentPassword')->addError(new \Symfony\Component\Form\FormError('Mot de passe actuel incorrect.'));
+                    } else {
+                        $user->setPassword($passwordHasher->hashPassword($user, $plainPassword));
+                        $user->setPasswordChangedAt(new \DateTimeImmutable());
+                        $userSessionRevoker->revokeAll($user);
+                    }
                 }
             }
 
-            $user->setUpdatedAt(new \DateTimeImmutable());
-            $entityManager->flush();
+            if (!$form->get('plainPassword')->getErrors()->count() && !$form->get('currentPassword')->getErrors()->count()) {
+                $user->setUpdatedAt(new \DateTimeImmutable());
+                $entityManager->flush();
 
-            $this->addFlash('success', 'Profil mis à jour avec succès !');
+                $this->addFlash('success', 'Profil mis à jour avec succès !');
 
-            return $this->redirectToRoute('member_profile_read');
+                return $this->redirectToRoute('member_profile_read');
+            }
         }
 
         return $this->render('member/profile/update.html.twig', [
@@ -110,37 +124,48 @@ class MemberProfileController extends AbstractController
         ]);
     }
 
+    /**
+     * Toujours une auto-édition dans cet espace : le mot de passe ACTUEL est
+     * exigé (ChangePasswordFormType, P1 #7) — jamais ResetPasswordFormType
+     * ici, réservé au mot de passe OUBLIÉ (SecurityController), un cas où
+     * l'ancien mot de passe n'existe par définition pas.
+     */
     #[Route('/mot-de-passe', name: 'change_password', methods: ['GET', 'POST'])]
     public function changePassword(
         Request $request,
         EntityManagerInterface $entityManager,
         UserPasswordHasherInterface $passwordHasher,
+        PasswordConfirmationGuard $passwordConfirmationGuard,
+        UserSessionRevoker $userSessionRevoker,
     ): Response {
         $user = $this->currentUser();
 
-        // Formulaire dédié (2 champs) plutôt que ProfileType + validation_groups :
-        // ProfileType a 10 champs mappés sur le même User, donc form_end(form)
-        // (sans render_rest:false) auto-rendait TOUS les autres champs
-        // (nom/email/téléphone/rôles système...) sur cette page censée ne
-        // montrer que le mot de passe.
-        $form = $this->createForm(ResetPasswordFormType::class);
+        $form = $this->createForm(ChangePasswordFormType::class);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $plainPassword = $form->get('plainPassword')->getData();
             $confirmPassword = $form->get('confirmPassword')->getData();
 
-            if ($plainPassword === $confirmPassword) {
-                $hashedPassword = $passwordHasher->hashPassword($user, $plainPassword);
-                $user->setPassword($hashedPassword);
-                $user->setPasswordChangedAt(new \DateTimeImmutable());
-                $entityManager->flush();
+            if ($plainPassword !== $confirmPassword) {
+                $form->get('plainPassword')->addError(new \Symfony\Component\Form\FormError('Les mots de passe ne correspondent pas.'));
+            } else {
+                $check = $passwordConfirmationGuard->check($user, $form->get('currentPassword')->getData());
+                if (PasswordConfirmationGuard::THROTTLED === $check) {
+                    $form->get('currentPassword')->addError(new \Symfony\Component\Form\FormError('Trop de tentatives. Patientez avant de réessayer.'));
+                } elseif (PasswordConfirmationGuard::OK !== $check) {
+                    $form->get('currentPassword')->addError(new \Symfony\Component\Form\FormError('Mot de passe actuel incorrect.'));
+                } else {
+                    $user->setPassword($passwordHasher->hashPassword($user, $plainPassword));
+                    $user->setPasswordChangedAt(new \DateTimeImmutable());
+                    $userSessionRevoker->revokeAll($user);
+                    $entityManager->flush();
 
-                $this->addFlash('success', 'Mot de passe changé avec succès !');
+                    $this->addFlash('success', 'Mot de passe changé avec succès !');
 
-                return $this->redirectToRoute('member_profile_read');
+                    return $this->redirectToRoute('member_profile_read');
+                }
             }
-            $form->get('plainPassword')->addError(new \Symfony\Component\Form\FormError('Les mots de passe ne correspondent pas.'));
         }
 
         return $this->render('member/profile/change_password.html.twig', [

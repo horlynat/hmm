@@ -3,6 +3,7 @@
 namespace App\EventSubscriber;
 
 use App\Entity\User;
+use App\Security\TwoFactorMandatePolicy;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -44,7 +45,7 @@ final class AccountStatusSubscriber implements EventSubscriberInterface
      * reste accessible même à un compte bloqué avec un cookie de session
      * résiduel.
      */
-    private const IN_SCOPE_PATTERN = '#^/(admin|profile|projects|mes-devis)(/|$)#';
+    private const IN_SCOPE_PATTERN = '#^/(admin|profile|projects|mes-devis|user/profil)(/|$)#';
 
     /**
      * Chemins toujours exemptés, même sous une zone ci-dessus : les deux
@@ -60,6 +61,7 @@ final class AccountStatusSubscriber implements EventSubscriberInterface
     public function __construct(
         private readonly Security $security,
         private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly TwoFactorMandatePolicy $twoFactorMandatePolicy,
     ) {
     }
 
@@ -76,7 +78,9 @@ final class AccountStatusSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $path = $event->getRequest()->getPathInfo();
+        // Chemin décodé, comme le pare-feu et le routeur (contre-audit B2,
+        // 11e passe) : `/%61dmin/…` échappait à la redirection « compte bloqué ».
+        $path = rawurldecode($event->getRequest()->getPathInfo());
         if (1 !== preg_match(self::IN_SCOPE_PATTERN, $path) || 1 === preg_match(self::SKIP_PATTERN, $path)) {
             return;
         }
@@ -128,9 +132,13 @@ final class AccountStatusSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // 2FA obligatoire sur l'espace membre (client/collaborateur) uniquement —
-        // le back-office (ROLE_EDITOR+) a sa propre gestion, hors périmètre ici.
-        if (!$isAdminArea && !$user->isTotpAuthenticationEnabled()) {
+        // 2FA obligatoire (P1 #13) : tout compte espace membre (client/
+        // collaborateur, sans ROLE_EDITOR) ET tout compte ROLE_ADMIN+ du
+        // back-office — cf. App\Security\TwoFactorMandatePolicy, seule
+        // source de cette règle (partagée avec TwoFactorController côté web
+        // et ApiTwoFactorEnforcementSubscriber côté API). Ne verrouille
+        // jamais /profile/2fa/setup ni /logout (SKIP_PATTERN ci-dessus).
+        if ($this->twoFactorMandatePolicy->needsEnforcement($user)) {
             $event->setController(fn () => new RedirectResponse($this->urlGenerator->generate('profile_two_factor_setup')));
         }
     }

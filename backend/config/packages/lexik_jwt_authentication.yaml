@@ -2,3 +2,22 @@ lexik_jwt_authentication:
     secret_key: '%env(resolve:JWT_SECRET_KEY)%'
     public_key: '%env(resolve:JWT_PUBLIC_KEY)%'
     pass_phrase: '%env(JWT_PASSPHRASE)%'
+
+    # Durée de vie explicite du jeton d'accès API (avant : 3600 s implicites).
+    # 1800 s = 30 min, alignée sur la durée de vie d'une session web inactive
+    # (framework.session.gc_maxlifetime) : un jeton volé et non révoqué reste
+    # exploitable au plus 30 min. Pas plus court : le frontend n'a pas de
+    # jeton de rafraîchissement (reconnexion obligatoire à expiration, le
+    # cookie httpOnly suit `exp`), et la révocation active est désormais
+    # assurée par POST /api/logout (jti) et le claim `tv` (token_version) —
+    # cf. App\Security\Api\JwtRevocationSubscriber.
+    token_ttl: 1800
+
+    # Liste de blocage par `jti` (ajouté automatiquement aux jetons quand
+    # cette option est active) : POST /api/logout y inscrit le jeton courant
+    # jusqu'à son `exp`. Stockage en base (pool cache.jwt_blocklist, table
+    # cache_items) : survit aux redéploiements, contrairement au cache
+    # fichier du conteneur.
+    blocklist_token:
+        enabled: true
+        cache: cache.jwt_blocklist

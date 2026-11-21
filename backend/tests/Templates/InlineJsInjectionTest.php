@@ -3,9 +3,8 @@
 namespace App\Tests\Templates;
 
 use App\Entity\User;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Functional\FunctionalTestCase;
 use Symfony\Component\Finder\Finder;
 
 /**
@@ -24,7 +23,7 @@ use Symfony\Component\Finder\Finder;
  *    attribut `on…` ni dans aucun <script>, et doit la restituer intacte
  *    (en simple donnée) dans `data-confirm-message-value`.
  */
-final class InlineJsInjectionTest extends WebTestCase
+final class InlineJsInjectionTest extends FunctionalTestCase
 {
     private const PAYLOAD = "');alert(1);//";
 
@@ -50,17 +49,14 @@ final class InlineJsInjectionTest extends WebTestCase
 
     public function testMaliciousNameAndEmailNeverReachExecutableJs(): void
     {
-        $client = static::createClient();
-        /** @var EntityManagerInterface $em */
-        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $client = $this->client;
+        $em = $this->em();
 
         $suffix = bin2hex(random_bytes(4));
-        $admin = (new User())
-            ->setEmail("xss-admin-{$suffix}@example.test")
-            ->setRoles(['ROLE_SUPER_ADMIN'])
-            ->setSuperAdminElevatedUntil(new \DateTimeImmutable('+10 minutes'))
-            ->setIsVerified(true);
-        $admin->setPassword('!');
+        // Vrai parcours B2 : super-admin avec 2FA (obligatoire pour le
+        // back-office), élévation demandée par mot de passe DANS cette
+        // session (elle n'est jamais déduite de la seule date en base).
+        $admin = $this->createUser(['ROLE_ADMIN', 'ROLE_SUPER_ADMIN'], twoFactor: true, email: "sa-{$suffix}@example.test");
 
         $victim = (new User())
             ->setEmail("x".self::PAYLOAD."{$suffix}@example.test")
@@ -74,13 +70,16 @@ final class InlineJsInjectionTest extends WebTestCase
             ->setRoles(['ROLE_ADMIN']);
         $victimAdmin->setPassword('!');
 
-        $em->persist($admin);
         $em->persist($victim);
         $em->persist($victimAdmin);
         $em->flush();
 
         try {
             $client->loginUser($admin, 'main');
+            $crawler = $client->request('GET', '/admin/profil/'.$admin->getId());
+            self::assertResponseIsSuccessful();
+            $client->submit($crawler->filter('form[action$="/profile/elevation/activate"]')->form(['password' => self::PASSWORD]));
+            self::assertResponseRedirects();
 
             $pages = [
                 '/admin/users/'.$victim->getId(),

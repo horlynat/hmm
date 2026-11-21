@@ -34,9 +34,15 @@ final class UserChecker implements UserCheckerInterface
 {
     public function checkPreAuth(UserInterface $user): void
     {
-        // Volontairement vide : aucun contrôle de statut avant la validation du
-        // mot de passe, pour ne pas révéler l'existence ou l'état d'un compte
-        // à qui ne connaît pas le mot de passe (anti-énumération).
+        // Aucun contrôle de statut « bavard » avant la validation du mot de
+        // passe (anti-énumération). Seule exception : un compte verrouillé est
+        // refusé ICI, avant le mot de passe, avec exactement la réponse d'un
+        // mauvais mot de passe — sinon, pendant le verrou, « verrouillé »
+        // (bon mot de passe) vs « identifiants invalides » (mauvais) était un
+        // oracle de mot de passe (P1 #10).
+        if ($user instanceof User && $user->isLocked()) {
+            throw new LockedAccountAuthenticationException('Compte verrouillé.');
+        }
     }
 
     public function checkPostAuth(UserInterface $user, ?TokenInterface $token = null): void
@@ -51,10 +57,6 @@ final class UserChecker implements UserCheckerInterface
 
         if (!$user->isActive()) {
             throw new CustomUserMessageAccountStatusException('Votre compte a été désactivé. Contactez le support pour plus d\'informations.');
-        }
-
-        if ($user->isLocked()) {
-            throw new CustomUserMessageAccountStatusException('Votre compte est temporairement verrouillé suite à plusieurs échecs de connexion. Réessayez plus tard.');
         }
 
         if ($user->isExpired()) {

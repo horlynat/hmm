@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Exception\TooManyRequestsException;
 use App\Repository\UserRepository;
 use App\Service\AccountLinkResolver;
+use App\Service\UserSessionRevoker;
 use App\Service\AuditLogger;
 use App\Service\EmailManager;
 use App\Service\JWTService;
@@ -93,6 +94,7 @@ final class PasswordResetController extends AbstractController
         EntityManagerInterface $entityManager,
         ValidatorInterface $validator,
         AuditLogger $auditLogger,
+        UserSessionRevoker $userSessionRevoker,
     ): JsonResponse {
         $payload = json_decode($request->getContent(), true);
         if (!\is_array($payload)) {
@@ -130,6 +132,8 @@ final class PasswordResetController extends AbstractController
         // setPassword() invalide aussi passwordResetRequestedAt (usage unique).
         $user->setPassword($passwordHasher->hashPassword($user, $plainPassword));
         $user->setPasswordChangedAt(new \DateTimeImmutable());
+        // Toutes les sessions, remember-me et JWT antérieurs tombent (P1 #8).
+        $userSessionRevoker->revokeAll($user);
         $entityManager->flush();
 
         $auditLogger->log(User::class, (int) $user->getId(), $user->getEmail(), 'password_reset_api');

@@ -19,10 +19,13 @@ framework:
 
     # Liste blanche d'hôtes (regex, séparées par des virgules) : toute requête
     # dont le Host n'y figure pas reçoit une 400 avant d'atteindre un
-    # contrôleur. Vide = aucune restriction (dev/test). En prod, au minimum :
-    #   SYMFONY_TRUSTED_HOSTS='^(api|dark)\.horlynat\.com$,^backend$,^localhost$,^127\.0\.0\.1$'
-    # (`backend` = appels internes du frontend Next.js via le réseau Docker,
-    # 127.0.0.1 = build du frontend et sondes locales) — cf. infra/README.md.
+    # contrôleur. Vide = aucune restriction (dev/test). En prod (valeur par
+    # défaut de infra/docker-compose.prod.yml) :
+    #   ^(api|dark)\.horlynat\.com$,^hmm-backend$
+    # (`hmm-backend` = appels internes du frontend Next.js et build du
+    # frontend, alias propre au portfolio sur le réseau Docker partagé ; plus
+    # de `backend` ni de 127.0.0.1 depuis les PR #150 et B2) — cf.
+    # infra/README.md.
     trusted_hosts: '%env(default::SYMFONY_TRUSTED_HOSTS)%'
 
     # Sessions sécurisées
@@ -63,6 +66,16 @@ framework:
             policy: fixed_window
             limit: 5
             interval: '1 minute'
+        # Re-saisie du mot de passe ACTUEL par un utilisateur déjà connecté
+        # (PATCH/DELETE /api/me, désactivation 2FA, régénération des codes de
+        # récupération, changement de mot de passe/e-mail depuis les profils
+        # web) — App\Security\PasswordConfirmationGuard. Sans limite, chacun
+        # de ces écrans était un oracle de mot de passe exploitable avec une
+        # session ou un JWT volé. Clé = identifiant du compte.
+        password_confirmation:
+            policy: fixed_window
+            limit: 5
+            interval: '15 minutes'
         # Anti-bruteforce du code TOTP à la connexion (/2fa_check). Scheb ne
         # limite pas nativement les tentatives ; sans ce garde-fou, un code à
         # 6 chiffres (1 000 000 de combinaisons, fenêtre TOTP ~30-90s) resterait
@@ -80,6 +93,16 @@ framework:
             policy: fixed_window
             limit: 5
             interval: '15 minutes'
+        # Demandes de changement d'e-mail (ProfileEmailChangeController) :
+        # chaque demande valide envoie un mail vers une adresse CHOISIE par le
+        # demandeur. PasswordConfirmationGuard remet son compteur à zéro après
+        # un mot de passe correct — sans ce limiteur, une session + le mot de
+        # passe permettaient d'envoyer des mails sans limite vers des
+        # adresses arbitraires (contre-audit B2). Clé = id du compte.
+        email_change_request:
+            policy: fixed_window
+            limit: 3
+            interval: '1 hour'
         # Anti-spam des notifications admin par email (ErrorNotifier) : au plus
         # 1 email par heure et par classe d'exception. Pool dédié (cache.yaml)
         # pour pouvoir le vider isolément sans affecter les autres limiteurs.

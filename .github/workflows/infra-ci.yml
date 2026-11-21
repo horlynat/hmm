@@ -1,0 +1,45 @@
+name: Infra CI
+
+# Bancs d'attaque des scripts de déploiement (contre-audit B2) : jusqu'ici
+# lancés seulement à la main. Aucun accès au VPS, aucun secret : tout tourne
+# sur le runner (dossiers temporaires, ssh simulé, `docker compose config`).
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Syntaxe des scripts
+        run: |
+          set -euo pipefail
+          for f in infra/scripts/*.sh infra/scripts/tests/*.sh; do
+            bash -n "$f"
+          done
+
+      - name: Compose de prod valide
+        run: docker compose --env-file infra/.env.prod.example -f infra/docker-compose.prod.yml config -q
+
+      - name: Banc — contrôle des variables de sécurité (.env.prod)
+        run: bash infra/scripts/tests/check-env-prod.test.sh
+
+      - name: Banc — passerelle SSH de la clé de déploiement
+        run: |
+          set -euo pipefail
+          # Même chemin que le banc et que la passerelle (HMM_RRSYNC par défaut).
+          test -x /usr/bin/rrsync || { echo "::error::/usr/bin/rrsync absent du runner (paquet rsync)"; exit 1; }
+          bash infra/scripts/tests/deploy-ssh-gate.test.sh

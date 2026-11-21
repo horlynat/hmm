@@ -7,7 +7,6 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
-use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -24,6 +23,16 @@ use Symfony\Component\Validator\Constraints\PasswordStrength;
  * (élévation de privilèges, contournement d'un bannissement...). Ces champs
  * restent gérés exclusivement via UserType, dans les contrôleurs Admin*
  * (réservés ROLE_ADMIN, avec les garde-fous UserVoter appropriés).
+ *
+ * P1 #7 : `email` et `phone` retirés — alignement sur App\Controller\Api\
+ * MeController::EDITABLE_FIELDS, qui n'autorise ni l'un ni l'autre en
+ * self-service (l'e-mail passe désormais par le flux dédié en deux temps,
+ * App\Controller\ProfileEmailChangeController ; le téléphone reste modifiable
+ * uniquement par un administrateur via UserType). `currentPassword` (non
+ * mappé) est ajouté : revalidé par le contrôleur, UNIQUEMENT quand l'auteur
+ * de la requête édite SON PROPRE compte et renseigne un nouveau mot de passe
+ * — jamais quand un administrateur édite le compte d'un tiers (cf. docblocks
+ * de MemberProfileController::update() / AdminProfileController::update()).
  */
 class ProfileType extends AbstractType
 {
@@ -44,16 +53,13 @@ class ProfileType extends AbstractType
                     ),
                 ],
             ])
-            ->add('email', EmailType::class, [
-                'label' => 'Email',
-                'attr' => [
-                    'class' => 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500',
-                ],
-            ])
-            ->add('phone', TextType::class, [
-                'label' => 'Téléphone',
+            ->add('currentPassword', PasswordType::class, [
+                'mapped' => false,
                 'required' => false,
+                'label' => 'Mot de passe actuel',
                 'attr' => [
+                    'autocomplete' => 'current-password',
+                    'placeholder' => 'Requis pour changer votre mot de passe',
                     'class' => 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500',
                 ],
             ])

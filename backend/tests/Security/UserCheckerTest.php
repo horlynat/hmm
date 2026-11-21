@@ -54,22 +54,33 @@ final class UserCheckerTest extends TestCase
         $this->createChecker()->checkPostAuth($this->createUser(false, true));
     }
 
-    public function testLockedUserIsRejectedPostAuth(): void
+    /**
+     * P1 #10 : le verrou est vérifié AVANT le mot de passe, avec la même
+     * clé de message qu'un mauvais mot de passe (aucun oracle).
+     */
+    public function testLockedUserIsRejectedPreAuthAsBadCredentials(): void
     {
         $user = $this->createUser(true, true);
         $user->setLockedUntil(new \DateTimeImmutable('+15 minutes'));
 
-        $this->expectException(CustomUserMessageAccountStatusException::class);
-        $this->expectExceptionMessageMatches('/verrouillé/');
+        try {
+            $this->createChecker()->checkPreAuth($user);
+            self::fail('Un compte verrouillé doit être refusé avant la vérification du mot de passe.');
+        } catch (\App\Security\LockedAccountAuthenticationException $e) {
+            self::assertInstanceOf(\Symfony\Component\Security\Core\Exception\BadCredentialsException::class, $e);
+            self::assertSame((new \Symfony\Component\Security\Core\Exception\BadCredentialsException())->getMessageKey(), $e->getMessageKey());
+        }
 
+        // Plus aucun message spécifique après le mot de passe.
         $this->createChecker()->checkPostAuth($user);
     }
 
-    public function testUserWithExpiredLockPassesPostAuth(): void
+    public function testUserWithExpiredLockPassesPreAndPostAuth(): void
     {
         $user = $this->createUser(true, true);
         $user->setLockedUntil(new \DateTimeImmutable('-1 minute'));
 
+        $this->createChecker()->checkPreAuth($user);
         $this->createChecker()->checkPostAuth($user);
         $this->addToAssertionCount(1);
     }

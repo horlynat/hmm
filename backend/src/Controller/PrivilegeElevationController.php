@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Security\SuperAdminElevationContext;
 use App\Service\AuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -12,7 +13,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Security\Http\Authenticator\Token\PostAuthenticationToken;
 
 /**
  * PAM (Privileged Access Management) en libre-service : ROLE_SUPER_ADMIN
@@ -27,6 +30,12 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
  *
  * Pas de paramètre {id} : on ne gère jamais l'élévation d'un AUTRE compte
  * ici, uniquement celle de l'appelant (même principe que TwoFactorController).
+ *
+ * L'élévation est liée à CETTE session (marqueur de session, cf.
+ * SuperAdminElevationContext) : elle ne s'étend jamais aux JWT du compte ni à
+ * ses autres sessions. Le jeton de sécurité de la session est reconstruit
+ * avec les nouveaux rôles, sans quoi le ContextListener verrait des rôles
+ * différents à la requête suivante et déconnecterait l'utilisateur.
  */
 #[Route('/profile/elevation', name: 'profile_elevation_')]
 #[IsGranted('ROLE_ADMIN')]
@@ -37,11 +46,13 @@ class PrivilegeElevationController extends AbstractController
     #[Route('/activate', name: 'activate', methods: ['POST'])]
     public function activate(
         Request $request,
+        TokenStorageInterface $tokenStorage,
         EntityManagerInterface $entityManager,
         UserPasswordHasherInterface $passwordHasher,
         AuditLogger $auditLogger,
         #[Autowire(service: 'limiter.privilege_elevation')]
         RateLimiterFactory $privilegeElevationLimiter,
+        \App\Repository\UserSessionRepository $userSessionRepository,
     ): Response {
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -76,10 +87,28 @@ class PrivilegeElevationController extends AbstractController
             return $redirect;
         }
 
-        $until = new \DateTimeImmutable(sprintf('+%d minutes', self::ELEVATION_DURATION_MINUTES));
+        // Seconde entière : l'horodatage sert de lien entre la base et le
+        // marqueur de session (comparaison exacte).
+        $until = (new \DateTimeImmutable())->setTimestamp(time() + self::ELEVATION_DURATION_MINUTES * 60);
         $user->setSuperAdminElevatedUntil($until);
         $auditLogger->log(User::class, (int) $user->getId(), $user->getEmail(), 'super_admin_elevated', sprintf('Jusqu\'à %s.', $until->format('d/m/Y H:i')));
+
+        // Contre-audit B2 : nouvel identifiant de session au moment où cette
+        // session devient super-admin (défense contre la fixation : un
+        // identifiant connu d'un tiers avant l'élévation ne vaut plus rien
+        // après). L'ancien est détruit ; le suivi des sessions (UserSession :
+        // « mes sessions », révocation ciblée) est rattaché au nouveau.
+        $session = $request->getSession();
+        $previousId = $session->getId();
+        $session->migrate(true);
+        if ('' !== $previousId && $previousId !== $session->getId()) {
+            $userSessionRepository->findOneBySessionId($previousId)?->rebindSessionId($session->getId());
+        }
         $entityManager->flush();
+
+        $session->set(SuperAdminElevationContext::SESSION_KEY, ['user' => $user->getUserIdentifier(), 'until' => $until->getTimestamp()]);
+        SuperAdminElevationContext::grant($user->getUserIdentifier(), $until->getTimestamp());
+        $this->refreshSecurityToken($tokenStorage, $user);
 
         $this->addFlash('success', sprintf('Mode Super Administrateur activé jusqu\'à %s.', $until->format('H:i')));
 
@@ -87,7 +116,7 @@ class PrivilegeElevationController extends AbstractController
     }
 
     #[Route('/deactivate', name: 'deactivate', methods: ['POST'])]
-    public function deactivate(Request $request, EntityManagerInterface $entityManager, AuditLogger $auditLogger): Response
+    public function deactivate(Request $request, TokenStorageInterface $tokenStorage, EntityManagerInterface $entityManager, AuditLogger $auditLogger): Response
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -109,6 +138,20 @@ class PrivilegeElevationController extends AbstractController
             $this->addFlash('success', 'Mode Super Administrateur désactivé.');
         }
 
+        $request->getSession()->remove(SuperAdminElevationContext::SESSION_KEY);
+        SuperAdminElevationContext::reset();
+        $this->refreshSecurityToken($tokenStorage, $user);
+
         return $redirect;
+    }
+
+    private function refreshSecurityToken(TokenStorageInterface $tokenStorage, User $user): void
+    {
+        $token = $tokenStorage->getToken();
+        if (null === $token || !method_exists($token, 'getFirewallName')) {
+            return;
+        }
+
+        $tokenStorage->setToken(new PostAuthenticationToken($user, $token->getFirewallName(), $user->getRoles()));
     }
 }

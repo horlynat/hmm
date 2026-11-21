@@ -52,8 +52,10 @@ class UserSession
     {
         $this->user = $user;
         $this->sessionId = $sessionId;
-        $this->ip = $ip;
-        $this->userAgent = $userAgent;
+        // Tronqués aux longueurs de colonne : un User-Agent démesuré ne doit
+        // jamais faire échouer l'ouverture de session (P1 #10).
+        $this->ip = null === $ip ? null : mb_substr($ip, 0, 45);
+        $this->userAgent = null === $userAgent ? null : mb_substr($userAgent, 0, 255);
         $this->loginHistory = $loginHistory;
     }
 
@@ -70,6 +72,17 @@ class UserSession
     public function getSessionId(): string
     {
         return $this->sessionId;
+    }
+
+    /**
+     * Suit un changement d'identifiant de session (Session::migrate()) sans
+     * perdre l'historique de cette connexion (appareil, IP, LoginHistory).
+     */
+    public function rebindSessionId(string $sessionId): static
+    {
+        $this->sessionId = $sessionId;
+
+        return $this;
     }
 
     public function getIp(): ?string

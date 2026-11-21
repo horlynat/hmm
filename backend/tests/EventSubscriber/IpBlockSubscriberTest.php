@@ -25,6 +25,11 @@ final class IpBlockSubscriberTest extends TestCase
         yield 'api login check 2fa POST' => ['POST', '/api/login_check/2fa', true];
         yield 'unrelated path' => ['POST', '/admin/dashboard/', false];
         yield 'register is not a login attempt' => ['POST', '/register', false];
+        // Contre-audit B2 (11e passe) : le pare-feu décode le chemin ; le
+        // blocage d'IP doit voir la même tentative de connexion.
+        yield 'api login check encodé (%6b)' => ['POST', '/api/login_chec%6b', true];
+        yield 'login encodé (%6e)' => ['POST', '/logi%6e', true];
+        yield '2fa check encodé (%5f)' => ['POST', '/2fa%5fcheck', true];
     }
 
     #[DataProvider('pathProvider')]

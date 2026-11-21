@@ -312,8 +312,26 @@ export async function changePassword(
     .safeParse({ currentPassword, plainPassword });
   if (!parsed.success) return invalidInput;
 
-  const result = await authedMutation("changePassword", "/me", { method: "PATCH", json: parsed.data }, ignoreBody);
-  return result.ok ? { ok: true } : result;
+  const result = await authedMutation(
+    "changePassword",
+    "/me",
+    { method: "PATCH", json: parsed.data },
+    jsonBody<{ token?: unknown }>(),
+  );
+  if (!result.ok) return result;
+
+  // Le backend révoque TOUS les jetons du compte au changement de mot de
+  // passe (y compris celui de cette requête) et renvoie un nouveau jeton
+  // pour cet appareil : on remplace le cookie, sinon la session tomberait
+  // à la requête suivante. Sans jeton valide renvoyé, on efface la session
+  // (reconnexion propre plutôt qu'un cookie révoqué).
+  const token = result.data?.token;
+  if (typeof token === "string" && /^[\w-]+\.[\w-]+\.[\w-]+$/.test(token)) {
+    await setSessionCookie(token);
+  } else {
+    await clearSessionCookie();
+  }
+  return { ok: true };
 }
 
 /**
@@ -588,8 +606,13 @@ export async function requestInvoiceRevision(
  * cookie de session localement dans tous les cas où l'appel réussit — un
  * compte supprimé ne doit plus être considéré comme connecté.
  */
-export async function deleteAccount(): Promise<ApiPostResult> {
-  const result = await authedMutation("deleteAccount", "/me", { method: "DELETE" }, ignoreBody);
+export async function deleteAccount(currentPassword: string): Promise<ApiPostResult> {
+  // Action irréversible : le backend exige le mot de passe actuel (un jeton
+  // volé ne doit pas suffire à effacer le compte, cf. MeController::delete()).
+  const parsed = z.object({ currentPassword: passwordInput }).safeParse({ currentPassword });
+  if (!parsed.success) return invalidInput;
+
+  const result = await authedMutation("deleteAccount", "/me", { method: "DELETE", json: parsed.data }, ignoreBody);
   if (!result.ok) return result;
 
   await clearSessionCookie();

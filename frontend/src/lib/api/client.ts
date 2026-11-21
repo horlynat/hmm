@@ -127,14 +127,23 @@ export function pickLocalizedList<T>(fr: T[], en: T[] | null | undefined, locale
  * formulaires qui veulent afficher un message précis plutôt que générique
  * (ex: inscription collaborateur). Partagé entre apiPost et apiPostWithData.
  */
+/**
+ * Message d'erreur du backend : `detail` (API Platform), sinon `code` (ex.
+ * `{"code":"2fa_required"}` d'ApiTwoFactorEnforcementSubscriber, sans
+ * `detail`) — un appelant peut ainsi réagir à un refus PRÉCIS plutôt qu'à
+ * n'importe quel « HTTP 403 ».
+ */
 async function extractErrorDetail(res: Response): Promise<string | null> {
   return res
     .json()
-    .then((body: unknown) =>
-      typeof body === "object" && body && "detail" in body
-        ? String((body as { detail: unknown }).detail)
-        : null,
-    )
+    .then((body: unknown) => {
+      if (typeof body !== "object" || !body) return null;
+      if ("detail" in body) return String((body as { detail: unknown }).detail);
+      if ("code" in body && typeof (body as { code: unknown }).code === "string") {
+        return (body as { code: string }).code;
+      }
+      return null;
+    })
     .catch(() => null);
 }
 

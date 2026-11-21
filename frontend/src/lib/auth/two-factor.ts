@@ -10,6 +10,15 @@ import type { SessionUser } from "@/lib/types";
  * passent pas par lui (ex. /api/me/export, qui relaie GET /api/me — route
  * exemptée côté backend, donc à contrôler ici).
  */
-export function mustSetUpTwoFactor(user: Pick<SessionUser, "roles" | "isTwoFactorEnabled">): boolean {
-  return !user.roles.includes("ROLE_EDITOR") && !user.isTwoFactorEnabled;
+export function mustSetUpTwoFactor(
+  user: Pick<SessionUser, "roles" | "isTwoFactorEnabled" | "isTwoFactorRequired">,
+): boolean {
+  if (user.isTwoFactorEnabled === true) return false;
+  // Contre-audit B2 : le backend expose sa propre règle (TwoFactorMandatePolicy,
+  // hiérarchie des rôles comprise) — c'est elle qui fait foi. L'ancienne
+  // approximation sur les rôles bruts exigeait la 2FA d'un modérateur/manager
+  // (non obligatoire côté backend). Repli sur cette approximation, plus
+  // stricte, seulement si le champ est absent ou invalide.
+  if (typeof user.isTwoFactorRequired === "boolean") return user.isTwoFactorRequired;
+  return !user.roles.includes("ROLE_EDITOR");
 }

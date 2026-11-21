@@ -120,7 +120,7 @@ describe("F2 — mandatory 2FA enforced on every Server Action", () => {
     ["changePassword", () => actions.changePassword("a", "b")],
     ["postProjectComment", () => actions.postProjectComment(1, "x")],
     ["validateInvoice", () => actions.validateInvoice(1)],
-    ["deleteAccount", () => actions.deleteAccount()],
+    ["deleteAccount", () => actions.deleteAccount("current-pw")],
     ["getCandidateMessages", () => actions.getCandidateMessages()],
     ["sendCandidateMessage", () => actions.sendCandidateMessage("hello world")],
     ["resendVerificationEmail", () => actions.resendVerificationEmail()],
@@ -144,9 +144,52 @@ describe("F2 — mandatory 2FA enforced on every Server Action", () => {
 
   it("deleteAccount keeps the session when the backend refuses", async () => {
     setFetch(async () => jsonResponse({ detail: "nope" }, 400));
-    expect(await actions.deleteAccount()).toEqual({ ok: false, error: "nope" });
+    expect(await actions.deleteAccount("current-pw")).toEqual({ ok: false, error: "nope" });
     expect(cookieJar.get("hmm_token")).toBe(TOKEN);
   });
+});
+
+describe("B2 — backend contract: token rotation and password-confirmed deletion", () => {
+  const NEW_TOKEN = "eyJhbGciOiJSUzI1NiJ9.eyJpYXQiOjF9.c2ln";
+
+  it("changePassword replaces the session cookie with the rotated token", async () => {
+    setFetch(async () => jsonResponse({ id: 1, token: NEW_TOKEN }));
+    expect(await actions.changePassword("old", "New-Passw0rd")).toEqual({ ok: true });
+    expect(cookieJar.get("hmm_token")).toBe(NEW_TOKEN);
+  });
+
+  it.each([
+    ["no token (older backend)", { id: 1 }],
+    ["non-string token", { id: 1, token: 42 }],
+    ["malformed token", { id: 1, token: "not a jwt; Path=/" }],
+  ])("changePassword clears the (revoked) session on %s", async (_label, body) => {
+    setFetch(async () => jsonResponse(body));
+    expect(await actions.changePassword("old", "New-Passw0rd")).toEqual({ ok: true });
+    expect(cookieJar.has("hmm_token")).toBe(false);
+  });
+
+  it("changePassword keeps the session when the backend refuses", async () => {
+    setFetch(async () => jsonResponse({ detail: "Mot de passe actuel incorrect." }, 422));
+    expect(await actions.changePassword("bad", "New-Passw0rd")).toEqual({ ok: false, error: "Mot de passe actuel incorrect." });
+    expect(cookieJar.get("hmm_token")).toBe(TOKEN);
+  });
+
+  it("deleteAccount sends the current password in the DELETE body", async () => {
+    setFetch(async () => new Response(null, { status: 204 }));
+    expect(await actions.deleteAccount("current-pw")).toEqual({ ok: true });
+    expect(fetchCalls[0].init.method).toBe("DELETE");
+    expect(JSON.parse(String(fetchCalls[0].init.body))).toEqual({ currentPassword: "current-pw" });
+    expect(cookieJar.has("hmm_token")).toBe(false);
+  });
+
+  it.each([[""], [undefined], [42], ["x".repeat(4097)]])(
+    "deleteAccount rejects %j before any backend call",
+    async (pw) => {
+      expect(await actions.deleteAccount(pw as string)).toEqual({ ok: false, error: "invalid_input" });
+      expect(fetchCalls).toHaveLength(0);
+      expect(cookieJar.get("hmm_token")).toBe(TOKEN);
+    },
+  );
 });
 
 describe("F3 — logout revokes the token server-side, then always clears the cookie", () => {
