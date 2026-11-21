@@ -5,4 +5,16 @@ secrets/*
 certs/*
 !certs/.gitkeep
 
+# Configuration réelle (seul le modèle est versionné)
 .env.prod
+.env.prod.*
+!.env.prod.example
+
+# Données produites sur le VPS (bind mounts du compose) : dumps SQL en
+# clair, journaux applicatifs.
+backups/
+logs/
+*.sql
+*.sql.gz
+*.sql.age
+*.log

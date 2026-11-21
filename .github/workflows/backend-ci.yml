@@ -14,6 +14,11 @@ on:
       - ".github/workflows/backend-ci.yml"
   workflow_dispatch:
 
+# Lecture seule pour tout le workflow : ce CI ne publie rien (l'image n'est
+# poussée que par deploy.yml, job dédié).
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -26,7 +31,7 @@ jobs:
       # les migrations committées sont écrites en SQL MySQL (AUTO_INCREMENT),
       # elles échouent sur un autre moteur.
       database:
-        image: mysql:8.0
+        image: mysql:8.0.46
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
           MYSQL_DATABASE: app_test
@@ -39,10 +44,12 @@ jobs:
           --health-retries=10
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: PHP 8.4 + extensions (miroir de l'image FrankenPHP de prod)
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         # update: true — toujours le dernier correctif 8.4, jamais le PHP
         # préinstallé (potentiellement antérieur) du runner : composer.json
         # exige ~8.4.27 (correctif PHP2Shell), un PHP plus ancien ferait
@@ -55,7 +62,7 @@ jobs:
           coverage: none
 
       - name: Cache Composer
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.cache/composer
           key: composer-${{ hashFiles('backend/composer.lock') }}
@@ -89,3 +96,59 @@ jobs:
           # en échec (exit 255) sur toute PR touchant backend/.
           DATABASE_URL: "mysql://root@127.0.0.1:3306/app?serverVersion=8.0&charset=utf8mb4"
         run: vendor/bin/phpunit
+
+  # Construit l'image de prod EXACTEMENT comme deploy.yml (même Dockerfile,
+  # même cache gha) mais sans la pousser, puis :
+  #  - vérifie le PHP embarqué (garde-fou PHP2Shell, cf. backend/Dockerfile) ;
+  #  - la scanne avec Trivy : échec sur toute vulnérabilité CRITICAL/HIGH
+  #    pour laquelle un correctif existe (--ignore-unfixed : une CVE sans
+  #    correctif publié ne bloque pas une PR, elle n'est pas actionnable).
+  # Trivy est lancé depuis son image officielle épinglée par digest, pas via
+  # aquasecurity/trivy-action (dont les tags ont été réécrits lors de la
+  # compromission de mars 2026) : rien d'autre que ce digest n'est exécuté.
+  image-scan:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: hmm-backend:ci
+      TRIVY_IMAGE: aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build de l'image backend (sans push)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ./backend
+          push: false
+          load: true
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Vérifier la version de PHP embarquée (>= 8.4.27 / >= 8.5.12)
+        run: |
+          set -euo pipefail
+          docker run --rm --entrypoint php "${IMAGE}" -r '
+            $v = PHP_VERSION;
+            $ok = (version_compare($v, "8.4.27", ">=") && version_compare($v, "8.5.0", "<"))
+               || version_compare($v, "8.5.12", ">=");
+            fwrite(STDOUT, "PHP ".$v.($ok ? " : OK" : " : VULNERABLE (PHP2Shell)")."\n");
+            exit($ok ? 0 : 1);'
+
+      - name: Trivy — vulnérabilités CRITICAL/HIGH corrigeables
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/trivy-cache"
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock:ro \
+            -v "${RUNNER_TEMP}/trivy-cache:/root/.cache/trivy" \
+            "${TRIVY_IMAGE}" image \
+              --scanners vuln \
+              --severity CRITICAL,HIGH \
+              --ignore-unfixed \
+              --exit-code 1 \
+              --no-progress \
+              "${IMAGE}"
