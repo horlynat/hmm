@@ -23,10 +23,20 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  * Un jeton émis avant ce mécanisme (sans `tv`) est traité comme `tv = 0` : il
  * reste valable jusqu'à son expiration naturelle tant que le compte n'a
  * jamais été révoqué.
+ *
+ * Contre-audit B2 (M2) : le compte est retrouvé par son e-mail, et un compte
+ * neuf part de `tv = 0`. Un ancien jeton de A restait donc valable contre un
+ * compte B créé ensuite sur l'ancienne adresse de A (changement d'e-mail, ou
+ * suppression puis réinscription) — B héritait de la session de A. Claim
+ * `uid` (identifiant du compte) ajouté à l'émission et exigé au décodage
+ * quand il est présent. Un jeton sans `uid` ne peut provenir que de l'ancien
+ * code : il expire au plus tard une durée de vie de jeton après le
+ * déploiement (token_ttl).
  */
 final class JwtRevocationSubscriber implements EventSubscriberInterface
 {
     public const CLAIM = 'tv';
+    public const USER_ID_CLAIM = 'uid';
 
     public function __construct(private readonly Connection $connection)
     {
@@ -49,6 +59,7 @@ final class JwtRevocationSubscriber implements EventSubscriberInterface
 
         $payload = $event->getData();
         $payload[self::CLAIM] = $user->getTokenVersion();
+        $payload[self::USER_ID_CLAIM] = $user->getId();
         $event->setData($payload);
     }
 
@@ -62,15 +73,24 @@ final class JwtRevocationSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $current = $this->connection->fetchOne('SELECT token_version FROM `user` WHERE email = :email', ['email' => $identifier]);
-        if (false === $current) {
+        $row = $this->connection->fetchAssociative('SELECT id, token_version FROM `user` WHERE email = :email', ['email' => $identifier]);
+        if (false === $row) {
             $event->markAsInvalid();
 
             return;
         }
 
+        if (\array_key_exists(self::USER_ID_CLAIM, $payload)) {
+            $claimedId = $payload[self::USER_ID_CLAIM];
+            if (!\is_int($claimedId) || $claimedId !== (int) $row['id']) {
+                $event->markAsInvalid();
+
+                return;
+            }
+        }
+
         $claimed = $payload[self::CLAIM] ?? 0;
-        if (!\is_int($claimed) || $claimed !== (int) $current) {
+        if (!\is_int($claimed) || $claimed !== (int) $row['token_version']) {
             $event->markAsInvalid();
         }
     }

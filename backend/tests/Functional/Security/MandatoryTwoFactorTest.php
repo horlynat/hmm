@@ -140,6 +140,58 @@ final class MandatoryTwoFactorTest extends FunctionalTestCase
         self::assertSame(1, preg_match('#^/api/me/2fa(/|$)#', '/api/me/2fa'));
     }
 
+    /**
+     * Contre-audit B2 (B1) : le contrôle ne couvrait que /api/me/** — un
+     * ROLE_ADMIN sans TOTP lisait avec son seul mot de passe les ressources
+     * staff d'API Platform.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function staffApiResources(): iterable
+    {
+        yield 'devis' => ['/api/quote_requests'];
+        yield 'messages de contact' => ['/api/contact_messages'];
+        yield 'abonnés newsletter' => ['/api/newsletter_subscribers'];
+        yield 'tickets support' => ['/api/support_tickets'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('staffApiResources')]
+    public function testAdminWithoutTwoFactorCannotReadStaffApiResources(string $uri): void
+    {
+        $admin = $this->createUser(['ROLE_ADMIN']);
+        $response = $this->jsonRequest('GET', $uri, null, $this->jwtFor($admin), ['HTTP_ACCEPT' => 'application/ld+json']);
+
+        self::assertSame(403, $response->getStatusCode(), $uri);
+        self::assertSame(['code' => '2fa_required'], $this->json($response));
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('staffApiResources')]
+    public function testAdminWithTwoFactorStillReadsStaffApiResources(string $uri): void
+    {
+        $admin = $this->createUser(['ROLE_ADMIN'], twoFactor: true);
+        $response = $this->jsonRequest('GET', $uri, null, $this->jwtFor($admin), ['HTTP_ACCEPT' => 'application/ld+json']);
+
+        self::assertSame(200, $response->getStatusCode(), $uri.' '.$response->getContent());
+    }
+
+    public function testAnonymousPublicApiIsUnaffected(): void
+    {
+        $response = $this->jsonRequest('GET', '/api/home_contents');
+
+        self::assertNotSame(403, $response->getStatusCode());
+    }
+
+    public function testApiExemptionsHavePathBoundaries(): void
+    {
+        $exempt = '#^/api/(me/2fa|login_check)(/|$)#';
+        self::assertSame(1, preg_match($exempt, '/api/login_check'));
+        self::assertSame(1, preg_match($exempt, '/api/login_check/2fa'));
+        self::assertSame(0, preg_match($exempt, '/api/login_checkx'));
+        self::assertSame(0, preg_match($exempt, '/api/quote_requests'));
+        self::assertSame(1, preg_match('#^/api(/|$)#', '/api'));
+        self::assertSame(0, preg_match('#^/api(/|$)#', '/apix'));
+    }
+
     public function testClientWithTwoFactorIsNotBlocked(): void
     {
         $client = $this->createUser(['ROLE_USER'], twoFactor: true);

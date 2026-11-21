@@ -179,10 +179,14 @@ class ProfileEmailChangeController extends AbstractController
         }
 
         $oldEmail = $user->getEmail();
-        $user->setEmail($newEmail); // clears pendingEmail/emailChangeRequestedAt itself
         // Changer l'identifiant de connexion est aussi sensible qu'un
         // changement de mot de passe : toute session/JWT antérieur tombe.
+        // AVANT setEmail() (contre-audit B2, M2) : les remember-me sont
+        // purgés par adresse — après le changement, ceux de l'ancienne
+        // adresse survivaient et restaient rejouables contre quiconque la
+        // reprendrait.
         $userSessionRevoker->revokeAll($user);
+        $user->setEmail($newEmail); // clears pendingEmail/emailChangeRequestedAt itself
         $entityManager->flush();
 
         $auditLogger->log(User::class, (int) $user->getId(), $newEmail, 'email_changed', sprintf('Ancienne adresse : %s.', $oldEmail));

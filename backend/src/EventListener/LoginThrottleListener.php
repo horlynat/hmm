@@ -2,6 +2,7 @@
 
 namespace App\EventListener;
 
+use App\Repository\UserRepository;
 use App\Security\LoginThrottle;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -28,6 +29,15 @@ use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
  *   délai (pas de réarmement), ni un CSRF invalide, ni un statut de compte.
  * - LoginSuccessEvent : remet la paire (e-mail, IP) à zéro et mémorise l'IP
  *   comme connue pour ce compte.
+ *
+ * Contre-audit B2 (M1) : les compteurs portent sur l'adresse CANONIQUE du
+ * compte. La colonne user.email est en utf8mb4_0900_ai_ci (insensible aux
+ * accents) : `vïctim@…` et `vîctim@…` chargent le même compte, mais
+ * avaient chacun leur compteur — le délai se contournait en changeant
+ * d'accent. On résout donc l'adresse par la base (même collation que la
+ * connexion) ; pour une adresse inconnue, repli sur un pliage ASCII
+ * (mêmes variantes regroupées, aucune différence de comportement qui
+ * trahirait l'existence du compte).
  */
 final class LoginThrottleListener
 {
@@ -37,6 +47,7 @@ final class LoginThrottleListener
         private readonly LoginThrottle $throttle,
         private readonly LoggerInterface $logger,
         private readonly RequestStack $requestStack,
+        private readonly UserRepository $userRepository,
     ) {
     }
 
@@ -50,7 +61,7 @@ final class LoginThrottleListener
 
         /** @var UserBadge $badge */
         $badge = $passport->getBadge(UserBadge::class);
-        $wait = $this->throttle->retryAfter($badge->getUserIdentifier(), $this->requestStack->getMainRequest()?->getClientIp());
+        $wait = $this->throttle->retryAfter($this->canonical($badge->getUserIdentifier()), $this->requestStack->getMainRequest()?->getClientIp());
         if ($wait > 0) {
             throw new TooManyLoginAttemptsAuthenticationException((int) ceil($wait / 60));
         }
@@ -74,7 +85,7 @@ final class LoginThrottleListener
         }
 
         try {
-            $this->throttle->recordFailure($email, $event->getRequest()->getClientIp());
+            $this->throttle->recordFailure($this->canonical($email), $event->getRequest()->getClientIp());
         } catch (\Throwable $e) {
             $this->logger->error('LoginThrottle : impossible d\'enregistrer un échec de connexion.', ['exception' => $e]);
         }
@@ -88,7 +99,27 @@ final class LoginThrottleListener
             return;
         }
 
-        $this->throttle->recordSuccess($event->getUser()->getUserIdentifier(), $event->getRequest()->getClientIp());
+        $this->throttle->recordSuccess($this->canonical($event->getUser()->getUserIdentifier()), $event->getRequest()->getClientIp());
+    }
+
+    private function canonical(string $identifier): string
+    {
+        $identifier = trim($identifier);
+        if ('' !== $identifier && mb_strlen($identifier) <= 180) {
+            try {
+                $user = $this->userRepository->findOneBy(['email' => $identifier]);
+                if (null !== $user) {
+                    return $user->getUserIdentifier();
+                }
+            } catch (\Throwable $e) {
+                $this->logger->warning('LoginThrottle : résolution de l\'adresse canonique impossible.', ['exception' => $e]);
+            }
+        }
+
+        static $fold = null;
+        $fold ??= \Transliterator::create('Any-Latin; Latin-ASCII; Lower()') ?: false;
+
+        return false === $fold ? $identifier : (string) ($fold->transliterate($identifier) ?: $identifier);
     }
 
     private function identifierFrom(LoginFailureEvent $event): ?string

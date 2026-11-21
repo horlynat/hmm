@@ -14,8 +14,14 @@ use Symfony\Component\HttpKernel\KernelEvents;
 /**
  * P1 #13 (b) — pour un compte soumis à la 2FA obligatoire
  * (App\Security\TwoFactorMandatePolicy) qui ne l'a pas activée, bloque
- * `/api/me/**` avec 403 JSON `{"code":"2fa_required"}` — CONTRAT partagé
- * avec le lot frontend.
+ * TOUTE requête `/api/**` authentifiée avec 403 JSON
+ * `{"code":"2fa_required"}` — CONTRAT partagé avec le lot frontend.
+ *
+ * Contre-audit B2 : limité à `/api/me/**`, le contrôle laissait un
+ * ROLE_ADMIN sans TOTP lire, avec son seul mot de passe, les ressources
+ * API Platform réservées au staff (devis, messages de contact, abonnés
+ * newsletter, tickets…). Le périmètre est donc tout `/api`, sauf la
+ * liste blanche ci-dessous ; une requête anonyme n'est jamais concernée.
  *
  * Avant ce correctif, `/api/login_check` délivrait un jeton complet même
  * pour un compte 2FA obligatoire non équipé (aucun second facteur
@@ -28,16 +34,17 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * - `GET /api/me` (le frontend doit pouvoir lire `isTwoFactorEnabled` pour
  *   savoir s'il doit rediriger vers la mise en place) ;
  * - `/api/me/2fa/**` (le flux de mise en place lui-même) ;
- * - `POST /api/logout` (route distincte, hors du préfixe `/api/me`, jamais
- *   bloquée — se déconnecter doit toujours rester possible).
+ * - `POST /api/logout` (se déconnecter doit toujours rester possible) ;
+ * - `/api/login_check/**` (connexion et second facteur : firewall dédié,
+ *   aucun utilisateur résolu ici de toute façon).
  *
  * `kernel.request`, après le firewall (qui résout déjà l'utilisateur pour un
  * firewall stateless comme `api`).
  */
 final class ApiTwoFactorEnforcementSubscriber implements EventSubscriberInterface
 {
-    private const IN_SCOPE_PATTERN = '#^/api/me(/|$)#';
-    private const EXEMPT_PATTERN = '#^/api/me/2fa(/|$)#';
+    private const IN_SCOPE_PATTERN = '#^/api(/|$)#';
+    private const EXEMPT_PATTERN = '#^/api/(me/2fa|login_check)(/|$)#';
 
     public function __construct(
         private readonly Security $security,
@@ -64,6 +71,10 @@ final class ApiTwoFactorEnforcementSubscriber implements EventSubscriberInterfac
         }
 
         if ('/api/me' === $path && $request->isMethod('GET')) {
+            return;
+        }
+
+        if ('/api/logout' === $path && $request->isMethod('POST')) {
             return;
         }
 

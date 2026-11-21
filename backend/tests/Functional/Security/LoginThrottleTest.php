@@ -44,6 +44,43 @@ final class LoginThrottleTest extends FunctionalTestCase
         self::assertStringNotContainsString('token', (string) $withGoodPassword->getContent());
     }
 
+    /**
+     * Contre-audit B2 (M1) : user.email est en collation insensible aux
+     * accents — une variante accentuée charge le même compte et ne doit pas
+     * repartir d'un compteur neuf.
+     */
+    public function testAccentVariantsShareTheSameCounter(): void
+    {
+        $user = $this->createUser(email: sprintf('victim-%s@test.invalid', bin2hex(random_bytes(4))));
+        $ip = self::ip();
+
+        for ($i = 0; $i < LoginThrottle::PAIR_FREE_FAILURES; ++$i) {
+            self::assertSame(401, $this->login($user->getEmail(), 'wrong'.$i, $ip)->getStatusCode());
+        }
+
+        foreach (['vïctim', 'vîctim', 'VICTÎM', ' victim'] as $variant) {
+            $email = str_replace('victim', $variant, $user->getEmail());
+            $response = $this->login($email, self::PASSWORD, $ip);
+            self::assertSame(401, $response->getStatusCode(), "La variante « $email » contourne le délai.");
+            self::assertStringNotContainsString('token', (string) $response->getContent());
+        }
+    }
+
+    public function testAccentVariantsOfAnUnknownEmailShareTheSameCounter(): void
+    {
+        $base = sprintf('nobody-%s@test.invalid', bin2hex(random_bytes(4)));
+        $ip = self::ip();
+
+        for ($i = 0; $i < LoginThrottle::PAIR_FREE_FAILURES; ++$i) {
+            $this->login($base, 'wrong'.$i, $ip);
+        }
+
+        $first = $this->login(str_replace('nobody', 'nöbody', $base), 'x', $ip);
+        $second = $this->login(str_replace('nobody', 'nòbody', $base), 'x', $ip);
+        self::assertSame($first->getContent(), $second->getContent());
+        self::assertSame(401, $first->getStatusCode());
+    }
+
     public function testUnknownEmailIsThrottledExactlyLikeAKnownOne(): void
     {
         $known = $this->createUser();
