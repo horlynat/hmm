@@ -3,6 +3,7 @@
 namespace App\Form;
 
 use App\Entity\AboutContent;
+use App\Form\DataTransformer\OfferLinesTransformer;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -75,6 +76,19 @@ class AboutContentType extends AbstractType
             ->add('visionTomorrowText', TextareaType::class, ['label' => 'Vision — "Demain"'])
             ->add('visionTomorrowTextEn', TextareaType::class, ['label' => 'Vision — "Demain" (anglais)', 'required' => false])
 
+            // --- Vision, mission, ambition ; parcours (refonte R5) ---
+            // Facultatifs : un texte vide masque le bloc correspondant sur le site.
+            ->add('visionPillar', TextareaType::class, ['label' => 'Carte « Vision »', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('visionPillarEn', TextareaType::class, ['label' => 'Carte « Vision » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('missionPillar', TextareaType::class, ['label' => 'Carte « Mission »', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('missionPillarEn', TextareaType::class, ['label' => 'Carte « Mission » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('ambitionPillar', TextareaType::class, ['label' => 'Carte « Ambition »', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('ambitionPillarEn', TextareaType::class, ['label' => 'Carte « Ambition » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('horizonMidText', TextareaType::class, ['label' => 'Ambition « D\'ici trois ans »', 'required' => false, 'help' => 'Entre « Aujourd\'hui » et « Demain » ci-dessus, affichés comme « Aujourd\'hui » et « À long terme ».', 'attr' => ['rows' => 3]])
+            ->add('horizonMidTextEn', TextareaType::class, ['label' => 'Ambition « D\'ici trois ans » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('learningText', TextareaType::class, ['label' => 'Parcours — encart « Toujours en formation »', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('learningTextEn', TextareaType::class, ['label' => 'Parcours — encart « Toujours en formation » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
+
             // --- Pourquoi moi ---
             ->add('why1Title', TextType::class, ['label' => 'Différenciateur 1 — titre'])
             ->add('why1TitleEn', TextType::class, ['label' => 'Différenciateur 1 — titre (anglais)', 'required' => false])
@@ -125,6 +139,20 @@ class AboutContentType extends AbstractType
             ->add('ctaSub', TextareaType::class, ['label' => 'Appel à l\'action — texte'])
             ->add('ctaSubEn', TextareaType::class, ['label' => 'Appel à l\'action — texte (anglais)', 'required' => false])
         ;
+
+        // Repères du parcours : « Depuis 2016 | dans le numérique », un par
+        // ligne. Ligne mal formée => erreur de formulaire (422), jamais 500.
+        $statsHelp = 'Un repère par ligne : « Depuis 2016 | dans le numérique » (6 au plus).';
+        foreach (['journeyStats' => false, 'journeyStatsEn' => true] as $field => $nullable) {
+            $builder->add($field, TextareaType::class, [
+                'label' => 'Parcours — repères chiffrés'.($nullable ? ' (anglais)' : ''),
+                'required' => false,
+                'help' => $statsHelp.($nullable ? ' Optionnel — même ordre que le français.' : ''),
+                'attr' => ['rows' => 4],
+                'invalid_message' => 'Format invalide — '.$statsHelp,
+            ]);
+            $builder->get($field)->addModelTransformer(new OfferLinesTransformer(OfferLinesTransformer::MODE_STAT, $nullable));
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void

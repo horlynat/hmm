@@ -19,6 +19,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: AboutContentRepository::class)]
 class AboutContent
 {
+    /** Longueur maximale des textes Vision/Mission/Ambition, horizon et formation. */
+    public const PILLAR_MAX = 600;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -171,6 +174,95 @@ class AboutContent
 
     #[Groups(['api_public', 'api_admin'])]
     private ?string $visionTomorrowTextEn = null;
+
+    // --- Vision, mission, ambition ; parcours (refonte 2026-11, lot R5) ---
+    //
+    // Facultatifs (chaîne vide = bloc masqué sur le site) ; mêmes garde-fous
+    // que les offres (Offer::SAFE_TEXT / SAFE_LINE : aucun caractère de
+    // contrôle ou invisible) et longueur bornée. Les setters acceptent null :
+    // un champ absent de la soumission ne doit jamais produire de 500
+    // (leçon du contre-audit R1).
+
+    /** Carte « Vision » (bloc Vision, mission, ambition). */
+    #[ORM\Column(type: Types::TEXT)]
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private string $visionPillar = '';
+
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $visionPillarEn = null;
+
+    /** Carte « Mission ». */
+    #[ORM\Column(type: Types::TEXT)]
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private string $missionPillar = '';
+
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $missionPillarEn = null;
+
+    /** Carte « Ambition ». */
+    #[ORM\Column(type: Types::TEXT)]
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private string $ambitionPillar = '';
+
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $ambitionPillarEn = null;
+
+    /** Ambition « D'ici trois ans » — entre visionTodayText (Aujourd'hui) et visionTomorrowText (À long terme). */
+    #[ORM\Column(type: Types::TEXT)]
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private string $horizonMidText = '';
+
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $horizonMidTextEn = null;
+
+    /** Encart « Toujours en formation » du parcours. */
+    #[ORM\Column(type: Types::TEXT)]
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private string $learningText = '';
+
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $learningTextEn = null;
+
+    /** @var list<array{value: string, label: string}> Repères du parcours (« Depuis 2016 » / « dans le numérique »). */
+    #[ORM\Column(type: Types::JSON)]
+    #[Assert\Type('list')]
+    #[Assert\Count(max: 6)]
+    #[Assert\All([new Assert\Sequentially([new Assert\Type('array'), new Assert\Collection(fields: [
+        'value' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: 30), new Assert\Regex(pattern: Offer::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.'), new Assert\Regex(pattern: '/\\|/', match: false, message: 'Le caractère « | » est réservé au format de saisie.')]),
+        'label' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: 120), new Assert\Regex(pattern: Offer::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]),
+    ])])])]
+    #[Groups(['api_public', 'api_admin'])]
+    private array $journeyStats = [];
+
+    /** @var list<array{value: string, label: string}>|null */
+    #[Assert\Type('list')]
+    #[Assert\Count(max: 6)]
+    #[Assert\All([new Assert\Sequentially([new Assert\Type('array'), new Assert\Collection(fields: [
+        'value' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: 30), new Assert\Regex(pattern: Offer::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.'), new Assert\Regex(pattern: '/\\|/', match: false, message: 'Le caractère « | » est réservé au format de saisie.')]),
+        'label' => new Assert\Sequentially([new Assert\Type('string'), new Assert\NotBlank(normalizer: 'trim'), new Assert\Length(max: 120), new Assert\Regex(pattern: Offer::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]),
+    ])])])]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?array $journeyStatsEn = null;
 
     // --- Pourquoi moi (4 cartes) ---
 
@@ -1050,6 +1142,154 @@ class AboutContent
     public function setUpdatedBy(?User $updatedBy): static
     {
         $this->updatedBy = $updatedBy;
+
+        return $this;
+    }
+
+    public function getVisionPillar(): string
+    {
+        return $this->visionPillar;
+    }
+
+    public function setVisionPillar(?string $visionPillar): static
+    {
+        $this->visionPillar = $visionPillar ?? '';
+
+        return $this;
+    }
+
+    public function getVisionPillarEn(): ?string
+    {
+        return $this->visionPillarEn;
+    }
+
+    public function setVisionPillarEn(?string $visionPillarEn): static
+    {
+        $this->visionPillarEn = $visionPillarEn;
+
+        return $this;
+    }
+
+    public function getMissionPillar(): string
+    {
+        return $this->missionPillar;
+    }
+
+    public function setMissionPillar(?string $missionPillar): static
+    {
+        $this->missionPillar = $missionPillar ?? '';
+
+        return $this;
+    }
+
+    public function getMissionPillarEn(): ?string
+    {
+        return $this->missionPillarEn;
+    }
+
+    public function setMissionPillarEn(?string $missionPillarEn): static
+    {
+        $this->missionPillarEn = $missionPillarEn;
+
+        return $this;
+    }
+
+    public function getAmbitionPillar(): string
+    {
+        return $this->ambitionPillar;
+    }
+
+    public function setAmbitionPillar(?string $ambitionPillar): static
+    {
+        $this->ambitionPillar = $ambitionPillar ?? '';
+
+        return $this;
+    }
+
+    public function getAmbitionPillarEn(): ?string
+    {
+        return $this->ambitionPillarEn;
+    }
+
+    public function setAmbitionPillarEn(?string $ambitionPillarEn): static
+    {
+        $this->ambitionPillarEn = $ambitionPillarEn;
+
+        return $this;
+    }
+
+    public function getHorizonMidText(): string
+    {
+        return $this->horizonMidText;
+    }
+
+    public function setHorizonMidText(?string $horizonMidText): static
+    {
+        $this->horizonMidText = $horizonMidText ?? '';
+
+        return $this;
+    }
+
+    public function getHorizonMidTextEn(): ?string
+    {
+        return $this->horizonMidTextEn;
+    }
+
+    public function setHorizonMidTextEn(?string $horizonMidTextEn): static
+    {
+        $this->horizonMidTextEn = $horizonMidTextEn;
+
+        return $this;
+    }
+
+    public function getLearningText(): string
+    {
+        return $this->learningText;
+    }
+
+    public function setLearningText(?string $learningText): static
+    {
+        $this->learningText = $learningText ?? '';
+
+        return $this;
+    }
+
+    public function getLearningTextEn(): ?string
+    {
+        return $this->learningTextEn;
+    }
+
+    public function setLearningTextEn(?string $learningTextEn): static
+    {
+        $this->learningTextEn = $learningTextEn;
+
+        return $this;
+    }
+
+    /** @return list<array{value: string, label: string}> */
+    public function getJourneyStats(): array
+    {
+        return $this->journeyStats;
+    }
+
+    /** @param list<array{value: string, label: string}>|null $journeyStats */
+    public function setJourneyStats(?array $journeyStats): static
+    {
+        $this->journeyStats = $journeyStats ?? [];
+
+        return $this;
+    }
+
+    /** @return list<array{value: string, label: string}>|null */
+    public function getJourneyStatsEn(): ?array
+    {
+        return $this->journeyStatsEn;
+    }
+
+    /** @param list<array{value: string, label: string}>|null $journeyStatsEn */
+    public function setJourneyStatsEn(?array $journeyStatsEn): static
+    {
+        $this->journeyStatsEn = $journeyStatsEn;
 
         return $this;
     }

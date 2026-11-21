@@ -184,6 +184,27 @@ class SeedContentCommand extends Command
             ->setCtaTitleEn('Got a project in mind?')
             ->setCtaSub("Discutons de vos besoins — développement, sécurisation ou intégration d'IA, je vous accompagne de A à Z.")
             ->setCtaSubEn('Let’s talk about your needs — development, security or AI integration, I’ll guide you from A to Z.')
+            // Refonte R5 : Vision / Mission / Ambition, horizon, parcours.
+            ->setVisionPillar('Une architecture bien pensée aujourd’hui évite les refontes coûteuses demain. Je conçois des systèmes qui grandissent avec l’activité de mes clients, sans dette technique cachée.')
+            ->setVisionPillarEn('A well-designed architecture today avoids costly rebuilds tomorrow. I design systems that grow with my clients’ business, with no hidden technical debt.')
+            ->setMissionPillar('Accompagner durablement la croissance de mes clients en leur livrant des solutions sur mesure, sécurisées et évolutives, de l’idée jusqu’à l’exploitation.')
+            ->setMissionPillarEn('To support my clients’ growth over the long term with tailored, secure and scalable solutions, from the first idea to day-to-day operation.')
+            ->setAmbitionPillar('Contribuer, projet après projet, à ce que les organisations disposent d’outils numériques fiables, sûrs et durables, et accompagner leur croissance sur le long terme.')
+            ->setAmbitionPillarEn('To help organisations, project after project, get reliable, secure and lasting digital tools, and to support their growth over the long term.')
+            ->setHorizonMidText('Faire de la sécurité et de la gestion des risques un réflexe pour les PME d’Afrique centrale.')
+            ->setHorizonMidTextEn('Make security and risk management a reflex for SMEs in Central Africa.')
+            ->setLearningText('Chaque projet m’amène à apprendre : nouvelles technologies, nouvelles menaces, nouvelles réglementations. Objectif à terme : un doctorat consacré à l’intelligence artificielle.')
+            ->setLearningTextEn('Every project teaches me something new: technologies, threats, regulations. Long-term goal: a doctorate in artificial intelligence.')
+            ->setJourneyStats([
+                ['value' => 'Depuis 2016', 'label' => 'dans le numérique'],
+                ['value' => 'Depuis 2018', 'label' => 'en gestion et management des risques'],
+                ['value' => '2026', 'label' => 'fondation de Digital Business Group'],
+            ])
+            ->setJourneyStatsEn([
+                ['value' => 'Since 2016', 'label' => 'in digital'],
+                ['value' => 'Since 2018', 'label' => 'in risk management'],
+                ['value' => '2026', 'label' => 'founding of Digital Business Group'],
+            ])
         ;
     }
 }
