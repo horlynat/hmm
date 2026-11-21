@@ -28,6 +28,15 @@ const SLIDE_DURATION_MS = 7000;
  * Le titre de page (h1) est porté par la page, pas par une diapositive :
  * il ne change pas quand le carrousel tourne.
  */
+/** `:focus-visible` (focus clavier) ; prudent par défaut si non supporté. */
+function isFocusVisible(el: Element): boolean {
+  try {
+    return el.matches(":focus-visible");
+  } catch {
+    return true;
+  }
+}
+
 export function OfferHeroCarousel({ offers }: { offers: Offer[] }) {
   const t = useTranslations("home.hero");
   const locale = useLocale();
@@ -35,11 +44,12 @@ export function OfferHeroCarousel({ offers }: { offers: Offer[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [keyboardFocus, setKeyboardFocus] = useState(false);
   const total = offers.length;
 
   const go = useCallback((next: number) => setIndex(((next % total) + total) % total), [total]);
 
-  const autoplay = total > 1 && !paused && !hovered && !reduceMotion;
+  const autoplay = total > 1 && !paused && !hovered && !keyboardFocus && !reduceMotion;
   useEffect(() => {
     if (!autoplay) return;
     const id = window.setTimeout(() => go(index + 1), SLIDE_DURATION_MS);
@@ -54,9 +64,12 @@ export function OfferHeroCarousel({ offers }: { offers: Offer[] }) {
       aria-label={t("carouselLabel")}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onFocus={() => setHovered(true)}
+      // Pause au focus CLAVIER seulement : un clic souris (ex. sur « lecture »)
+      // laisse le focus sur le bouton, et la reprise ne doit pas attendre
+      // qu'il le perde — le survol couvre déjà la souris.
+      onFocus={(e) => setKeyboardFocus(isFocusVisible(e.target))}
       onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHovered(false);
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setKeyboardFocus(false);
       }}
     >
       <div className="relative">

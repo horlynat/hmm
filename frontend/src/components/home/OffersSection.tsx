@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import clsx from "clsx";
 import { useLocale, useTranslations } from "next-intl";
 import type { Offer } from "@/lib/types";
@@ -31,6 +31,16 @@ function subscribeHash(callback: () => void) {
  * choix au bouton est mémorisé avec l'ancre courante, et une nouvelle ancre
  * (clic sur une carte besoin) le remplace. `useSyncExternalStore` plutôt
  * qu'un setState dans un effet (règle react-hooks/set-state-in-effect).
+ *
+ * Un clic sur un bouton reporte le filtre dans l'ancre de l'URL
+ * (`history.replaceState`) : recliquer ensuite une carte « Votre besoin »
+ * change donc toujours l'ancre et déclenche bien `hashchange`.
+ *
+ * Lien « Voir l'offre » du carrousel (`#offre-<slug>`) : si la carte était
+ * masquée par un filtre, le navigateur n'a pas pu y défiler ; le filtre
+ * repasse à « toutes » (l'ancre n'est plus une situation) et la carte est
+ * amenée à l'écran après rendu. `getElementById` : aucune construction de
+ * sélecteur CSS à partir de l'URL.
  */
 export function OffersSection({ offers }: { offers: Offer[] }) {
   const t = useTranslations("home.offers");
@@ -41,6 +51,17 @@ export function OffersSection({ offers }: { offers: Offer[] }) {
 
   const active: Filter = choice && choice.hash === hash ? choice.value : (situationFromHash(hash) ?? "all");
   const visible = active === "all" ? offers : offers.filter((offer) => offer.situation === active);
+
+  useEffect(() => {
+    if (!hash.startsWith("#offre-")) return;
+    document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start" });
+  }, [hash]);
+
+  function choose(value: Filter) {
+    const nextHash = value === "all" ? "#offres" : `#offres-${value}`;
+    window.history.replaceState(window.history.state, "", nextHash);
+    setChoice({ value, hash: nextHash });
+  }
 
   return (
     <section id="offres" className="scroll-mt-20 px-6 py-20">
@@ -59,7 +80,7 @@ export function OffersSection({ offers }: { offers: Offer[] }) {
               key={value}
               type="button"
               aria-pressed={active === value}
-              onClick={() => setChoice({ value, hash })}
+              onClick={() => choose(value)}
               className={clsx(
                 "rounded-full border px-3.5 py-1.5 text-sm transition-colors",
                 active === value

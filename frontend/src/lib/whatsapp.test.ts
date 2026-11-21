@@ -32,4 +32,16 @@ describe("whatsappLink", () => {
     expect([...url.searchParams.keys()]).toEqual(["text"]);
     expect(url.searchParams.get("text")).toBe(`Intéressé par « ${title} »`);
   });
+
+  it("encode les espaces en %20 (format documenté par WhatsApp)", () => {
+    expect(whatsappLink("Bonjour Horlynat")).toBe("https://wa.me/242066429090?text=Bonjour%20Horlynat");
+  });
+
+  it("ne lève pas sur un caractère UTF-16 isolé (titre corrompu)", () => {
+    const link = whatsappLink("Offre \uD800 cassée");
+    const url = new URL(link);
+    expect(url.host).toBe("wa.me");
+    expect([...url.searchParams.keys()]).toEqual(["text"]);
+    expect(url.searchParams.get("text")).toBe("Offre \uFFFD cassée");
+  });
 });

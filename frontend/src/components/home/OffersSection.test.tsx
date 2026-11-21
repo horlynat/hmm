@@ -39,6 +39,7 @@ describe("situationFromHash", () => {
 describe("OffersSection", () => {
   afterEach(() => {
     window.history.replaceState(null, "", "/");
+    vi.restoreAllMocks();
   });
 
   it("affiche toutes les offres par défaut", () => {
@@ -77,6 +78,53 @@ describe("OffersSection", () => {
       window.dispatchEvent(new HashChangeEvent("hashchange"));
     });
     expect(titles()).toEqual(["Assistant"]);
+  });
+
+  /**
+   * Scénario du contre-audit : grille filtrée sur « secu », puis « Voir
+   * l'offre » d'une offre « clients » depuis le carrousel. La carte n'était
+   * pas dans le DOM : le filtre doit repasser à « toutes » et la carte être
+   * amenée à l'écran.
+   */
+  it("« Voir l'offre » vers une carte masquée par le filtre : la montre et y défile", () => {
+    // jsdom n'implémente pas scrollIntoView : on l'installe pour ce test.
+    const scrolled: string[] = [];
+    Element.prototype.scrollIntoView = function (this: Element) {
+      scrolled.push(this.id);
+    };
+    render(<OffersSection offers={offers} />);
+    fireEvent.click(screen.getByRole("button", { name: "filters.secu" }));
+    expect(titles()).toEqual(["Audit"]);
+
+    act(() => {
+      window.location.hash = "#offre-whatsapp";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+
+    expect(titles()).toEqual(["Assistant", "Audit", "Risques"]);
+    expect(scrolled).toEqual(["offre-whatsapp"]);
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  });
+
+  it("un choix au bouton est reporté dans l'ancre : recliquer la carte besoin refiltre", () => {
+    render(<OffersSection offers={offers} />);
+    act(() => {
+      window.location.hash = "#offres-secu";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+    fireEvent.click(screen.getByRole("button", { name: "filters.clients" }));
+    expect(window.location.hash).toBe("#offres-clients");
+    expect(titles()).toEqual(["Assistant"]);
+
+    // Recliquer la carte « secu » change désormais l'ancre.
+    act(() => {
+      window.location.hash = "#offres-secu";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+    expect(titles()).toEqual(["Audit"]);
+
+    fireEvent.click(screen.getByRole("button", { name: "filterAll" }));
+    expect(window.location.hash).toBe("#offres");
   });
 
   it("annonce l'absence d'offre pour une situation sans offre", () => {

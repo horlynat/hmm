@@ -8,7 +8,17 @@ import type { Offer, OfferCalendarStep, OfferPackBlock } from "@/lib/types";
 // qu'un filet de sécurité si ce webhook venait à échouer.
 const OFFERS_REVALIDATE_SECONDS = 60 * 60 * 24;
 
-interface RawOffer extends Omit<Offer, "includes" | "beforeItems" | "afterItems" | "calendar" | "pack"> {
+/**
+ * API Platform omet les champs NULL de la réponse (`skip_null_values`, actif
+ * par défaut) : une offre hors carrousel arrive SANS clé `heroPosition`, pas
+ * avec `null`. Les champs nullables sont donc optionnels ici et normalisés en
+ * `null` dans `localizeOffer` — sinon `undefined !== null` ferait entrer
+ * l'offre dans le carrousel.
+ */
+interface RawOffer
+  extends Omit<Offer, "heroPosition" | "proofProjectSlug" | "includes" | "beforeItems" | "afterItems" | "calendar" | "pack"> {
+  heroPosition?: number | null;
+  proofProjectSlug?: string | null;
   titleEn?: string | null;
   shortTitleEn?: string | null;
   painEn?: string | null;
@@ -39,6 +49,8 @@ function localizeOffer(raw: RawOffer, locale: string): Offer {
 
   return {
     ...rest,
+    heroPosition: typeof raw.heroPosition === "number" ? raw.heroPosition : null,
+    proofProjectSlug: raw.proofProjectSlug ?? null,
     title: pickLocalized(raw.title, titleEn, locale),
     shortTitle: pickLocalized(raw.shortTitle, shortTitleEn, locale),
     pain: pickLocalized(raw.pain, painEn, locale),
@@ -78,6 +90,6 @@ export async function getOffers(locale: string): Promise<Offer[]> {
 /** Offres à afficher dans le carrousel du hero, triées par heroPosition. */
 export function heroOffers(offers: Offer[]): Offer[] {
   return offers
-    .filter((offer): offer is Offer & { heroPosition: number } => offer.heroPosition !== null)
+    .filter((offer): offer is Offer & { heroPosition: number } => typeof offer.heroPosition === "number")
     .sort((a, b) => a.heroPosition - b.heroPosition);
 }

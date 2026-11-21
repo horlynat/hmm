@@ -33,6 +33,7 @@ describe("OfferHeroCarousel", () => {
   });
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("n'affiche rien sans offre", () => {
@@ -74,6 +75,32 @@ describe("OfferHeroCarousel", () => {
     fireEvent.mouseEnter(screen.getByRole("region", { name: "carouselLabel" }));
     act(() => vi.advanceTimersByTime(30000));
     expect(activeHeadline()).toBe("Titre A");
+  });
+
+  /** Simule `:focus-visible` (focus clavier ou souris) sans dépendre de jsdom. */
+  function focusAs(kind: "keyboard" | "mouse", el: HTMLElement) {
+    const original = Element.prototype.matches;
+    vi.spyOn(Element.prototype, "matches").mockImplementation(function (this: Element, selector: string) {
+      return selector === ":focus-visible" ? kind === "keyboard" : original.call(this, selector);
+    });
+    fireEvent.focus(el);
+  }
+
+  it("se met en pause quand le focus clavier entre dans le carrousel", () => {
+    render(<OfferHeroCarousel offers={offers} />);
+    focusAs("keyboard", screen.getByRole("button", { name: "next" }));
+    act(() => vi.advanceTimersByTime(30000));
+    expect(activeHeadline()).toBe("Titre A");
+  });
+
+  it("un clic souris sur « lecture » relance le défilement sans attendre la perte du focus", () => {
+    render(<OfferHeroCarousel offers={offers} />);
+    fireEvent.click(screen.getByRole("button", { name: "pause" }));
+    const play = screen.getByRole("button", { name: "play" });
+    focusAs("mouse", play);
+    fireEvent.click(play);
+    act(() => vi.advanceTimersByTime(7000));
+    expect(activeHeadline()).toBe("Titre B");
   });
 
   it("précédent/suivant bouclent, les pastilles choisissent une offre", () => {
