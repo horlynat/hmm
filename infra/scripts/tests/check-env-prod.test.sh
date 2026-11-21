@@ -43,6 +43,10 @@ t KO "espaces autour du = (CF hôte seul)" "CF_ACCESS_HOSTS = dark.horlynat.com"
 t KO "équipe + AUD en « X = y », sans hôte" $'CF_ACCESS_TEAM_DOMAIN = x.cloudflareaccess.com\nCF_ACCESS_AUD = abc'
 t KO "AUD = \${NOPE} (vide une fois résolu)" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=${NOPE}'
 t OK "Cloudflare complet en « X = y »" $'CF_ACCESS_HOSTS = dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN = x.cloudflareaccess.com\nCF_ACCESS_AUD = abc'
+# Caractères non ASCII normalisés différemment par Python et PHP (6e passe)
+t KO "espace insécable après hmm-backend" $'PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend\u00a0,backend'
+t KO "signe Kelvin à la place d'un K" $'PUBLIC_API_HOSTS=api.horlynat.com,hmm-bac\u212aend,backend'
+t KO "caractère non ASCII dans l'AUD" $'CF_ACCESS_HOSTS=dark.horlynat.com\nCF_ACCESS_TEAM_DOMAIN=x.cloudflareaccess.com\nCF_ACCESS_AUD=ab\u00e9'
 t KO "dernière affectation retire hmm-backend" $'PUBLIC_API_HOSTS=api.horlynat.com,hmm-backend\nPUBLIC_API_HOSTS=api.horlynat.com'
 
 bash "$CHECK" "$T/absent" "$COMPOSE" >/dev/null 2>&1 && { echo "FAIL fichier absent accepté"; fail=1; } || echo "PASS KO fichier absent"

@@ -153,8 +153,13 @@ final class CloudflareAccessVerifier
         // aussi (1 à 4 relectures sur 80 processus simultanés). Verrou de
         // fichier non bloquant : un seul processus vérifie PUIS pose la
         // réservation ; les autres repartent aussitôt, sans attendre.
-        $handle = @fopen(sys_get_temp_dir().'/'.$this->cacheKey().'.lock', 'c');
+        $lockPath = sys_get_temp_dir().'/'.$this->cacheKey().'.lock';
+        $handle = @fopen($lockPath, 'c');
         if (false === $handle) {
+            // Jamais silencieux : sans ce verrou, une rotation de clés n'est
+            // plus absorbée qu'à l'expiration du cache (jusqu'à 1 h de 403).
+            $this->logger->warning('Cloudflare Access : verrou de relecture des clés inaccessible, relecture forcée désactivée.', ['path' => $lockPath]);
+
             return false;
         }
 
