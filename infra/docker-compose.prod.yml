@@ -81,18 +81,18 @@ services:
       # temps du build (cf. scripts/deploy-remote.sh). Implique toujours un
       # déploiement en deux temps (cf. README "Build en deux temps") :
       # backend démarré AVANT `docker compose build frontend`.
-      # Nom `backend` : même Host qu'à l'exécution, accepté par
+      # Nom `hmm-backend` : même Host qu'à l'exécution, accepté par
       # framework.trusted_hosts (SYMFONY_TRUSTED_HOSTS) côté Symfony.
       # host-gateway = IP de docker0 (172.17.0.1 par défaut) — doit valoir
       # HMM_BUILD_GATEWAY_BIND ci-dessous.
       # ⚠️ Nécessite que frontend/Dockerfile n'utilise plus
       # `RUN --network=host` (sinon : « network.host is not allowed »).
       extra_hosts:
-        - "backend:host-gateway"
+        - "hmm-backend:host-gateway"
       args:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
         NEXT_PUBLIC_MEDIA_URL: ${NEXT_PUBLIC_MEDIA_URL}
-        API_URL: http://backend:8000/api
+        API_URL: http://hmm-backend:8000/api
     <<: *hardening
     # Aucune capacité : l'image tourne entièrement en non-root (USER nextjs,
     # uid/gid 1001 — entrypoint, node et healthcheck compris, cf.
@@ -116,8 +116,11 @@ services:
     environment:
       - NODE_ENV=production
       # Appel interne conteneur-à-conteneur, jamais via le domaine public
-      # (cf. _config.frontend.md "100% server-side") :
-      - API_URL=http://backend:80/api
+      # (cf. _config.frontend.md "100% server-side"). `hmm-backend` = alias
+      # propre au portfolio sur edge-net (réseau PARTAGÉ avec un autre projet
+      # qui emploie aussi des noms génériques comme `backend` : le DNS Docker
+      # répartirait alors les appels — JWT, mots de passe — entre les deux).
+      - API_URL=http://hmm-backend:80/api
     secrets:
       - revalidate_secret
     networks:
@@ -198,14 +201,16 @@ services:
       # PublicApiHostRestrictionSubscriber) — même liste que le routeur
       # Traefik `api`, en défense en profondeur.
       - PUBLIC_API_HOSTS=${PUBLIC_API_HOSTS:-api.horlynat.com}
-      # Liste blanche des Host acceptés par Symfony (400 sinon). `backend` =
-      # appels serveur du frontend (API_URL=http://backend:80/api) ;
-      # le build du frontend passe aussi par ce nom (api-build-gateway +
-      # extra_hosts backend:host-gateway). Plus de 127.0.0.1 : le port publié
+      # Liste blanche des Host acceptés par Symfony (400 sinon). `hmm-backend`
+      # = appels serveur du frontend (API_URL=http://hmm-backend:80/api) ; le
+      # build du frontend passe aussi par ce nom (api-build-gateway +
+      # extra_hosts hmm-backend:host-gateway). `^backend$` gardé le temps de
+      # la bascule (l'ancien frontend l'emploie jusqu'à son remplacement en
+      # fin de déploiement) — à retirer au lot suivant. Plus de 127.0.0.1 : le port publié
       # 127.0.0.1:8000 a disparu, et la sonde de santé vise l'admin Caddy
       # (:2019), pas Symfony. `$$` = `$` littéral pour compose ; PAS
       # d'apostrophes (elles entreraient dans la regex -> 400 partout).
-      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^backend$$}
+      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^hmm-backend$$,^backend$$}
       # IP/plage du conteneur traefik (réseau edge-net) ET plages Cloudflare
       # (cf. cloudflare-ips.txt) — Symfony doit faire confiance aux DEUX pour
       # lire correctement les en-têtes X-Forwarded-* : Traefik restaure l'IP
@@ -257,8 +262,11 @@ services:
       database:
         condition: service_healthy
     networks:
-      - edge-net
-      - data-net
+      edge-net:
+        # Nom non ambigu pour les appels internes (cf. API_URL du frontend).
+        aliases:
+          - hmm-backend
+      data-net: {}
     volumes:
       # Logs lisibles depuis l'hôte pour fail2ban (jail symfony-security,
       # cf. scripts/01-base-hardening.sh) — tant que Monolog n'a pas de
@@ -331,7 +339,7 @@ services:
       - traefik.http.routers.hmm-dark.middlewares=cloudflare-only@file,security-headers@file,ratelimit-strict@file
 
   api-build-gateway:
-    # Passerelle TCP ÉPHÉMÈRE vers backend:80, utilisée UNIQUEMENT pendant
+    # Passerelle TCP ÉPHÉMÈRE vers hmm-backend:80, utilisée UNIQUEMENT pendant
     # `docker compose build frontend` (profil `build` : jamais démarrée par
     # un `up` normal). deploy-remote.sh la démarre juste avant le build et la
     # supprime juste après (échec compris). Publiée sur l'IP de docker0 —
@@ -345,8 +353,10 @@ services:
     <<: *hardening
     user: "65534:65534"
     read_only: true
-    pids_limit: 64
-    command: ["TCP-LISTEN:8000,fork,reuseaddr", "TCP:backend:80"]
+    # socat forke un processus par connexion ; next build en ouvre beaucoup
+    # en parallèle (keep-alive) — 64 pouvait faire échouer le build.
+    pids_limit: 256
+    command: ["TCP-LISTEN:8000,fork,reuseaddr", "TCP:hmm-backend:80"]
     ports:
       - "${HMM_BUILD_GATEWAY_BIND:-172.17.0.1}:8000:8000"
     networks:
@@ -407,7 +417,7 @@ services:
       - DEFAULT_URI=https://api.horlynat.com
       - BACKOFFICE_URL=${BACKOFFICE_URL:-https://dark.horlynat.com}
       - PUBLIC_API_HOSTS=${PUBLIC_API_HOSTS:-api.horlynat.com}
-      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^backend$$}
+      - SYMFONY_TRUSTED_HOSTS=${SYMFONY_TRUSTED_HOSTS:-^(api|dark)\.horlynat\.com$$,^hmm-backend$$,^backend$$}
     secrets:
       - app_secret
       - database_url

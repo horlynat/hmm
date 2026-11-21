@@ -62,8 +62,16 @@ jobs:
         env:
           INPUT_TAG: ${{ inputs.backend_tag }}
           COMMIT_SHA: ${{ github.sha }}
+          GIT_REF: ${{ github.ref }}
         run: |
           set -euo pipefail
+          # Un workflow_dispatch lancé depuis une autre branche construirait
+          # et pousserait `:latest` AVANT la porte d'approbation `production`
+          # (et déploierait l'infra/ de cette branche) : main uniquement.
+          if [[ "${GIT_REF}" != "refs/heads/main" ]]; then
+            echo "::error::Déploiement refusé hors de main (${GIT_REF})."
+            exit 1
+          fi
           if [[ -z "${INPUT_TAG}" ]]; then
             echo "tag=${COMMIT_SHA}" >> "$GITHUB_OUTPUT"
             echo "build=true" >> "$GITHUB_OUTPUT"

@@ -171,7 +171,7 @@ trap stop_build_gateway EXIT
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
-echo "==> Passerelle de build (${BUILD_GATEWAY_BIND}:8000 -> backend:80)"
+echo "==> Passerelle de build (${BUILD_GATEWAY_BIND}:8000 -> hmm-backend:80)"
 "${COMPOSE[@]}" --profile build up -d --no-deps api-build-gateway
 
 echo "==> Attente API prête (endpoints qui font échouer next build s'ils traînent)"
@@ -183,7 +183,7 @@ wait_for_api() {
   for ep in home_contents about_contents; do
     deadline=$((SECONDS + 120))
     until curl -fsS --max-time 10 -o /dev/null \
-      -H 'Accept: application/ld+json' -H 'Host: backend' \
+      -H 'Accept: application/ld+json' -H 'Host: hmm-backend' \
       "http://${BUILD_GATEWAY_BIND}:8000/api/${ep}"; do
       if ((SECONDS >= deadline)); then
         echo "API /${ep} toujours injoignable après 120 s -- build frontend annulé." >&2
@@ -210,6 +210,13 @@ echo "==> Frontend : build local (backend joint via api-build-gateway pendant le
 "${COMPOSE[@]}" build --no-cache frontend
 stop_build_gateway
 up_with_retry frontend
+# Frontend non-root : un secret illisible (groupe/droits du fichier sur
+# l'hôte) n'empêche pas le démarrage mais désactive en silence la
+# revalidation — on rend l'échec visible.
+if "${COMPOSE[@]}" logs --no-log-prefix frontend 2>&1 | grep -q '\[entrypoint\] AVERTISSEMENT'; then
+  echo "Frontend démarré SANS un de ses secrets (cf. logs frontend) -- vérifier HMM_SECRETS_GID et les droits de infra/secrets/." >&2
+  exit 1
+fi
 
 echo "==> Reste de la stack (postfixadmin...) + nettoyage des orphelins"
 # Rappel : relance TOUT service arrêté à la main (docker compose stop X) —
