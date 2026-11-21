@@ -26,6 +26,10 @@ final class PublicInputHardeningTest extends WebTestCase
         yield 'point en tête' => ['.lead%s'];
         yield 'deux points consécutifs' => ['a..b%s'];
         yield 'point final' => ['tr%s.'];
+        // Contre-audit de dc6b849 : `new Address()` lève InvalidArgumentException
+        // (et non RfcComplianceException) sur un caractère de contrôle -> 500.
+        yield 'caractère de contrôle 0x01' => ["a\u{1}b%s"];
+        yield 'caractère DEL 0x7F' => ["a\u{7f}b%s"];
     }
 
     /**
@@ -71,6 +75,7 @@ final class PublicInputHardeningTest extends WebTestCase
         $manager = static::getContainer()->get(EmailManager::class);
 
         self::assertFalse($manager->sendNow('.lead@example.test', 'Sujet', 'confirmation_email', ['fullName' => 'X', 'verifyUrl' => 'https://example.test']));
+        self::assertFalse($manager->sendNow("a\u{1}b@example.test", 'Sujet', 'confirmation_email', ['fullName' => 'X', 'verifyUrl' => 'https://example.test']));
     }
 
     /**

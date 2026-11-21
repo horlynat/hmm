@@ -10,7 +10,7 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Mime\Address;
-use Symfony\Component\Mime\Exception\RfcComplianceException;
+use Symfony\Component\Mime\Exception\ExceptionInterface as MimeException;
 
 /**
  * Service central unifié pour la gestion des emails.
@@ -86,7 +86,7 @@ class EmailManager
         // 500 (et en e-mail d'alerte) alors que l'écriture en base était déjà
         // faite. La validation (App\Validator\MailerAddress) la bloque en
         // amont ; ceci couvre les adresses déjà stockées avant ce correctif.
-        catch (RfcComplianceException $e) {
+        catch (MimeException $e) { // RfcCompliance + InvalidArgument (caractère de contrôle)
             $this->logger->warning('Adresse e-mail non conforme, envoi abandonné : ' . $e->getMessage(), [
                 'subject' => $subject,
             ]);
