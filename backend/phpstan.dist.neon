@@ -11,5 +11,16 @@ parameters:
         - public/
         - src/
         - tests/
+    # config/reference.php est GÉNÉRÉ par Symfony (PhpConfigReferenceDumpPass,
+    # « auto-generated and is for apps only »). Il reste découvert (scan) mais
+    # n'est pas analysé : quand le cache de dev est périmé, le chargeur
+    # Doctrine (tests/object-manager.php) recompile le conteneur et exécute ce
+    # fichier ; PHPStan lit alors la classe déjà chargée et ne voit plus ses
+    # alias @psalm-type -> ~80 erreurs « unknown class …Config » sans aucun
+    # défaut de code, absentes quand le cache est à jour (cas de la CI).
+    # Reproduit le 2026-11-21 (touch config/packages/framework.yaml).
+    excludePaths:
+        analyse:
+            - config/reference.php
     doctrine:
         objectManagerLoader: tests/object-manager.php

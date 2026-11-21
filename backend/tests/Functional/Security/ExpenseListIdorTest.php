@@ -171,4 +171,22 @@ final class ExpenseListIdorTest extends FunctionalTestCase
         $this->expectException(\Symfony\Component\Security\Core\Exception\AccessDeniedException::class);
         $component->refresh();
     }
+
+    /**
+     * Contre-audit B2 (3e passe) : même garantie pour le tableau admin des
+     * projets — un administrateur rétrogradé pendant l'affichage perd
+     * l'accès dès la requête AJAX suivante.
+     */
+    public function testDemotedAdminLosesTheProjectTableOnTheNextAjaxRequest(): void
+    {
+        $admin = $this->createUser(['ROLE_ADMIN']);
+        $component = $this->createLiveComponent('admin_project_table')->actingAs($admin);
+        self::assertStringNotContainsString('Access Denied', $component->render()->toString());
+
+        $admin->setRoles(['ROLE_USER']);
+        $this->em()->flush();
+
+        $this->expectException(\Symfony\Component\Security\Core\Exception\AccessDeniedException::class);
+        $component->refresh();
+    }
 }

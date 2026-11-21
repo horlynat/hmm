@@ -45,6 +45,13 @@ final class LoginTimingEqualizerListenerTest extends TestCase
         self::assertSame(1, $this->hashes);
     }
 
+    public function testLockedAccountAlsoCostsOnePasswordVerification(): void
+    {
+        $this->listener()->onLoginFailure($this->event(new \App\Security\LockedAccountAuthenticationException('Compte verrouillé.')));
+
+        self::assertSame(1, $this->verifies, 'Un compte verrouillé ne doit pas répondre plus vite que les autres.');
+    }
+
     public function testWrongPasswordOnAnExistingAccountIsNotHashedTwice(): void
     {
         $this->listener()->onLoginFailure($this->event(new BadCredentialsException('The presented password is invalid.')));

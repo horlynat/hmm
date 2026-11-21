@@ -57,7 +57,9 @@ final class CloudflareAccessSubscriber implements EventSubscriberInterface
         }
 
         $request = $event->getRequest();
-        if (!\in_array(strtolower($request->getHost()), $this->protectedHosts, true)) {
+        // Même normalisation que la liste (casse, espaces, point final) :
+        // `dark.horlynat.com.` ne doit pas échapper au contrôle.
+        if (!\in_array(PublicApiHostRestrictionSubscriber::normalizeHost($request->getHost()), $this->protectedHosts, true)) {
             return;
         }
 

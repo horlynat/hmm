@@ -80,7 +80,7 @@ final class CloudflareAccessVerifier
             } catch (\UnexpectedValueException $e) {
                 // Clé inconnue (rotation chez Cloudflare) : une relecture
                 // forcée, bornée dans le temps, puis nouvel essai unique.
-                if (!str_contains($e->getMessage(), '"kid" invalid') || !$this->forgetKeySet()) {
+                if (!str_contains($e->getMessage(), '"kid" invalid') || !$this->refreshKeySet()) {
                     throw $e;
                 }
                 $claims = $this->decode($assertion, $this->keySet());
@@ -131,26 +131,71 @@ final class CloudflareAccessVerifier
     }
 
     /**
-     * Oublie le jeu de clés en cache, au plus une fois par minute.
+     * Relit le jeu de clés, au plus une fois par minute, et ne remplace le
+     * cache QUE si la relecture réussit.
      *
-     * @return bool false si une relecture a déjà eu lieu il y a moins d'une minute
+     * Contre-audit B2 (3e passe) :
+     * - 2a : le créneau était réservé avec `time()` — toutes les requêtes de
+     *   la même seconde « gagnaient » et relançaient chacune un appel
+     *   bloquant (20 kid aléatoires simultanés = 21 lectures). Réservation
+     *   par jeton aléatoire : une seule requête la gagne par minute.
+     * - 2b : le cache était vidé AVANT de savoir si la relecture réussirait —
+     *   pendant une panne de Cloudflare, un seul kid aléatoire faisait
+     *   perdre les clés valides (jetons légitimes refusés). On lit d'abord,
+     *   on remplace ensuite ; en cas d'échec, les anciennes clés restent.
+     *
+     * @return bool true si de nouvelles clés ont été chargées
      */
-    private function forgetKeySet(): bool
+    private function refreshKeySet(): bool
     {
-        $now = time();
-        $last = $this->cache->get($this->cacheKey().'_refresh', function (ItemInterface $item) use ($now): int {
+        $token = bin2hex(random_bytes(8));
+        $claimed = $this->cache->get($this->cacheKey().'_refresh', function (ItemInterface $item) use ($token): string {
             $item->expiresAfter(self::JWKS_MIN_REFRESH_INTERVAL);
 
-            return $now;
+            return $token;
         });
 
-        if ($last !== $now) {
+        if ($claimed !== $token) {
             return false;
         }
 
-        $this->cache->delete($this->cacheKey());
+        $keys = $this->fetchKeys();
+        if (null === $keys) {
+            return false;
+        }
+
+        // beta = INF : recalcul forcé, l'entrée en cache est remplacée.
+        $this->cache->get($this->cacheKey(), function (ItemInterface $item) use ($keys): array {
+            $item->expiresAfter(self::JWKS_CACHE_TTL);
+
+            return ['keys' => $keys];
+        }, \INF);
 
         return true;
+    }
+
+    /**
+     * @return list<array<string, mixed>>|null null si la récupération échoue
+     */
+    private function fetchKeys(): ?array
+    {
+        try {
+            $response = $this->httpClient->request('GET', sprintf('https://%s/cdn-cgi/access/certs', $this->teamDomain), [
+                'timeout' => 5,
+                'max_redirects' => 0,
+            ]);
+
+            $data = $response->toArray();
+            if (!isset($data['keys']) || !\is_array($data['keys']) || [] === $data['keys']) {
+                throw new \RuntimeException('JWKS Cloudflare Access vide.');
+            }
+
+            return array_values($data['keys']);
+        } catch (\Throwable $e) {
+            $this->logger->error('Cloudflare Access : récupération des clés impossible.', ['reason' => $e->getMessage()]);
+
+            return null;
+        }
     }
 
     /**
@@ -159,27 +204,17 @@ final class CloudflareAccessVerifier
     private function keySet(): array
     {
         $jwks = $this->cache->get($this->cacheKey(), function (ItemInterface $item): array {
-            try {
-                $response = $this->httpClient->request('GET', sprintf('https://%s/cdn-cgi/access/certs', $this->teamDomain), [
-                    'timeout' => 5,
-                    'max_redirects' => 0,
-                ]);
-
-                $data = $response->toArray();
-                if (!isset($data['keys']) || !\is_array($data['keys']) || [] === $data['keys']) {
-                    throw new \RuntimeException('JWKS Cloudflare Access vide.');
-                }
-            } catch (\Throwable $e) {
+            $keys = $this->fetchKeys();
+            if (null === $keys) {
                 // Échec mémorisé brièvement : pas un appel bloquant par requête.
                 $item->expiresAfter(self::JWKS_FAILURE_TTL);
-                $this->logger->error('Cloudflare Access : récupération des clés impossible.', ['reason' => $e->getMessage()]);
 
                 return ['error' => true];
             }
 
             $item->expiresAfter(self::JWKS_CACHE_TTL);
 
-            return ['keys' => $data['keys']];
+            return ['keys' => $keys];
         });
 
         if (!isset($jwks['keys'])) {

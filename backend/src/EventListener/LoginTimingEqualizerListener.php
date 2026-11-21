@@ -3,6 +3,7 @@
 namespace App\EventListener;
 
 use App\Entity\User;
+use App\Security\LockedAccountAuthenticationException;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\PasswordHasher\Hasher\PasswordHasherFactoryInterface;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
@@ -18,9 +19,14 @@ use Symfony\Component\Security\Http\Event\LoginFailureEvent;
  * un compte existant avec un mauvais mot de passe. Le message est identique,
  * mais la durée trahit l'existence du compte.
  *
- * On effectue donc, dans ce seul cas, une vérification factice de même coût
+ * On effectue donc, dans ce cas, une vérification factice de même coût
  * (même hacheur que les comptes réels) — les deux chemins d'échec prennent
  * le même temps.
+ *
+ * Même chose pour un compte VERROUILLÉ (contre-audit B2, 3e passe) :
+ * UserChecker::checkPreAuth() le refuse avant le mot de passe (pour ne pas
+ * offrir d'oracle de mot de passe pendant le verrou) — il répondait donc
+ * plus vite que tous les autres cas, ce qui le rendait repérable.
  */
 final class LoginTimingEqualizerListener
 {
@@ -41,7 +47,11 @@ final class LoginTimingEqualizerListener
         }
 
         $exception = $event->getException();
-        if (!$exception instanceof UserNotFoundException && !$exception->getPrevious() instanceof UserNotFoundException) {
+        $skippedHashing = $exception instanceof UserNotFoundException
+            || $exception->getPrevious() instanceof UserNotFoundException
+            || $exception instanceof LockedAccountAuthenticationException
+            || $exception->getPrevious() instanceof LockedAccountAuthenticationException;
+        if (!$skippedHashing) {
             return;
         }
 

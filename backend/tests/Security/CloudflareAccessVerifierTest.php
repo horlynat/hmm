@@ -49,13 +49,73 @@ final class CloudflareAccessVerifierTest extends TestCase
             return new MockResponse(json_encode(['keys' => [$real['jwk']]], \JSON_THROW_ON_ERROR));
         });
 
+        // Une seule clé d'attaquant, kid différent à chaque jeton : générer une
+        // clé RSA par tour rendait la boucle assez lente (suite chargée) pour
+        // dépasser la minute — une 2e relecture devenait alors légitime et le
+        // test échouait sans défaut réel. La durée ne dépend plus de la machine.
+        $attacker = $this->newKey();
+        $start = time();
         self::assertTrue($verifier->verify($this->token($real)));
         for ($i = 0; $i < 20; ++$i) {
-            self::assertFalse($verifier->verify($this->token($this->newKey())));
+            $jwk = $attacker['jwk'];
+            $jwk['kid'] = 'kid-'.bin2hex(random_bytes(6));
+            self::assertFalse($verifier->verify($this->token(['private' => $attacker['private'], 'jwk' => $jwk])));
         }
+        self::assertLessThan(60, time() - $start, 'Le scénario doit tenir dans la fenêtre d\'une minute.');
 
         self::assertSame(2, $calls, 'Au plus une relecture par minute, quel que soit le nombre de kid inconnus.');
         self::assertTrue($verifier->verify($this->token($real)), 'La clé légitime reste acceptée.');
+    }
+
+    /**
+     * Contre-audit B2 (3e passe, 2a) : jetons préparés À L'AVANCE puis envoyés
+     * en rafale (même seconde) — c'est le scénario qui contournait la limite.
+     */
+    public function testBurstOfRandomKidsInTheSameSecondTriggersOneRefetchAtMost(): void
+    {
+        $real = $this->newKey();
+        $calls = 0;
+        $verifier = $this->verifier(function () use ($real, &$calls): MockResponse {
+            ++$calls;
+
+            return new MockResponse(json_encode(['keys' => [$real['jwk']]], \JSON_THROW_ON_ERROR));
+        });
+
+        $attacker = $this->newKey();
+        $tokens = [];
+        for ($i = 0; $i < 20; ++$i) {
+            $jwk = $attacker['jwk'];
+            $jwk['kid'] = 'kid-'.bin2hex(random_bytes(6));
+            $tokens[] = $this->token(['private' => $attacker['private'], 'jwk' => $jwk]);
+        }
+
+        self::assertTrue($verifier->verify($this->token($real)));
+        foreach ($tokens as $token) {
+            self::assertFalse($verifier->verify($token));
+        }
+
+        self::assertSame(2, $calls, '20 kid aléatoires dans la même seconde ne doivent déclencher qu\'une relecture.');
+    }
+
+    /**
+     * Contre-audit B2 (3e passe, 2b) : pendant une panne de Cloudflare, un kid
+     * aléatoire ne doit pas faire perdre les clés valides déjà en cache.
+     */
+    public function testRandomKidDuringAnOutageKeepsTheValidKeys(): void
+    {
+        $real = $this->newKey();
+        $cloudflare = new \ArrayObject(['up' => true]);
+        $verifier = $this->verifier(function () use ($real, $cloudflare): MockResponse {
+            return true === $cloudflare['up']
+                ? new MockResponse(json_encode(['keys' => [$real['jwk']]], \JSON_THROW_ON_ERROR))
+                : new MockResponse('down', ['http_code' => 503]);
+        });
+
+        self::assertTrue($verifier->verify($this->token($real)));
+        $cloudflare['up'] = false; // panne de l'adresse des certificats
+
+        self::assertFalse($verifier->verify($this->token($this->newKey())));
+        self::assertTrue($verifier->verify($this->token($real)), 'Le jeton légitime doit rester accepté pendant la panne.');
     }
 
     public function testFetchFailureIsCachedBrieflyAndRejects(): void

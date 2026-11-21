@@ -158,6 +158,19 @@ final class CloudflareAccessTest extends FunctionalTestCase
         self::assertSame(200, $this->client->getResponse()->getStatusCode(), $host.'/api/home_contents');
     }
 
+    /**
+     * Contre-audit B2 (3e passe) : un Host avec point final (`dark…invalid.`)
+     * désigne le même site et ne doit pas échapper au contrôle.
+     */
+    public function testTrailingDotHostIsStillProtected(): void
+    {
+        $this->installCloudflareVerifier();
+        foreach (['dark.test.invalid.', 'DARK.test.invalid'] as $host) {
+            $this->client->request('GET', '/login', server: ['HTTP_HOST' => $host]);
+            self::assertSame(403, $this->client->getResponse()->getStatusCode(), "Host « $host »");
+        }
+    }
+
     public function testCloudflareAccessDoesNotApplyToOtherHosts(): void
     {
         $this->installCloudflareVerifier();

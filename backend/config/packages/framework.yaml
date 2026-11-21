@@ -19,10 +19,13 @@ framework:
 
     # Liste blanche d'hôtes (regex, séparées par des virgules) : toute requête
     # dont le Host n'y figure pas reçoit une 400 avant d'atteindre un
-    # contrôleur. Vide = aucune restriction (dev/test). En prod, au minimum :
-    #   SYMFONY_TRUSTED_HOSTS='^(api|dark)\.horlynat\.com$,^backend$,^localhost$,^127\.0\.0\.1$'
-    # (`backend` = appels internes du frontend Next.js via le réseau Docker,
-    # 127.0.0.1 = build du frontend et sondes locales) — cf. infra/README.md.
+    # contrôleur. Vide = aucune restriction (dev/test). En prod (valeur par
+    # défaut de infra/docker-compose.prod.yml) :
+    #   ^(api|dark)\.horlynat\.com$,^hmm-backend$
+    # (`hmm-backend` = appels internes du frontend Next.js et build du
+    # frontend, alias propre au portfolio sur le réseau Docker partagé ; plus
+    # de `backend` ni de 127.0.0.1 depuis les PR #150 et B2) — cf.
+    # infra/README.md.
     trusted_hosts: '%env(default::SYMFONY_TRUSTED_HOSTS)%'
 
     # Sessions sécurisées

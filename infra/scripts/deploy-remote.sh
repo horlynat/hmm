@@ -57,6 +57,10 @@ check_secrets() {
 }
 check_secrets
 
+# Variables de sécurité de .env.prod (Cloudflare Access complet ou absent,
+# PUBLIC_API_HOSTS incluant hmm-backend) — cf. check-env-prod.sh.
+bash "$(dirname "${BASH_SOURCE[0]}")/check-env-prod.sh" .env.prod
+
 COMPOSE=(docker compose --env-file .env.prod -f docker-compose.prod.yml)
 
 # Passerelle éphémère du build frontend (service api-build-gateway, profil
