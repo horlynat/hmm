@@ -643,6 +643,8 @@ export interface SessionUser {
   roles: string[];
   isVerified: boolean;
   isTwoFactorEnabled: boolean;
+  /** Règle backend (TwoFactorMandatePolicy) : 2FA obligatoire pour ce compte. Absent sur un backend antérieur. */
+  isTwoFactorRequired?: boolean;
   isCollaborator: boolean;
   /** Complétude du profil "freelance" (0-100), pertinente seulement si isCollaborator. Voir User::getFreelanceProfileCompletionPercentage(). */
   profileCompletion: number;

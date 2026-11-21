@@ -9,6 +9,7 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Symfony\UX\LiveComponent\Attribute\PostHydrate;
 use Symfony\UX\TwigComponent\Attribute\PostMount;
 
 // ✅ Nom explicite en minuscules et chemin de template standardisé
@@ -30,6 +31,19 @@ class BudgetSummary
 
     public function __construct(private readonly Security $security)
     {
+    }
+
+    /**
+     * Contre-audit B2 : revérification à CHAQUE requête AJAX (re-rendu ou
+     * LiveAction), après ré-hydratation et avant toute action — #[PostMount]
+     * ne couvre que le montage initial : un accès retiré en cours de session
+     * (retrait d'un projet, rétrogradation) restait sinon valable pour ce
+     * composant déjà affiché.
+     */
+    #[PostHydrate]
+    public function recheckAccessOnEveryRequest(): void
+    {
+        $this->checkAccess([]);
     }
 
     /**

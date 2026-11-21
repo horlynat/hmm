@@ -52,6 +52,7 @@ class PrivilegeElevationController extends AbstractController
         AuditLogger $auditLogger,
         #[Autowire(service: 'limiter.privilege_elevation')]
         RateLimiterFactory $privilegeElevationLimiter,
+        \App\Repository\UserSessionRepository $userSessionRepository,
     ): Response {
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -91,9 +92,21 @@ class PrivilegeElevationController extends AbstractController
         $until = (new \DateTimeImmutable())->setTimestamp(time() + self::ELEVATION_DURATION_MINUTES * 60);
         $user->setSuperAdminElevatedUntil($until);
         $auditLogger->log(User::class, (int) $user->getId(), $user->getEmail(), 'super_admin_elevated', sprintf('Jusqu\'à %s.', $until->format('d/m/Y H:i')));
+
+        // Contre-audit B2 : nouvel identifiant de session au moment où cette
+        // session devient super-admin (défense contre la fixation : un
+        // identifiant connu d'un tiers avant l'élévation ne vaut plus rien
+        // après). L'ancien est détruit ; le suivi des sessions (UserSession :
+        // « mes sessions », révocation ciblée) est rattaché au nouveau.
+        $session = $request->getSession();
+        $previousId = $session->getId();
+        $session->migrate(true);
+        if ('' !== $previousId && $previousId !== $session->getId()) {
+            $userSessionRepository->findOneBySessionId($previousId)?->rebindSessionId($session->getId());
+        }
         $entityManager->flush();
 
-        $request->getSession()->set(SuperAdminElevationContext::SESSION_KEY, ['user' => $user->getUserIdentifier(), 'until' => $until->getTimestamp()]);
+        $session->set(SuperAdminElevationContext::SESSION_KEY, ['user' => $user->getUserIdentifier(), 'until' => $until->getTimestamp()]);
         SuperAdminElevationContext::grant($user->getUserIdentifier(), $until->getTimestamp());
         $this->refreshSecurityToken($tokenStorage, $user);
 

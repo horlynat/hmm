@@ -57,6 +57,8 @@ class ProfileEmailChangeController extends AbstractController
         PasswordConfirmationGuard $passwordConfirmationGuard,
         JWTService $jwt,
         EmailManager $emailManager,
+        #[\Symfony\Component\DependencyInjection\Attribute\Target('email_change_request')]
+        \Symfony\Component\RateLimiter\RateLimiterFactoryInterface $emailChangeRequestLimiter,
     ): Response {
         $user = $this->currentUser();
 
@@ -82,6 +84,10 @@ class ProfileEmailChangeController extends AbstractController
                 // tous les autres cas — une tentative sur un e-mail déjà pris
                 // par un tiers ne révèle rien à ce tiers).
                 $error = 'Cette adresse ne peut pas être utilisée.';
+            } elseif (!$emailChangeRequestLimiter->create('user_'.$user->getId())->consume()->isAccepted()) {
+                // Contre-audit B2 : chaque demande envoie un mail vers une
+                // adresse choisie par le demandeur — au plus 3 par heure.
+                $error = 'Trop de demandes de changement d\'adresse. Réessayez dans une heure.';
             } else {
                 $now = new \DateTimeImmutable();
                 $user->requestEmailChange($newEmail, $now);

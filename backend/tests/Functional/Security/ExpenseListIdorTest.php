@@ -139,4 +139,36 @@ final class ExpenseListIdorTest extends FunctionalTestCase
 
         self::assertStringNotContainsString('Access Denied', $html);
     }
+
+    /**
+     * Contre-audit B2 : un accès retiré APRÈS le montage (projet réattribué)
+     * doit couper le composant déjà affiché dès sa requête AJAX suivante.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function projectComponents(): iterable
+    {
+        yield 'liste des dépenses' => ['project:expense_list'];
+        yield 'synthèse budgétaire' => ['project:budget_summary'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('projectComponents')]
+    public function testAccessRevokedAfterMountIsEnforcedOnTheNextAjaxRequest(string $componentName): void
+    {
+        $collaborator = $this->createUser(['ROLE_EDITOR']);
+        $newOwner = $this->createUser(['ROLE_EDITOR']);
+        $project = $this->makeProject('Projet réattribué', $collaborator);
+        $project->setBudget('5000.00');
+        $this->em()->flush();
+
+        $component = $this->createLiveComponent($componentName, ['project' => $project])->actingAs($collaborator);
+        self::assertStringNotContainsString('Access Denied', $component->render()->toString());
+
+        // L'accès est retiré pendant que le composant est affiché.
+        $project->setOwner($newOwner);
+        $this->em()->flush();
+
+        $this->expectException(\Symfony\Component\Security\Core\Exception\AccessDeniedException::class);
+        $component->refresh();
+    }
 }

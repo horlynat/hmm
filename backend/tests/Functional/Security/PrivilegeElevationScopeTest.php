@@ -2,6 +2,7 @@
 
 namespace App\Tests\Functional\Security;
 
+use App\Entity\UserSession;
 use App\Tests\Functional\FunctionalTestCase;
 
 /**
@@ -61,5 +62,51 @@ final class PrivilegeElevationScopeTest extends FunctionalTestCase
         $this->client->request('GET', '/admin/security/permissions/');
         self::assertSame(403, $this->client->getResponse()->getStatusCode());
         self::assertNull($this->reload($superAdmin)->getSuperAdminElevatedUntil());
+    }
+
+    /**
+     * Contre-audit B2 : défense contre la fixation de session — l'identifiant
+     * qui existait avant l'élévation ne doit plus être celui de la session
+     * super-admin, et le suivi (« mes sessions », révocation) doit suivre.
+     */
+    public function testElevationRotatesTheSessionIdAndKeepsItsTracking(): void
+    {
+        $superAdmin = $this->createUser(['ROLE_ADMIN', 'ROLE_SUPER_ADMIN'], twoFactor: true);
+        $this->client->loginUser($superAdmin, 'main');
+        $crawler = $this->client->request('GET', '/admin/profil/'.$superAdmin->getId());
+        self::assertSame(200, $this->client->getResponse()->getStatusCode());
+
+        $before = $this->client->getRequest()->getSession()->getId();
+        self::assertNotSame('', $before);
+        $tracked = new UserSession($superAdmin, $before, '10.0.0.1', 'phpunit');
+        $this->em()->persist($tracked);
+        $this->em()->flush();
+
+        $this->client->submit($crawler->filter('form[action$="/profile/elevation/activate"]')->form(['password' => self::PASSWORD]));
+        self::assertSame(302, $this->client->getResponse()->getStatusCode());
+
+        $after = $this->sessionCookieSetBy($this->client->getResponse());
+        self::assertNotNull($after, "La réponse d'élévation doit poser le nouveau cookie de session.");
+        self::assertNotSame($before, $after, "L'identifiant de session doit changer à l'élévation.");
+
+        $trackedId = $tracked->getId();
+        $this->em()->clear();
+        $reloaded = $this->em()->find(UserSession::class, $trackedId);
+        self::assertNotNull($reloaded, 'Le suivi de session ne doit pas être perdu.');
+        self::assertSame($after, $reloaded->getSessionId(), 'Le suivi de session doit suivre le nouvel identifiant.');
+
+        $this->client->request('GET', '/admin/security/permissions/');
+        self::assertSame(200, $this->client->getResponse()->getStatusCode(), 'La session renouvelée reste super-admin.');
+    }
+
+    private function sessionCookieSetBy(\Symfony\Component\HttpFoundation\Response $response): ?string
+    {
+        foreach ($response->headers->getCookies() as $cookie) {
+            if (str_contains(strtoupper($cookie->getName()), 'SESS') && '' !== (string) $cookie->getValue()) {
+                return (string) $cookie->getValue();
+            }
+        }
+
+        return null;
     }
 }

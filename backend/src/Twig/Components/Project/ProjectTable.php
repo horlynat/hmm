@@ -18,6 +18,7 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp; // Import de l'attribut de prop
 use Symfony\UX\LiveComponent\DefaultActionTrait; // Import du trait par défaut[cite: 9]
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\UX\LiveComponent\Attribute\PostHydrate;
 use Symfony\UX\TwigComponent\Attribute\PostMount;
 
 // P1 #6 : ce composant liste TOUS les projets (budgets, clients, équipe) sans
@@ -62,6 +63,19 @@ class ProjectTable
     #[LiveProp(writable: true)] public ?int $progress_max = null; // Filtre d'avancement maximum[cite: 9]
     
     private int $limit = 20; // Limite de projets par page[cite: 9]
+
+    /**
+     * Contre-audit B2 : revérification à CHAQUE requête AJAX (re-rendu ou
+     * LiveAction), après ré-hydratation et avant toute action — #[PostMount]
+     * ne couvre que le montage initial : un accès retiré en cours de session
+     * (retrait d'un projet, rétrogradation) restait sinon valable pour ce
+     * composant déjà affiché.
+     */
+    #[PostHydrate]
+    public function recheckAccessOnEveryRequest(): void
+    {
+        $this->checkAccess([]);
+    }
 
     /**
      * Cf. docblock équivalent sur ExpenseList::checkAccess() : Security est

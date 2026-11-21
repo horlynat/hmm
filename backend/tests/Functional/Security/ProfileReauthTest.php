@@ -164,6 +164,39 @@ final class ProfileReauthTest extends FunctionalTestCase
         self::assertStringContainsString($originalEmail, $emails, "L'ancienne adresse doit recevoir une notification.");
     }
 
+    /**
+     * Contre-audit B2 : chaque demande envoie un mail vers une adresse
+     * choisie par le demandeur, et le mot de passe correct remet à zéro le
+     * garde de confirmation — au plus 3 demandes par heure et par compte.
+     */
+    public function testEmailChangeRequestsAreRateLimitedPerAccount(): void
+    {
+        $user = $this->createUser(['ROLE_USER'], twoFactor: true);
+        $this->client->loginUser($user, 'main');
+
+        $sent = [];
+        for ($i = 0; $i < 5; ++$i) {
+            $target = sprintf('spam-%d-%s@test.invalid', $i, bin2hex(random_bytes(3)));
+            $crawler = $this->client->request('GET', '/profile/email');
+            $this->client->submit($crawler->selectButton('Envoyer le lien de confirmation')->form([
+                'email_change_request[newEmail]' => $target,
+                'email_change_request[currentPassword]' => self::PASSWORD,
+            ]));
+            if ($this->client->getResponse()->isRedirect()) {
+                $sent[] = $target;
+                $this->client->followRedirect();
+            } else {
+                self::assertStringContainsString('Trop de demandes', (string) $this->client->getResponse()->getContent());
+            }
+        }
+
+        self::assertCount(3, $sent, 'Au plus 3 demandes acceptées par heure.');
+        $emails = implode("\n", $this->capturedEmails());
+        foreach ([3, 4] as $blocked) {
+            self::assertStringNotContainsString(sprintf('spam-%d-', $blocked), $emails, 'Aucun mail vers une adresse refusée.');
+        }
+    }
+
     public function testEmailChangeConfirmationCompletesTheChangeAndRevokesSessions(): void
     {
         $user = $this->createUser(['ROLE_USER'], twoFactor: true);

@@ -74,6 +74,17 @@ class UserSession
         return $this->sessionId;
     }
 
+    /**
+     * Suit un changement d'identifiant de session (Session::migrate()) sans
+     * perdre l'historique de cette connexion (appareil, IP, LoginHistory).
+     */
+    public function rebindSessionId(string $sessionId): static
+    {
+        $this->sessionId = $sessionId;
+
+        return $this;
+    }
+
     public function getIp(): ?string
     {
         return $this->ip;

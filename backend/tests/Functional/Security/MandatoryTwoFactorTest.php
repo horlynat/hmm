@@ -215,6 +215,35 @@ final class MandatoryTwoFactorTest extends FunctionalTestCase
         self::assertSame(['code' => '2fa_required'], $this->json($response));
     }
 
+    /**
+     * Contre-audit B2 : /api/me expose la règle du backend, que le frontend
+     * applique telle quelle (plus d'approximation sur les rôles bruts).
+     *
+     * @return iterable<string, array{list<string>, bool}>
+     */
+    public static function mandateByRole(): iterable
+    {
+        yield 'client' => [['ROLE_USER'], true];
+        yield 'éditeur' => [['ROLE_EDITOR'], false];
+        yield 'modérateur' => [['ROLE_MODERATOR'], false];
+        yield 'manager' => [['ROLE_MANAGER'], false];
+        yield 'admin' => [['ROLE_ADMIN'], true];
+        yield 'super-admin' => [['ROLE_SUPER_ADMIN'], true];
+    }
+
+    /**
+     * @param list<string> $roles
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('mandateByRole')]
+    public function testApiMeExposesTheBackendMandate(array $roles, bool $required): void
+    {
+        $user = $this->createUser($roles);
+        $response = $this->jsonRequest('GET', '/api/me', null, $this->jwtFor($user));
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame($required, $this->json($response)['isTwoFactorRequired'] ?? null);
+    }
+
     public function testClientWithTwoFactorIsNotBlocked(): void
     {
         $client = $this->createUser(['ROLE_USER'], twoFactor: true);

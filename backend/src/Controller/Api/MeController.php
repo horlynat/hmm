@@ -113,6 +113,7 @@ final class MeController extends AbstractController
         private readonly PasswordConfirmationGuard $passwordConfirmationGuard,
         private readonly UserSessionRevoker $userSessionRevoker,
         private readonly JWTTokenManagerInterface $jwtManager,
+        private readonly \App\Security\TwoFactorMandatePolicy $twoFactorMandatePolicy,
     ) {
     }
 
@@ -1388,6 +1389,10 @@ final class MeController extends AbstractController
             'roles' => $roles,
             'isVerified' => $user->isVerified(),
             'isTwoFactorEnabled' => $user->isTwoFactorEnabled(),
+            // Source unique de la règle (TwoFactorMandatePolicy, la même qui
+            // bloque l'API) : le frontend n'a plus à la recalculer sur les
+            // rôles bruts, qui ignorent la hiérarchie (contre-audit B2).
+            'isTwoFactorRequired' => $this->twoFactorMandatePolicy->isMandatoryFor($user),
             'isCollaborator' => $isCollaborator,
             // Calculés pour tout le monde (inoffensif pour un client) — le
             // frontend ne les affiche que si isCollaborator. Voir

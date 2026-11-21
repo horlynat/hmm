@@ -41,6 +41,13 @@ abstract class FunctionalTestCase extends WebTestCase
         $this->client->disableReboot();
         $this->clientIp = sprintf('10.%d.%d.%d', random_int(0, 255), random_int(0, 255), random_int(1, 254));
         $this->client->setServerParameter('REMOTE_ADDR', $this->clientIp);
+
+        // Isolation : certains limiteurs sont indexés par l'id du compte
+        // (PasswordConfirmationGuard `pwd_confirm_<id>`, changement d'e-mail
+        // `user_<id>`) et leur pool survit d'une exécution à l'autre. Sur une
+        // base de test recréée, un nouveau compte n°1 héritait des tentatives
+        // d'un ancien compte n°1 -> refus à tort, test instable.
+        static::getContainer()->get('cache.rate_limiter')->clear();
     }
 
     protected function em(): EntityManagerInterface

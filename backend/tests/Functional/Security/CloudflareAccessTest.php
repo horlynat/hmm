@@ -115,6 +115,49 @@ final class CloudflareAccessTest extends FunctionalTestCase
         self::assertSame(403, $this->requestDark($header.'.'.$payload.'.'), 'alg none');
     }
 
+    /**
+     * Contre-audit B2 (M3) : un hôte protégé dont la configuration du
+     * vérificateur est incomplète ne doit pas s'ouvrir en silence.
+     */
+    public function testIncompleteConfigurationFailsClosed(): void
+    {
+        static::getContainer()->set(CloudflareAccessVerifier::class, new CloudflareAccessVerifier(
+            new MockHttpClient(static fn (): MockResponse => self::fail('Aucun appel réseau attendu.')),
+            new ArrayAdapter(),
+            new NullLogger(),
+            '',
+            '',
+        ));
+
+        self::assertSame(403, $this->requestDark(null), 'sans en-tête');
+        self::assertSame(403, $this->requestDark('a.b.c'), 'avec un en-tête quelconque');
+    }
+
+    /**
+     * Contre-audit B2 (M3) : les noms internes joignables sans Cloudflare
+     * (`hmm-backend`, `backend`) ne servent que /api, /uploads, /newsletter —
+     * jamais le back-office, qui ne reste servi que par l'hôte protégé.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function internalHosts(): iterable
+    {
+        yield 'hmm-backend' => ['hmm-backend'];
+        yield 'backend' => ['backend'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('internalHosts')]
+    public function testInternalHostsNeverServeTheBackOffice(string $host): void
+    {
+        foreach (['/login', '/admin', '/admin/users', '/profile/2fa'] as $path) {
+            $this->client->request('GET', 'http://'.$host.$path);
+            self::assertSame(404, $this->client->getResponse()->getStatusCode(), $host.$path);
+        }
+
+        $this->client->request('GET', 'http://'.$host.'/api/home_contents', server: ['HTTP_ACCEPT' => 'application/ld+json']);
+        self::assertSame(200, $this->client->getResponse()->getStatusCode(), $host.'/api/home_contents');
+    }
+
     public function testCloudflareAccessDoesNotApplyToOtherHosts(): void
     {
         $this->installCloudflareVerifier();

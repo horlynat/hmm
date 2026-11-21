@@ -1026,10 +1026,14 @@ production :
 - `PUBLIC_API_HOSTS` — hôte(s) où seuls `/api`, `/uploads`, `/newsletter`
   répondent côté Symfony ; défaut `api.horlynat.com`.
 - `SYMFONY_TRUSTED_HOSTS` — liste blanche d'hôtes Symfony (400 sinon) ;
-  défaut `^(api|dark)\.horlynat\.com$,^hmm-backend$,^backend$`.
+  défaut `^(api|dark)\.horlynat\.com$,^hmm-backend$`.
   `^hmm-backend$` (alias edge-net propre au portfolio) est indispensable (appels internes du frontend + build via `api-build-gateway`).
-- Les variables Cloudflare Access (`CF_ACCESS_*`) arriveront avec le lot
-  d'authentification backend (B2), qui les lit.
+- `CF_ACCESS_HOSTS`, `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD` — vérification
+  côté Symfony du jeton Cloudflare Access (vide = inactif). À renseigner
+  ensemble : `CF_ACCESS_HOSTS` seul refuse tout sur ces hôtes (fail-closed).
+- `PUBLIC_API_HOSTS` inclut aussi les noms internes `hmm-backend`/`backend` :
+  joignables sans Cloudflare, ils ne servent que `/api`, `/uploads`,
+  `/newsletter`, jamais le back-office.
 - `HMM_BUILD_GATEWAY_BIND` — IP de `docker0` pour la passerelle de build
   éphémère (défaut `172.17.0.1`, cf. §6).
 
