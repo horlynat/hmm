@@ -1970,6 +1970,76 @@
     },
     "account": {
       "long": "Espace clients et freelances"
+    },
+    "footer": {
+      "tagline": "Ingénieur et architecte logiciel, consultant en cybersécurité, gestion et management des risques.",
+      "home": "Horlynat, accueil",
+      "offers": "Offres",
+      "allOffers": "Toutes les offres",
+      "site": "Le site",
+      "about": "À propos",
+      "skills": "Compétences",
+      "projects": "Réalisations",
+      "blog": "Blog",
+      "legal": "Informations légales",
+      "mentions": "Mentions légales",
+      "privacy": "Protection des données (RGPD)",
+      "terms": "Conditions d’utilisation",
+      "service": "Conditions de prestation",
+      "cookies": "Cookies",
+      "contact": "Contact",
+      "dbg": "Digital Business Group",
+      "rights": "Tous droits réservés.",
+      "location": "Brazzaville, Congo · missions à distance",
+      "social": "Réseaux sociaux"
+    },
+    "assistant": {
+      "name": "Assistant de Horlynat",
+      "status": "En ligne · répond en quelques secondes",
+      "open": "Ouvrir l'assistant de Horlynat",
+      "close": "Fermer l’assistant",
+      "newChat": "Nouvelle conversation",
+      "welcomeTitle": "Bonjour, que puis-je faire pour vous ?",
+      "welcomeText": "Décrivez votre besoin : je vous oriente vers la bonne solution, avec son prix et son délai.",
+      "suggestions": [
+        [
+          "shop",
+          "Je veux plus de clients",
+          "Un assistant WhatsApp qui répond et vend"
+        ],
+        [
+          "tag",
+          "Combien ça coûte ?",
+          "Les prix de départ de chaque offre"
+        ],
+        [
+          "lock",
+          "Sécuriser mon site",
+          "Un audit de sécurité en 7 jours"
+        ],
+        [
+          "umb",
+          "Suis-je bien assuré ?",
+          "Vérifier ce que mes contrats couvrent"
+        ]
+      ],
+      "humanTitle": "Préférez parler à Horlynat ?",
+      "humanSub": "Réponse en personne sur WhatsApp",
+      "humanMessage": "Bonjour Horlynat, j’ai une question.",
+      "inputLabel": "Votre question",
+      "placeholder": "Écrivez votre question…",
+      "send": "Envoyer",
+      "disclaimer": "Assistant IA : il peut se tromper. Pour un devis, Horlynat vous répond en personne.",
+      "dataLink": "Vos données",
+      "follow": [
+        "Quel délai ?",
+        "Combien ça coûte ?",
+        "Parler à Horlynat"
+      ],
+      "talkAnswer": "Avec plaisir : Horlynat vous répond en personne sur WhatsApp, en général dans la journée.",
+      "writeHorlynat": "Écrire à Horlynat",
+      "typing": "L’assistant écrit",
+      "whatsapp": "Écrire sur WhatsApp"
     }
   }
 }

@@ -1970,6 +1970,76 @@
     },
     "account": {
       "long": "Client and freelancer area"
+    },
+    "footer": {
+      "tagline": "Software engineer and architect, consultant in cybersecurity and risk management.",
+      "home": "Horlynat, home",
+      "offers": "Offers",
+      "allOffers": "All offers",
+      "site": "The site",
+      "about": "About",
+      "skills": "Skills",
+      "projects": "Projects",
+      "blog": "Blog",
+      "legal": "Legal information",
+      "mentions": "Legal notice",
+      "privacy": "Data protection (GDPR)",
+      "terms": "Terms of use",
+      "service": "Terms of service",
+      "cookies": "Cookies",
+      "contact": "Contact",
+      "dbg": "Digital Business Group",
+      "rights": "All rights reserved.",
+      "location": "Brazzaville, Congo · remote missions",
+      "social": "Social networks"
+    },
+    "assistant": {
+      "name": "Horlynat’s assistant",
+      "status": "Online · replies in a few seconds",
+      "open": "Open Horlynat’s assistant",
+      "close": "Close the assistant",
+      "newChat": "New conversation",
+      "welcomeTitle": "Hello, how can I help you?",
+      "welcomeText": "Describe your need: I’ll point you to the right solution, with its price and timeline.",
+      "suggestions": [
+        [
+          "shop",
+          "I want more customers",
+          "A WhatsApp assistant that answers and sells"
+        ],
+        [
+          "tag",
+          "How much does it cost?",
+          "The starting price of each offer"
+        ],
+        [
+          "lock",
+          "Secure my website",
+          "A security audit in 7 days"
+        ],
+        [
+          "umb",
+          "Am I properly insured?",
+          "Check what my policies cover"
+        ]
+      ],
+      "humanTitle": "Prefer to talk to Horlynat?",
+      "humanSub": "Personal reply on WhatsApp",
+      "humanMessage": "Hello Horlynat, I have a question.",
+      "inputLabel": "Your question",
+      "placeholder": "Write your question…",
+      "send": "Send",
+      "disclaimer": "AI assistant: it can make mistakes. For a quote, Horlynat replies to you personally.",
+      "dataLink": "Your data",
+      "follow": [
+        "How long does it take?",
+        "How much does it cost?",
+        "Talk to Horlynat"
+      ],
+      "talkAnswer": "With pleasure: Horlynat will reply to you personally on WhatsApp, usually the same day.",
+      "writeHorlynat": "Write to Horlynat",
+      "typing": "The assistant is typing",
+      "whatsapp": "Write on WhatsApp"
     }
   }
 }
