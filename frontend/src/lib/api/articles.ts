@@ -31,3 +31,15 @@ export async function getArticleBySlug(slug: string, locale: string): Promise<Ar
   const articles = await getArticles(locale);
   return articles.find((article) => article.slug === slug) ?? null;
 }
+
+/**
+ * Slugs uniquement, indépendant de la locale — pour `generateStaticParams`
+ * (exécuté au build, sans contexte de requête). Cf. getOfferSlugs/getProjectSlugs.
+ */
+export async function getArticleSlugs(): Promise<string[]> {
+  const payload = await apiFetch<unknown>("/articles", {
+    tags: ["articles"],
+    revalidate: ARTICLES_REVALIDATE_SECONDS,
+  });
+  return extractCollection<{ slug: string }>(payload).map((article) => article.slug);
+}

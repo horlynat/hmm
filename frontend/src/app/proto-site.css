@@ -15,4 +15,12 @@
 
 /* Images du back-office dans les cadres illustrés du prototype. */
 .proto-skin .gim img,
-.proto-skin .device img { object-fit: cover; }
+.proto-skin .device img,
+.proto-skin .cov img,
+.proto-skin .arcov img,
+.proto-skin .pph img { object-fit: cover; }
+
+/* `next/image fill` positionne l'image en absolu : `.avs` (avatar), seul
+   cadre non déjà positionné dans le prototype (pensé pour un <img> normal,
+   `.cov`/`.gim`/`.device`/`.pph` le sont déjà), a besoin de ce contexte. */
+.proto-skin .avs { position: relative; }

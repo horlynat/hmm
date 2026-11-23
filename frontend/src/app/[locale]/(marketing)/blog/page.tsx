@@ -1,7 +1,22 @@
-// Refonte, phase 1 : copie conforme du prototype (contenu figé du prototype).
-// La phase 2 rebranche les données du back-office (cf. historique git de ce fichier).
-import ProtoBlog from "@/components/protopages/blog";
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { buildPageMetadata } from "@/lib/metadata";
+import { SiteBlog } from "@/components/blog-proto/SiteBlog";
 
-export default function Page() {
-  return <ProtoBlog />;
+export const dynamic = "force-static";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "blogPage" });
+  return buildPageMetadata({
+    locale,
+    pathname: "/blog",
+    title: t("metaTitle"),
+    description: t("lede"),
+  });
+}
+
+export default async function BlogPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  return <SiteBlog locale={locale} />;
 }

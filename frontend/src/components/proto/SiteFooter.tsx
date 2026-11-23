@@ -4,8 +4,8 @@ import { siteConfig } from "@/config/site";
 import { getOffers } from "@/lib/api/offers";
 
 /**
- * Pied de page du site vitrine — markup du prototype (`.ft .ftg .ftb`,
- * cf. ProtoFooter, sa copie conforme), alimenté par le back-office :
+ * Pied de page du site vitrine — markup du prototype (`.ft .ftg .ftb`),
+ * alimenté par le back-office :
  * colonne « Offres » = offres réellement publiées (sélection du prototype si
  * elles sont en ligne, sinon les premières par ordre d'affichage — jamais de
  * lien vers une offre dépubliée). Textes bilingues, année courante.

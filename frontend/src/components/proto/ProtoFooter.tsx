@@ -1,9 +1,0 @@
-/* Copie conforme du prototype — GÉNÉRÉ par html2tsx.py, ne pas éditer à la main. */
-import type { CSSProperties } from "react";
-import { PL } from "@/components/proto/PL";
-
-export function ProtoFooter() {
-  return (
-    <footer className={"ft"}><div className={"w"}><div className={"ftg"}><div><PL className={"brand"} href={"/"} aria-label={"Horlynat, accueil"}><span className={"logo"}>H</span>Horlynat</PL><p className={"mut"} style={{ marginTop: "16px", fontSize: "14.5px", maxWidth: "34ch" } as CSSProperties}>Ingénieur et architecte logiciel, consultant en cybersécurité, gestion et management des risques.</p></div><div><h4>Offres</h4><PL href={"/offres/whatsapp"}>Assistant IA WhatsApp</PL><PL href={"/offres/architecture"}>Audit d’architecture logicielle</PL><PL href={"/offres/audit"}>Audit de sécurité express</PL><PL href={"/offres/risques"}>Diagnostic risques et assurances</PL><PL href={"/offres"}>Toutes les offres</PL></div><div><h4>Le site</h4><PL href={"/a-propos"}>À propos</PL><PL href={"/a-propos#competences"} data-a={"jump"} data-id={"competences"}>Compétences</PL><PL href={"/a-propos#realisations"} data-a={"jump"} data-id={"realisations"}>Réalisations</PL><PL href={"/blog"}>Blog</PL></div><div><h4>Informations légales</h4><PL href={"/mentions-legales"}>Mentions légales</PL><PL href={"/confidentialite"}>Protection des données (RGPD)</PL><PL href={"/utilisation"}>Conditions d’utilisation</PL><PL href={"/conditions"}>Conditions de prestation</PL><PL href={"/cookies"}>Cookies</PL></div><div><h4>Contact</h4><a href={"https://wa.me/242066429090"} target={"_blank"} rel={"noopener"}>WhatsApp</a><a href={"mailto:contact@horlynat.com"}>contact@horlynat.com</a><a href={"https://groupdbg.com"} target={"_blank"} rel={"noopener"}>Digital Business Group</a></div></div><div className={"ftb"}><span>© 2026 Horlynat. Tous droits réservés.</span><span>Brazzaville, Congo · missions à distance</span></div></div></footer>
-  );
-}

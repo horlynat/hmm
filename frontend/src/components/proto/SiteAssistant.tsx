@@ -8,7 +8,7 @@ import { useReducedMotion } from "@/lib/useReducedMotion";
 import { AI_ASSISTANT_OPEN_EVENT, consumeAiAssistantOpenRequest } from "@/lib/aiAssistantOpen";
 import type { AiAssistantChatResult } from "@/lib/types";
 import { PL } from "./PL";
-import { ProtoIcon } from "./ProtoSvg";
+import { PersonAvatarArt, ProtoIcon } from "./ProtoSvg";
 import type { ProtoIconName } from "./assets";
 
 /**
@@ -203,7 +203,7 @@ export function SiteAssistant({ fallback }: { fallback: string | null }) {
                   </div>
                   <a className="dwa" href={whatsappLink(t("humanMessage"))} target="_blank" rel="noopener noreferrer">
                     <span className="avs">
-                      <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15" r="7" fill="rgba(255,255,255,.55)" /><path d="M6 40c1-9 7-14 14-14s13 5 14 14z" fill="rgba(255,255,255,.55)" /></svg>
+                      <PersonAvatarArt />
                     </span>
                     <span>
                       <b>{t("humanTitle")}</b>

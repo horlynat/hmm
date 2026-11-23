@@ -10,9 +10,17 @@ import { getMediaUrl } from "@/lib/media";
 import { getExcerpt } from "@/lib/text";
 import { whatsappLink } from "@/lib/whatsapp";
 import type { Project } from "@/lib/types";
-import { PROTO_PROJECT_ART, type ProtoIconName } from "@/components/proto/assets";
+import {
+  PROTO_PROJECT_ART,
+  type ProtoIconName,
+} from "@/components/proto/assets";
 import { offerIcon, pickHomeOffers } from "./offerHelpers";
-import { ProjectArt, ProtoIcon, SilhouetteArt, TrustIcon } from "@/components/proto/ProtoSvg";
+import {
+  ProjectArt,
+  ProtoIcon,
+  SilhouetteArt,
+  TrustIcon,
+} from "@/components/proto/ProtoSvg";
 import { LandingHero } from "./LandingHero";
 import { HomeDemo } from "./HomeDemo";
 
@@ -23,10 +31,20 @@ import { HomeDemo } from "./HomeDemo";
  * réalisations (projets publics), portrait et repères (À propos). Les textes
  * fixes viennent des traductions (landing.*), FR et EN.
  */
-const ART_KEYS = Object.keys(PROTO_PROJECT_ART) as (keyof typeof PROTO_PROJECT_ART)[];
+const ART_KEYS = Object.keys(
+  PROTO_PROJECT_ART,
+) as (keyof typeof PROTO_PROJECT_ART)[];
 
 /** Image de couverture du projet, sinon illustration du prototype (par slug, sinon par rang). */
-export function ProjectImage({ project, index, sizes }: { project: Project; index: number; sizes: string }) {
+export function ProjectImage({
+  project,
+  index,
+  sizes,
+}: {
+  project: Project;
+  index: number;
+  sizes: string;
+}) {
   const cover = project.info?.coverImage;
   if (cover) {
     return (
@@ -45,6 +63,80 @@ export function ProjectImage({ project, index, sizes }: { project: Project; inde
   return <ProjectArt name={key} />;
 }
 
+/** Bloc « projet principal + projets secondaires » du prototype (projBlock : `.pjf` + `.pjs`). */
+export async function ProjectsShowcase({
+  locale,
+  projects,
+}: {
+  locale: string;
+  projects: Project[];
+}) {
+  const t = await getTranslations({ locale, namespace: "landing" });
+  const [lead, ...others] = projects;
+  if (!lead) return null;
+  const projectStatus = (p: Project) => t(`projects.status.${p.status}`);
+  return (
+    <>
+      <Link
+        className="pjf"
+        href={{ pathname: "/realisations/[slug]", params: { slug: lead.slug } }}
+      >
+        <div className="im">
+          <ProjectImage
+            project={lead}
+            index={0}
+            sizes="(max-width: 900px) 100vw, 600px"
+          />
+        </div>
+        <div className="bd">
+          <span className="tag" style={{ alignSelf: "flex-start" }}>
+            {projectStatus(lead)}
+          </span>
+          <h3 style={{ fontSize: "26px", lineHeight: "1.25" }}>{lead.title}</h3>
+          <p className="mut">{getExcerpt(lead.description, 240)}</p>
+          <span className="lnk">
+            {t("projects.see")} <ProtoIcon name="ar" />
+          </span>
+        </div>
+      </Link>
+      {others.length > 0 && (
+        <div className="pjs">
+          {others.map((p, i) => (
+            <Link
+              key={p.id}
+              className="pj"
+              href={{
+                pathname: "/realisations/[slug]",
+                params: { slug: p.slug },
+              }}
+            >
+              <div className="im">
+                <ProjectImage
+                  project={p}
+                  index={i + 1}
+                  sizes="(max-width: 900px) 100vw, 560px"
+                />
+              </div>
+              <div className="bd">
+                <span className="tag" style={{ alignSelf: "flex-start" }}>
+                  {projectStatus(p)}
+                </span>
+                <h3 style={{ fontSize: "20px" }}>{p.title}</h3>
+                <p className="mut" style={{ fontSize: "15px" }}>
+                  {getExcerpt(p.description, 180)}
+                </p>
+                <span className="lnk" style={{ marginTop: "auto" }}>
+                  {t("projects.see")} <ProtoIcon name="ar" />
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 export async function SiteHome({ locale }: { locale: string }) {
   const [t, offers, projects, about] = await Promise.all([
     getTranslations({ locale, namespace: "landing" }),
@@ -57,15 +149,22 @@ export async function SiteHome({ locale }: { locale: string }) {
   const homeOffers = pickHomeOffers(offers);
   const featured = offers.find((o) => o.featured) ?? null;
   const shown = sortProjectsForDisplay(projects).slice(0, 3);
-  const [lead, ...others] = shown;
-  const needs = (t.raw("needs.items") as { dom: string; title: string; text: string; offer: string; icon: ProtoIconName }[]).map((n) => ({
+  const lead = shown[0];
+  const needs = (
+    t.raw("needs.items") as {
+      dom: string;
+      title: string;
+      text: string;
+      offer: string;
+      icon: ProtoIconName;
+    }[]
+  ).map((n) => ({
     ...n,
     // Lien vers l'offre ciblée seulement si elle est publiée ; sinon le catalogue.
     published: offers.some((o) => o.slug === n.offer),
   }));
   // Repères propres à l'accueil (différents de ceux de la page À propos, cf. prototype).
   const stats = t.raw("me.stats") as [string, string][];
-  const projectStatus = (p: Project) => t(`projects.status.${p.status}`);
 
   return (
     <>
@@ -91,7 +190,14 @@ export async function SiteHome({ locale }: { locale: string }) {
           </div>
           <div className="need">
             {needs.map((n) => (
-              <Link key={n.offer} href={n.published ? { pathname: "/offres/[slug]", params: { slug: n.offer } } : "/offres"}>
+              <Link
+                key={n.offer}
+                href={
+                  n.published
+                    ? { pathname: "/offres/[slug]", params: { slug: n.offer } }
+                    : "/offres"
+                }
+              >
                 <span className="ic">
                   <ProtoIcon name={n.icon} />
                 </span>
@@ -119,14 +225,19 @@ export async function SiteHome({ locale }: { locale: string }) {
             </div>
             <div className={`offers o${Math.min(homeOffers.length, 4)}`}>
               {homeOffers.map((o) => {
-                const href = { pathname: "/offres/[slug]" as const, params: { slug: o.slug } };
+                const href = {
+                  pathname: "/offres/[slug]" as const,
+                  params: { slug: o.slug },
+                };
                 return (
                   <article key={o.id} className={o.featured ? "of ft" : "of "}>
                     <div className="top">
                       <span className="oic">
                         <ProtoIcon name={offerIcon(o.icon)} />
                       </span>
-                      {o.featured && <span className="tag">{t("offers.featuredTag")}</span>}
+                      {o.featured && (
+                        <span className="tag">{t("offers.featuredTag")}</span>
+                      )}
                     </div>
                     <div className="bd">
                       <h3>
@@ -145,15 +256,28 @@ export async function SiteHome({ locale }: { locale: string }) {
                       </ul>
                       <div className="ft2">
                         <div className="pr">
-                          <small>{o.priceOnce ? t("hero.priceOnce") : t("hero.priceFrom")}</small>
+                          <small>
+                            {o.priceOnce
+                              ? t("hero.priceOnce")
+                              : t("hero.priceFrom")}
+                          </small>
                           <b>{formatFcfa(o.price, locale)}</b>
                         </div>
-                        <span className="dl">{t("hero.readyIn", { delay: o.delay })}</span>
+                        <span className="dl">
+                          {t("hero.readyIn", { delay: o.delay })}
+                        </span>
                       </div>
                     </div>
                     <div className="act">
                       {o.featured && (
-                        <a className="b b-w sm" href={whatsappLink(t("hero.orderMessage", { title: o.title }))} target="_blank" rel="noopener noreferrer">
+                        <a
+                          className="b b-w sm"
+                          href={whatsappLink(
+                            t("hero.orderMessage", { title: o.title }),
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
                           <ProtoIcon name="wa" />
                           {t("offers.order")}
                         </a>
@@ -205,7 +329,10 @@ export async function SiteHome({ locale }: { locale: string }) {
               {featured && (
                 <div className="scp">
                   <span className="p">
-                    {featured.priceOnce ? t("hero.priceOnce") : t("hero.priceFrom")} <b>{formatFcfa(featured.price, locale)}</b>
+                    {featured.priceOnce
+                      ? t("hero.priceOnce")
+                      : t("hero.priceFrom")}{" "}
+                    <b>{formatFcfa(featured.price, locale)}</b>
                   </span>
                   <span className="d">
                     <i />
@@ -214,11 +341,26 @@ export async function SiteHome({ locale }: { locale: string }) {
                 </div>
               )}
               <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
-                <a className="b b-w" href={whatsappLink(t("demo.orderMessage"))} target="_blank" rel="noopener noreferrer">
+                <a
+                  className="b b-w"
+                  href={whatsappLink(t("demo.orderMessage"))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <ProtoIcon name="wa" />
                   {t("demo.order")}
                 </a>
-                <Link className="b b-g" href={featured ? { pathname: "/offres/[slug]", params: { slug: featured.slug } } : "/offres"}>
+                <Link
+                  className="b b-g"
+                  href={
+                    featured
+                      ? {
+                          pathname: "/offres/[slug]",
+                          params: { slug: featured.slug },
+                        }
+                      : "/offres"
+                  }
+                >
                   {t("demo.seeOffer")}
                 </Link>
               </div>
@@ -235,46 +377,12 @@ export async function SiteHome({ locale }: { locale: string }) {
               <h2>{t("projects.title")}</h2>
               <p>{t("projects.lede")}</p>
             </div>
-            <Link className="pjf" href={{ pathname: "/realisations/[slug]", params: { slug: lead.slug } }}>
-              <div className="im">
-                <ProjectImage project={lead} index={0} sizes="(max-width: 900px) 100vw, 600px" />
-              </div>
-              <div className="bd">
-                <span className="tag" style={{ alignSelf: "flex-start" }}>
-                  {projectStatus(lead)}
-                </span>
-                <h3 style={{ fontSize: "26px", lineHeight: "1.25" }}>{lead.title}</h3>
-                <p className="mut">{getExcerpt(lead.description, 240)}</p>
-                <span className="lnk">
-                  {t("projects.see")} <ProtoIcon name="ar" />
-                </span>
-              </div>
-            </Link>
-            {others.length > 0 && (
-              <div className="pjs">
-                {others.map((p, i) => (
-                  <Link key={p.id} className="pj" href={{ pathname: "/realisations/[slug]", params: { slug: p.slug } }}>
-                    <div className="im">
-                      <ProjectImage project={p} index={i + 1} sizes="(max-width: 900px) 100vw, 560px" />
-                    </div>
-                    <div className="bd">
-                      <span className="tag" style={{ alignSelf: "flex-start" }}>
-                        {projectStatus(p)}
-                      </span>
-                      <h3 style={{ fontSize: "20px" }}>{p.title}</h3>
-                      <p className="mut" style={{ fontSize: "15px" }}>
-                        {getExcerpt(p.description, 180)}
-                      </p>
-                      <span className="lnk" style={{ marginTop: "auto" }}>
-                        {t("projects.see")} <ProtoIcon name="ar" />
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
+            <ProjectsShowcase locale={locale} projects={shown} />
             <div style={{ textAlign: "center", marginTop: "36px" }}>
-              <Link className="b b-g" href={{ pathname: "/a-propos", hash: "realisations" }}>
+              <Link
+                className="b b-g"
+                href={{ pathname: "/a-propos", hash: "realisations" }}
+              >
                 {t("projects.all")}
               </Link>
             </div>
@@ -329,7 +437,12 @@ export async function SiteHome({ locale }: { locale: string }) {
               <Link className="b b-g" href="/a-propos">
                 {t("me.more")}
               </Link>
-              <a className="b b-w" href={whatsappLink(t("cta.message"))} target="_blank" rel="noopener noreferrer">
+              <a
+                className="b b-w"
+                href={whatsappLink(t("cta.message"))}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <ProtoIcon name="wa" />
                 {t("me.whatsapp")}
               </a>
@@ -372,7 +485,10 @@ export async function SiteHome({ locale }: { locale: string }) {
                   {i === 3 && (
                     <>
                       {" "}
-                      <Link className="lnk" href="/politique-de-confidentialite">
+                      <Link
+                        className="lnk"
+                        href="/politique-de-confidentialite"
+                      >
                         {t("faq.privacyLink")}
                       </Link>
                     </>
@@ -383,7 +499,11 @@ export async function SiteHome({ locale }: { locale: string }) {
           </div>
           <p className="faqm">
             {t("faq.more")}{" "}
-            <a href={whatsappLink(t("faq.moreMessage"))} target="_blank" rel="noopener noreferrer">
+            <a
+              href={whatsappLink(t("faq.moreMessage"))}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               {t("faq.moreLink")}
             </a>
           </p>
@@ -396,7 +516,12 @@ export async function SiteHome({ locale }: { locale: string }) {
             <h2>{t("cta.title")}</h2>
             <p>{t("cta.text")}</p>
             <div className="row">
-              <a className="b b-w" href={whatsappLink(t("cta.message"))} target="_blank" rel="noopener noreferrer">
+              <a
+                className="b b-w"
+                href={whatsappLink(t("cta.message"))}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <ProtoIcon name="wa" />
                 {t("cta.whatsapp")}
               </a>

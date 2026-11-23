@@ -9,6 +9,8 @@ import { resolveOgLocale, SITE_URL } from "@/lib/metadata";
 import { getArticleExcerpt } from "@/lib/sanitize";
 import { sortProjectsForDisplay } from "@/lib/projects/sortForDisplay";
 import { CaseStudy } from "@/components/cases/CaseStudy";
+import { getPathname } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
 
 export const dynamic = "force-static";
 
@@ -44,12 +46,23 @@ export async function generateMetadata({
   // n'acceptent pas de balisage.
   const excerpt = getArticleExcerpt(project.description);
 
+  // Canonical et hreflang propres à la fiche : sans eux, la page hérite de
+  // ceux du layout racine (l'accueil) et les moteurs la traitent comme un
+  // doublon de l'accueil, donc ne l'indexent pas (cf. offres/[slug]).
+  const href = { pathname: "/realisations/[slug]" as const, params: { slug: project.slug } };
+  const url = `${SITE_URL}${getPathname({ locale, href })}`;
+  const languages = Object.fromEntries(
+    routing.locales.map((l) => [l, `${SITE_URL}${getPathname({ locale: l, href })}`]),
+  );
+
   return {
     title: project.title,
     description: excerpt,
+    alternates: { canonical: url, languages },
     openGraph: {
       title: project.title,
       description: excerpt,
+      url,
       type: "article",
       siteName: siteConfig.name,
       locale: resolveOgLocale(locale),

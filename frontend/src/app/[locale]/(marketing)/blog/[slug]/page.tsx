@@ -1,23 +1,90 @@
-// Refonte, phase 1 : copie conforme du prototype (contenu figé du prototype).
-// La phase 2 rebranche les données du back-office (cf. historique git de ce fichier).
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import ProtoBlogA0 from "@/components/protopages/blog-a0";
-import ProtoBlogA1 from "@/components/protopages/blog-a1";
+import { getArticleBySlug, getArticles, getArticleSlugs } from "@/lib/api/articles";
+import { getArticleExcerpt } from "@/lib/sanitize";
+import { getMediaUrl } from "@/lib/media";
+import { jsonLdScript } from "@/lib/json-ld";
+import { siteConfig } from "@/config/site";
+import { resolveOgLocale, SITE_URL } from "@/lib/metadata";
+import { getPathname } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
+import { ArticleDetail } from "@/components/blog-proto/ArticleDetail";
 
-const PAGES = {
-  a0: ProtoBlogA0,
-  a1: ProtoBlogA1,
-} as const;
+export const dynamic = "force-static";
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return Object.keys(PAGES).map((slug) => ({ slug }));
+// Pré-génère une page par article et par locale au build (cf. offres/[slug]).
+export async function generateStaticParams() {
+  const slugs = await getArticleSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
-export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const Proto = Object.hasOwn(PAGES, slug) ? PAGES[slug as keyof typeof PAGES] : null;
-  if (!Proto) notFound();
-  return <Proto />;
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; locale: string }>;
+}): Promise<Metadata> {
+  const { slug, locale } = await params;
+  const article = await getArticleBySlug(slug, locale);
+  if (!article) return {};
+
+  const description = getArticleExcerpt(article.content);
+  const image = article.media[0] ? getMediaUrl(article.media[0].filePath) : `${SITE_URL}/${locale}/opengraph-image`;
+
+  // Canonical et hreflang propres à l'article (cf. offres/[slug]).
+  const href = { pathname: "/blog/[slug]" as const, params: { slug: article.slug } };
+  const url = `${SITE_URL}${getPathname({ locale, href })}`;
+  const languages = Object.fromEntries(
+    routing.locales.map((l) => [l, `${SITE_URL}${getPathname({ locale: l, href })}`]),
+  );
+
+  return {
+    title: article.title,
+    description,
+    alternates: { canonical: url, languages },
+    openGraph: {
+      title: article.title,
+      description,
+      url,
+      type: "article",
+      siteName: siteConfig.name,
+      locale: resolveOgLocale(locale),
+      images: [image],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description,
+      images: [image],
+    },
+  };
+}
+
+export default async function ArticleDetailPage({ params }: { params: Promise<{ slug: string; locale: string }> }) {
+  const { slug, locale } = await params;
+  const [article, articles] = await Promise.all([getArticleBySlug(slug, locale), getArticles(locale)]);
+  if (!article) notFound();
+
+  const image = article.media[0] ? getMediaUrl(article.media[0].filePath) : undefined;
+  const url = `${SITE_URL}${getPathname({ locale, href: { pathname: "/blog/[slug]", params: { slug: article.slug } } })}`;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: getArticleExcerpt(article.content),
+    image: image ? [image] : undefined,
+    author: { "@type": "Person", name: siteConfig.name },
+    keywords: article.tags.length ? article.tags.map((t) => t.name).join(", ") : undefined,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    inLanguage: locale,
+  };
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }} />
+      {/* Pas de date de publication exposée par l'API aujourd'hui (Article
+          n'a pas de champ publishedAt côté back-office) : aucune date
+          inventée, le bloc date du gabarit reste simplement masqué. */}
+      <ArticleDetail locale={locale} article={article} articles={articles} publishedAt={null} />
+    </>
+  );
 }

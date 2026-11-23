@@ -1,7 +1,13 @@
-// Refonte, phase 1 : copie conforme du prototype (contenu figé du prototype).
-// La phase 2 rebranche les données du back-office (cf. historique git de ce fichier).
-import ProtoAPropos from "@/components/protopages/a-propos";
+import { permanentRedirect } from "next/navigation";
+import { getPathname } from "@/i18n/navigation";
 
-export default function Page() {
-  return <ProtoAPropos />;
+/**
+ * Refonte : la rubrique « réalisations » est une section de la page À propos
+ * (comme dans le prototype). Redirection permanente vers l'ancre, pour
+ * conserver les anciens liens et le référencement (cf. competences/page.tsx
+ * pour le choix de `next/navigation` plutôt que le wrapper next-intl).
+ */
+export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  permanentRedirect(`${getPathname({ locale, href: "/a-propos" })}#realisations`);
 }

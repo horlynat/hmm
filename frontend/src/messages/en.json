@@ -2310,5 +2310,192 @@
     "mbarSmall": "A similar project?",
     "mbarBig": "Let’s talk",
     "mbarMessage": "Hello Horlynat, I have a project similar to “{title}”."
+  },
+  "aboutPage": {
+    "crumb": "About",
+    "talk": "Talk with me",
+    "talkMessage": "Hello Horlynat, I would like to talk with you.",
+    "seeProjects": "See my projects",
+    "subLabel": "Page sections",
+    "sub": {
+      "vision": "Vision",
+      "qui": "Who I am",
+      "competences": "Skills",
+      "realisations": "Projects",
+      "parcours": "Background"
+    },
+    "visionKick": "My vision",
+    "pillars": [
+      "Vision",
+      "Mission",
+      "Ambition"
+    ],
+    "horizonTitle": "My ambitions over time",
+    "horizon": [
+      "Today",
+      "Within three years",
+      "In the long run"
+    ],
+    "quiKick": "Who I am",
+    "skillsKick": "Skills",
+    "skillsTitle": "Four fields, one standard of excellence",
+    "skillsLede": "Pick a field: what I do for you, my current tools, and the related services and proof.",
+    "skillsTabs": "Fields of expertise",
+    "doFor": "What I do for you",
+    "tools": "Current tools",
+    "linkedOffers": "Services in this field",
+    "delay": "Timeline",
+    "proof": "See the project: {title}",
+    "skillsNote": "Indicative list: I keep learning the technologies each project requires.",
+    "domains": [
+      {
+        "icon": "arch",
+        "title": "Software engineering and architecture",
+        "short": "Building solid software that grows with the business.",
+        "text": "I design the architecture, develop and launch web platforms, mobile apps and internal tools. Every technical choice is made to last and to evolve without a costly rewrite.",
+        "do": [
+          "Design a platform’s architecture",
+          "Build web and mobile applications",
+          "Design APIs and data models",
+          "Audit and evolve existing software"
+        ],
+        "tools": [
+          "PHP",
+          "Python",
+          "JavaScript",
+          "TypeScript",
+          "SQL",
+          "Dart",
+          "Symfony",
+          "API Platform",
+          "Next.js",
+          "React",
+          "Flutter",
+          "Docker",
+          "Kubernetes",
+          "CI/CD",
+          "Linux"
+        ],
+        "offers": [
+          "application",
+          "architecture",
+          "site"
+        ],
+        "proof": "dbg"
+      },
+      {
+        "icon": "lock",
+        "title": "Cybersecurity",
+        "short": "Security built in from the design stage, then verified.",
+        "text": "I think about the attack surface of each feature before writing it, then I verify: audits, penetration tests, hardening and monitoring.",
+        "do": [
+          "Audits and penetration tests",
+          "Server and application hardening",
+          "Access management and authentication",
+          "Compliance: GDPR, ISO 27001, Congolese law no. 29-2019"
+        ],
+        "tools": [
+          "OWASP",
+          "Penetration testing",
+          "RBAC",
+          "OAuth",
+          "JWT",
+          "Two-factor authentication",
+          "Cloudflare"
+        ],
+        "offers": [
+          "audit"
+        ],
+        "proof": "dbg"
+      },
+      {
+        "icon": "umb",
+        "title": "Risk management",
+        "short": "Since 2018, applied to every project.",
+        "text": "As head of miscellaneous, transport, hull and cargo risks for four years, I learned to spot what can go wrong and to check what a contract really covers.",
+        "do": [
+          "Risk analysis and mapping",
+          "Insurance coverage audits",
+          "Miscellaneous, transport, hull and cargo risks",
+          "Prevention and business continuity"
+        ],
+        "tools": [
+          "Non-life insurance",
+          "Underwriting",
+          "Claims management",
+          "Business continuity"
+        ],
+        "offers": [
+          "risques"
+        ],
+        "proof": ""
+      },
+      {
+        "icon": "spark",
+        "title": "AI and automation",
+        "short": "Assistants and automations that help every day.",
+        "text": "I bring in artificial intelligence where it saves time or wins sales: assistants on WhatsApp and websites, document processing, automation of repetitive tasks.",
+        "do": [
+          "AI assistants on WhatsApp and websites",
+          "Answers based on your own documents",
+          "Automation of repetitive tasks",
+          "Integration with your existing tools"
+        ],
+        "tools": [
+          "Claude",
+          "Gemini",
+          "RAG",
+          "Python",
+          "PyTorch",
+          "TensorFlow",
+          "WhatsApp API"
+        ],
+        "offers": [
+          "whatsapp",
+          "automatisation"
+        ],
+        "proof": "agent"
+      }
+    ],
+    "projectsKick": "Projects",
+    "projectsTitle": "Platforms designed, delivered and run",
+    "projectsLede": "Every project is live or being rolled out. Open a case study to understand the approach.",
+    "pathKick": "Background",
+    "pathTitle": "From mathematics to business",
+    "pathLede": "Computing, insurance, then entrepreneurship: a path that taught me to build and to anticipate risks.",
+    "experience": "Experience",
+    "education": "Education",
+    "soon": "Upcoming",
+    "from": "From {date}",
+    "learning": "Always learning"
+  },
+  "blogPage": {
+    "metaTitle": "Blog",
+    "crumb": "Blog",
+    "title": "Notes and ",
+    "titleAccent": "lessons learned.",
+    "lede": "Architecture, cybersecurity, risk management and artificial intelligence, explained simply.",
+    "filterLabel": "Filter by topic",
+    "filterAll": "All topics",
+    "readMore": "Read the article",
+    "empty": "Articles will be published here very soon.",
+    "askTitle": "A question about an article?",
+    "askText": "Ask it directly: I will answer you in person.",
+    "askAssistant": "Ask the assistant",
+    "askWhatsapp": "Message on WhatsApp",
+    "askMessage": "Hello Horlynat, I have a question about one of your articles.",
+    "readAlso": "You may also like",
+    "allArticles": "All articles",
+    "readingTime": "{minutes, plural, one {# min read} other {# min read}}",
+    "toc": "In this article",
+    "writtenBy": "Written by",
+    "myPath": "My background",
+    "shareTitle": "Could this article help someone?",
+    "shareWhatsapp": "WhatsApp",
+    "shareLinkedin": "LinkedIn",
+    "askSideTitle": "A question about this topic?",
+    "askSideText": "Ask it directly: I will answer you in person, usually within the day.",
+    "askArticleMessage": "Hello Horlynat, I read your article “{title}” and I have a question.",
+    "noMatch": "No article matches this topic yet."
   }
 }

@@ -84,3 +84,13 @@ export function SilhouetteArt() {
 export function ProjectArt({ name }: { name: keyof typeof PROTO_PROJECT_ART }) {
   return <Raw markup={PROTO_PROJECT_ART[name]} />;
 }
+
+/** Silhouette d'avatar du prototype (`.avs`, `.dwa .avs`), tant qu'aucune photo n'est fournie. */
+export function PersonAvatarArt() {
+  return (
+    <svg viewBox="0 0 40 40" aria-hidden="true">
+      <circle cx="20" cy="15" r="7" fill="rgba(255,255,255,.55)" />
+      <path d="M6 40c1-9 7-14 14-14s13 5 14 14z" fill="rgba(255,255,255,.55)" />
+    </svg>
+  );
+}
