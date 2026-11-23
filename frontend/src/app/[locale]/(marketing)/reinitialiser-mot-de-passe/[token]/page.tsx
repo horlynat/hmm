@@ -1,21 +1,11 @@
-import { getTranslations } from "next-intl/server";
-import { ResetPasswordForm } from "@/components/sections/ResetPasswordForm";
+import { SimpleAuthPage } from "@/components/auth-proto/SimpleAuthPage";
+import { ResetPasswordPanel } from "@/components/auth-proto/ResetPasswordPanel";
 
-export default async function ResetPasswordPage({
-  params,
-}: {
-  params: Promise<{ locale: string; token: string }>;
-}) {
-  const { locale, token } = await params;
-  const t = await getTranslations({ locale, namespace: "auth.resetPassword" });
-
+export default async function ResetPasswordPage({ params }: { params: Promise<{ locale: string; token: string }> }) {
+  const { token } = await params;
   return (
-    <section className="px-6 py-16">
-      <div className="mx-auto max-w-[440px]">
-        <h1 className="mb-2 text-[clamp(1.6rem,3vw,2.2rem)]">{t("title")}</h1>
-        <p className="mb-6 opacity-70">{t("subtitle")}</p>
-        <ResetPasswordForm token={token} />
-      </div>
-    </section>
+    <SimpleAuthPage>
+      <ResetPasswordPanel token={token} />
+    </SimpleAuthPage>
   );
 }

@@ -17,10 +17,10 @@ type Tab = "in" | "up";
  * branché sur la logique réelle déjà testée (LoginForm, ForgotPasswordForm,
  * ClientForm, FreelanceForm).
  */
-export function AuthCard({ initialTab }: { initialTab: Tab }) {
+export function AuthCard({ initialTab, initialForgot }: { initialTab: Tab; initialForgot?: boolean }) {
   const t = useTranslations("authPage");
   const [tab, setTab] = useState<Tab>(initialTab);
-  const [forgot, setForgot] = useState(false);
+  const [forgot, setForgot] = useState(Boolean(initialForgot));
   const [role, setRole] = useState<"client" | "free" | null>(null);
 
   function selectTab(next: Tab) {

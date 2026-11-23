@@ -15,8 +15,13 @@ import { RhfPasswordField } from "./RhfPasswordField";
 
 const DISPO_KEYS = ["dispoImmediate", "dispo2Weeks", "dispo1Month", "dispoDiscuss"] as const;
 
-/** Formulaire freelance du prototype (`.g2 .fl2 .chipsel .chip2 .cons`), logique identique à `FreelanceForm`. */
-export function FreelanceSignupForm({ onChangeRole }: { onChangeRole: () => void }) {
+/**
+ * Formulaire freelance du prototype (`.g2 .fl2 .chipsel .chip2 .cons`),
+ * logique identique à `FreelanceForm`. `onChangeRole` absent (ex. page
+ * /freelances, où le profil est déjà déterminé par le contexte de la
+ * page) masque le bouton « Changer de profil ».
+ */
+export function FreelanceSignupForm({ onChangeRole }: { onChangeRole?: () => void }) {
   const t = useTranslations("authPage");
   const tf = useTranslations("freelances.signup");
   const tv = useTranslations("validation");
@@ -86,10 +91,12 @@ export function FreelanceSignupForm({ onChangeRole }: { onChangeRole: () => void
 
   return (
     <form className="auth" noValidate onSubmit={handleSubmit(onSubmit)}>
-      <button type="button" className="linkbtn back" onClick={onChangeRole}>
-        <ProtoIcon name="al" />
-        {t("changeRole")}
-      </button>
+      {onChangeRole && (
+        <button type="button" className="linkbtn back" onClick={onChangeRole}>
+          <ProtoIcon name="al" />
+          {t("changeRole")}
+        </button>
+      )}
       <h2 tabIndex={-1}>{t("freelanceFormTitle")}</h2>
       <div className="hp" aria-hidden="true">
         <label htmlFor="fl-hp">{t("codeLabel")}</label>

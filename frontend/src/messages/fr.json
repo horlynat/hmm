@@ -742,7 +742,9 @@
       "success": "Compte créé — vérifiez vos emails pour confirmer votre adresse. Votre profil sera ensuite revu avant activation.",
       "error": "Une erreur est survenue, merci de réessayer.",
       "errorRequired": "Merci de compléter votre nom, un email valide, un mot de passe conforme, et d'accepter les conditions."
-    }
+    },
+    "whatsapp": "Écrire sur WhatsApp",
+    "whatsappMessage": "Bonjour Horlynat, je suis freelance et j'aimerais en savoir plus sur votre réseau."
   },
   "contact": {
     "eyebrow": "Entrer en contact",

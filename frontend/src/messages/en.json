@@ -742,7 +742,9 @@
       "success": "Account created — check your email to confirm your address. Your profile will then be reviewed before activation.",
       "error": "Something went wrong, please try again.",
       "errorRequired": "Please fill in your name, a valid email, a compliant password, and agree to the terms."
-    }
+    },
+    "whatsapp": "Message on WhatsApp",
+    "whatsappMessage": "Hello Horlynat, I am a freelancer and would like to know more about your network."
   },
   "contact": {
     "eyebrow": "Get in touch",

@@ -16,14 +16,14 @@ export default async function ConnexionPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; view?: string }>;
 }) {
   const { locale } = await params;
-  const { tab } = await searchParams;
+  const { tab, view } = await searchParams;
 
   // Déjà connecté → espace compte.
   const user = await getCurrentUser();
   if (user) redirect({ href: "/compte", locale });
 
-  return <SiteConnexion tab={tab === "up" ? "up" : "in"} />;
+  return <SiteConnexion tab={tab === "up" ? "up" : "in"} forgot={view === "forgot"} />;
 }
