@@ -1,14 +1,15 @@
 import "server-only";
 import { apiFetch, extractCollection, pickLocalized, pickLocalizedList } from "./client";
 import { getMediaUrl } from "@/lib/media";
-import type { AboutContent } from "@/lib/types";
+import type { AboutContent, AboutJourneyStat } from "@/lib/types";
 
 // Contenu curé manuellement, mis à jour rarement — la fraîcheur réelle vient
 // du webhook /api/revalidate (revalidateTag) déclenché par le backend ; ce
 // délai n'est qu'un filet de sécurité si ce webhook venait à échouer.
 const ABOUT_CONTENT_REVALIDATE_SECONDS = 60 * 60 * 24;
 
-interface RawAboutContent extends AboutContent {
+interface RawAboutContent
+  extends Omit<AboutContent, "visionPillar" | "missionPillar" | "ambitionPillar" | "horizonMidText" | "learningText" | "journeyStats"> {
   heroEyebrowEn?: string | null;
   heroTitleEn?: string | null;
   heroTitleAccentEn?: string | null;
@@ -39,6 +40,35 @@ interface RawAboutContent extends AboutContent {
   beyondInterestsEn?: string[] | null;
   ctaTitleEn?: string | null;
   ctaSubEn?: string | null;
+  // Refonte R5 : optionnels ici aussi — un backend antérieur à la migration
+  // (déploiements séparés) ne les renvoie pas encore.
+  visionPillar?: string | null;
+  visionPillarEn?: string | null;
+  missionPillar?: string | null;
+  missionPillarEn?: string | null;
+  ambitionPillar?: string | null;
+  ambitionPillarEn?: string | null;
+  horizonMidText?: string | null;
+  horizonMidTextEn?: string | null;
+  learningText?: string | null;
+  learningTextEn?: string | null;
+  journeyStats?: unknown;
+  journeyStatsEn?: unknown;
+}
+
+/**
+ * Repères du parcours : ne garde que des paires {value, label} de chaînes non
+ * vides — la donnée vient de l'API, rien n'est supposé de sa forme.
+ */
+function toJourneyStats(value: unknown): AboutJourneyStat[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((row) => {
+    if (typeof row !== "object" || row === null) return [];
+    const { value: v, label } = row as Record<string, unknown>;
+    return typeof v === "string" && typeof label === "string" && v.trim() !== "" && label.trim() !== ""
+      ? [{ value: v, label }]
+      : [];
+  });
 }
 
 /** `locale` explicite — cf. commentaire dans projects.ts (bug de mémoïsation de `getLocale()`). */
@@ -83,5 +113,17 @@ export async function getAboutContent(locale: string): Promise<AboutContent | nu
     beyondInterests: pickLocalizedList(raw.beyondInterests, raw.beyondInterestsEn, locale),
     ctaTitle: pickLocalized(raw.ctaTitle, raw.ctaTitleEn, locale),
     ctaSub: pickLocalized(raw.ctaSub, raw.ctaSubEn, locale),
+    visionPillar: pickLocalized(raw.visionPillar ?? "", raw.visionPillarEn, locale),
+    missionPillar: pickLocalized(raw.missionPillar ?? "", raw.missionPillarEn, locale),
+    ambitionPillar: pickLocalized(raw.ambitionPillar ?? "", raw.ambitionPillarEn, locale),
+    horizonMidText: pickLocalized(raw.horizonMidText ?? "", raw.horizonMidTextEn, locale),
+    learningText: pickLocalized(raw.learningText ?? "", raw.learningTextEn, locale),
+    // Liste anglaise retenue seulement si elle contient au moins un repère
+    // valide ; sinon repli sur le français (même règle que pickLocalizedList).
+    journeyStats: (() => {
+      const fr = toJourneyStats(raw.journeyStats);
+      const en = toJourneyStats(raw.journeyStatsEn);
+      return locale === "en" && en.length > 0 ? en : fr;
+    })(),
   };
 }

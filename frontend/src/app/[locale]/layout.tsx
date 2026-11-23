@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { headers } from "next/headers";
@@ -14,6 +15,18 @@ import { buildPageMetadata, SITE_URL } from "@/lib/metadata";
 import "../globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+// Police du site vitrine (refonte) : LE fichier exact du prototype validé
+// (Montserrat variable 100-900, sous-ensemble latin, extrait de son
+// @font-face base64) — rendu identique au glyphe près, auto-hébergé par
+// next/font (aucune requête externe). Portée : .proto-skin uniquement ;
+// l'espace compte garde --font-inter.
+const montserrat = localFont({
+  src: "../fonts/montserrat-prototype.woff2",
+  variable: "--font-montserrat",
+  weight: "100 900",
+  style: "normal",
+  display: "swap",
+});
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
@@ -124,7 +137,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={`${inter.variable} ${jetbrainsMono.variable} ${fraunces.variable}`}
+      className={`${inter.variable} ${jetbrainsMono.variable} ${fraunces.variable} ${montserrat.variable}`}
       suppressHydrationWarning
     >
       <head>

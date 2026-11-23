@@ -17,7 +17,10 @@
     "readMore": "Read article",
     "seeProject": "View project",
     "seeDetails": "See details",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "headerWhatsappMessage": "Hello Horlynat, I’d like to talk to you about my project.",
+    "menu": "Menu",
+    "langueLabel": "Language"
   },
   "validation": {
     "required": "This field is required.",
@@ -51,14 +54,17 @@
     "blog": "Blog",
     "contact": "Contact",
     "compte": "My account",
-    "connexion": "Sign in"
+    "connexion": "Sign in",
+    "espaceClient": "Client area"
   },
   "footer": {
     "note": "Portfolio of Horlynat MAMPASSI MBAMA — full-stack, mobile developer and AI solutions integrator, cybersecurity consultant and insurance technician.",
     "navHeading": "Navigation",
     "connectHeading": "Follow me",
     "legalHeading": "Legal",
-    "rights": "All rights reserved."
+    "rights": "All rights reserved.",
+    "location": "Brazzaville, Congo · remote missions",
+    "contactForm": "Contact form"
   },
   "home": {
     "eyebrow": "Full-Stack Developer & AI Integrator",
@@ -421,6 +427,55 @@
     "cta": {
       "title": "Want to talk about it?",
       "sub": "Describe your project directly, or ask my AI assistant — it knows my profile as well as I do."
+    },
+    "nav": {
+      "label": "Page sections",
+      "vision": "Vision",
+      "qui": "Who I am",
+      "competences": "Skills",
+      "realisations": "Projects",
+      "parcours": "Background"
+    },
+    "heroCta": {
+      "whatsapp": "Talk with me",
+      "whatsappMessage": "Hello Horlynat, I’d like to talk with you.",
+      "projects": "See my projects",
+      "cv": "Download my CV"
+    },
+    "portrait": {
+      "alt": "Portrait of {name}"
+    },
+    "pillars": {
+      "vision": "Vision",
+      "mission": "Mission",
+      "ambition": "Ambition"
+    },
+    "horizons": {
+      "title": "My ambitions over time",
+      "today": "Today",
+      "midTerm": "Within three years",
+      "longTerm": "In the long run"
+    },
+    "projects": {
+      "eyebrow": "Projects",
+      "title": "Platforms designed, delivered and operated",
+      "lede": "Every project is live or being rolled out. Open a case study to see the approach behind it.",
+      "cta": "All projects",
+      "empty": "Upcoming projects will appear here as soon as they are published."
+    },
+    "skillsLinks": {
+      "skills": "My skills in detail",
+      "offers": "Related offers"
+    },
+    "journey": {
+      "eyebrow": "Background",
+      "title": "From mathematics to business",
+      "lede": "IT, insurance, then entrepreneurship: a path that taught me to build and to anticipate risk.",
+      "learningTitle": "Always learning"
+    },
+    "finalCta": {
+      "whatsapp": "Write on WhatsApp",
+      "contact": "Describe my project"
     }
   },
   "skills": {
@@ -1630,6 +1685,291 @@
       "appearanceHint": "Choose the light or dark theme for your space.",
       "languageLabel": "Language",
       "languageHint": "Choose the display language for the site."
+    }
+  },
+  "landing": {
+    "identity": {
+      "name": "Horlynat Mampassi Mbama",
+      "role1": "Software engineer and architect",
+      "role2": "Cybersecurity · Risk management",
+      "photoLabel": "Placeholder for Horlynat's photo"
+    },
+    "hero": {
+      "carouselLabel": "Offers",
+      "slideRole": "slide",
+      "slideLabel": "{index} of {total}",
+      "chooseOffer": "Choose an offer",
+      "previous": "Previous offer",
+      "next": "Next offer",
+      "pause": "Pause the slideshow",
+      "play": "Resume the slideshow",
+      "priceOnce": "One-time price",
+      "priceFrom": "From",
+      "readyIn": "Ready in {delay}",
+      "order": "Order on WhatsApp",
+      "seeOffer": "See the offer",
+      "orderMessage": "Hello Horlynat, I'm interested in the “{title}” offer.",
+      "fallbackTitle": "Clear digital solutions, with upfront prices.",
+      "fallbackLead": "AI WhatsApp assistant, websites, security audits and applications: you know what you get, for how much and how fast."
+    },
+    "trust": {
+      "label": "Guarantees",
+      "items": [
+        "Price announced before we start",
+        "Payment by Mobile Money",
+        "Proposal within 48 h",
+        "Security included",
+        "Follow-up after delivery"
+      ]
+    },
+    "needs": {
+      "kick": "Your need",
+      "title": "What problem do you want to solve?",
+      "lede": "Choose your situation, I’ll show you the right solution.",
+      "cta": "See the solution",
+      "items": [
+        {
+          "dom": "Software engineering",
+          "title": "I lose sales because I don’t reply fast enough",
+          "text": "An AI assistant answers your customers on WhatsApp, day and night.",
+          "offer": "whatsapp",
+          "icon": "shop"
+        },
+        {
+          "dom": "Software architecture",
+          "title": "My application slows down or crashes as the business grows",
+          "text": "I find what’s blocking and how to grow without rebuilding everything.",
+          "offer": "architecture",
+          "icon": "arch"
+        },
+        {
+          "dom": "Cybersecurity",
+          "title": "I’m afraid of being hacked or losing my data",
+          "text": "I find your weaknesses before attackers do and help you fix them.",
+          "offer": "audit",
+          "icon": "lock"
+        },
+        {
+          "dom": "Risk management",
+          "title": "I’m insured, but am I really covered?",
+          "text": "I check what your policies really cover, before a loss.",
+          "offer": "risques",
+          "icon": "umb"
+        }
+      ]
+    },
+    "offers": {
+      "kick": "Offers",
+      "title": "Choose what you need",
+      "lede": "Each offer shows what you get, starting from how much, and in how long.",
+      "order": "Order",
+      "detail": "See the details",
+      "swipe": "Swipe to see the other offers",
+      "all": "See all offers",
+      "eng": [
+        [
+          "A single point of contact",
+          "from the first message to follow-up"
+        ],
+        [
+          "Announced deadline",
+          "and kept, step by step"
+        ],
+        [
+          "Payment in two steps",
+          "a deposit, then the balance on delivery"
+        ]
+      ],
+      "featuredTag": "For businesses"
+    },
+    "demo": {
+      "kick": "Featured offer",
+      "title": "Your WhatsApp assistant, in action",
+      "lede": "What your customer experiences, and what you receive on your side. Write to it to try.",
+      "shop": "Boutique Ndinga",
+      "shopSub": "Example shop · AI assistant",
+      "welcome": "Bonjour ! Bienvenue à la Boutique Ndinga. Que puis-je faire pour vous ?",
+      "user1": "Bonsoir, vous livrez à Poto-Poto ?",
+      "bot1": "Bonsoir ! Oui, nous livrons à Poto-Poto aujourd’hui même, pour toute commande passée avant 14 h.",
+      "quick": [
+        "Vous avez du riz ?",
+        "Je veux commander",
+        "Vous livrez ?",
+        "Vos horaires ?"
+      ],
+      "inputLabel": "Your message",
+      "placeholder": "Write a message",
+      "send": "Send",
+      "typing": "The assistant is typing",
+      "dashboard": "Your dashboard",
+      "today": "Today",
+      "kpi": [
+        "Messages handled",
+        "Orders",
+        "Handed to you"
+      ],
+      "alertsTitle": "Latest alerts",
+      "alerts": [
+        [
+          "ok",
+          "Commande : 4 cartons d’huile",
+          "62 000 FCFA · il y a 12 min"
+        ],
+        [
+          "hi",
+          "Demande importante transmise",
+          "Grossiste, 50 cartons · il y a 1 h"
+        ]
+      ],
+      "newOrder": [
+        "Nouvelle commande",
+        "À l’instant · via l’assistant"
+      ],
+      "handover": [
+        "Demande transmise à vous",
+        "À l’instant"
+      ],
+      "answers": {
+        "product": "Oui ! Riz parfumé, sac de 25 kg à 18 000 FCFA. Je vous le réserve ?",
+        "delivery": "Oui, nous livrons à Brazzaville le jour même pour toute commande passée avant 14 h.",
+        "hours": "Nous sommes ouverts du lundi au samedi, de 8 h à 19 h.",
+        "order": "Parfait ! Commande notée : 2 sacs de riz, 36 000 FCFA. Livraison aujourd’hui à 16 h. Le gérant est prévenu.",
+        "bulk": "Pour une commande en gros, je vous mets en relation avec le gérant. Il vous répond dans quelques minutes.",
+        "default": "Merci pour votre message. Je transmets votre demande au gérant, qui vous répond rapidement."
+      },
+      "steps": [
+        [
+          "You send me your products and prices",
+          "A simple list is enough."
+        ],
+        [
+          "I set it up and test it with you",
+          "Your business’s tone and answers."
+        ],
+        [
+          "Your customers are served",
+          "In 21 days, day and night."
+        ]
+      ],
+      "order": "Order my assistant",
+      "orderMessage": "Hello Horlynat, I want an AI assistant on my WhatsApp.",
+      "seeOffer": "See the offer"
+    },
+    "projects": {
+      "kick": "Projects",
+      "title": "Real projects, in production",
+      "lede": "Proof of what I can build for you.",
+      "see": "See the project",
+      "all": "See all projects",
+      "status": {
+        "en_cours": "In progress",
+        "termine": "In production"
+      }
+    },
+    "me": {
+      "kick": "Who will support you",
+      "title": "A single point of contact, from the first message to follow-up",
+      "text": "Software engineer and architect, consultant in cybersecurity and risk management. I build your project myself, and I remain your contact after delivery.",
+      "stats": [
+        [
+          "Since 2016",
+          "in digital"
+        ],
+        [
+          "Since 2018",
+          "in risk management"
+        ],
+        [
+          "4",
+          "areas of expertise"
+        ]
+      ],
+      "more": "More about me",
+      "whatsapp": "Write on WhatsApp",
+      "photo": "Your professional photo",
+      "available": "Available",
+      "name": "Horlynat",
+      "role": "Software engineer and architect"
+    },
+    "steps": {
+      "kick": "How it works",
+      "title": "Six clear steps, no surprises",
+      "lede": "At every moment you know where your project stands and what comes next.",
+      "items": [
+        [
+          "First conversation",
+          "On WhatsApp or by phone, you explain your need. Free and with no commitment."
+        ],
+        [
+          "Written proposal",
+          "Within 48 h: what you get, the price and the deadline."
+        ],
+        [
+          "Kick-off",
+          "You approve, you pay the deposit, the schedule is set."
+        ],
+        [
+          "Delivery work",
+          "Regular check-ins and versions to test at every step."
+        ],
+        [
+          "Delivery",
+          "Go-live, hand-over to your team, then the balance."
+        ],
+        [
+          "Follow-up",
+          "I remain available for fixes and improvements."
+        ]
+      ]
+    },
+    "faq": {
+      "kick": "Frequently asked questions",
+      "title": "What people often ask me",
+      "items": [
+        [
+          "I’m not technical, is that a problem?",
+          "Not at all. I explain every step simply, and you decide. You only need to know your business."
+        ],
+        [
+          "Are the displayed prices final?",
+          "They are starting prices. After a short conversation, you get a precise proposal within 48 h, with no hidden costs."
+        ],
+        [
+          "How does payment work?",
+          "A deposit at kick-off, the balance on delivery, by Mobile Money or bank transfer."
+        ],
+        [
+          "Is my data protected?",
+          "Yes. It is only used to answer you and deliver your project, never sold, and kept confidential."
+        ],
+        [
+          "Do you work remotely?",
+          "Yes. I work from Brazzaville with clients everywhere, via WhatsApp, phone or video call."
+        ],
+        [
+          "And after delivery?",
+          "I remain available for follow-up, fixes and improvements to your tool."
+        ]
+      ],
+      "privacyLink": "Read the privacy policy",
+      "more": "Another question?",
+      "moreLink": "Ask it on WhatsApp",
+      "moreMessage": "Hello Horlynat, I have a question."
+    },
+    "cta": {
+      "title": "Let’s talk about your project.",
+      "text": "A WhatsApp assistant, a website, an audit or an application: write to me in one sentence, I’ll reply the same day.",
+      "whatsapp": "Write on WhatsApp",
+      "offers": "See the offers",
+      "message": "Hello Horlynat, I’d like to talk to you about my project."
+    },
+    "freelance": {
+      "title": "Are you a freelancer or digital professional?",
+      "text": "Create your profile and collaborate with me on ongoing projects.",
+      "cta": "Join as a freelancer"
+    },
+    "account": {
+      "long": "Client and freelancer area"
     }
   }
 }

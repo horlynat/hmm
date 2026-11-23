@@ -234,6 +234,20 @@ export interface AboutContent {
   beyondInterests: string[];
   ctaTitle: string;
   ctaSub: string;
+  /** Refonte R5 — facultatifs : chaîne vide = bloc masqué. */
+  visionPillar: string;
+  missionPillar: string;
+  ambitionPillar: string;
+  /** Ambition « D'ici trois ans », entre visionTodayText et visionTomorrowText. */
+  horizonMidText: string;
+  learningText: string;
+  journeyStats: AboutJourneyStat[];
+}
+
+/** Repère du parcours (« Depuis 2016 » / « dans le numérique »). */
+export interface AboutJourneyStat {
+  value: string;
+  label: string;
 }
 
 /** Réglages du widget assistant IA — miroir de App\Entity\AiAssistantSettings. */
