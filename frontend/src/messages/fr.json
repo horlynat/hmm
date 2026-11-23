@@ -2630,5 +2630,13 @@
     "nameRequired": "Indiquez votre nom.",
     "emailRequired": "Indiquez une adresse e-mail valide.",
     "codeRequired": "Le code doit comporter 6 chiffres."
+  },
+  "notFoundPage": {
+    "crumb": "Accueil",
+    "title": "Cette page n’existe pas ou a été déplacée.",
+    "lede": "Vérifiez l’adresse, ou repartez de l’une de ces pages.",
+    "home": "Revenir à l’accueil",
+    "offers": "Voir les offres",
+    "contact": "Me contacter"
   }
 }

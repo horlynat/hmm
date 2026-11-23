@@ -2630,5 +2630,13 @@
     "nameRequired": "Enter your name.",
     "emailRequired": "Enter a valid email address.",
     "codeRequired": "The code must have 6 digits."
+  },
+  "notFoundPage": {
+    "crumb": "Home",
+    "title": "This page does not exist or has been moved.",
+    "lede": "Check the address, or start again from one of these pages.",
+    "home": "Back to home",
+    "offers": "See the services",
+    "contact": "Contact me"
   }
 }

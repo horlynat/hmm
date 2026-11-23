@@ -48,7 +48,10 @@ export async function SiteAbout({ locale }: { locale: string }) {
     getOffers(locale),
     getProjects(locale),
   ]);
-  const now = Date.now();
+  // `new Date()`, pas `Date.now()` (même convention que Footer.tsx pour
+  // l'année courante) : page revalidée toutes les heures (cf. page.tsx),
+  // donc cette lecture de l'heure reste fraîche en pratique.
+  const now = new Date().getTime();
   const monthYear = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", { month: "long", year: "numeric" });
 
   const domains: SkillDomain[] = (

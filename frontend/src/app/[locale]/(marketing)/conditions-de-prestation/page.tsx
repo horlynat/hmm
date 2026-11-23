@@ -1,7 +1,18 @@
-// Refonte, phase 1 : copie conforme du prototype (contenu figé du prototype).
-// La phase 2 rebranche les données du back-office (cf. historique git de ce fichier).
-import ProtoConditions from "@/components/protopages/conditions";
+import type { Metadata } from "next";
+import { buildPageMetadata } from "@/lib/metadata";
+import { LegalPage } from "@/components/legal-proto/LegalPage";
+import { conditionsContent } from "@/content/legal/conditions";
 
-export default function Page() {
-  return <ProtoConditions />;
+export const dynamic = "force-static";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const c = conditionsContent[locale === "en" ? "en" : "fr"];
+  return buildPageMetadata({ locale, pathname: "/conditions-de-prestation", title: c.title, description: c.lede });
+}
+
+export default async function ConditionsPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const c = conditionsContent[locale === "en" ? "en" : "fr"];
+  return <LegalPage locale={locale} path="/conditions-de-prestation" crumb={c.crumb} title={c.title} lede={c.lede} sections={c.sections} updatedLabel={c.updatedLabel} />;
 }

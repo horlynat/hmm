@@ -5,6 +5,13 @@ import { buildPageMetadata } from "@/lib/metadata";
 import { SiteAbout } from "@/components/about-proto/SiteAbout";
 
 export const dynamic = "force-static";
+// Le statut « à venir » d'une formation (SiteAbout) compare une date de
+// début à l'heure courante : sans borne de validité, la page générée
+// statiquement figerait cette comparaison au moment du build et resterait
+// fausse jusqu'à la prochaine revalidation par tag (aucun tag ne change au
+// fil du temps qui passe). Revalidation horaire, comme les autres contenus
+// éditoriaux peu volatils de ce site.
+export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;

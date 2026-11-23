@@ -1,7 +1,8 @@
-// Refonte, phase 1 : copie conforme du prototype (contenu figé du prototype).
-// La phase 2 rebranche les données du back-office (cf. historique git de ce fichier).
-import ProtoPageInexistante from "@/components/protopages/page-inexistante";
+import { routing } from "@/i18n/routing";
+import { SiteNotFound } from "@/components/proto/SiteNotFound";
 
-export default function NotFound() {
-  return <ProtoPageInexistante />;
+// `params` peut être absent pour ce fichier spécial (cf. [locale]/not-found.tsx) — repli sur la locale par défaut.
+export default async function NotFound({ params }: { params?: Promise<{ locale?: string }> }) {
+  const locale = (await params)?.locale ?? routing.defaultLocale;
+  return <SiteNotFound locale={locale} />;
 }
