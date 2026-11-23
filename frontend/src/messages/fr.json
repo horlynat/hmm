@@ -2553,5 +2553,80 @@
     "quickConsent": "J’accepte que ces informations soient utilisées pour répondre à ma demande, selon la <privacy>politique de confidentialité</privacy>.",
     "quickErrorConsent": "Cochez cette case pour envoyer votre demande.",
     "quickSubjectOther": "Autre besoin"
+  },
+  "authPage": {
+    "title": "Votre espace, ",
+    "titleAccent": "vos projets.",
+    "clientPoints": [
+      [
+        "Vos projets au même endroit",
+        "Avancement, échanges et versions à tester."
+      ],
+      [
+        "Vos documents",
+        "Propositions, factures et livrables, toujours disponibles."
+      ],
+      [
+        "Un accès protégé",
+        "Double authentification disponible sur chaque compte."
+      ]
+    ],
+    "freelancePoints": [
+      [
+        "Des projets réels",
+        "Collaborez sur des missions en cours, avec un cadre clair."
+      ],
+      [
+        "Un accord pour chaque tâche",
+        "Mission, rémunération et propriété du travail, par écrit."
+      ],
+      [
+        "Confidentialité",
+        "Les données des projets restent protégées."
+      ]
+    ],
+    "helpText": "Besoin d’aide pour vous connecter ?",
+    "helpLink": "Écrivez-moi",
+    "helpMessage": "Bonjour Horlynat, j’ai besoin d’aide pour me connecter à mon espace.",
+    "tabIn": "Se connecter",
+    "tabUp": "Créer un compte",
+    "loginTitle": "Bon retour parmi nous",
+    "loginLede": "Connectez-vous pour suivre vos projets.",
+    "rememberMe": "Rester connecté",
+    "forgotLink": "Mot de passe oublié ?",
+    "secureNote": "Connexion chiffrée · double authentification disponible",
+    "twoFactorTitle": "Code de vérification",
+    "twoFactorLede": "Saisissez le code à 6 chiffres affiché dans votre application d’authentification.",
+    "codeLabel": "Code",
+    "verify": "Vérifier",
+    "backToLogin": "Revenir à la connexion",
+    "emailSentTitle": "Confirmez votre adresse e-mail",
+    "emailSentText": "Un lien de confirmation vient d’être envoyé. Une fois votre adresse confirmée, activez la double authentification pour protéger votre compte.",
+    "goToLogin": "Aller à la connexion",
+    "chooseRole": "Créer un compte",
+    "chooseRoleLede": "Vous êtes :",
+    "roleClient": "Client",
+    "roleClientDesc": "Suivre mes projets, mes documents et mes factures.",
+    "roleFreelance": "Freelance",
+    "roleFreelanceDesc": "Proposer mes compétences et collaborer sur des projets.",
+    "changeRole": "Changer de profil",
+    "clientFormTitle": "Compte client",
+    "freelanceFormTitle": "Profil freelance",
+    "organizationLabel": "Organisation (facultatif)",
+    "termsLabel": "J’accepte les <terms>conditions d’utilisation</terms> et la <privacy>politique de protection des données</privacy>.",
+    "createAccount": "Créer mon compte",
+    "forgotTitle": "Mot de passe oublié",
+    "forgotLede": "Indiquez votre e-mail : vous recevrez un lien pour choisir un nouveau mot de passe.",
+    "sendLink": "Envoyer le lien",
+    "resetSentTitle": "Vérifiez votre messagerie",
+    "resetSentText": "Si un compte existe pour cette adresse, un lien de réinitialisation vient d’être envoyé. Il est valable pendant une durée limitée.",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "passwordMeterHint": "Au moins 8 caractères, avec majuscule, minuscule, chiffre et caractère spécial.",
+    "notVerifiedTitle": "Votre adresse e-mail n’est pas encore confirmée",
+    "resendLink": "Renvoyer l’e-mail de confirmation",
+    "nameRequired": "Indiquez votre nom.",
+    "emailRequired": "Indiquez une adresse e-mail valide.",
+    "codeRequired": "Le code doit comporter 6 chiffres."
   }
 }

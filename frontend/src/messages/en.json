@@ -2553,5 +2553,80 @@
     "quickConsent": "I agree that this information will be used to respond to my request, in accordance with the <privacy>privacy policy</privacy>.",
     "quickErrorConsent": "Check this box to send your request.",
     "quickSubjectOther": "Other need"
+  },
+  "authPage": {
+    "title": "Your space, ",
+    "titleAccent": "your projects.",
+    "clientPoints": [
+      [
+        "All your projects in one place",
+        "Progress, discussions and versions to review."
+      ],
+      [
+        "Your documents",
+        "Proposals, invoices and deliverables, always available."
+      ],
+      [
+        "Protected access",
+        "Two-factor authentication available on every account."
+      ]
+    ],
+    "freelancePoints": [
+      [
+        "Real projects",
+        "Collaborate on ongoing missions, with a clear framework."
+      ],
+      [
+        "An agreement for every task",
+        "Mission, pay and ownership of the work, in writing."
+      ],
+      [
+        "Confidentiality",
+        "Project data stays protected."
+      ]
+    ],
+    "helpText": "Need help signing in?",
+    "helpLink": "Message me",
+    "helpMessage": "Hello Horlynat, I need help signing in to my account.",
+    "tabIn": "Sign in",
+    "tabUp": "Create an account",
+    "loginTitle": "Welcome back",
+    "loginLede": "Sign in to follow your projects.",
+    "rememberMe": "Stay signed in",
+    "forgotLink": "Forgot password?",
+    "secureNote": "Encrypted sign-in · two-factor authentication available",
+    "twoFactorTitle": "Verification code",
+    "twoFactorLede": "Enter the 6-digit code shown in your authenticator app.",
+    "codeLabel": "Code",
+    "verify": "Verify",
+    "backToLogin": "Back to sign in",
+    "emailSentTitle": "Confirm your email address",
+    "emailSentText": "A confirmation link has just been sent. Once your address is confirmed, enable two-factor authentication to protect your account.",
+    "goToLogin": "Go to sign in",
+    "chooseRole": "Create an account",
+    "chooseRoleLede": "You are:",
+    "roleClient": "Client",
+    "roleClientDesc": "Track my projects, documents and invoices.",
+    "roleFreelance": "Freelancer",
+    "roleFreelanceDesc": "Offer my skills and collaborate on projects.",
+    "changeRole": "Change profile",
+    "clientFormTitle": "Client account",
+    "freelanceFormTitle": "Freelancer profile",
+    "organizationLabel": "Organisation (optional)",
+    "termsLabel": "I agree to the <terms>terms of use</terms> and the <privacy>data protection policy</privacy>.",
+    "createAccount": "Create my account",
+    "forgotTitle": "Forgot password",
+    "forgotLede": "Enter your email: you will receive a link to choose a new password.",
+    "sendLink": "Send link",
+    "resetSentTitle": "Check your inbox",
+    "resetSentText": "If an account exists for this address, a reset link has just been sent. It is valid for a limited time.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "passwordMeterHint": "At least 8 characters, with an uppercase letter, a lowercase letter, a digit and a special character.",
+    "notVerifiedTitle": "Your email address is not yet confirmed",
+    "resendLink": "Resend confirmation email",
+    "nameRequired": "Enter your name.",
+    "emailRequired": "Enter a valid email address.",
+    "codeRequired": "The code must have 6 digits."
   }
 }

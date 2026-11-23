@@ -22,10 +22,12 @@ export type NavHref =
   | "/freelances"
   | "/aide"
   | "/contact"
+  | "/connexion"
   | "/mentions-legales"
   | "/politique-de-confidentialite"
   | "/politique-de-cookies"
-  | "/conditions-generales";
+  | "/conditions-generales"
+  | "/conditions-de-prestation";
 
 // "/aide" reste une route valide (centre d'aide public, accessible depuis
 // l'espace client — cf. AccountNav.tsx — ou un lien direct/email de support)
