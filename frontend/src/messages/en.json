@@ -1786,16 +1786,16 @@
       "kick": "Featured offer",
       "title": "Your WhatsApp assistant, in action",
       "lede": "What your customer experiences, and what you receive on your side. Write to it to try.",
-      "shop": "Boutique Ndinga",
+      "shop": "Ndinga Store",
       "shopSub": "Example shop · AI assistant",
-      "welcome": "Bonjour ! Bienvenue à la Boutique Ndinga. Que puis-je faire pour vous ?",
-      "user1": "Bonsoir, vous livrez à Poto-Poto ?",
-      "bot1": "Bonsoir ! Oui, nous livrons à Poto-Poto aujourd’hui même, pour toute commande passée avant 14 h.",
+      "welcome": "Hello! Welcome to Ndinga Store. How can I help you?",
+      "user1": "Good evening, do you deliver to Poto-Poto?",
+      "bot1": "Good evening! Yes, we deliver to Poto-Poto today, for any order placed before 2 p.m.",
       "quick": [
-        "Vous avez du riz ?",
-        "Je veux commander",
-        "Vous livrez ?",
-        "Vos horaires ?"
+        "Do you have rice?",
+        "I want to order",
+        "Do you deliver?",
+        "Opening hours?"
       ],
       "inputLabel": "Your message",
       "placeholder": "Write a message",
@@ -1812,30 +1812,30 @@
       "alerts": [
         [
           "ok",
-          "Commande : 4 cartons d’huile",
-          "62 000 FCFA · il y a 12 min"
+          "Order: 4 boxes of oil",
+          "62,000 FCFA · 12 min ago"
         ],
         [
           "hi",
-          "Demande importante transmise",
-          "Grossiste, 50 cartons · il y a 1 h"
+          "Important request forwarded",
+          "Wholesaler, 50 boxes · 1 h ago"
         ]
       ],
       "newOrder": [
-        "Nouvelle commande",
-        "À l’instant · via l’assistant"
+        "New order",
+        "Just now · via the assistant"
       ],
       "handover": [
-        "Demande transmise à vous",
-        "À l’instant"
+        "Request forwarded to you",
+        "Just now"
       ],
       "answers": {
-        "product": "Oui ! Riz parfumé, sac de 25 kg à 18 000 FCFA. Je vous le réserve ?",
-        "delivery": "Oui, nous livrons à Brazzaville le jour même pour toute commande passée avant 14 h.",
-        "hours": "Nous sommes ouverts du lundi au samedi, de 8 h à 19 h.",
-        "order": "Parfait ! Commande notée : 2 sacs de riz, 36 000 FCFA. Livraison aujourd’hui à 16 h. Le gérant est prévenu.",
-        "bulk": "Pour une commande en gros, je vous mets en relation avec le gérant. Il vous répond dans quelques minutes.",
-        "default": "Merci pour votre message. Je transmets votre demande au gérant, qui vous répond rapidement."
+        "product": "Yes! Fragrant rice, 25 kg bag at 18,000 FCFA. Shall I reserve one for you?",
+        "delivery": "Yes, we deliver anywhere in Brazzaville the same day for any order placed before 2 p.m.",
+        "hours": "We are open Monday to Saturday, 8 a.m. to 7 p.m.",
+        "order": "Perfect! Order noted: 2 bags of rice, 36,000 FCFA. Delivery today at 4 p.m. The manager has been notified.",
+        "bulk": "For a wholesale order, I will put you in touch with the manager. They will reply within minutes.",
+        "default": "Thank you for your message. I am forwarding your request to the manager, who will reply shortly."
       },
       "steps": [
         [
@@ -1853,7 +1853,16 @@
       ],
       "order": "Order my assistant",
       "orderMessage": "Hello Horlynat, I want an AI assistant on my WhatsApp.",
-      "seeOffer": "See the offer"
+      "seeOffer": "See the offer",
+      "match": {
+        "product": "rice|product|have|stock|price",
+        "delivery": "deliver",
+        "hours": "hour|open|time",
+        "order": "order|yes|reserve|want",
+        "bulk": "wholesale|bulk|boxes",
+        "countOrder": "order|yes|reserve|want|bags",
+        "countHandover": "wholesale|bulk|boxes|special delivery"
+      }
     },
     "projects": {
       "kick": "Projects",
@@ -1863,7 +1872,10 @@
       "all": "See all projects",
       "status": {
         "en_cours": "In progress",
-        "termine": "In production"
+        "termine": "In production",
+        "a_venir": "Upcoming",
+        "suspendu": "On hold",
+        "collaboration": "In collaboration"
       }
     },
     "me": {
@@ -2041,5 +2053,262 @@
       "typing": "The assistant is typing",
       "whatsapp": "Write on WhatsApp"
     }
+  },
+  "catalog": {
+    "metaTitle": "Services and pricing",
+    "crumbHome": "Home",
+    "crumb": "Services",
+    "title": "Clear solutions, ",
+    "titleAccent": "at a known price.",
+    "lede": "Start from your situation and your budget: each service states what you get, the starting price and how long it takes.",
+    "situationLabel": "Your situation",
+    "budgetLabel": "Your budget",
+    "situations": {
+      "tous": "All situations",
+      "clients": "I want more customers",
+      "appli": "My application must evolve",
+      "secu": "I want protection from hackers",
+      "assur": "I want to check my insurance"
+    },
+    "budgets": {
+      "tous": "All budgets",
+      "petit": "Under 150,000 FCFA",
+      "moyen": "150,000 to 300,000 FCFA",
+      "grand": "Over 300,000 FCFA"
+    },
+    "count": "{count, plural, one {<b>#</b> service for you} other {<b>#</b> services for you}}",
+    "reset": "Show all",
+    "featured": "Featured service",
+    "starCta": "See the service and order",
+    "groups": {
+      "dev": "Build and automate",
+      "aud": "Audit and protect"
+    },
+    "groupCount": "{count, plural, one {# service} other {# services}}",
+    "for": "For: {who}",
+    "see": "See the service",
+    "emptyTitle": "No service matches both criteria.",
+    "emptyText": "Describe your need in one sentence: I will suggest a suitable solution.",
+    "emptyAll": "See all services",
+    "emptyMessage": "Hello Horlynat, I am looking for a solution for my need.",
+    "compareTitle": "Compare at a glance",
+    "compareSub": "From the most affordable to the most complete",
+    "compareCols": [
+      "Service",
+      "Starting at",
+      "Timeline"
+    ],
+    "compareHot": "Featured",
+    "compareGo": "See",
+    "ctaTitle": "Torn between two services?",
+    "ctaText": "Describe your situation in one sentence on WhatsApp: I will tell you which one fits, with no commitment.",
+    "noOffers": "Services will be listed here very soon. In the meantime, message me on WhatsApp."
+  },
+  "offerPage": {
+    "order": "Order on WhatsApp",
+    "orderShort": "Order",
+    "ask": "Ask a question",
+    "askMessage": "Hello Horlynat, I have a question about the “{title}” service.",
+    "changeTitle": "What changes for you",
+    "before": "Today",
+    "after": "With this service",
+    "resultTitle": "What the result looks like",
+    "includesTitle": "What you get",
+    "packTitle": "A complete package",
+    "packOnce": "One-time price, paid once",
+    "packNoSub": "No subscription",
+    "packSplit": "Payable in two instalments: a deposit at kick-off, the balance at go-live.",
+    "packNext": "And afterwards?",
+    "packNextItems": [
+      "The improvements I make to the product are free for you.",
+      "A change specific to your business? It is quoted separately, only if you ask for it."
+    ],
+    "packQuote": "Lots of messages every day?",
+    "packQuoteLink": "Ask for a tailored quote",
+    "packQuoteMessage": "Hello Horlynat, my business receives a lot of messages. Could you send me a quote for the “{title}” service?",
+    "calendarTitle": "The timeline",
+    "calendarNote": "The timeline starts once the deposit and the items below are received.",
+    "needsTitle": "What I need from you",
+    "engTitle": "My commitments",
+    "eng": [
+      [
+        "Written proposal within 48 h",
+        "Scope, price and timeline, before any commitment."
+      ],
+      [
+        "Fixes included",
+        "Everything agreed is corrected at no extra cost."
+      ],
+      [
+        "Confidentiality",
+        "Your information is only used for your project."
+      ]
+    ],
+    "faqTitle": "Questions about this service",
+    "faqOnce": [
+      "Is there a subscription?",
+      "No. You pay {price} once. The improvements I make to the product are free for you; a change specific to your business is quoted separately, only if you ask for it."
+    ],
+    "faqDelay": [
+      "Is the timeline guaranteed?",
+      "The {delay} timeline starts once the deposit and the required items are received. It is written in the proposal."
+    ],
+    "faqPrice": [
+      "Can the price change?",
+      "The starting price covers the base version. The written proposal sets the exact price before any commitment."
+    ],
+    "faqAfter": [
+      "What happens after delivery?",
+      "Fixes related to what was agreed are included. New features are quoted separately."
+    ],
+    "proofTitle": "A similar project",
+    "proofSee": "See the project",
+    "quote": "Request a detailed quote",
+    "buyNote": "Written proposal within 48 h. Deposit at kick-off, balance on delivery.",
+    "otherKick": "Other services",
+    "otherTitle": "You may also be interested in",
+    "ctaTitle": "Ready to start your project?",
+    "ctaText": "Message me in one sentence on WhatsApp: I will send you a proposal for the “{title}” service within 48 h.",
+    "pv": {
+      "sample": "Anonymised example",
+      "chatTitle": "What your customers see",
+      "chatLink": "Try the demo",
+      "overview": "Overview",
+      "illustration": "Illustration",
+      "report": {
+        "title": "Security report",
+        "cols": [
+          "Finding",
+          "Urgency",
+          "Fix"
+        ],
+        "rows": [
+          [
+            "Form without bot protection",
+            "r",
+            "Add a verification step"
+          ],
+          [
+            "Weak passwords accepted",
+            "r",
+            "Enforce a minimum length"
+          ],
+          [
+            "Missing security headers",
+            "o",
+            "Configure the server"
+          ],
+          [
+            "Software version exposed",
+            "o",
+            "Hide the version"
+          ],
+          [
+            "Encrypted connection active",
+            "g",
+            "Nothing to do"
+          ]
+        ],
+        "levels": {
+          "r": "Urgent",
+          "o": "Plan it",
+          "g": "Compliant"
+        }
+      },
+      "risk": {
+        "title": "Coverage map",
+        "cols": [
+          "Business risk",
+          "Your contract",
+          "Recommendation"
+        ],
+        "rows": [
+          [
+            "Fire on the premises",
+            "g",
+            "Covered"
+          ],
+          [
+            "Theft of goods",
+            "g",
+            "Covered, raise the limit"
+          ],
+          [
+            "Business interruption",
+            "r",
+            "Add this cover"
+          ],
+          [
+            "Third-party liability",
+            "g",
+            "Covered"
+          ],
+          [
+            "Customer data breach",
+            "r",
+            "Consider cyber cover"
+          ]
+        ],
+        "levels": {
+          "g": "Covered",
+          "r": "Not covered"
+        }
+      },
+      "roadmap": {
+        "title": "Roadmap",
+        "cols": [
+          "Priority",
+          "Action",
+          "Expected effect"
+        ],
+        "rows": [
+          [
+            "1",
+            "Reorganise data access",
+            "Much faster pages"
+          ],
+          [
+            "2",
+            "Cache the most viewed pages",
+            "Less load at peak times"
+          ],
+          [
+            "3",
+            "Split the heaviest module",
+            "Cheaper changes"
+          ],
+          [
+            "4",
+            "Automate tests",
+            "Fewer regressions"
+          ]
+        ]
+      }
+    }
+  },
+  "casePage": {
+    "crumb": "Projects",
+    "startKick": "The starting point",
+    "startTitle": "The problem to solve",
+    "stepsKick": "The approach",
+    "stepsTitle": "How I went about it",
+    "resultKick": "The result",
+    "resultTitle": "What was delivered",
+    "galleryKick": "In pictures",
+    "galleryTitle": "Gallery",
+    "techKick": "Technologies",
+    "role": "My role",
+    "sameKick": "For you",
+    "sameTitle": "Do you have a similar need?",
+    "sameText": "The “{title}” service follows the same approach, starting at {price}.",
+    "sameCta": "See the service",
+    "next": "Next project",
+    "visit": "See the live project",
+    "code": "See the code",
+    "ctaTitle": "A project of this scale?",
+    "ctaText": "Tell me about your need: I will explain how I would approach it, and how long it would take.",
+    "mbarSmall": "A similar project?",
+    "mbarBig": "Let’s talk",
+    "mbarMessage": "Hello Horlynat, I have a project similar to “{title}”."
   }
 }

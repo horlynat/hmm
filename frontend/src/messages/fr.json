@@ -1853,7 +1853,16 @@
       ],
       "order": "Commander mon assistant",
       "orderMessage": "Bonjour Horlynat, je veux un assistant IA sur mon WhatsApp.",
-      "seeOffer": "Voir l'offre"
+      "seeOffer": "Voir l'offre",
+      "match": {
+        "product": "riz|produit|avez|stock|prix",
+        "delivery": "livr",
+        "hours": "horaire|ouvert|heure",
+        "order": "command|oui|reserve|veux",
+        "bulk": "gros|cartons",
+        "countOrder": "command|oui|reserve|veux|sacs",
+        "countHandover": "gros|cartons|prix de gros|livraison speciale"
+      }
     },
     "projects": {
       "kick": "Réalisations",
@@ -1863,7 +1872,10 @@
       "all": "Voir toutes les réalisations",
       "status": {
         "en_cours": "En cours",
-        "termine": "En production"
+        "termine": "En production",
+        "a_venir": "À venir",
+        "suspendu": "En pause",
+        "collaboration": "En collaboration"
       }
     },
     "me": {
@@ -2041,5 +2053,262 @@
       "typing": "L’assistant écrit",
       "whatsapp": "Écrire sur WhatsApp"
     }
+  },
+  "catalog": {
+    "metaTitle": "Offres et prix",
+    "crumbHome": "Accueil",
+    "crumb": "Offres",
+    "title": "Des solutions claires, ",
+    "titleAccent": "à prix connu.",
+    "lede": "Partez de votre situation et de votre budget : chaque offre indique ce que vous recevez, à partir de combien et en combien de temps.",
+    "situationLabel": "Votre situation",
+    "budgetLabel": "Votre budget",
+    "situations": {
+      "tous": "Toutes les situations",
+      "clients": "Je veux plus de clients",
+      "appli": "Mon application doit évoluer",
+      "secu": "Je veux me protéger des pirates",
+      "assur": "Je veux vérifier mes assurances"
+    },
+    "budgets": {
+      "tous": "Tous les budgets",
+      "petit": "Moins de 150 000 FCFA",
+      "moyen": "150 000 à 300 000 FCFA",
+      "grand": "Plus de 300 000 FCFA"
+    },
+    "count": "{count, plural, one {<b>#</b> offre pour vous} other {<b>#</b> offres pour vous}}",
+    "reset": "Tout afficher",
+    "featured": "Offre vedette",
+    "starCta": "Voir l’offre et commander",
+    "groups": {
+      "dev": "Créer et automatiser",
+      "aud": "Auditer et protéger"
+    },
+    "groupCount": "{count, plural, one {# offre} other {# offres}}",
+    "for": "Pour : {who}",
+    "see": "Voir l’offre",
+    "emptyTitle": "Aucune offre ne correspond à ces deux critères.",
+    "emptyText": "Décrivez votre besoin en une phrase : je vous propose une solution adaptée.",
+    "emptyAll": "Voir toutes les offres",
+    "emptyMessage": "Bonjour Horlynat, je cherche une solution pour mon besoin.",
+    "compareTitle": "Comparer en un coup d’œil",
+    "compareSub": "Du plus accessible au plus complet",
+    "compareCols": [
+      "Offre",
+      "À partir de",
+      "Délai"
+    ],
+    "compareHot": "Vedette",
+    "compareGo": "Voir",
+    "ctaTitle": "Vous hésitez entre deux offres ?",
+    "ctaText": "Décrivez votre situation en une phrase sur WhatsApp : je vous dis laquelle vous convient, sans engagement.",
+    "noOffers": "Les offres seront affichées ici très bientôt. En attendant, écrivez-moi sur WhatsApp."
+  },
+  "offerPage": {
+    "order": "Commander sur WhatsApp",
+    "orderShort": "Commander",
+    "ask": "Poser une question",
+    "askMessage": "Bonjour Horlynat, j'ai une question sur l'offre « {title} ».",
+    "changeTitle": "Ce qui change pour vous",
+    "before": "Aujourd’hui",
+    "after": "Avec cette offre",
+    "resultTitle": "À quoi ressemble le résultat",
+    "includesTitle": "Ce que vous recevez",
+    "packTitle": "Une formule complète",
+    "packOnce": "Prix unique, payé une seule fois",
+    "packNoSub": "Sans abonnement",
+    "packSplit": "Payable en deux fois : un acompte au lancement, le solde à la mise en service.",
+    "packNext": "Et ensuite ?",
+    "packNextItems": [
+      "Les améliorations que j’apporte au produit vous sont offertes.",
+      "Une évolution propre à votre activité ? Elle est chiffrée sur devis, seulement si vous la demandez."
+    ],
+    "packQuote": "Beaucoup de messages chaque jour ?",
+    "packQuoteLink": "Demandez un devis adapté",
+    "packQuoteMessage": "Bonjour Horlynat, mon entreprise reçoit beaucoup de messages. Pouvez-vous me proposer un devis pour l’offre « {title} » ?",
+    "calendarTitle": "Le calendrier",
+    "calendarNote": "Le délai court dès réception de l’acompte et des éléments ci-dessous.",
+    "needsTitle": "Ce dont j’ai besoin de vous",
+    "engTitle": "Mes engagements",
+    "eng": [
+      [
+        "Proposition écrite sous 48 h",
+        "Contenu, prix et délai, avant tout engagement."
+      ],
+      [
+        "Corrections incluses",
+        "Tout ce qui a été convenu est corrigé sans frais."
+      ],
+      [
+        "Confidentialité",
+        "Vos informations ne servent qu’à votre projet."
+      ]
+    ],
+    "faqTitle": "Questions sur cette offre",
+    "faqOnce": [
+      "Y a-t-il un abonnement ?",
+      "Non. Vous payez {price} une seule fois. Les améliorations que j’apporte au produit vous sont offertes ; une évolution propre à votre activité est chiffrée sur devis, seulement si vous la demandez."
+    ],
+    "faqDelay": [
+      "Le délai est-il garanti ?",
+      "Le délai de {delay} court dès réception de l’acompte et des éléments nécessaires. Il est inscrit dans la proposition écrite."
+    ],
+    "faqPrice": [
+      "Le prix peut-il changer ?",
+      "Le prix de départ correspond à la version de base. La proposition écrite fixe le prix exact avant tout engagement."
+    ],
+    "faqAfter": [
+      "Et après la livraison ?",
+      "Les corrections liées à ce qui a été convenu sont incluses. Les évolutions font l’objet d’un nouveau devis."
+    ],
+    "proofTitle": "Une réalisation proche",
+    "proofSee": "Voir le projet",
+    "quote": "Demander un devis détaillé",
+    "buyNote": "Proposition écrite sous 48 h. Acompte au lancement, solde à la livraison.",
+    "otherKick": "Autres offres",
+    "otherTitle": "Cela peut aussi vous intéresser",
+    "ctaTitle": "Prêt à lancer votre projet ?",
+    "ctaText": "Écrivez-moi en une phrase sur WhatsApp : je vous envoie une proposition pour l’offre « {title} » sous 48 h.",
+    "pv": {
+      "sample": "Exemple anonymisé",
+      "chatTitle": "Ce que voient vos clients",
+      "chatLink": "Essayer la démonstration",
+      "overview": "Aperçu",
+      "illustration": "Illustration",
+      "report": {
+        "title": "Rapport de sécurité",
+        "cols": [
+          "Constat",
+          "Urgence",
+          "Correction"
+        ],
+        "rows": [
+          [
+            "Formulaire sans protection contre les robots",
+            "r",
+            "Ajouter une vérification"
+          ],
+          [
+            "Mots de passe faibles acceptés",
+            "r",
+            "Imposer une longueur minimale"
+          ],
+          [
+            "En-têtes de sécurité absents",
+            "o",
+            "Configurer le serveur"
+          ],
+          [
+            "Version du logiciel visible",
+            "o",
+            "Masquer la version"
+          ],
+          [
+            "Connexion chiffrée active",
+            "g",
+            "Rien à faire"
+          ]
+        ],
+        "levels": {
+          "r": "Urgent",
+          "o": "À prévoir",
+          "g": "Conforme"
+        }
+      },
+      "risk": {
+        "title": "Cartographie des couvertures",
+        "cols": [
+          "Risque de l’activité",
+          "Votre contrat",
+          "Recommandation"
+        ],
+        "rows": [
+          [
+            "Incendie des locaux",
+            "g",
+            "Garanti"
+          ],
+          [
+            "Vol de marchandises",
+            "g",
+            "Garanti, plafond à relever"
+          ],
+          [
+            "Perte d’exploitation",
+            "r",
+            "Ajouter cette garantie"
+          ],
+          [
+            "Responsabilité civile",
+            "g",
+            "Garanti"
+          ],
+          [
+            "Fuite de données clients",
+            "r",
+            "Étudier une couverture cyber"
+          ]
+        ],
+        "levels": {
+          "g": "Couvert",
+          "r": "Non couvert"
+        }
+      },
+      "roadmap": {
+        "title": "Feuille de route",
+        "cols": [
+          "Priorité",
+          "Action",
+          "Effet attendu"
+        ],
+        "rows": [
+          [
+            "1",
+            "Réorganiser l’accès aux données",
+            "Pages nettement plus rapides"
+          ],
+          [
+            "2",
+            "Mettre en cache les pages les plus vues",
+            "Moins de charge aux heures de pointe"
+          ],
+          [
+            "3",
+            "Découper le module le plus lourd",
+            "Évolutions moins coûteuses"
+          ],
+          [
+            "4",
+            "Automatiser les tests",
+            "Moins de régressions"
+          ]
+        ]
+      }
+    }
+  },
+  "casePage": {
+    "crumb": "Réalisations",
+    "startKick": "Le point de départ",
+    "startTitle": "Le problème à résoudre",
+    "stepsKick": "La démarche",
+    "stepsTitle": "Comment j’ai procédé",
+    "resultKick": "Le résultat",
+    "resultTitle": "Ce qui a été livré",
+    "galleryKick": "En images",
+    "galleryTitle": "Galerie",
+    "techKick": "Technologies",
+    "role": "Mon rôle",
+    "sameKick": "Pour vous",
+    "sameTitle": "Vous avez un besoin semblable ?",
+    "sameText": "L’offre « {title} » part de la même démarche, à partir de {price}.",
+    "sameCta": "Voir l’offre",
+    "next": "Projet suivant",
+    "visit": "Voir le projet en ligne",
+    "code": "Voir le code",
+    "ctaTitle": "Un projet de cette ampleur ?",
+    "ctaText": "Décrivez-moi votre besoin : je vous dis comment je l’aborderais, et sous quel délai.",
+    "mbarSmall": "Un projet semblable ?",
+    "mbarBig": "Parlons-en",
+    "mbarMessage": "Bonjour Horlynat, j'ai un projet semblable à « {title} »."
   }
 }

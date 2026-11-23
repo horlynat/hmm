@@ -5,6 +5,7 @@ import { SiteBand } from "@/components/proto/SiteBand";
 import { SiteAssistant } from "@/components/proto/SiteAssistant";
 import { getAiAssistantSettings } from "@/lib/api/ai-assistant";
 import "../../proto-skin.css";
+import "../../proto-site.css";
 
 /**
  * Site vitrine — refonte sur le modèle du prototype validé

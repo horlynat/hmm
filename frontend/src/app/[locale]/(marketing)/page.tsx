@@ -1,7 +1,9 @@
-// Refonte, phase 1 : copie conforme du prototype (contenu figé du prototype).
-// La phase 2 rebranche les données du back-office (cf. historique git de ce fichier).
-import ProtoHome from "@/components/protopages/home";
+import { SiteHome } from "@/components/landing/SiteHome";
 
-export default function Page() {
-  return <ProtoHome />;
+// Rendu statique, rafraîchi par les tags de l'API (webhook /api/revalidate).
+export const dynamic = "force-static";
+
+export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  return <SiteHome locale={locale} />;
 }
