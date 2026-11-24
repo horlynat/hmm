@@ -172,6 +172,27 @@ final class AiAssistantIngestionVisibilityTest extends KernelTestCase
         self::assertSame([], $this->chunks()->findByEntity('Project', $id));
     }
 
+    public function testPurgeOrphansCommandRemovesChunksOfDeletedEntitiesOnly(): void
+    {
+        $kept = $this->project(ProjectStatusEnum::IN_PROGRESS);
+        $this->service()->ingest('Project', (int) $kept->getId());
+        $orphanId = 987654321;
+        $this->em->persist((new AiAssistantDocumentChunk())
+            ->setEntityType('Project')->setEntityId($orphanId)->setChunkIndex(0)
+            ->setChunkText('projet supprimé')->setChunkSummary('projet supprimé')->setMetadata(['is_public' => true, 'label' => 'x']));
+        $this->em->flush();
+        $callsBefore = $this->geminiCalls;
+
+        $command = new \App\Command\AiAssistantReingestCommand($this->service(), $this->em);
+        $tester = new \Symfony\Component\Console\Tester\CommandTester($command);
+        $tester->execute(['--purge-orphans' => true]);
+
+        $tester->assertCommandIsSuccessful();
+        self::assertSame([], $this->chunks()->findByEntity('Project', $orphanId));
+        self::assertCount(1, $this->chunks()->findByEntity('Project', (int) $kept->getId()));
+        self::assertSame($callsBefore, $this->geminiCalls, 'La purge n\'appelle jamais Gemini.');
+    }
+
     public function testProjectThatBecomesHiddenLeavesTheAssistant(): void
     {
         $project = $this->project(ProjectStatusEnum::COMPLETED);
