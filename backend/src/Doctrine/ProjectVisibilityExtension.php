@@ -23,7 +23,12 @@ use Doctrine\ORM\QueryBuilder;
  */
 final class ProjectVisibilityExtension implements QueryCollectionExtensionInterface, QueryItemExtensionInterface
 {
-    private const PUBLIC_STATUSES = [
+    /**
+     * Statuts visibles publiquement. Partagé avec l'ingestion de l'assistant
+     * IA (AiAssistantIngestionService) : un projet invisible dans l'API ne
+     * doit pas non plus nourrir l'assistant public.
+     */
+    public const PUBLIC_STATUSES = [
         ProjectStatusEnum::IN_PROGRESS->value,
         ProjectStatusEnum::COMPLETED->value,
     ];
