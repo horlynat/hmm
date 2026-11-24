@@ -24,6 +24,12 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  *
  *   php bin/console app:assistant:reingest --all
  *   php bin/console app:assistant:reingest --entity=Project --id=42
+ *   php bin/console app:assistant:reingest --purge-orphans
+ *
+ * --purge-orphans (aussi exécuté par --all) supprime, sans appeler Gemini,
+ * les chunks dont l'entité n'existe plus : avant la prise en compte de la
+ * suppression (preRemove), le résumé d'une entité supprimée restait dans le
+ * contexte de l'assistant public.
  */
 #[AsCommand(name: 'app:assistant:reingest', description: 'Force la réingestion RAG du contenu du portfolio pour l\'assistant IA.')]
 class AiAssistantReingestCommand extends Command
@@ -48,6 +54,7 @@ class AiAssistantReingestCommand extends Command
             ->addOption('all', null, InputOption::VALUE_NONE, 'Réingère tout le contenu (Project + Article + Experience + SkillCategory).')
             ->addOption('entity', null, InputOption::VALUE_REQUIRED, 'Type d\'entité : Project, Article, Experience ou SkillCategory.')
             ->addOption('id', null, InputOption::VALUE_REQUIRED, 'Id de l\'entité (requis avec --entity).')
+            ->addOption('purge-orphans', null, InputOption::VALUE_NONE, 'Supprime seulement les chunks dont l\'entité n\'existe plus (sans appel à Gemini).')
         ;
     }
 
@@ -55,7 +62,16 @@ class AiAssistantReingestCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
+        if ($input->getOption('purge-orphans')) {
+            $io->success(sprintf('%d chunk(s) orphelin(s) supprimé(s).', $this->purgeOrphans()));
+
+            return Command::SUCCESS;
+        }
+
         if ($input->getOption('all')) {
+            $purged = $this->purgeOrphans();
+            $io->note(sprintf('%d chunk(s) orphelin(s) supprimé(s).', $purged));
+
             return $this->reingestAll($io);
         }
 
@@ -78,6 +94,28 @@ class AiAssistantReingestCommand extends Command
         $io->success(sprintf('%s #%d réingéré(e).', $entityType, (int) $id));
 
         return Command::SUCCESS;
+    }
+
+    /** Supprime les chunks dont l'entité source n'existe plus. Retourne le nombre d'entités concernées. */
+    private function purgeOrphans(): int
+    {
+        $purged = 0;
+        foreach (self::ENTITY_CLASSES as $entityType => $class) {
+            /** @var list<int|string> $chunkIds */
+            $chunkIds = $this->entityManager->createQuery(
+                'SELECT DISTINCT c.entityId FROM App\Entity\AiAssistantDocumentChunk c WHERE c.entityType = :type'
+            )->setParameter('type', $entityType)->getSingleColumnResult();
+
+            foreach ($chunkIds as $id) {
+                if (null === $this->entityManager->find($class, (int) $id)) {
+                    // Entité introuvable : ingest() supprime ses chunks sans appeler Gemini.
+                    $this->ingestionService->ingest($entityType, (int) $id);
+                    ++$purged;
+                }
+            }
+        }
+
+        return $purged;
     }
 
     private function reingestAll(SymfonyStyle $io): int

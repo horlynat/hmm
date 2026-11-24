@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use App\Doctrine\ProjectVisibilityExtension;
+
 use App\Entity\AiAssistantDocumentChunk;
 use App\Entity\Article;
 use App\Entity\Experience;
@@ -17,9 +19,12 @@ use Psr\Log\LoggerInterface;
  * entité de contenu du portfolio. Project/Article/Experience/SkillCategory
  * alimentent le corpus statique envoyé à Claude (cf. docblock de
  * App\State\AiAssistantChatProcessor) — toutes déjà exposées sans filtre par
- * l'API publique (opérations GetCollection sans `security:`), donc déjà du
- * contenu public à 100 % : aucun filtre de statut supplémentaire n'est
- * nécessaire ici.
+ * l'API publique (opérations GetCollection sans `security:`). Exception :
+ * les projets, que l'API publique filtre par statut
+ * (ProjectVisibilityExtension::PUBLIC_STATUSES). Un projet client en
+ * attente (par exemple issu d'une demande de devis) n'est donc ni envoyé à
+ * Gemini, ni exposé à l'assistant public ; ses chunks sont retirés dès qu'il
+ * n'est plus visible.
  *
  * SkillCategory est ingérée au niveau de la catégorie (pas de chaque Skill
  * individuellement) : un Skill seul ("Symfony, niveau 9/10") est un chunk
@@ -63,8 +68,19 @@ final class AiAssistantIngestionService
             return;
         }
 
+        if ($entity instanceof Project && !\in_array($entity->getStatus()->value, ProjectVisibilityExtension::PUBLIC_STATUSES, true)) {
+            $this->chunkRepository->deleteByEntity($entityType, $entityId);
+            $this->entityManager->flush();
+
+            return;
+        }
+
         $sourceText = $this->extractSourceText($entityType, $entity);
         if ('' === trim($sourceText)) {
+            // Plus rien à dire : l'ancien chunk ne doit pas survivre au contenu vidé.
+            $this->chunkRepository->deleteByEntity($entityType, $entityId);
+            $this->entityManager->flush();
+
             return;
         }
 

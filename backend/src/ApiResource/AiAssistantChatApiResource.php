@@ -57,7 +57,7 @@ class AiAssistantChatApiResource
         return 'chat';
     }
 
-    #[Assert\NotBlank(message: 'La question est obligatoire.')]
+    #[Assert\NotBlank(message: 'La question est obligatoire.', normalizer: 'trim')]
     #[Assert\Length(max: 1000, maxMessage: 'La question ne peut pas dépasser {{ limit }} caractères.')]
     #[Groups(['ask_input'])]
     private string $question = '';
@@ -97,6 +97,27 @@ class AiAssistantChatApiResource
      */
     #[Groups(['ask_output'])]
     private array $suggestions = [];
+
+    /**
+     * Vrai quand `answer` est le texte de repli (panne, filtre anti-injection,
+     * fuite suspectée) et non une vraie réponse : le site n'ajoute pas ce
+     * tour à l'historique renvoyé ensuite, sinon une seule question suspecte
+     * bloquait toutes les suivantes (filtre de l'historique).
+     */
+    #[Groups(['ask_output'])]
+    private bool $degraded = false;
+
+    public function isDegraded(): bool
+    {
+        return $this->degraded;
+    }
+
+    public function setDegraded(bool $degraded): static
+    {
+        $this->degraded = $degraded;
+
+        return $this;
+    }
 
     public function getQuestion(): string
     {

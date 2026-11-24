@@ -16,6 +16,9 @@
 		<!-- Champ Titre -->
 		<twig:FieldPair :fr="form.title" :en="form.titleEn" />
 
+		<!-- Chapô (prototype : sous le titre et dans les cartes du blog) -->
+		<twig:FieldPair :fr="form.summary" :en="form.summaryEn" :isTextarea="true" />
+
 		<!-- Champ Contenu — wiring bilingue manuel (FieldPair ne gère que les
 		     champs texte simples, pas l'éditeur riche Quill par-dessus) -->
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-controller="bilingual-field">
@@ -92,6 +95,14 @@
                     {{ form_errors(form.tags)|striptags }}
                 </p>
             {% endif %}
+        </div>
+
+        <!-- Bloc Offre liée -->
+        <div class="card">
+            {{ form_label(form.relatedOfferSlug, null, {'label_attr': {'class': 'block text-sm font-bold mb-2'}}) }}
+            {{ form_widget(form.relatedOfferSlug, {'attr': {'class': 'input w-full text-sm'}}) }}
+            <p class="text-[11px] opacity-40 mt-2 leading-normal">{{ form.relatedOfferSlug.vars.help }}</p>
+            {{ form_errors(form.relatedOfferSlug) }}
         </div>
 
         <!-- Bloc Couverture / Média -->

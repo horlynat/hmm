@@ -12,11 +12,11 @@ describe("formatFcfa", () => {
   });
 
   it("formate en anglais avec virgule", () => {
-    expect(formatFcfa(199999, "en")).toBe("199,999 FCFA");
+    expect(formatFcfa(199999, "en")).toBe("199,999\u202fFCFA");
   });
 
   it("ne coupe jamais l'unité de la somme (espace insécable)", () => {
-    expect(formatFcfa(90000, "fr")).toMatch(/ FCFA$/);
+    expect(formatFcfa(90000, "fr")).toBe("90\u202f000\u202fFCFA");
   });
 
   it("n'affiche pas de décimales", () => {

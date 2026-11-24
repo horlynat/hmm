@@ -1,37 +1,61 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { useParams } from "next/navigation";
 import clsx from "clsx";
-import { Link, usePathname } from "@/i18n/navigation";
-import { navItems } from "@/config/site";
-import { Logo, Skeleton } from "@/components/ui";
-import { useScrolled } from "@/lib/useScrolled";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
+import { WhatsappIcon } from "@/components/home/OfferIcon";
 import { useAuthStatus } from "@/lib/auth/useAuthStatus";
-import { LocaleSwitcher } from "./LocaleSwitcher";
+import { whatsappLink } from "@/lib/whatsapp";
+import { siteConfig } from "@/config/site";
+
+/**
+ * En-tête du site vitrine — markup et classes repris tels quels du
+ * prototype de refonte (`.hd`, `.brand`, `.nav`, `.hr`, `.lsw`, `.pill`,
+ * cf. src/app/proto-skin.css), pour un rendu identique. Données réelles :
+ * navigation ([[config/site]].navItems, traduite), état de connexion
+ * ([[lib/auth/useAuthStatus]]), langue courante (next-intl), lien WhatsApp
+ * encodé ([[lib/whatsapp]]).
+ */
+/** Les 4 liens de l'en-tête du prototype, dans son ordre. */
+const HEADER_NAV = [
+  { key: "offres", href: "/offres" },
+  { key: "apropos", href: "/a-propos" },
+  { key: "blog", href: "/blog" },
+  { key: "contact", href: "/contact" },
+] as const;
+
+function isCurrentSection(pathname: string, href: string): boolean {
+  if (pathname === href) return true;
+  if (href !== "/" && pathname.startsWith(href + "/")) return true;
+  return href === "/a-propos" && pathname.startsWith("/realisations");
+}
 
 export function Header() {
   const t = useTranslations("nav");
   const tc = useTranslations("common");
+  const tl = useTranslations("landing");
+  const locale = useLocale();
+  const router = useRouter();
   const pathname = usePathname();
+  const params = useParams();
   const [open, setOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
-  const scrolled = useScrolled();
   const isAuthenticated = useAuthStatus();
 
   const accountHref = isAuthenticated ? "/compte" : "/connexion";
-  const accountLabel = isAuthenticated ? t("compte") : t("connexion");
+  const accountLabel = isAuthenticated ? t("compte") : t("espaceClient");
 
   // Ferme par la touche Échap et au clic en dehors du menu (mobile).
-  // La navigation via les liens ferme déjà le menu (onClick ci-dessous).
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setOpen(false);
-        // Au clavier uniquement : on rend la main au bouton qui a ouvert le menu.
         toggleButtonRef.current?.focus();
       }
     }
@@ -46,129 +70,104 @@ export function Header() {
     };
   }, [open]);
 
-  // À l'ouverture du panneau mobile, déplace le focus sur son premier lien.
   useEffect(() => {
     if (open) firstLinkRef.current?.focus();
   }, [open]);
 
+  function switchTo(nextLocale: (typeof routing.locales)[number]) {
+    router.replace(
+      // @ts-expect-error -- pathname vient d'une route connue de next-intl
+      { pathname, params },
+      { locale: nextLocale },
+    );
+  }
+
   return (
-    <header
-      className={clsx(
-        "sticky top-0 z-50 border-b transition-colors duration-300",
-        scrolled || open
-          ? "border-[var(--border-softer)] bg-bg-default/85 shadow-sm backdrop-blur-md"
-          : "border-transparent bg-transparent",
-      )}
-      // Ancre pour les transitions de page (cf. globals.css,
-      // ::view-transition-group(site-header)) : ne change jamais entre deux
-      // pages, ne doit donc pas participer au fondu — sans ce nom, deux
-      // copies se chevauchent brièvement à l'identique à chaque navigation.
-      style={{ viewTransitionName: "site-header" }}
-    >
-      <nav
-        ref={navRef}
-        aria-label={tc("siteName")}
-        className="mx-auto flex max-w-[1120px] items-center justify-between px-6 py-4"
-      >
-        <Link href="/" aria-label={tc("siteName")} className="flex items-center">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-brand-primary text-[var(--color-on-brand-primary)]">
-            <Logo className="h-6 w-6" />
-          </span>
+    <header className="hd">
+      <div className="w">
+        <Link href="/" className="brand" aria-label={tc("siteName")}>
+          <span className="logo" aria-hidden="true">H</span>
+          {tc("siteName")}
         </Link>
 
-        <ul
-          id="primary-nav"
-          className={clsx(
-            "absolute inset-x-0 top-full flex-col gap-0 border-b border-[var(--border-softer)] bg-bg-default px-6 md:static md:flex md:flex-row md:items-center md:gap-1 md:border-0 md:bg-transparent md:px-0",
-            open ? "flex pb-4" : "hidden md:flex",
-          )}
-        >
-          {navItems.map((item, index) => {
-            const active = pathname === item.href;
-            const isContact = item.key === "contact";
-            return (
-              <li key={item.href} className="w-full list-none md:w-auto">
-                <Link
-                  href={item.href}
-                  ref={index === 0 ? firstLinkRef : undefined}
-                  onClick={() => setOpen(false)}
-                  aria-current={active ? "page" : undefined}
-                  className={clsx(
-                    "block border-b border-[var(--border-softer)] py-4 text-sm font-semibold transition-colors md:border-0 md:py-2",
-                    isContact ? "md:ml-2 md:rounded-full md:px-4" : "md:rounded-md md:px-3",
-                    active
-                      ? isContact
-                        ? "text-[var(--color-badge-accent-text)] opacity-100 md:bg-brand-primary md:text-[var(--color-on-brand-primary)]"
-                        : "text-[var(--color-badge-accent-text)] opacity-100 md:bg-brand-primary/10"
-                      : isContact
-                        ? "opacity-70 hover:text-brand-primary hover:opacity-100 md:border md:border-brand-primary/40 md:bg-brand-primary/10 md:text-brand-primary md:hover:bg-brand-primary/15"
-                        : "opacity-70 hover:text-brand-primary hover:opacity-100 md:hover:bg-brand-dark/5 md:dark:hover:bg-white/5",
-                  )}
-                >
-                  {t(item.key)}
-                </Link>
-              </li>
-            );
-          })}
-          <li className="w-full list-none md:hidden">
-            {isAuthenticated === null ? (
-              <div className="py-4">
-                <Skeleton className="h-4 w-24" />
-              </div>
-            ) : (
-              <Link
-                href={accountHref}
-                onClick={() => setOpen(false)}
-                className="block py-4 text-sm font-semibold text-brand-primary"
-              >
-                {accountLabel}
-              </Link>
-            )}
-          </li>
-        </ul>
-
-        <div className="flex items-center gap-3">
-          {isAuthenticated === null ? (
-            <Skeleton className="hidden h-4 w-16 md:block" />
-          ) : (
+        <nav ref={navRef} className="nav" aria-label="Navigation principale">
+          {HEADER_NAV.map((item, index) => (
             <Link
-              href={accountHref}
-              className="hidden text-sm font-semibold opacity-70 hover:text-brand-primary hover:opacity-100 md:inline-flex"
+              key={item.href}
+              href={item.href}
+              ref={index === 0 ? firstLinkRef : undefined}
+              onClick={() => setOpen(false)}
+              aria-current={pathname === item.href ? "page" : undefined}
+              // Comme header() du prototype : `on` = rubrique courante (sous-pages
+              // comprises, une étude de cas allume « À propos ») ; `hi` = « Offres »
+              // toujours mise en avant.
+              className={clsx(isCurrentSection(pathname, item.href) && "on", item.href === "/offres" && "hi") || undefined}
             >
-              {accountLabel}
+              {t(item.key)}
             </Link>
-          )}
-          <LocaleSwitcher />
+          ))}
+        </nav>
+
+        <div className="hr">
+          {/* « Espace client » par défaut (aussi pendant la vérification de
+              session) : même rendu que le prototype, sans décalage visuel. */}
+          <Link href={accountHref} className="lnk2 l" title={tl("account.long")}>
+            {accountLabel}
+          </Link>
+
+          <span className="lsw" role="group" aria-label={tc("langueLabel")}>
+            {routing.locales.map((l) => (
+              <button
+                key={l}
+                type="button"
+                aria-pressed={l === locale}
+                onClick={() => switchTo(l)}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </span>
+
+          <a
+            className="b b-w sm"
+            href={whatsappLink(tc("headerWhatsappMessage"))}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <WhatsappIcon />
+            {tl("cta.whatsapp")}
+          </a>
+
           <button
             ref={toggleButtonRef}
             type="button"
-            aria-label={open ? tc("closeMenu") : tc("openMenu")}
+            className="burger"
+            aria-label={open ? tc("closeMenu") : tc("menu")}
             aria-expanded={open}
-            aria-controls="primary-nav"
             onClick={() => setOpen((v) => !v)}
-            className="flex h-10 w-10 shrink-0 flex-col items-center justify-center gap-1.5 rounded-full border border-[var(--border-soft)] bg-bg-card md:hidden"
           >
-            <span
-              className={clsx(
-                "h-0.5 w-[18px] rounded bg-brand-dark transition-transform duration-200",
-                open && "translate-y-2 rotate-45",
-              )}
-            />
-            <span
-              className={clsx(
-                "h-0.5 w-[18px] rounded bg-brand-dark transition-opacity duration-200",
-                open && "opacity-0",
-              )}
-            />
-            <span
-              className={clsx(
-                "h-0.5 w-[18px] rounded bg-brand-dark transition-transform duration-200",
-                open && "-translate-y-2 -rotate-45",
-              )}
-            />
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d={open ? "M6 6l12 12M18 6L6 18" : "M4 7h16M4 12h16M4 17h16"} />
+            </svg>
           </button>
         </div>
-      </nav>
+
+        {open && (
+          <div className="mm">
+            {HEADER_NAV.map((item) => (
+              <Link key={item.href} href={item.href} onClick={() => setOpen(false)}>
+                {t(item.key)}
+              </Link>
+            ))}
+            <a href={siteConfig.whatsappUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#25D366" }}>
+              {tl("cta.whatsapp")}
+            </a>
+            <Link href="/connexion" style={{ color: "var(--mu)" }} onClick={() => setOpen(false)}>
+              {tl("account.long")}
+            </Link>
+          </div>
+        )}
+      </div>
     </header>
   );
 }

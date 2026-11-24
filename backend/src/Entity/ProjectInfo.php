@@ -94,6 +94,144 @@ class ProjectInfo
     #[Groups(['api_public', 'api_admin'])]
     private ?Media $architectureDiagram = null;
 
+    // ===== Récit de l'étude de cas (prototype pCase) =====
+
+    /** Résultat en une phrase (prototype `.res`), sous le titre de l'étude de cas. */
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $result = null;
+
+    /** Version anglaise — retombe sur la version française côté frontend si vide. */
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $resultEn = null;
+
+    /** « Le point de départ » : le contexte (1er paragraphe). */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(max: 2000)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $context = null;
+
+    /** Version anglaise — retombe sur la version française côté frontend si vide. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(max: 2000)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $contextEn = null;
+
+    /** « Le point de départ » : le défi à relever (2e paragraphe). */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(max: 2000)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $stake = null;
+
+    /** Version anglaise — retombe sur la version française côté frontend si vide. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(max: 2000)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $stakeEn = null;
+
+    /** « Ce qui a été livré » : paragraphe de synthèse. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(max: 2000)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $solution = null;
+
+    /** Version anglaise — retombe sur la version française côté frontend si vide. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(max: 2000)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $solutionEn = null;
+
+    /**
+     * Bref en trois temps (situation, ce que j'ai fait, ce que cela a changé) : [{title, text}], 3 au plus.
+     *
+     * @var array<int, array{title: string, text: string}>|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?array $brief = null;
+
+    /**
+     * Version anglaise — retombe sur la version française côté frontend si vide.
+     *
+     * @var array<int, array{title: string, text: string}>|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?array $briefEn = null;
+
+    /**
+     * Démarche : étapes [{title, text}].
+     *
+     * @var array<int, array{title: string, text: string}>|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?array $steps = null;
+
+    /**
+     * Version anglaise — retombe sur la version française côté frontend si vide.
+     *
+     * @var array<int, array{title: string, text: string}>|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?array $stepsEn = null;
+
+    /**
+     * Livrables, un par entrée.
+     *
+     * @var string[]|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?array $deliverables = null;
+
+    /**
+     * Version anglaise — retombe sur la version française côté frontend si vide.
+     *
+     * @var string[]|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?array $deliverablesEn = null;
+
+    /**
+     * Légendes de la galerie, dans l'ordre des images.
+     *
+     * @var string[]|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?array $galleryCaptions = null;
+
+    /**
+     * Version anglaise — retombe sur la version française côté frontend si vide.
+     *
+     * @var string[]|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?array $galleryCaptionsEn = null;
+
+    /**
+     * Projet en production dont l'architecture et les protections ne sont pas
+     * décrites publiquement : la fiche affiche la note « Pourquoi certains
+     * détails ne sont pas publiés » du prototype.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    #[Groups(['api_public', 'api_admin'])]
+    private bool $discreet = false;
+
+    /** Slug de l'offre « Vous avez un besoin semblable ? » ; optionnel (cf. Offer::$proofProjectSlug). */
+    #[ORM\Column(length: 60, nullable: true)]
+    #[Assert\Length(max: 60)]
+    #[Assert\Regex(pattern: '/^[a-z0-9]+(?:-[a-z0-9]+)*$/D')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $relatedOfferSlug = null;
+
     // ===== Getters et Setters =====
 
     public function getId(): ?int
@@ -256,6 +394,220 @@ class ProjectInfo
     public function setArchitectureDiagram(?Media $architectureDiagram): static
     {
         $this->architectureDiagram = $architectureDiagram;
+        return $this;
+    }
+
+    public function getResult(): ?string
+    {
+        return $this->result;
+    }
+
+    public function setResult(?string $result): static
+    {
+        $this->result = $result;
+        return $this;
+    }
+
+    public function getResultEn(): ?string
+    {
+        return $this->resultEn;
+    }
+
+    public function setResultEn(?string $resultEn): static
+    {
+        $this->resultEn = $resultEn;
+        return $this;
+    }
+
+    public function getContext(): ?string
+    {
+        return $this->context;
+    }
+
+    public function setContext(?string $context): static
+    {
+        $this->context = $context;
+        return $this;
+    }
+
+    public function getContextEn(): ?string
+    {
+        return $this->contextEn;
+    }
+
+    public function setContextEn(?string $contextEn): static
+    {
+        $this->contextEn = $contextEn;
+        return $this;
+    }
+
+    public function getStake(): ?string
+    {
+        return $this->stake;
+    }
+
+    public function setStake(?string $stake): static
+    {
+        $this->stake = $stake;
+        return $this;
+    }
+
+    public function getStakeEn(): ?string
+    {
+        return $this->stakeEn;
+    }
+
+    public function setStakeEn(?string $stakeEn): static
+    {
+        $this->stakeEn = $stakeEn;
+        return $this;
+    }
+
+    public function getSolution(): ?string
+    {
+        return $this->solution;
+    }
+
+    public function setSolution(?string $solution): static
+    {
+        $this->solution = $solution;
+        return $this;
+    }
+
+    public function getSolutionEn(): ?string
+    {
+        return $this->solutionEn;
+    }
+
+    public function setSolutionEn(?string $solutionEn): static
+    {
+        $this->solutionEn = $solutionEn;
+        return $this;
+    }
+
+    /** @return array<int, array{title: string, text: string}> */
+    public function getBrief(): array
+    {
+        return $this->brief ?? [];
+    }
+
+    /** @param array<int, array{title: string, text: string}>|null $brief */
+    public function setBrief(?array $brief): static
+    {
+        $this->brief = $brief ?: null;
+        return $this;
+    }
+
+    /** @return array<int, array{title: string, text: string}>|null */
+    public function getBriefEn(): ?array
+    {
+        return $this->briefEn;
+    }
+
+    /** @param array<int, array{title: string, text: string}>|null $briefEn */
+    public function setBriefEn(?array $briefEn): static
+    {
+        $this->briefEn = $briefEn ?: null;
+        return $this;
+    }
+
+    /** @return array<int, array{title: string, text: string}> */
+    public function getSteps(): array
+    {
+        return $this->steps ?? [];
+    }
+
+    /** @param array<int, array{title: string, text: string}>|null $steps */
+    public function setSteps(?array $steps): static
+    {
+        $this->steps = $steps ?: null;
+        return $this;
+    }
+
+    /** @return array<int, array{title: string, text: string}>|null */
+    public function getStepsEn(): ?array
+    {
+        return $this->stepsEn;
+    }
+
+    /** @param array<int, array{title: string, text: string}>|null $stepsEn */
+    public function setStepsEn(?array $stepsEn): static
+    {
+        $this->stepsEn = $stepsEn ?: null;
+        return $this;
+    }
+
+    /** @return string[] */
+    public function getDeliverables(): array
+    {
+        return $this->deliverables ?? [];
+    }
+
+    /** @param string[]|null $deliverables */
+    public function setDeliverables(?array $deliverables): static
+    {
+        $this->deliverables = $deliverables ?: null;
+        return $this;
+    }
+
+    /** @return string[]|null */
+    public function getDeliverablesEn(): ?array
+    {
+        return $this->deliverablesEn;
+    }
+
+    /** @param string[]|null $deliverablesEn */
+    public function setDeliverablesEn(?array $deliverablesEn): static
+    {
+        $this->deliverablesEn = $deliverablesEn ?: null;
+        return $this;
+    }
+
+    /** @return string[] */
+    public function getGalleryCaptions(): array
+    {
+        return $this->galleryCaptions ?? [];
+    }
+
+    /** @param string[]|null $galleryCaptions */
+    public function setGalleryCaptions(?array $galleryCaptions): static
+    {
+        $this->galleryCaptions = $galleryCaptions ?: null;
+        return $this;
+    }
+
+    /** @return string[]|null */
+    public function getGalleryCaptionsEn(): ?array
+    {
+        return $this->galleryCaptionsEn;
+    }
+
+    /** @param string[]|null $galleryCaptionsEn */
+    public function setGalleryCaptionsEn(?array $galleryCaptionsEn): static
+    {
+        $this->galleryCaptionsEn = $galleryCaptionsEn ?: null;
+        return $this;
+    }
+
+    public function isDiscreet(): bool
+    {
+        return $this->discreet;
+    }
+
+    public function setDiscreet(bool $discreet): static
+    {
+        $this->discreet = $discreet;
+        return $this;
+    }
+
+    public function getRelatedOfferSlug(): ?string
+    {
+        return $this->relatedOfferSlug;
+    }
+
+    public function setRelatedOfferSlug(?string $relatedOfferSlug): static
+    {
+        $this->relatedOfferSlug = $relatedOfferSlug;
         return $this;
     }
 }

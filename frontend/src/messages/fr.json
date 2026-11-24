@@ -17,7 +17,10 @@
     "readMore": "Lire l'article",
     "seeProject": "Voir le projet",
     "seeDetails": "Voir les détails",
-    "loading": "Chargement…"
+    "loading": "Chargement…",
+    "headerWhatsappMessage": "Bonjour Horlynat, j’aimerais vous parler de mon projet.",
+    "menu": "Menu",
+    "langueLabel": "Langue"
   },
   "validation": {
     "required": "Ce champ est requis.",
@@ -51,14 +54,17 @@
     "blog": "Blog",
     "contact": "Contact",
     "compte": "Mon compte",
-    "connexion": "Connexion"
+    "connexion": "Connexion",
+    "espaceClient": "Espace client"
   },
   "footer": {
     "note": "Portfolio de Horlynat MAMPASSI MBAMA — développeur full-stack, mobile et intégrateur de solutions IA, consultant en cybersécurité et technicien en assurances.",
     "navHeading": "Navigation",
     "connectHeading": "Suivez-moi",
     "legalHeading": "Légal",
-    "rights": "Tous droits réservés."
+    "rights": "Tous droits réservés.",
+    "location": "Brazzaville, Congo · missions à distance",
+    "contactForm": "Formulaire de contact"
   },
   "home": {
     "eyebrow": "Développeur Full-Stack & Intégrateur IA",
@@ -421,6 +427,55 @@
     "cta": {
       "title": "Envie d'en discuter ?",
       "sub": "Décrivez votre projet directement, ou posez vos questions à mon assistant IA — il connaît mon profil aussi bien que moi."
+    },
+    "nav": {
+      "label": "Sections de la page",
+      "vision": "Vision",
+      "qui": "Qui je suis",
+      "competences": "Compétences",
+      "realisations": "Réalisations",
+      "parcours": "Parcours"
+    },
+    "heroCta": {
+      "whatsapp": "Échanger avec moi",
+      "whatsappMessage": "Bonjour Horlynat, j’aimerais échanger avec vous.",
+      "projects": "Voir mes réalisations",
+      "cv": "Télécharger mon CV"
+    },
+    "portrait": {
+      "alt": "Portrait de {name}"
+    },
+    "pillars": {
+      "vision": "Vision",
+      "mission": "Mission",
+      "ambition": "Ambition"
+    },
+    "horizons": {
+      "title": "Mes ambitions dans le temps",
+      "today": "Aujourd’hui",
+      "midTerm": "D’ici trois ans",
+      "longTerm": "À long terme"
+    },
+    "projects": {
+      "eyebrow": "Réalisations",
+      "title": "Des plateformes conçues, livrées et exploitées",
+      "lede": "Chaque réalisation est en service ou en cours de déploiement. Ouvrez une étude de cas pour en comprendre la démarche.",
+      "cta": "Toutes les réalisations",
+      "empty": "Les prochaines réalisations seront affichées ici dès leur publication."
+    },
+    "skillsLinks": {
+      "skills": "Le détail de mes compétences",
+      "offers": "Les offres associées"
+    },
+    "journey": {
+      "eyebrow": "Parcours",
+      "title": "Des mathématiques à l’entreprise",
+      "lede": "Informatique, assurance puis entrepreneuriat : un parcours qui m’a appris à construire et à anticiper les risques.",
+      "learningTitle": "Toujours en formation"
+    },
+    "finalCta": {
+      "whatsapp": "Écrire sur WhatsApp",
+      "contact": "Décrire mon projet"
     }
   },
   "skills": {
@@ -687,7 +742,9 @@
       "success": "Compte créé — vérifiez vos emails pour confirmer votre adresse. Votre profil sera ensuite revu avant activation.",
       "error": "Une erreur est survenue, merci de réessayer.",
       "errorRequired": "Merci de compléter votre nom, un email valide, un mot de passe conforme, et d'accepter les conditions."
-    }
+    },
+    "whatsapp": "Écrire sur WhatsApp",
+    "whatsappMessage": "Bonjour Horlynat, je suis freelance et j'aimerais en savoir plus sur votre réseau."
   },
   "contact": {
     "eyebrow": "Entrer en contact",
@@ -880,7 +937,9 @@
       "successStep1": "Vérification de votre demande par l'assistant IA",
       "successStep2": "Étude de votre besoin et cadrage technique",
       "successStep3": "Réponse personnalisée sous 48h, par le canal choisi",
-      "errorSubmit": "Une erreur est survenue lors de l'envoi, merci de réessayer."
+      "errorSubmit": "Une erreur est survenue lors de l'envoi, merci de réessayer.",
+      "successWhatsapp": "Prévenir sur WhatsApp",
+      "successWhatsappMessage": "Bonjour Horlynat, je viens de vous envoyer une demande de devis ({type})."
     },
     "rdv": {
       "badge": "Échange rapide",
@@ -977,85 +1036,16 @@
   },
   "legal": {
     "mentions": {
-      "title": "Mentions légales",
-      "lastUpdate": "Dernière mise à jour",
-      "editorTitle": "Éditeur du site",
-      "editorText": "Ce site est édité à titre professionnel par Horlynat MAMPASSI MBAMA, développeur full-stack indépendant basé à Brazzaville, République du Congo.",
-      "hostingTitle": "Hébergement",
-      "hostingText": "Le site est hébergé sur un serveur privé virtuel (VPS) [nom et adresse de l'hébergeur à compléter] et distribué via Cloudflare, Inc. (États-Unis), qui assure la résolution DNS, la mise en cache (CDN) et la terminaison SSL/TLS.",
-      "ipTitle": "Propriété intellectuelle",
-      "ipText": "L'ensemble des contenus présents sur ce site (textes, visuels, code, identité visuelle) est la propriété de Horlynat MAMPASSI MBAMA, sauf mention contraire.",
-      "moreTitle": "Pour aller plus loin",
-      "moreText": "Les informations relatives à la collecte et au traitement de vos données personnelles sont détaillées dans notre <privacy>politique de confidentialité</privacy>. Les règles d'utilisation du site sont précisées dans nos <terms>conditions générales d'utilisation</terms>."
+      "title": "Mentions légales"
     },
     "privacy": {
-      "title": "Politique de confidentialité",
-      "lastUpdate": "Dernière mise à jour",
-      "intro": "Cette politique explique quelles données personnelles sont collectées sur ce site, pourquoi, pendant combien de temps, et comment vous pouvez exercer vos droits — conformément aux principes du RGPD (Règlement Général sur la Protection des Données).",
-      "controllerTitle": "Responsable du traitement",
-      "controllerText": "Horlynat MAMPASSI MBAMA, développeur full-stack indépendant basé à Brazzaville, République du Congo, est responsable du traitement des données collectées sur ce site.",
-      "dataTitle": "Données collectées",
-      "dataContact": "Formulaires de contact et de devis : nom, email, téléphone (selon le canal choisi), description de votre projet ou de votre demande.",
-      "dataAccount": "Création de compte (client ou freelance) : nom, email, mot de passe — jamais stocké en clair, haché par le serveur.",
-      "dataProject": "Demande de devis : catégorie de prestation, budget indicatif, délai souhaité, et toute précision apportée via l'assistant de qualification.",
-      "dataFreelance": "Inscription freelance : spécialités, disponibilité, portfolio et présentation libre, fournis à votre initiative.",
-      "dataTechnical": "Donnée technique : votre adresse IP est utilisée de façon transitoire (non stockée) pour limiter les tentatives abusives d'envoi de formulaires.",
-      "dataAiAssistant": "Assistant IA conversationnel : le texte des questions que vous lui posez est transmis à des prestataires IA tiers pour générer une réponse (voir « Destinataires des données »). Aucune trace de ce texte n'est conservée dans notre propre base — seules des métadonnées anonymisées le sont (longueur, coût, horodatage, empreinte non réversible de l'adresse IP).",
-      "purposeTitle": "Finalité du traitement",
-      "purposeText": "Ces informations sont utilisées uniquement pour qualifier votre demande, vous recontacter, gérer votre compte le cas échéant, établir un devis ou organiser un rendez-vous. Elles ne sont ni revendues ni utilisées à des fins publicitaires.",
-      "legalBasisTitle": "Base légale",
-      "legalBasisText": "Le traitement repose sur votre consentement explicite (cases à cocher des formulaires), sur l'exécution du contrat lorsque vous créez un compte, et sur l'intérêt légitime pour la prévention des abus (limitation du nombre de tentatives d'envoi).",
-      "retentionTitle": "Durée de conservation",
-      "retentionText": "Les données d'un compte (client ou freelance) sont conservées tant que le compte reste actif. Les demandes de devis ou de rendez-vous non suivies d'effet sont conservées le temps nécessaire à leur traitement, puis supprimées. Les métadonnées anonymisées des échanges avec l'assistant IA sont supprimées automatiquement après 90 jours.",
-      "recipientsTitle": "Destinataires des données",
-      "recipientsText": "Vos données sont accessibles uniquement à Horlynat MAMPASSI MBAMA, responsable du traitement. Aucune donnée n'est vendue, louée ou partagée avec des tiers à des fins commerciales ou publicitaires ; ce site n'utilise aucun outil d'analytics ou de tracking tiers. Exception technique : les questions posées à l'assistant IA sont transmises à Google (Gemini, recherche de contenu pertinent) et Anthropic (Claude, génération de la réponse), deux prestataires situés hors Union européenne agissant comme sous-traitants techniques pour cette seule fonctionnalité, dans le cadre de leurs conditions d'utilisation API respectives — jamais à des fins publicitaires de notre part.",
-      "rightsTitle": "Vos droits",
-      "rightsText": "Conformément aux principes du RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation et d'opposition concernant vos données personnelles, ainsi que d'un droit à la portabilité pour les données que vous avez fournies.",
-      "rightsContact": "Pour exercer l'un de ces droits, contactez-nous via le <link>formulaire de contact</link>.",
-      "securityTitle": "Sécurité",
-      "securityText": "Les échanges avec le site sont chiffrés (HTTPS/TLS). Les mots de passe sont hachés par le serveur et ne sont jamais stockés ni transmis en clair. La session de connexion est conservée dans un cookie protégé (httpOnly), inaccessible aux scripts du navigateur.",
-      "cookiesTitle": "Cookies",
-      "cookiesText": "Ce site utilise un nombre volontairement réduit de cookies, tous strictement nécessaires à son fonctionnement. Le détail est disponible dans notre <link>politique de cookies</link>."
+      "title": "Politique de confidentialité"
     },
     "cookies": {
-      "title": "Politique de cookies",
-      "lastUpdate": "Dernière mise à jour",
-      "intro": "Cette page liste, de façon exhaustive et honnête, tout ce que ce site stocke dans votre navigateur : il n'y a rien de caché.",
-      "essentialTitle": "Cookies strictement nécessaires",
-      "essentialText": "Ce site utilise deux cookies, tous deux indispensables à son fonctionnement de base. Aucun consentement n'est requis pour ces cookies au titre du RGPD et de la directive ePrivacy, puisqu'ils sont strictement nécessaires au service demandé.",
-      "sessionCookiePurpose": "Cookie de session : garde votre connexion active lorsque vous êtes identifié sur votre espace client ou freelance.",
-      "sessionCookieDuration": "Httponly et sécurisé, expire avec votre session de connexion.",
-      "localeCookiePurpose": "Mémorise la langue choisie (français ou anglais) pour vous éviter de la resélectionner à chaque visite.",
-      "localeCookieDuration": "Environ 1 an, ou jusqu'à changement de langue.",
-      "localStorageTitle": "Stockage local",
-      "localStorageText": "Le thème d'affichage (clair ou sombre) que vous choisissez est mémorisé dans le stockage local de votre navigateur (localStorage), et non dans un cookie. Il reste sur votre appareil jusqu'à ce que vous le changiez ou effaciez les données de ce site.",
-      "noTrackingTitle": "Aucun cookie de mesure ou de publicité",
-      "noTrackingText": "Ce site n'utilise aucun outil d'analytics, de mesure d'audience, de publicité ou de réseau social tiers. Aucune donnée de navigation n'est collectée ou partagée à des fins statistiques ou publicitaires.",
-      "noBannerTitle": "Pourquoi il n'y a pas de bandeau de consentement",
-      "noBannerText": "Un bandeau de consentement n'est légalement requis que pour les cookies non essentiels (mesure d'audience, publicité, etc.). Comme ce site n'en utilise aucun, aucun bandeau ne vous est présenté — un choix assumé de simplicité plutôt qu'une case à cocher pour la forme.",
-      "controlTitle": "Garder le contrôle",
-      "controlText": "Vous pouvez à tout moment supprimer les cookies et le stockage local de ce site depuis les réglages de votre navigateur. La suppression du cookie de session vous déconnectera simplement de votre espace."
+      "title": "Politique de cookies"
     },
     "terms": {
-      "title": "Conditions générales d'utilisation",
-      "lastUpdate": "Dernière mise à jour",
-      "intro": "Les présentes conditions régissent l'utilisation de ce site, qu'il s'agisse de sa simple consultation ou de la création et de l'utilisation d'un compte client ou freelance.",
-      "objectTitle": "Objet",
-      "objectText": "Ce site présente le profil professionnel de Horlynat MAMPASSI MBAMA et permet de le contacter, de demander un devis, de prendre rendez-vous, de créer un compte client pour confier un projet, ou de créer un profil freelance pour candidater à des collaborations.",
-      "accessTitle": "Accès au site",
-      "accessText": "La consultation du site est libre et gratuite. La création d'un compte (client ou freelance) et l'accès aux fonctionnalités associées nécessitent la fourniture d'informations exactes lors de l'inscription.",
-      "accountsTitle": "Comptes client et freelance",
-      "accountsText": "Vous êtes responsable de la confidentialité de votre mot de passe et de toute activité effectuée depuis votre compte. Un compte freelance est soumis à validation avant activation complète ; la création d'un compte ne constitue pas un engagement contractuel de collaboration.",
-      "contentTitle": "Propriété intellectuelle",
-      "contentText": "L'ensemble des contenus présents sur ce site (textes, visuels, code, identité visuelle) est la propriété de Horlynat MAMPASSI MBAMA, sauf mention contraire, et ne peut être reproduit sans autorisation préalable.",
-      "aiTitle": "Assistant IA",
-      "aiText": "L'assistant conversationnel présent sur ce site répond à partir d'informations prédéfinies sur le profil de Horlynat MAMPASSI MBAMA. Il ne constitue pas un engagement contractuel.",
-      "liabilityTitle": "Responsabilité",
-      "liabilityText": "Ce site est fourni « en l'état ». Bien qu'un soin particulier soit apporté à l'exactitude des informations publiées, leur exhaustivité ou leur actualité ne peuvent être garanties. Horlynat MAMPASSI MBAMA ne saurait être tenu responsable d'une interruption temporaire du service ou d'une erreur de contenu.",
-      "lawTitle": "Droit applicable",
-      "lawText": "Les présentes conditions sont soumises au droit applicable au lieu d'établissement de l'éditeur. Tout litige relève, à défaut de résolution amiable, des juridictions compétentes.",
-      "changesTitle": "Modification des conditions",
-      "changesText": "Ces conditions peuvent être mises à jour à tout moment ; la version en vigueur est celle publiée sur cette page. Il est conseillé de la consulter régulièrement."
+      "title": "Conditions générales d'utilisation"
     }
   },
   "notFound": {
@@ -1631,5 +1621,976 @@
       "languageLabel": "Langue",
       "languageHint": "Choisissez la langue d'affichage du site."
     }
+  },
+  "landing": {
+    "identity": {
+      "name": "Horlynat Mampassi Mbama",
+      "role1": "Ingénieur et architecte logiciel",
+      "role2": "Cybersécurité · Gestion et management des risques",
+      "photoLabel": "Emplacement de la photo de Horlynat"
+    },
+    "hero": {
+      "carouselLabel": "Offres",
+      "slideRole": "diapositive",
+      "slideLabel": "{index} sur {total}",
+      "chooseOffer": "Choisir une offre",
+      "previous": "Offre précédente",
+      "next": "Offre suivante",
+      "pause": "Mettre le défilement en pause",
+      "play": "Reprendre le défilement",
+      "priceOnce": "Prix unique",
+      "priceFrom": "À partir de",
+      "readyIn": "Prêt en {delay}",
+      "order": "Commander sur WhatsApp",
+      "seeOffer": "Voir l'offre",
+      "orderMessage": "Bonjour Horlynat, je suis intéressé par l'offre « {title} ».",
+      "fallbackTitle": "Des solutions numériques claires, à prix annoncés.",
+      "fallbackLead": "Assistant WhatsApp IA, sites, audits de sécurité et applications : vous savez ce que vous recevez, à combien et en combien de temps."
+    },
+    "trust": {
+      "label": "Garanties",
+      "items": [
+        "Prix annoncé avant de commencer",
+        "Paiement par Mobile Money",
+        "Proposition sous 48 h",
+        "Sécurité incluse",
+        "Suivi après livraison"
+      ]
+    },
+    "needs": {
+      "kick": "Votre besoin",
+      "title": "Quel problème voulez-vous régler ?",
+      "lede": "Choisissez votre situation, je vous montre la solution adaptée.",
+      "cta": "Voir la solution",
+      "items": [
+        {
+          "dom": "Ingénierie logicielle",
+          "title": "Je perds des ventes parce que je ne réponds pas assez vite",
+          "text": "Un assistant IA répond à vos clients sur WhatsApp, jour et nuit.",
+          "offer": "whatsapp",
+          "icon": "shop"
+        },
+        {
+          "dom": "Architecture logicielle",
+          "title": "Mon application ralentit ou plante quand l’activité grandit",
+          "text": "Je trouve ce qui bloque et comment évoluer sans tout refaire.",
+          "offer": "architecture",
+          "icon": "arch"
+        },
+        {
+          "dom": "Cybersécurité",
+          "title": "J’ai peur d’être piraté ou de perdre mes données",
+          "text": "Je trouve vos failles avant les pirates et je vous aide à les corriger.",
+          "offer": "audit",
+          "icon": "lock"
+        },
+        {
+          "dom": "Gestion des risques",
+          "title": "Je suis assuré, mais suis-je vraiment couvert ?",
+          "text": "Je vérifie ce que vos contrats couvrent vraiment, avant un sinistre.",
+          "offer": "risques",
+          "icon": "umb"
+        }
+      ]
+    },
+    "offers": {
+      "kick": "Offres",
+      "title": "Choisissez ce dont vous avez besoin",
+      "lede": "Chaque offre indique ce que vous recevez, à partir de combien et en combien de temps.",
+      "order": "Commander",
+      "detail": "Voir le détail",
+      "swipe": "Faites glisser pour voir les autres offres",
+      "all": "Voir toutes les offres",
+      "eng": [
+        [
+          "Un seul interlocuteur",
+          "du premier message au suivi"
+        ],
+        [
+          "Délai annoncé",
+          "et tenu, étape par étape"
+        ],
+        [
+          "Paiement en deux temps",
+          "un acompte, puis le solde à la livraison"
+        ]
+      ],
+      "featuredTag": "Pour les commerces"
+    },
+    "demo": {
+      "kick": "Offre vedette",
+      "title": "Votre assistant WhatsApp, en action",
+      "lede": "Ce que vit votre client, et ce que vous recevez de votre côté. Écrivez-lui pour essayer.",
+      "shop": "Boutique Ndinga",
+      "shopSub": "Boutique d’exemple · assistant IA",
+      "welcome": "Bonjour ! Bienvenue à la Boutique Ndinga. Que puis-je faire pour vous ?",
+      "user1": "Bonsoir, vous livrez à Poto-Poto ?",
+      "bot1": "Bonsoir ! Oui, nous livrons à Poto-Poto aujourd’hui même, pour toute commande passée avant 14 h.",
+      "quick": [
+        "Vous avez du riz ?",
+        "Je veux commander",
+        "Vous livrez ?",
+        "Vos horaires ?"
+      ],
+      "inputLabel": "Votre message",
+      "placeholder": "Écrire un message",
+      "send": "Envoyer",
+      "typing": "L'assistant écrit",
+      "dashboard": "Votre tableau de bord",
+      "today": "Aujourd’hui",
+      "kpi": [
+        "Messages traités",
+        "Commandes",
+        "Transmises à vous"
+      ],
+      "alertsTitle": "Dernières alertes",
+      "alerts": [
+        [
+          "ok",
+          "Commande : 4 cartons d’huile",
+          "62 000 FCFA · il y a 12 min"
+        ],
+        [
+          "hi",
+          "Demande importante transmise",
+          "Grossiste, 50 cartons · il y a 1 h"
+        ]
+      ],
+      "newOrder": [
+        "Nouvelle commande",
+        "À l’instant · via l’assistant"
+      ],
+      "handover": [
+        "Demande transmise à vous",
+        "À l’instant"
+      ],
+      "answers": {
+        "product": "Oui ! Riz parfumé, sac de 25 kg à 18 000 FCFA. Je vous le réserve ?",
+        "delivery": "Oui, nous livrons à Brazzaville le jour même pour toute commande passée avant 14 h.",
+        "hours": "Nous sommes ouverts du lundi au samedi, de 8 h à 19 h.",
+        "order": "Parfait ! Commande notée : 2 sacs de riz, 36 000 FCFA. Livraison aujourd’hui à 16 h. Le gérant est prévenu.",
+        "bulk": "Pour une commande en gros, je vous mets en relation avec le gérant. Il vous répond dans quelques minutes.",
+        "default": "Merci pour votre message. Je transmets votre demande au gérant, qui vous répond rapidement."
+      },
+      "steps": [
+        [
+          "Vous m’envoyez vos produits et vos prix",
+          "Une simple liste suffit."
+        ],
+        [
+          "Je configure et je teste avec vous",
+          "Le ton et les réponses de votre maison."
+        ],
+        [
+          "Vos clients sont servis",
+          "En 21 jours, jour et nuit."
+        ]
+      ],
+      "order": "Commander mon assistant",
+      "orderMessage": "Bonjour Horlynat, je veux un assistant IA sur mon WhatsApp.",
+      "seeOffer": "Voir l'offre",
+      "match": {
+        "product": "riz|produit|avez|stock|prix",
+        "delivery": "livr",
+        "hours": "horaire|ouvert|heure",
+        "order": "command|oui|reserve|veux",
+        "bulk": "gros|cartons",
+        "countOrder": "command|oui|reserve|veux|sacs",
+        "countHandover": "gros|cartons|prix de gros|livraison speciale"
+      }
+    },
+    "projects": {
+      "kick": "Réalisations",
+      "title": "Des projets réels, en production",
+      "lede": "La preuve de ce que je peux construire pour vous.",
+      "see": "Voir le projet",
+      "all": "Voir toutes les réalisations",
+      "status": {
+        "en_cours": "En cours",
+        "termine": "En production",
+        "a_venir": "À venir",
+        "suspendu": "En pause",
+        "collaboration": "En collaboration"
+      }
+    },
+    "me": {
+      "kick": "Qui vous accompagne",
+      "title": "Un seul interlocuteur, du premier message au suivi",
+      "text": "Ingénieur et architecte logiciel, consultant en cybersécurité, gestion et management des risques. Je réalise moi-même votre projet, et je reste votre contact après la livraison.",
+      "stats": [
+        [
+          "Depuis 2016",
+          "dans le numérique"
+        ],
+        [
+          "Depuis 2018",
+          "en gestion des risques"
+        ],
+        [
+          "4",
+          "domaines d’expertise"
+        ]
+      ],
+      "more": "En savoir plus sur moi",
+      "whatsapp": "Écrire sur WhatsApp",
+      "photo": "Votre photo professionnelle",
+      "available": "Disponible",
+      "name": "Horlynat",
+      "role": "Ingénieur et architecte logiciel"
+    },
+    "steps": {
+      "kick": "Comment ça se passe",
+      "title": "Six étapes claires, sans surprise",
+      "lede": "Vous savez à chaque moment où en est votre projet et ce qui vient ensuite.",
+      "items": [
+        [
+          "Premier échange",
+          "Sur WhatsApp ou par appel, vous m’expliquez votre besoin. Gratuit et sans engagement."
+        ],
+        [
+          "Proposition écrite",
+          "Sous 48 h : ce que vous recevez, le prix et le délai."
+        ],
+        [
+          "Lancement",
+          "Vous validez, vous versez l’acompte, le calendrier est fixé."
+        ],
+        [
+          "Réalisation",
+          "Des points réguliers et des versions à tester à chaque étape."
+        ],
+        [
+          "Livraison",
+          "Mise en service, prise en main par votre équipe, puis le solde."
+        ],
+        [
+          "Suivi",
+          "Je reste disponible pour les corrections et les évolutions."
+        ]
+      ]
+    },
+    "faq": {
+      "kick": "Questions fréquentes",
+      "title": "Ce que l’on me demande souvent",
+      "items": [
+        [
+          "Je ne suis pas technicien, est-ce un problème ?",
+          "Pas du tout. J’explique chaque étape simplement, et vous décidez. Vous n’avez besoin de connaître que votre activité."
+        ],
+        [
+          "Les prix affichés sont-ils définitifs ?",
+          "Ce sont des prix de départ. Après un court échange, vous recevez une proposition précise sous 48 h, sans frais cachés."
+        ],
+        [
+          "Comment se fait le paiement ?",
+          "Un acompte au lancement, le solde à la livraison, par Mobile Money ou virement."
+        ],
+        [
+          "Mes données sont-elles protégées ?",
+          "Oui. Elles servent uniquement à vous répondre et à réaliser votre projet, ne sont jamais vendues, et restent confidentielles."
+        ],
+        [
+          "Travaillez-vous à distance ?",
+          "Oui. Je travaille depuis Brazzaville avec des clients partout, par WhatsApp, appel ou visioconférence."
+        ],
+        [
+          "Et après la livraison ?",
+          "Je reste disponible pour le suivi, les corrections et les évolutions de votre outil."
+        ]
+      ],
+      "privacyLink": "Lire la politique de confidentialité",
+      "more": "Une autre question ?",
+      "moreLink": "Posez-la sur WhatsApp",
+      "moreMessage": "Bonjour Horlynat, j’ai une question."
+    },
+    "cta": {
+      "title": "Parlons de votre projet.",
+      "text": "Un assistant WhatsApp, un site, un audit ou une application : écrivez-moi en une phrase, je vous réponds dans la journée.",
+      "whatsapp": "Écrire sur WhatsApp",
+      "offers": "Voir les offres",
+      "message": "Bonjour Horlynat, j’aimerais vous parler de mon projet."
+    },
+    "freelance": {
+      "title": "Vous êtes freelance ou professionnel du numérique ?",
+      "text": "Créez votre profil et collaborez avec moi sur les projets en cours.",
+      "cta": "Rejoindre en freelance"
+    },
+    "account": {
+      "long": "Espace clients et freelances"
+    },
+    "footer": {
+      "tagline": "Ingénieur et architecte logiciel, consultant en cybersécurité, gestion et management des risques.",
+      "home": "Horlynat, accueil",
+      "offers": "Offres",
+      "allOffers": "Toutes les offres",
+      "site": "Le site",
+      "about": "À propos",
+      "skills": "Compétences",
+      "projects": "Réalisations",
+      "blog": "Blog",
+      "legal": "Informations légales",
+      "mentions": "Mentions légales",
+      "privacy": "Protection des données (RGPD)",
+      "terms": "Conditions d’utilisation",
+      "service": "Conditions de prestation",
+      "cookies": "Cookies",
+      "contact": "Contact",
+      "dbg": "Digital Business Group",
+      "rights": "Tous droits réservés.",
+      "location": "Brazzaville, Congo · missions à distance",
+      "social": "Réseaux sociaux"
+    },
+    "assistant": {
+      "name": "Assistant de Horlynat",
+      "status": "En ligne · répond en quelques secondes",
+      "open": "Ouvrir l'assistant de Horlynat",
+      "close": "Fermer l’assistant",
+      "newChat": "Nouvelle conversation",
+      "welcomeTitle": "Bonjour, que puis-je faire pour vous ?",
+      "welcomeText": "Décrivez votre besoin : je vous oriente vers la bonne solution, avec son prix et son délai.",
+      "suggestions": [
+        [
+          "shop",
+          "Je veux plus de clients",
+          "Un assistant WhatsApp qui répond et vend"
+        ],
+        [
+          "tag",
+          "Combien ça coûte ?",
+          "Les prix de départ de chaque offre"
+        ],
+        [
+          "lock",
+          "Sécuriser mon site",
+          "Un audit de sécurité en 7 jours"
+        ],
+        [
+          "umb",
+          "Suis-je bien assuré ?",
+          "Vérifier ce que mes contrats couvrent"
+        ]
+      ],
+      "humanTitle": "Préférez parler à Horlynat ?",
+      "humanSub": "Réponse en personne sur WhatsApp",
+      "humanMessage": "Bonjour Horlynat, j’ai une question.",
+      "inputLabel": "Votre question",
+      "placeholder": "Écrivez votre question…",
+      "send": "Envoyer",
+      "disclaimer": "Assistant IA : il peut se tromper. Pour un devis, Horlynat vous répond en personne.",
+      "dataLink": "Vos données",
+      "follow": [
+        "Quel délai ?",
+        "Combien ça coûte ?",
+        "Parler à Horlynat"
+      ],
+      "talkAnswer": "Avec plaisir : Horlynat vous répond en personne sur WhatsApp, en général dans la journée.",
+      "writeHorlynat": "Écrire à Horlynat",
+      "typing": "L’assistant écrit",
+      "whatsapp": "Écrire sur WhatsApp",
+      "stop": "Arrêter la réponse"
+    }
+  },
+  "catalog": {
+    "metaTitle": "Offres et prix",
+    "crumbHome": "Accueil",
+    "crumb": "Offres",
+    "title": "Des solutions claires, ",
+    "titleAccent": "à prix connu.",
+    "lede": "Partez de votre situation et de votre budget : chaque offre indique ce que vous recevez, à partir de combien et en combien de temps.",
+    "situationLabel": "Votre situation",
+    "budgetLabel": "Votre budget",
+    "situations": {
+      "tous": "Toutes les situations",
+      "clients": "Je veux plus de clients",
+      "appli": "Mon application doit évoluer",
+      "secu": "Je veux me protéger des pirates",
+      "assur": "Je veux vérifier mes assurances"
+    },
+    "budgets": {
+      "tous": "Tous les budgets",
+      "petit": "Moins de 150 000 FCFA",
+      "moyen": "150 000 à 300 000 FCFA",
+      "grand": "Plus de 300 000 FCFA"
+    },
+    "count": "{count, plural, one {<b>#</b> offre pour vous} other {<b>#</b> offres pour vous}}",
+    "reset": "Tout afficher",
+    "featured": "Offre vedette",
+    "starCta": "Voir l’offre et commander",
+    "groups": {
+      "dev": "Créer et automatiser",
+      "aud": "Auditer et protéger"
+    },
+    "groupCount": "{count, plural, one {# offre} other {# offres}}",
+    "for": "Pour : {who}",
+    "see": "Voir l’offre",
+    "emptyTitle": "Aucune offre ne correspond à ces deux critères.",
+    "emptyText": "Décrivez votre besoin en une phrase : je vous propose une solution adaptée.",
+    "emptyAll": "Voir toutes les offres",
+    "emptyMessage": "Bonjour Horlynat, je cherche une solution pour mon besoin.",
+    "compareTitle": "Comparer en un coup d’œil",
+    "compareSub": "Du plus accessible au plus complet",
+    "compareCols": [
+      "Offre",
+      "À partir de",
+      "Délai"
+    ],
+    "compareHot": "Vedette",
+    "compareGo": "Voir",
+    "ctaTitle": "Vous hésitez entre deux offres ?",
+    "ctaText": "Décrivez votre situation en une phrase sur WhatsApp : je vous dis laquelle vous convient, sans engagement.",
+    "noOffers": "Les offres seront affichées ici très bientôt. En attendant, écrivez-moi sur WhatsApp."
+  },
+  "offerPage": {
+    "order": "Commander sur WhatsApp",
+    "orderShort": "Commander",
+    "ask": "Poser une question",
+    "askMessage": "Bonjour Horlynat, j'ai une question sur l'offre « {title} ».",
+    "changeTitle": "Ce qui change pour vous",
+    "before": "Aujourd’hui",
+    "after": "Avec cette offre",
+    "resultTitle": "À quoi ressemble le résultat",
+    "includesTitle": "Ce que vous recevez",
+    "packTitle": "Une formule complète",
+    "packOnce": "Prix unique, payé une seule fois",
+    "packNoSub": "Sans abonnement",
+    "packSplit": "Payable en deux fois : 60 % à la conclusion du contrat ({deposit}), 40 % à la mise en service ({balance}).",
+    "packNext": "Et ensuite ?",
+    "packNextItems": [
+      "Les améliorations que j’apporte au produit vous sont offertes.",
+      "Une évolution propre à votre activité ? Elle est chiffrée sur devis, seulement si vous la demandez."
+    ],
+    "packQuote": "Beaucoup de messages chaque jour ?",
+    "packQuoteLink": "Demandez un devis adapté",
+    "packQuoteMessage": "Bonjour Horlynat, mon entreprise reçoit beaucoup de messages. Pouvez-vous me proposer un devis pour l’offre « {title} » ?",
+    "calendarTitle": "Le calendrier",
+    "calendarNote": "Le délai court dès réception de l’acompte et des éléments ci-dessous.",
+    "needsTitle": "Ce dont j’ai besoin de vous",
+    "engTitle": "Mes engagements",
+    "eng": [
+      [
+        "Proposition écrite sous 48 h",
+        "Contenu, prix et délai, avant tout engagement."
+      ],
+      [
+        "Corrections incluses",
+        "Tout ce qui a été convenu est corrigé sans frais."
+      ],
+      [
+        "Confidentialité",
+        "Vos informations ne servent qu’à votre projet."
+      ]
+    ],
+    "faqTitle": "Questions sur cette offre",
+    "faqOnce": [
+      "Y a-t-il un abonnement ?",
+      "Non. Vous payez {price} une seule fois. Les améliorations que j’apporte au produit vous sont offertes ; une évolution propre à votre activité est chiffrée sur devis, seulement si vous la demandez."
+    ],
+    "faqDelay": [
+      "Le délai est-il garanti ?",
+      "Le délai de {delay} court dès réception de l’acompte et des éléments nécessaires. Il est inscrit dans la proposition écrite."
+    ],
+    "faqPrice": [
+      "Le prix peut-il changer ?",
+      "Le prix de départ correspond à la version de base. La proposition écrite fixe le prix exact avant tout engagement."
+    ],
+    "faqAfter": [
+      "Et après la livraison ?",
+      "Les corrections liées à ce qui a été convenu sont incluses. Les évolutions font l’objet d’un nouveau devis."
+    ],
+    "proofTitle": "Une réalisation proche",
+    "proofSee": "Voir le projet",
+    "quote": "Demander un devis détaillé",
+    "buyNote": "Proposition écrite sous 48 h. Acompte au lancement, solde à la livraison.",
+    "otherKick": "Autres offres",
+    "otherTitle": "Cela peut aussi vous intéresser",
+    "ctaTitle": "Prêt à lancer votre projet ?",
+    "ctaText": "Écrivez-moi en une phrase sur WhatsApp : je vous envoie une proposition pour l’offre « {title} » sous 48 h.",
+    "pv": {
+      "sample": "Exemple anonymisé",
+      "chatTitle": "Ce que voient vos clients",
+      "chatLink": "Essayer la démonstration",
+      "overview": "Aperçu",
+      "illustration": "Illustration",
+      "report": {
+        "title": "Rapport de sécurité",
+        "cols": [
+          "Constat",
+          "Urgence",
+          "Correction"
+        ],
+        "rows": [
+          [
+            "Formulaire sans protection contre les robots",
+            "r",
+            "Ajouter une vérification"
+          ],
+          [
+            "Mots de passe faibles acceptés",
+            "r",
+            "Imposer une longueur minimale"
+          ],
+          [
+            "En-têtes de sécurité absents",
+            "o",
+            "Configurer le serveur"
+          ],
+          [
+            "Version du logiciel visible",
+            "o",
+            "Masquer la version"
+          ],
+          [
+            "Connexion chiffrée active",
+            "g",
+            "Rien à faire"
+          ]
+        ],
+        "levels": {
+          "r": "Urgent",
+          "o": "À prévoir",
+          "g": "Conforme"
+        }
+      },
+      "risk": {
+        "title": "Cartographie des couvertures",
+        "cols": [
+          "Risque de l’activité",
+          "Votre contrat",
+          "Recommandation"
+        ],
+        "rows": [
+          [
+            "Incendie des locaux",
+            "g",
+            "Garanti"
+          ],
+          [
+            "Vol de marchandises",
+            "g",
+            "Garanti, plafond à relever"
+          ],
+          [
+            "Perte d’exploitation",
+            "r",
+            "Ajouter cette garantie"
+          ],
+          [
+            "Responsabilité civile",
+            "g",
+            "Garanti"
+          ],
+          [
+            "Fuite de données clients",
+            "r",
+            "Étudier une couverture cyber"
+          ]
+        ],
+        "levels": {
+          "g": "Couvert",
+          "r": "Non couvert"
+        }
+      },
+      "roadmap": {
+        "title": "Feuille de route",
+        "cols": [
+          "Priorité",
+          "Action",
+          "Effet attendu"
+        ],
+        "rows": [
+          [
+            "1",
+            "Réorganiser l’accès aux données",
+            "Pages nettement plus rapides"
+          ],
+          [
+            "2",
+            "Mettre en cache les pages les plus vues",
+            "Moins de charge aux heures de pointe"
+          ],
+          [
+            "3",
+            "Découper le module le plus lourd",
+            "Évolutions moins coûteuses"
+          ],
+          [
+            "4",
+            "Automatiser les tests",
+            "Moins de régressions"
+          ]
+        ]
+      }
+    },
+    "faqTestimonial": [
+      "Une réduction est-elle possible ?",
+      "Oui : si vous acceptez que la mise en place de votre assistant soit filmée pour un témoignage, le prix est revu à la baisse. La réduction est fixée dans la proposition écrite."
+    ],
+    "packSplitFrom": "Payable en deux fois : 60 % à la conclusion du contrat, 40 % à la livraison."
+  },
+  "casePage": {
+    "crumb": "Réalisations",
+    "startKick": "Le point de départ",
+    "startTitle": "Le problème à résoudre",
+    "stepsKick": "La démarche",
+    "stepsTitle": "Comment j’ai procédé",
+    "resultKick": "Le résultat",
+    "resultTitle": "Ce qui a été livré",
+    "galleryKick": "En images",
+    "galleryTitle": "Galerie",
+    "techKick": "Technologies",
+    "role": "Mon rôle",
+    "sameKick": "Pour vous",
+    "sameTitle": "Vous avez un besoin semblable ?",
+    "sameText": "L’offre « {title} » part de la même démarche, à partir de {price}.",
+    "sameCta": "Voir l’offre",
+    "next": "Projet suivant",
+    "visit": "Voir le projet en ligne",
+    "code": "Voir le code",
+    "ctaTitle": "Un projet de cette ampleur ?",
+    "ctaText": "Décrivez-moi votre besoin : je vous dis comment je l’aborderais, et sous quel délai.",
+    "mbarSmall": "Un projet semblable ?",
+    "mbarBig": "Parlons-en",
+    "mbarMessage": "Bonjour Horlynat, j'ai un projet semblable à « {title} ».",
+    "galleryPending": "Capture réelle à venir",
+    "discreetTitle": "Pourquoi certains détails ne sont pas publiés",
+    "discreetText": "Cette plateforme est en production. Par principe de sécurité, son architecture et ses mesures de protection ne sont pas décrites publiquement. Je les présente volontiers lors d’un échange confidentiel."
+  },
+  "aboutPage": {
+    "crumb": "À propos",
+    "talk": "Échanger avec moi",
+    "talkMessage": "Bonjour Horlynat, j’aimerais échanger avec vous.",
+    "seeProjects": "Voir mes réalisations",
+    "subLabel": "Sections de la page",
+    "sub": {
+      "vision": "Vision",
+      "qui": "Qui je suis",
+      "competences": "Compétences",
+      "realisations": "Réalisations",
+      "parcours": "Parcours"
+    },
+    "visionKick": "Ma vision",
+    "pillars": [
+      "Vision",
+      "Mission",
+      "Ambition"
+    ],
+    "horizonTitle": "Mes ambitions dans le temps",
+    "horizon": [
+      "Aujourd’hui",
+      "D’ici trois ans",
+      "À long terme"
+    ],
+    "quiKick": "Qui je suis",
+    "skillsKick": "Compétences",
+    "skillsTitle": "Quatre domaines, un même niveau d’exigence",
+    "skillsLede": "Choisissez un domaine : ce que je fais pour vous, mes outils du moment, les offres et la preuve associées.",
+    "skillsTabs": "Domaines de compétence",
+    "doFor": "Ce que je fais pour vous",
+    "tools": "Outils du moment",
+    "linkedOffers": "Offres liées à ce domaine",
+    "delay": "Délai",
+    "proof": "Voir la réalisation : {title}",
+    "skillsNote": "Liste indicative : j’apprends en continu les technologies que chaque projet exige.",
+    "domains": [
+      {
+        "icon": "arch",
+        "title": "Ingénierie et architecture logicielle",
+        "short": "Concevoir des logiciels solides, qui grandissent avec l’activité.",
+        "text": "Je conçois l’architecture, je développe et je mets en service des plateformes web, des applications mobiles et des outils internes. Chaque choix technique est fait pour durer et pour évoluer sans refonte coûteuse.",
+        "do": [
+          "Concevoir l’architecture d’une plateforme",
+          "Développer des applications web et mobiles",
+          "Concevoir des API et modéliser les données",
+          "Auditer et faire évoluer un logiciel existant"
+        ],
+        "tools": [
+          "PHP",
+          "Python",
+          "JavaScript",
+          "TypeScript",
+          "SQL",
+          "Dart",
+          "Symfony",
+          "API Platform",
+          "Next.js",
+          "React",
+          "Flutter",
+          "Docker",
+          "Kubernetes",
+          "CI/CD",
+          "Linux"
+        ],
+        "offers": [
+          "application",
+          "architecture",
+          "site"
+        ],
+        "proof": "dbg"
+      },
+      {
+        "icon": "lock",
+        "title": "Cybersécurité",
+        "short": "La sécurité posée dès la conception, puis vérifiée.",
+        "text": "Je réfléchis à la surface d’attaque de chaque fonctionnalité avant de l’écrire, puis je vérifie : audits, tests d’intrusion, durcissement et surveillance.",
+        "do": [
+          "Audits et tests d’intrusion",
+          "Durcissement des serveurs et des applications",
+          "Gestion des accès et authentification",
+          "Conformité : RGPD, ISO 27001, loi congolaise n° 29-2019"
+        ],
+        "tools": [
+          "OWASP",
+          "Tests d’intrusion",
+          "RBAC",
+          "OAuth",
+          "JWT",
+          "Double authentification",
+          "Cloudflare"
+        ],
+        "offers": [
+          "audit"
+        ],
+        "proof": "dbg"
+      },
+      {
+        "icon": "umb",
+        "title": "Gestion et management des risques",
+        "short": "Depuis 2018, appliquée à chaque projet.",
+        "text": "Responsable des risques divers, transports, corps et facultés pendant quatre ans, j’ai appris à repérer ce qui peut mal tourner et à vérifier ce qu’un contrat couvre vraiment.",
+        "do": [
+          "Analyse et cartographie des risques",
+          "Audit des couvertures d’assurance",
+          "Risques divers, transport, corps et facultés",
+          "Prévention et continuité d’activité"
+        ],
+        "tools": [
+          "Assurance non-vie",
+          "Souscription",
+          "Gestion de sinistres",
+          "Continuité d’activité"
+        ],
+        "offers": [
+          "risques"
+        ],
+        "proof": ""
+      },
+      {
+        "icon": "spark",
+        "title": "IA et automatisation",
+        "short": "Des assistants et des automatisations utiles au quotidien.",
+        "text": "J’intègre l’intelligence artificielle là où elle fait gagner du temps ou des ventes : assistants sur WhatsApp et sur les sites, exploitation des documents, automatisation des tâches répétitives.",
+        "do": [
+          "Assistants IA sur WhatsApp et sur site",
+          "Réponses fondées sur vos propres documents",
+          "Automatisation des tâches répétitives",
+          "Intégration à vos outils existants"
+        ],
+        "tools": [
+          "Claude",
+          "Gemini",
+          "RAG",
+          "Python",
+          "PyTorch",
+          "TensorFlow",
+          "API WhatsApp"
+        ],
+        "offers": [
+          "whatsapp",
+          "automatisation"
+        ],
+        "proof": "agent"
+      }
+    ],
+    "projectsKick": "Réalisations",
+    "projectsTitle": "Des plateformes conçues, livrées et exploitées",
+    "projectsLede": "Chaque réalisation est en service ou en cours de déploiement. Ouvrez une étude de cas pour en comprendre la démarche.",
+    "pathKick": "Parcours",
+    "pathTitle": "Des mathématiques à l'entreprise",
+    "pathLede": "Informatique, assurance puis entrepreneuriat : un parcours qui m'a appris à construire et à anticiper les risques.",
+    "experience": "Expérience",
+    "education": "Formation",
+    "soon": "À venir",
+    "from": "Dès {date}",
+    "learning": "Toujours en formation"
+  },
+  "blogPage": {
+    "metaTitle": "Blog",
+    "crumb": "Blog",
+    "title": "Notes et ",
+    "titleAccent": "retours d'expérience.",
+    "lede": "Architecture, cybersécurité, gestion des risques et intelligence artificielle, expliquées simplement.",
+    "filterLabel": "Filtrer par thème",
+    "filterAll": "Tous les thèmes",
+    "readMore": "Lire l'article",
+    "empty": "Les articles seront publiés ici très bientôt.",
+    "askTitle": "Une question sur un article ?",
+    "askText": "Posez-la directement : je vous réponds en personne.",
+    "askAssistant": "Demander à l'assistant",
+    "askWhatsapp": "Écrire sur WhatsApp",
+    "askMessage": "Bonjour Horlynat, j'ai une question sur un de vos articles.",
+    "readAlso": "À lire aussi",
+    "allArticles": "Tous les articles",
+    "readingTime": "{minutes, plural, one {# min de lecture} other {# min de lecture}}",
+    "toc": "Dans cet article",
+    "writtenBy": "Écrit par",
+    "myPath": "Mon parcours",
+    "shareTitle": "Cet article peut servir à quelqu'un ?",
+    "shareWhatsapp": "WhatsApp",
+    "shareLinkedin": "LinkedIn",
+    "askSideTitle": "Une question sur ce sujet ?",
+    "askSideText": "Posez-la directement : je vous réponds en personne, en général dans la journée.",
+    "askArticleMessage": "Bonjour Horlynat, j'ai lu votre article « {title} » et j'ai une question.",
+    "noMatch": "Aucun article sur ce thème pour l’instant.",
+    "showAll": "Voir tous les articles",
+    "themes": {
+      "architecture": "Architecture",
+      "cyber": "Cybersécurité",
+      "risques": "Gestion des risques",
+      "ia": "IA"
+    },
+    "keyTakeaway": "À retenir",
+    "tocMinutes": "{minutes} min",
+    "offerKick": "L’offre liée à ce sujet",
+    "offerDelay": "Délai",
+    "offerCta": "Voir l’offre"
+  },
+  "contactPage": {
+    "metaTitle": "Contact",
+    "crumb": "Contact",
+    "title": "Parlons de ",
+    "titleAccent": "votre projet.",
+    "lede": "Je vous réponds personnellement, dans la journée. Choisissez le moyen qui vous convient.",
+    "available": "Disponible pour de nouveaux projets",
+    "whatsappTitle": "Écrire sur WhatsApp",
+    "whatsappSub": "Le plus rapide · réponse dans la journée",
+    "whatsappMessage": "Bonjour Horlynat, j’aimerais vous parler de mon projet.",
+    "callTitle": "Appeler",
+    "callHours": "Sur rendez-vous",
+    "scheduleTitle": "Planifier un échange",
+    "scheduleSub": "15 à 30 minutes, visio ou appel",
+    "scheduleMessage": "Bonjour Horlynat, je souhaite planifier un échange.",
+    "emailTitle": "E-mail",
+    "emailDelay": "Réponse sous 48 h",
+    "alreadyClient": "Déjà client ?",
+    "accessSpace": "Accédez à votre espace",
+    "alreadyFreelance": "Freelance ?",
+    "joinNetwork": "Rejoignez le réseau",
+    "segQuestTitle": "Demander un devis",
+    "segQuestSub": "Questionnaire guidé · 2 min",
+    "segDirectTitle": "Message rapide",
+    "segDirectSub": "Quelques lignes",
+    "next1Title": "Aujourd’hui",
+    "next1Text": "Je lis votre demande et je vous réponds",
+    "next2Title": "Sous 48 h",
+    "next2Text": "Vous recevez une proposition écrite",
+    "next3Title": "Ensuite",
+    "next3Text": "Vous décidez, sans engagement",
+    "honeypotLabel": "Ne pas remplir",
+    "offerContext": "Vous nous contactez à propos de : « {title} ».",
+    "quickName": "Nom",
+    "quickNamePlaceholder": "Votre nom",
+    "quickEmail": "E-mail",
+    "quickEmailPlaceholder": "nom@exemple.com",
+    "quickSubject": "Sujet",
+    "quickMessage": "Votre message",
+    "quickMessagePlaceholder": "Décrivez votre besoin…",
+    "quickErrorName": "Indiquez votre nom.",
+    "quickErrorEmail": "Indiquez une adresse e-mail valide.",
+    "quickErrorSubject": "Indiquez un sujet.",
+    "quickErrorMessage": "Écrivez votre message.",
+    "quickSend": "Envoyer le message",
+    "quickSending": "Envoi…",
+    "quickErrorSubmit": "Une erreur est survenue. Réessayez, ou écrivez-moi sur WhatsApp.",
+    "quickErrorRateLimited": "Trop de tentatives. Réessayez dans quelques minutes.",
+    "quickSuccessTitle": "Message envoyé",
+    "quickSuccessText": "Merci, je vous réponds dans la journée.",
+    "quickConsent": "J’accepte que ces informations soient utilisées pour répondre à ma demande, selon la <privacy>politique de confidentialité</privacy>.",
+    "quickErrorConsent": "Cochez cette case pour envoyer votre demande.",
+    "quickSubjectOther": "Autre besoin",
+    "segLabel": "Type de demande"
+  },
+  "authPage": {
+    "title": "Votre espace, ",
+    "titleAccent": "vos projets.",
+    "clientPoints": [
+      [
+        "Vos projets au même endroit",
+        "Avancement, échanges et versions à tester."
+      ],
+      [
+        "Vos documents",
+        "Propositions, factures et livrables, toujours disponibles."
+      ],
+      [
+        "Un accès protégé",
+        "Double authentification disponible sur chaque compte."
+      ]
+    ],
+    "freelancePoints": [
+      [
+        "Des projets réels",
+        "Collaborez sur des missions en cours, avec un cadre clair."
+      ],
+      [
+        "Un accord pour chaque tâche",
+        "Mission, rémunération et propriété du travail, par écrit."
+      ],
+      [
+        "Confidentialité",
+        "Les données des projets restent protégées."
+      ]
+    ],
+    "helpText": "Besoin d’aide pour vous connecter ?",
+    "helpLink": "Écrivez-moi",
+    "helpMessage": "Bonjour Horlynat, j’ai besoin d’aide pour me connecter à mon espace.",
+    "tabIn": "Se connecter",
+    "tabUp": "Créer un compte",
+    "loginTitle": "Bon retour parmi nous",
+    "loginLede": "Connectez-vous pour suivre vos projets.",
+    "rememberMe": "Rester connecté",
+    "forgotLink": "Mot de passe oublié ?",
+    "secureNote": "Connexion chiffrée · double authentification disponible",
+    "twoFactorTitle": "Code de vérification",
+    "twoFactorLede": "Saisissez le code à 6 chiffres affiché dans votre application d’authentification.",
+    "codeLabel": "Code",
+    "verify": "Vérifier",
+    "backToLogin": "Revenir à la connexion",
+    "emailSentTitle": "Confirmez votre adresse e-mail",
+    "emailSentText": "Un lien de confirmation vient d’être envoyé. Une fois votre adresse confirmée, activez la double authentification pour protéger votre compte.",
+    "goToLogin": "Aller à la connexion",
+    "chooseRole": "Créer un compte",
+    "chooseRoleLede": "Vous êtes :",
+    "roleClient": "Client",
+    "roleClientDesc": "Suivre mes projets, mes documents et mes factures.",
+    "roleFreelance": "Freelance",
+    "roleFreelanceDesc": "Proposer mes compétences et collaborer sur des projets.",
+    "changeRole": "Changer de profil",
+    "clientFormTitle": "Compte client",
+    "freelanceFormTitle": "Profil freelance",
+    "organizationLabel": "Organisation (facultatif)",
+    "termsLabel": "J’accepte les <terms>conditions d’utilisation</terms> et la <privacy>politique de protection des données</privacy>.",
+    "createAccount": "Créer mon compte",
+    "forgotTitle": "Mot de passe oublié",
+    "forgotLede": "Indiquez votre e-mail : vous recevrez un lien pour choisir un nouveau mot de passe.",
+    "sendLink": "Envoyer le lien",
+    "resetSentTitle": "Vérifiez votre messagerie",
+    "resetSentText": "Si un compte existe pour cette adresse, un lien de réinitialisation vient d’être envoyé. Il est valable pendant une durée limitée.",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "passwordMeterHint": "Au moins 8 caractères, avec majuscule, minuscule, chiffre et caractère spécial.",
+    "notVerifiedTitle": "Votre adresse e-mail n’est pas encore confirmée",
+    "resendLink": "Renvoyer l’e-mail de confirmation",
+    "nameRequired": "Indiquez votre nom.",
+    "emailRequired": "Indiquez une adresse e-mail valide.",
+    "codeRequired": "Le code doit comporter 6 chiffres.",
+    "tabsLabel": "Connexion ou création de compte"
+  },
+  "notFoundPage": {
+    "crumb": "Accueil",
+    "title": "Cette page n’existe pas ou a été déplacée.",
+    "lede": "Vérifiez l’adresse, ou repartez de l’une de ces pages.",
+    "home": "Revenir à l’accueil",
+    "offers": "Voir les offres",
+    "contact": "Me contacter"
   }
 }

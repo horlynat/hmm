@@ -1,51 +1,18 @@
-import { getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
-import { LegalPageLayout } from "@/components/sections/LegalPageLayout";
+import type { Metadata } from "next";
+import { buildPageMetadata } from "@/lib/metadata";
+import { LegalPage } from "@/components/legal-proto/LegalPage";
+import { mentionsLegalesContent } from "@/content/legal/mentions-legales";
 
 export const dynamic = "force-static";
 
-export default async function LegalNoticePage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "legal.mentions" });
+  const c = mentionsLegalesContent[locale === "en" ? "en" : "fr"];
+  return buildPageMetadata({ locale, pathname: "/mentions-legales", title: c.title, description: c.lede });
+}
 
-  return (
-    <LegalPageLayout
-      title={t("title")}
-      lastUpdate={t("lastUpdate")}
-      sections={[
-        { title: t("editorTitle"), body: <p>{t("editorText")}</p> },
-        { title: t("hostingTitle"), body: <p>{t("hostingText")}</p> },
-        { title: t("ipTitle"), body: <p>{t("ipText")}</p> },
-        {
-          title: t("moreTitle"),
-          body: (
-            <p>
-              {t.rich("moreText", {
-                privacy: (chunks) => (
-                  <Link
-                    href="/politique-de-confidentialite"
-                    className="font-semibold text-brand-primary hover:underline"
-                  >
-                    {chunks}
-                  </Link>
-                ),
-                terms: (chunks) => (
-                  <Link
-                    href="/conditions-generales"
-                    className="font-semibold text-brand-primary hover:underline"
-                  >
-                    {chunks}
-                  </Link>
-                ),
-              })}
-            </p>
-          ),
-        },
-      ]}
-    />
-  );
+export default async function MentionsLegalesPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const c = mentionsLegalesContent[locale === "en" ? "en" : "fr"];
+  return <LegalPage locale={locale} path="/mentions-legales" crumb={c.crumb} title={c.title} lede={c.lede} sections={c.sections} updatedLabel={c.updatedLabel} />;
 }

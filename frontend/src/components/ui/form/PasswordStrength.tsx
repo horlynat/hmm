@@ -2,19 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import clsx from "clsx";
-
-/** 5 critères cumulés (longueur, majuscule, minuscule, chiffre, caractère spécial) — aligné sur `STRONG_PASSWORD_RE`. */
-function scorePassword(value: string): number {
-  if (!value) return 0;
-  const checks = [
-    value.length >= 8,
-    /[A-Z]/.test(value),
-    /[a-z]/.test(value),
-    /\d/.test(value),
-    /[\W_]/.test(value),
-  ];
-  return checks.filter(Boolean).length;
-}
+import { scorePassword } from "@/lib/passwordStrength";
 
 /** Indicateur visuel de robustesse d'un mot de passe, sous forme de 4 segments colorés. */
 export function PasswordStrength({ value }: { value: string }) {

@@ -22,6 +22,11 @@ use Symfony\Component\Messenger\MessageBusInterface;
  * mettre en file un message correspondant à une écriture qui finirait par
  * échouer (rollback) plus loin dans le même flush.
  *
+ * Suppression : l'entité est mise en file à preRemove (son identifiant
+ * existe encore) ; au traitement, AiAssistantIngestionService ne la trouve
+ * plus et supprime ses chunks. Sans ça, le résumé d'un projet supprimé
+ * restait indéfiniment dans le contexte de l'assistant public (contre-audit).
+ *
  * Un Skill n'est pas ingéré individuellement (cf. AiAssistantIngestionService)
  * : modifier un Skill redéclenche l'ingestion de sa SkillCategory parente,
  * pour que le chunk agrégé reflète le nouveau niveau/nom.
@@ -38,7 +43,7 @@ class AiAssistantContentChangeSubscriber implements EventSubscriber
     /** @return string[] */
     public function getSubscribedEvents(): array
     {
-        return [Events::postPersist, Events::postUpdate, Events::postFlush];
+        return [Events::postPersist, Events::postUpdate, Events::preRemove, Events::postFlush];
     }
 
     /** @param LifecycleEventArgs<ObjectManager> $args */
@@ -49,6 +54,12 @@ class AiAssistantContentChangeSubscriber implements EventSubscriber
 
     /** @param LifecycleEventArgs<ObjectManager> $args */
     public function postUpdate(LifecycleEventArgs $args): void
+    {
+        $this->queue($args->getObject());
+    }
+
+    /** @param LifecycleEventArgs<ObjectManager> $args */
+    public function preRemove(LifecycleEventArgs $args): void
     {
         $this->queue($args->getObject());
     }

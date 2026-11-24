@@ -1,38 +1,32 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { ContactPageClient } from "./ContactPageClient";
 import { buildPageMetadata } from "@/lib/metadata";
+import { SiteContact } from "@/components/contact-proto/SiteContact";
 
-// Requis pour la CSP stricte par nonce (cf. src/proxy.ts, src/lib/csp.ts) :
-// un nonce ne peut être généré qu'au moment de la requête, donc cette page ne
-// peut pas être prérendue statiquement.
+// CSP stricte par nonce (cf. src/proxy.ts, src/lib/csp.ts) : un nonce ne
+// peut être généré qu'au moment de la requête, donc cette page ne peut pas
+// être prérendue statiquement.
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "contact" });
+  const t = await getTranslations({ locale, namespace: "contactPage" });
   return buildPageMetadata({
     locale,
     pathname: "/contact",
-    title: `${t("title")} ${t("titleAccent")}`,
-    description: t("sub"),
+    title: t("metaTitle"),
+    description: t("lede"),
   });
 }
 
 export default async function ContactPage({
+  params,
   searchParams,
 }: {
-  searchParams: Promise<{ mode?: string }>;
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ offre?: string }>;
 }) {
-  // Lu côté serveur (plutôt que `useSearchParams()` côté client, qui exige
-  // un `<Suspense>` dédié) : la page est déjà entièrement dynamique, `mode`
-  // permet de pré-sélectionner un panneau (ex. "Proposer mon projet" depuis
-  // /realisations doit ouvrir directement "Confier un projet", pas le mode
-  // "Demander un devis" par défaut).
-  const { mode } = await searchParams;
-  return <ContactPageClient initialMode={mode} />;
+  const { locale } = await params;
+  const { offre } = await searchParams;
+  return <SiteContact locale={locale} offerSlug={offre} />;
 }

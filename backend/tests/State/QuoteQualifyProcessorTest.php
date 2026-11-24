@@ -60,6 +60,7 @@ final class QuoteQualifyProcessorTest extends TestCase
             aiAssistantLimiter: $factory('ai_assistant_chat'),
             supportTicketGuestLimiter: $factory('support_ticket_guest_access'),
             quoteQualifyLimiter: $factory('quote_qualify'),
+            aiDemoLimiter: $factory('ai_demo_chat'),
             requestStack: $requestStack,
         );
     }

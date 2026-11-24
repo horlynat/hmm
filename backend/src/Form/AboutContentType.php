@@ -3,6 +3,7 @@
 namespace App\Form;
 
 use App\Entity\AboutContent;
+use App\Form\DataTransformer\OfferLinesTransformer;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -10,6 +11,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\File;
+use Symfony\Component\Validator\Constraints\NotBlank;
 
 class AboutContentType extends AbstractType
 {
@@ -75,6 +77,19 @@ class AboutContentType extends AbstractType
             ->add('visionTomorrowText', TextareaType::class, ['label' => 'Vision — "Demain"'])
             ->add('visionTomorrowTextEn', TextareaType::class, ['label' => 'Vision — "Demain" (anglais)', 'required' => false])
 
+            // --- Vision, mission, ambition ; parcours (refonte R5) ---
+            // Facultatifs : un texte vide masque le bloc correspondant sur le site.
+            ->add('visionPillar', TextareaType::class, ['label' => 'Carte « Vision »', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('visionPillarEn', TextareaType::class, ['label' => 'Carte « Vision » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('missionPillar', TextareaType::class, ['label' => 'Carte « Mission »', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('missionPillarEn', TextareaType::class, ['label' => 'Carte « Mission » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('ambitionPillar', TextareaType::class, ['label' => 'Carte « Ambition »', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('ambitionPillarEn', TextareaType::class, ['label' => 'Carte « Ambition » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('horizonMidText', TextareaType::class, ['label' => 'Ambition « D\'ici trois ans »', 'required' => false, 'help' => 'Entre « Aujourd\'hui » et « Demain » ci-dessus, affichés comme « Aujourd\'hui » et « À long terme ».', 'attr' => ['rows' => 3]])
+            ->add('horizonMidTextEn', TextareaType::class, ['label' => 'Ambition « D\'ici trois ans » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('learningText', TextareaType::class, ['label' => 'Parcours — encart « Toujours en formation »', 'required' => false, 'attr' => ['rows' => 3]])
+            ->add('learningTextEn', TextareaType::class, ['label' => 'Parcours — encart « Toujours en formation » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
+
             // --- Pourquoi moi ---
             ->add('why1Title', TextType::class, ['label' => 'Différenciateur 1 — titre'])
             ->add('why1TitleEn', TextType::class, ['label' => 'Différenciateur 1 — titre (anglais)', 'required' => false])
@@ -92,6 +107,10 @@ class AboutContentType extends AbstractType
             ->add('why4TitleEn', TextType::class, ['label' => 'Différenciateur 4 — titre (anglais)', 'required' => false])
             ->add('why4Desc', TextareaType::class, ['label' => 'Différenciateur 4 — description'])
             ->add('why4DescEn', TextareaType::class, ['label' => 'Différenciateur 4 — description (anglais)', 'required' => false])
+            ->add('why5Title', TextType::class, ['label' => 'Différenciateur 5 — titre (facultatif)', 'required' => false])
+            ->add('why5TitleEn', TextType::class, ['label' => 'Différenciateur 5 — titre (anglais)', 'required' => false])
+            ->add('why5Desc', TextareaType::class, ['label' => 'Différenciateur 5 — description (facultatif)', 'required' => false])
+            ->add('why5DescEn', TextareaType::class, ['label' => 'Différenciateur 5 — description (anglais)', 'required' => false])
 
             // --- Au-delà du code ---
             ->add('beyondLanguages', TextareaType::class, [
@@ -125,6 +144,41 @@ class AboutContentType extends AbstractType
             ->add('ctaSub', TextareaType::class, ['label' => 'Appel à l\'action — texte'])
             ->add('ctaSubEn', TextareaType::class, ['label' => 'Appel à l\'action — texte (anglais)', 'required' => false])
         ;
+
+        // Repères du parcours : « Depuis 2016 | dans le numérique », un par
+        // ligne. Ligne mal formée => erreur de formulaire (422), jamais 500.
+        $statsHelp = 'Un repère par ligne : « Depuis 2016 | dans le numérique » (6 au plus).';
+        foreach (['journeyStats' => false, 'journeyStatsEn' => true] as $field => $nullable) {
+            $builder->add($field, TextareaType::class, [
+                'label' => 'Parcours — repères chiffrés'.($nullable ? ' (anglais)' : ''),
+                'required' => false,
+                'help' => $statsHelp.($nullable ? ' Optionnel — même ordre que le français.' : ''),
+                'attr' => ['rows' => 4],
+                'invalid_message' => 'Format invalide — '.$statsHelp,
+            ]);
+            $builder->get($field)->addModelTransformer(new OfferLinesTransformer(OfferLinesTransformer::MODE_STAT, $nullable));
+        }
+
+        // Champs texte obligatoires : vides, ils arrivaient à null dans un
+        // setter `string` (TypeError => 500 dès que l'attribut HTML `required`
+        // est contourné). Vide => '' puis erreur de formulaire (422).
+        // Les champs du hero portent déjà #[Assert\NotBlank] sur l'entité :
+        // pas de second NotBlank (sinon deux messages d'erreur).
+        $entityNotBlank = ['heroEyebrow', 'heroTitle', 'heroTitleAccent', 'heroSub'];
+        foreach ($builder->all() as $name => $child) {
+            $type = $child->getType()->getInnerType()::class;
+            if (!$child->getRequired() || !$child->getMapped() || !\in_array($type, [TextType::class, TextareaType::class], true)) {
+                continue;
+            }
+            $constraints = $child->getOption('constraints') ?? [];
+            if (!\in_array($name, $entityNotBlank, true)) {
+                $constraints[] = new NotBlank(normalizer: 'trim', message: 'Ce champ est obligatoire.');
+            }
+            $builder->add($name, $type, array_merge($child->getOptions(), [
+                'empty_data' => '',
+                'constraints' => $constraints,
+            ]));
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void

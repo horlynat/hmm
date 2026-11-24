@@ -11,8 +11,6 @@ const STATIC_PATHNAMES = [
   "/",
   "/offres",
   "/a-propos",
-  "/competences",
-  "/realisations",
   "/blog",
   "/freelances",
   "/contact",
@@ -20,6 +18,7 @@ const STATIC_PATHNAMES = [
   "/politique-de-confidentialite",
   "/politique-de-cookies",
   "/conditions-generales",
+  "/conditions-de-prestation",
 ] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

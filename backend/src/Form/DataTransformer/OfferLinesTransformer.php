@@ -6,10 +6,12 @@ use Symfony\Component\Form\DataTransformerInterface;
 use Symfony\Component\Form\Exception\TransformationFailedException;
 
 /**
- * Listes des offres éditées en zone de texte, un élément par ligne :
+ * Listes éditées en zone de texte, un élément par ligne (offres, et depuis
+ * la refonte R5 les repères du parcours de la page « À propos ») :
  *  - MODE_LIST     : « élément »                         → list<string>
  *  - MODE_CALENDAR : « J1 | texte »                       → list<{day, text}>
  *  - MODE_PACK     : « Titre : élément ; élément ; … »    → list<{title, items}>
+ *  - MODE_STAT     : « Depuis 2016 | dans le numérique »  → list<{value, label}>
  *
  * Une ligne mal formée lève TransformationFailedException : le formulaire
  * affiche son `invalid_message`, jamais une 500. Les bornes (nombre, longueur)
@@ -22,6 +24,7 @@ final class OfferLinesTransformer implements DataTransformerInterface
     public const MODE_LIST = 'list';
     public const MODE_CALENDAR = 'calendar';
     public const MODE_PACK = 'pack';
+    public const MODE_STAT = 'stat';
 
     /** Garde-fou avant découpage : bien au-delà de toute liste légitime. */
     private const MAX_INPUT = 20_000;
@@ -43,6 +46,7 @@ final class OfferLinesTransformer implements DataTransformerInterface
             $lines[] = match ($this->mode) {
                 self::MODE_CALENDAR => \is_array($row) ? \sprintf('%s | %s', $row['day'] ?? '', $row['text'] ?? '') : '',
                 self::MODE_PACK => \is_array($row) ? \sprintf('%s : %s', $row['title'] ?? '', implode(' ; ', array_filter((array) ($row['items'] ?? []), 'is_string'))) : '',
+                self::MODE_STAT => \is_array($row) ? \sprintf('%s | %s', $row['value'] ?? '', $row['label'] ?? '') : '',
                 default => \is_string($row) ? $row : '',
             };
         }
@@ -80,6 +84,7 @@ final class OfferLinesTransformer implements DataTransformerInterface
             $rows[] = match ($this->mode) {
                 self::MODE_CALENDAR => $this->calendarRow($line, $n + 1),
                 self::MODE_PACK => $this->packRow($line, $n + 1),
+                self::MODE_STAT => $this->statRow($line, $n + 1),
                 default => $line,
             };
         }
@@ -98,6 +103,19 @@ final class OfferLinesTransformer implements DataTransformerInterface
         }
 
         return ['day' => trim($parts[0]), 'text' => trim($parts[1])];
+    }
+
+    /**
+     * @return array{value: string, label: string}
+     */
+    private function statRow(string $line, int $n): array
+    {
+        $parts = explode('|', $line, 2);
+        if (2 !== \count($parts) || '' === trim($parts[0]) || '' === trim($parts[1])) {
+            throw new TransformationFailedException(\sprintf('Ligne %d : format attendu « Depuis 2016 | dans le numérique ».', $n));
+        }
+
+        return ['value' => trim($parts[0]), 'label' => trim($parts[1])];
     }
 
     /**

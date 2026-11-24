@@ -132,6 +132,14 @@ framework:
             policy: sliding_window
             limit: 20
             interval: '1 hour'
+        # Démo WhatsApp de l'accueil en vraie IA (POST /api/assistant/demo) —
+        # PublicSubmissionThrottler::assertAiDemoAllowed(). Limiteur distinct
+        # de ai_assistant_chat ; réponses courtes sur Haiku (coût minimal),
+        # même plafond budgétaire mensuel que l'assistant.
+        ai_demo_chat:
+            policy: sliding_window
+            limit: 15
+            interval: '1 hour'
         # Anti-spam de l'alerte email de dépassement budgétaire (App\Service\
         # AiAssistantBudgetGuard) — au plus 1 par jour, même principe que
         # error_notification ci-dessus.

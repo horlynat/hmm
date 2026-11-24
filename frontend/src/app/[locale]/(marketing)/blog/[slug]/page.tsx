@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
-import { Badge, Breadcrumb, ButtonLink, Card, HeroBackground, ReadingProgressBar, Reveal } from "@/components/ui";
-import { NextUpCard } from "@/components/sections/NextUpCard";
-import { AiPageInsight } from "@/components/ai-assistant/AiPageInsight";
-import { getArticleBySlug, getArticles } from "@/lib/api/articles";
-import { sanitizeArticleHtml, getArticleExcerpt, getReadingTimeMinutes } from "@/lib/sanitize";
+import { getArticleBySlug, getArticles, getArticleSlugs } from "@/lib/api/articles";
+import { getArticleExcerpt } from "@/lib/sanitize";
 import { getMediaUrl } from "@/lib/media";
-import { articleImageTransitionName } from "@/lib/viewTransitionNames";
 import { jsonLdScript } from "@/lib/json-ld";
 import { siteConfig } from "@/config/site";
 import { resolveOgLocale, SITE_URL } from "@/lib/metadata";
+import { getPathname } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
+import { ArticleDetail } from "@/components/blog-proto/ArticleDetail";
+
+export const dynamic = "force-static";
+
+// Pré-génère une page par article et par locale au build (cf. offres/[slug]).
+export async function generateStaticParams() {
+  const slugs = await getArticleSlugs();
+  return slugs.map((slug) => ({ slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -20,25 +25,27 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug, locale } = await params;
   const article = await getArticleBySlug(slug, locale);
-
   if (!article) return {};
 
-  const description = getArticleExcerpt(article.content);
-  // Sans image propre à l'article, repli sur l'image générée par
-  // `[locale]/opengraph-image.tsx` — référencée explicitement, car Next.js
-  // ne la rattache PAS automatiquement dès qu'une route définit son propre
-  // `openGraph` (vérifié en dev : le rattachement implicite ne se produit
-  // jamais dans ce cas, cf. commentaire dans lib/metadata.ts).
-  const image = article.media[0]
-    ? getMediaUrl(article.media[0].filePath)
-    : `${SITE_URL}/${locale}/opengraph-image`;
+  // Chapô du back-office (rédigé pour ça) ; à défaut, extrait du contenu.
+  const description = article.summary ?? getArticleExcerpt(article.content);
+  const image = article.media[0] ? getMediaUrl(article.media[0].filePath) : `${SITE_URL}/${locale}/opengraph-image`;
+
+  // Canonical et hreflang propres à l'article (cf. offres/[slug]).
+  const href = { pathname: "/blog/[slug]" as const, params: { slug: article.slug } };
+  const url = `${SITE_URL}${getPathname({ locale, href })}`;
+  const languages = Object.fromEntries(
+    routing.locales.map((l) => [l, `${SITE_URL}${getPathname({ locale: l, href })}`]),
+  );
 
   return {
     title: article.title,
     description,
+    alternates: { canonical: url, languages },
     openGraph: {
       title: article.title,
       description,
+      url,
       type: "article",
       siteName: siteConfig.name,
       locale: resolveOgLocale(locale),
@@ -53,142 +60,32 @@ export async function generateMetadata({
   };
 }
 
-export default async function ArticleDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string; locale: string }>;
-}) {
+export default async function ArticleDetailPage({ params }: { params: Promise<{ slug: string; locale: string }> }) {
   const { slug, locale } = await params;
-  const [article, articles, t, tc] = await Promise.all([
-    getArticleBySlug(slug, locale),
-    getArticles(locale),
-    getTranslations({ locale, namespace: "blog" }),
-    getTranslations({ locale, namespace: "common" }),
-  ]);
+  const [article, articles] = await Promise.all([getArticleBySlug(slug, locale), getArticles(locale)]);
+  if (!article) notFound();
 
-  if (!article) {
-    notFound();
-  }
-
-  // Article suivant dans la liste (bouclé : le dernier renvoie au premier),
-  // affiché en fin de page plutôt qu'un simple lien retour — cf. NextUpCard.
-  // Masqué s'il n'y a qu'un seul article publié (n'aurait rien à proposer).
-  const currentIndex = articles.findIndex((a) => a.slug === article.slug);
-  const nextArticle = articles.length > 1 ? articles[(currentIndex + 1) % articles.length] : null;
-  const nextArticleImage = nextArticle?.media[0] ? getMediaUrl(nextArticle.media[0].filePath) : undefined;
-
-  const articleImage = article.media[0] ? getMediaUrl(article.media[0].filePath) : undefined;
-  const readingTime = getReadingTimeMinutes(article.content);
-
-  const articleJsonLd = {
+  const image = article.media[0] ? getMediaUrl(article.media[0].filePath) : undefined;
+  const url = `${SITE_URL}${getPathname({ locale, href: { pathname: "/blog/[slug]", params: { slug: article.slug } } })}`;
+  // Date réelle du back-office ; une valeur illisible est ignorée (aucune date inventée).
+  const publishedAt = article.publishedAt && !Number.isNaN(Date.parse(article.publishedAt)) ? article.publishedAt : null;
+  const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: article.title,
-    description: getArticleExcerpt(article.content),
-    image: articleImage ? [articleImage] : undefined,
+    description: article.summary ?? getArticleExcerpt(article.content),
+    image: image ? [image] : undefined,
+    datePublished: publishedAt ?? undefined,
     author: { "@type": "Person", name: siteConfig.name },
+    keywords: article.tags.length ? article.tags.map((t) => t.name).join(", ") : undefined,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    inLanguage: locale,
   };
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdScript(articleJsonLd) }}
-      />
-      <ReadingProgressBar />
-
-      {/* Même habillage (fond dégradé + grille de points) que le hero de
-          toutes les autres pages publiques, cf. PageHero — jusqu'ici absent
-          des pages de détail, qui tranchaient à plat sur le reste du site. */}
-      <section className="relative overflow-hidden px-6 pt-14 pb-8">
-        <HeroBackground />
-        <div className="relative mx-auto max-w-[1120px]">
-          <div className="mb-6">
-            <Breadcrumb items={[{ label: t("eyebrow"), href: "/blog" }, { label: article.title }]} />
-          </div>
-          <div className="hero-in mb-4 flex flex-wrap items-center gap-3" style={{ animationDelay: "0s" }}>
-            <Badge variant="accent">{t("eyebrow")}</Badge>
-            <span className="text-sm font-medium opacity-60">{t("readingTime", { minutes: readingTime })}</span>
-          </div>
-          {/* Volontairement pas de classe hero-in sur le h1 : candidat LCP le
-              plus probable de la page, cf. commentaire dans PageHero.tsx.
-              Taille alignée sur PageHero.tsx (clamp(1.75rem,3vw,2.75rem)) —
-              la référence utilisée initialement ici était surdimensionnée et
-              cassait la cohérence avec le reste du site. */}
-          <h1 className="mb-4 text-[clamp(1.75rem,3vw,2.75rem)] leading-[1.25]">
-            {article.title}
-          </h1>
-          {article.tags.length > 0 && (
-            <div className="hero-in mb-5 flex flex-wrap gap-1.5" style={{ animationDelay: "0.16s" }}>
-              {article.tags.map((tag) => (
-                <Badge key={tag.id} variant="outline">
-                  {tag.name}
-                </Badge>
-              ))}
-            </div>
-          )}
-          {/* Dans le hero, pas en fin de page : un visiteur qui ne lit pas
-              jusqu'au bout ne verrait jamais l'offre de résumé sinon (retour
-              direct suite à ce constat). */}
-          <div className="hero-in" style={{ animationDelay: "0.24s" }}>
-            <AiPageInsight slug={article.slug} contentType="article" />
-          </div>
-        </div>
-      </section>
-
-      {articleImage && (
-        <section className="px-6 pb-6">
-          <div className="mx-auto max-w-[1120px]">
-            <Reveal delay={0}>
-              <Card variant="soft" className="overflow-hidden p-0">
-                <div
-                  className="vt-target relative h-[240px] w-full bg-brand-light sm:h-[380px]"
-                  style={{ viewTransitionName: articleImageTransitionName(article.id) }}
-                >
-                  <Image
-                    src={articleImage}
-                    alt={article.media[0]?.altText ?? article.title}
-                    fill
-                    sizes="1120px"
-                    className="object-cover"
-                    priority
-                  />
-                </div>
-              </Card>
-            </Reveal>
-          </div>
-        </section>
-      )}
-
-      <section className="article-detail px-6 pt-2 pb-16">
-        <div className="mx-auto max-w-[1120px]">
-          {/* Contenu HTML rédigé côté admin Symfony (ROLE_ADMIN), sanitisé côté
-              serveur en défense en profondeur avant injection. */}
-          <div
-            className="article-body opacity-85"
-            dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(article.content) }}
-          />
-
-          <div className="mt-10 border-t border-[var(--border-softer)] pt-6">
-            <ButtonLink href="/blog" variant="secondary" className="mb-6">
-              {t("eyebrow")} ←
-            </ButtonLink>
-            {nextArticle && (
-              <Reveal delay={0}>
-                <NextUpCard
-                  eyebrow={t("nextArticle")}
-                  title={nextArticle.title}
-                  cta={tc("readMore")}
-                  href={{ pathname: "/blog/[slug]", params: { slug: nextArticle.slug } }}
-                  image={nextArticleImage}
-                  imageAlt={nextArticle.media[0]?.altText ?? nextArticle.title}
-                  imageTransitionName={articleImageTransitionName(nextArticle.id)}
-                />
-              </Reveal>
-            )}
-          </div>
-        </div>
-      </section>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }} />
+      <ArticleDetail locale={locale} article={article} articles={articles} publishedAt={publishedAt} />
     </>
   );
 }

@@ -1,68 +1,13 @@
-import { getTranslations } from "next-intl/server";
-import { Card, Reveal } from "@/components/ui";
-import { PageHero } from "@/components/sections/PageHero";
-import { ForgotPasswordForm } from "@/components/sections/ForgotPasswordForm";
-import { getCurrentUser } from "@/lib/auth/session";
-import { redirect } from "@/i18n/navigation";
+import { permanentRedirect } from "next/navigation";
+import { getPathname } from "@/i18n/navigation";
 
-export default async function ForgotPasswordPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
+/**
+ * Refonte : « mot de passe oublié » est un état de la carte /connexion
+ * (comme dans le prototype, `L.step===3`), pas une route dédiée.
+ * Redirection permanente, pour conserver les anciens liens et le
+ * référencement (cf. inscription/page.tsx).
+ */
+export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-
-  const user = await getCurrentUser();
-  if (user) {
-    redirect({ href: "/compte", locale });
-  }
-
-  const t = await getTranslations({ locale, namespace: "auth.forgotPassword" });
-  // Mot de passe oublié est un frère direct de Connexion (même parcours d'auth) :
-  // on réutilise ses messages de confiance plutôt que d'en inventer de nouveaux.
-  const tLogin = await getTranslations({ locale, namespace: "auth.login" });
-
-  const trustItems: [string, string][] = [
-    ["🔒", tLogin("secureBadge1")],
-    ["🛡️", tLogin("secureBadge2")],
-    ["🔏", tLogin("secureBadge3")],
-  ];
-
-  return (
-    <>
-      <PageHero
-        eyebrow={t("eyebrow")}
-        title={t("title")}
-        titleAccent={t("titleAccent")}
-        titleClassName="max-w-[24ch]"
-        subtitle={t("subtitle")}
-        subtitleClassName="max-w-[56ch]"
-        aside={
-          <Card variant="soft" className="hero-in p-7" style={{ animationDelay: "0.16s" }}>
-            <ul className="list-none space-y-4 p-0">
-              {trustItems.map(([icon, label]) => (
-                <li key={label} className="flex items-start gap-3">
-                  <span
-                    aria-hidden="true"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-primary/10 text-lg"
-                  >
-                    {icon}
-                  </span>
-                  <span className="pt-1.5 text-sm font-medium">{label}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        }
-      />
-
-      <section className="px-6 py-10">
-        <div className="mx-auto max-w-[440px]">
-          <Reveal delay={0}>
-            <ForgotPasswordForm />
-          </Reveal>
-        </div>
-      </section>
-    </>
-  );
+  permanentRedirect(`${getPathname({ locale, href: "/connexion" })}?view=forgot`);
 }

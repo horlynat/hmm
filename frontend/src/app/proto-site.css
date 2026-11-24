@@ -1,0 +1,38 @@
+/*
+ * Compléments du site au style du prototype (proto-skin.css, généré, n'est
+ * pas modifié à la main) : uniquement des cas que le prototype n'avait pas,
+ * dérivés de ses propres règles.
+ */
+
+/* Texte riche du back-office (description de projet, article) : mêmes
+   valeurs que `.chap p.t` du prototype. */
+.proto-skin .chap .t-rich > * + * { margin-top: 14px; }
+.proto-skin .chap .t-rich p,
+.proto-skin .chap .t-rich li { font-size: 17.5px; color: #c9d4e8; max-width: 66ch; }
+.proto-skin .chap .t-rich ul,
+.proto-skin .chap .t-rich ol { padding-left: 1.2em; }
+.proto-skin .chap .t-rich a { color: var(--ac); text-decoration: underline; }
+
+/* Images du back-office dans les cadres illustrés du prototype. */
+.proto-skin .gim img,
+.proto-skin .device img,
+.proto-skin .cov img,
+.proto-skin .arcov img,
+.proto-skin .pph img { object-fit: cover; }
+
+/* `next/image fill` positionne l'image en absolu : `.avs` (avatar), seul
+   cadre non déjà positionné dans le prototype (pensé pour un <img> normal,
+   `.cov`/`.gim`/`.device`/`.pph` le sont déjà), a besoin de ce contexte. */
+.proto-skin .avs { position: relative; }
+
+/* Réponses mises en forme de l'assistant (paragraphes, listes, liens) —
+   le prototype n'affichait que du texte brut dans `.bub.bb`. Mêmes couleurs
+   que les liens du prototype (`--ac`). */
+.proto-skin .bub.bb .ap + .ap,
+.proto-skin .bub.bb .ap + .aul,
+.proto-skin .bub.bb .aul + .ap { margin-top: 8px; }
+.proto-skin .bub.bb .aul { margin: 6px 0 0; padding-left: 1.15em; list-style: disc; }
+.proto-skin .bub.bb .aul li + li { margin-top: 4px; }
+.proto-skin .bub.bb b { color: #fff; font-weight: 600; }
+.proto-skin .bub.bb .alink { color: var(--ac); text-decoration: underline; text-underline-offset: 2px; }
+.proto-skin .dsend:disabled { opacity: .45; cursor: default; }

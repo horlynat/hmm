@@ -13,7 +13,46 @@ interface RawProjectInfo extends ProjectInfo {
   techStackEn?: ProjectInfo["techStack"] | null;
   challengesEn?: ProjectInfo["challenges"] | null;
   resultsEn?: ProjectInfo["results"] | null;
+  resultEn?: string | null;
+  contextEn?: string | null;
+  stakeEn?: string | null;
+  solutionEn?: string | null;
+  briefEn?: ProjectInfo["brief"] | null;
+  stepsEn?: ProjectInfo["steps"] | null;
+  deliverablesEn?: string[] | null;
+  galleryCaptionsEn?: string[] | null;
 }
+
+/**
+ * Listes du récit : seules les entrées bien formées sont gardées. Le
+ * formulaire admin n'en produit pas d'autres, mais une écriture API forgée
+ * (`brief: [null]`, titre objet…) ne doit jamais faire tomber la page.
+ */
+function pairList(value: unknown): { title: string; text: string | null }[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const { title, text } = item as { title?: unknown; text?: unknown };
+    if (typeof title !== "string" || title === "") return [];
+    return [{ title, text: typeof text === "string" ? text : null }];
+  });
+}
+
+function stringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string" && v !== "") : [];
+}
+
+function textOrNull(value: unknown): string | null {
+  return typeof value === "string" && value !== "" ? value : null;
+}
+
+/** Champs ajoutés après coup : absents (ancienne API) ou null en base. */
+type RawStory = Partial<Pick<ProjectInfo, "result" | "context" | "stake" | "solution" | "relatedOfferSlug" | "discreet">> & {
+  brief?: ProjectInfo["brief"] | null;
+  steps?: ProjectInfo["steps"] | null;
+  deliverables?: string[] | null;
+  galleryCaptions?: string[] | null;
+};
 
 interface RawProject extends Omit<Project, "info"> {
   titleEn?: string | null;
@@ -23,9 +62,35 @@ interface RawProject extends Omit<Project, "info"> {
 
 function localizeProjectInfo(info: RawProjectInfo | null, locale: string): ProjectInfo | null {
   if (!info) return null;
-  const { roleEn, objectivesEn, techStackEn, challengesEn, resultsEn, ...rest } = info;
+  const {
+    roleEn,
+    objectivesEn,
+    techStackEn,
+    challengesEn,
+    resultsEn,
+    resultEn,
+    contextEn,
+    stakeEn,
+    solutionEn,
+    briefEn,
+    stepsEn,
+    deliverablesEn,
+    galleryCaptionsEn,
+    ...rest
+  } = info;
+  const story = info as RawStory;
   return {
     ...rest,
+    result: pickLocalized(textOrNull(story.result), textOrNull(resultEn), locale),
+    context: pickLocalized(textOrNull(story.context), textOrNull(contextEn), locale),
+    stake: pickLocalized(textOrNull(story.stake), textOrNull(stakeEn), locale),
+    solution: pickLocalized(textOrNull(story.solution), textOrNull(solutionEn), locale),
+    brief: pickLocalizedList(pairList(story.brief), pairList(briefEn), locale),
+    steps: pickLocalizedList(pairList(story.steps), pairList(stepsEn), locale),
+    deliverables: pickLocalizedList(stringList(story.deliverables), stringList(deliverablesEn), locale),
+    galleryCaptions: pickLocalizedList(stringList(story.galleryCaptions), stringList(galleryCaptionsEn), locale),
+    discreet: story.discreet === true,
+    relatedOfferSlug: textOrNull(story.relatedOfferSlug),
     role: pickLocalized(info.role, roleEn, locale),
     objectives: pickLocalizedList(info.objectives, objectivesEn, locale),
     techStack: pickLocalizedList(info.techStack, techStackEn, locale),

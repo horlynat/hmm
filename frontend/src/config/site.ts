@@ -1,6 +1,9 @@
 export const siteConfig = {
   name: "Horlynat MAMPASSI MBAMA",
   whatsappUrl: "https://wa.me/242066429090",
+  /** Lien d'appel du même numéro que `whatsappUrl` (`tel:`) et sa forme lisible. */
+  phoneHref: "tel:+242066429090",
+  phoneDisplay: "+242 06 642 90 90",
   social: {
     linkedin: "https://www.linkedin.com/in/horlynat/",
     github: "https://github.com/horlynat",
@@ -19,10 +22,12 @@ export type NavHref =
   | "/freelances"
   | "/aide"
   | "/contact"
+  | "/connexion"
   | "/mentions-legales"
   | "/politique-de-confidentialite"
   | "/politique-de-cookies"
-  | "/conditions-generales";
+  | "/conditions-generales"
+  | "/conditions-de-prestation";
 
 // "/aide" reste une route valide (centre d'aide public, accessible depuis
 // l'espace client — cf. AccountNav.tsx — ou un lien direct/email de support)

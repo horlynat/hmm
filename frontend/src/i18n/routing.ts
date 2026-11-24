@@ -61,6 +61,12 @@ export const routing = defineRouting({
       fr: "/conditions-generales",
       en: "/terms-of-service",
     },
+    // Refonte (prototype) : conditions de prestation, distinctes des
+    // conditions générales d'utilisation du site.
+    "/conditions-de-prestation": {
+      fr: "/conditions-de-prestation",
+      en: "/service-terms",
+    },
     "/connexion": {
       fr: "/connexion",
       en: "/login",

@@ -510,7 +510,11 @@ final class AdminProjectController extends AbstractController
         $coverFile = $form->get('coverImage')->getData();
         $removeCoverImage = (bool) $form->get('removeCoverImage')->getData();
 
-        $hasTextContent = '' !== $role || '' !== $repoUrl || $objectives || $techStack || $challenges || $results;
+        // Récit de l'étude de cas (prototype pCase).
+        $story = $this->readStoryFields($form);
+
+        $hasTextContent = '' !== $role || '' !== $repoUrl || $objectives || $techStack || $challenges || $results
+            || [] !== array_filter($story, static fn ($v) => null !== $v && [] !== $v && false !== $v);
         $existing = $project->getInfo();
 
         if (!$hasTextContent && null === $coverFile && !$removeCoverImage && null === $existing) {
@@ -536,6 +540,16 @@ final class AdminProjectController extends AbstractController
         $info->setTechStackEn($techStackEn ?: null);
         $info->setChallengesEn($challengesEn ?: null);
         $info->setResultsEn($resultsEn ?: null);
+        $info->setResult($story['result'])->setResultEn($story['resultEn']);
+        $info->setContext($story['context'])->setContextEn($story['contextEn']);
+        $info->setStake($story['stake'])->setStakeEn($story['stakeEn']);
+        $info->setSolution($story['solution'])->setSolutionEn($story['solutionEn']);
+        $info->setBrief($story['brief'])->setBriefEn($story['briefEn']);
+        $info->setSteps($story['steps'])->setStepsEn($story['stepsEn']);
+        $info->setDeliverables($story['deliverables'])->setDeliverablesEn($story['deliverablesEn']);
+        $info->setGalleryCaptions($story['galleryCaptions'])->setGalleryCaptionsEn($story['galleryCaptionsEn']);
+        $info->setDiscreet($story['discreet']);
+        $info->setRelatedOfferSlug($story['relatedOfferSlug']);
 
         // Image de couverture : un nouvel envoi remplace l'actuelle (l'ancien
         // Media reste en base, potentiellement référencé ailleurs — pas de
@@ -561,6 +575,39 @@ final class AdminProjectController extends AbstractController
         if (null === $existing) {
             $project->setInfo($info);
         }
+    }
+
+    /**
+     * Champs du récit de l'étude de cas (onglet vitrine), normalisés : texte
+     * vide -> null, listes « une par ligne » et paires « Titre | Texte ».
+     *
+     * @return array<string, mixed>
+     */
+    private function readStoryFields(FormInterface $form): array
+    {
+        $text = static function (string $name) use ($form): ?string {
+            $value = trim((string) $form->get($name)->getData());
+
+            return '' !== $value ? $value : null;
+        };
+        $story = [];
+        foreach (['result', 'context', 'stake', 'solution'] as $name) {
+            $story[$name] = $text($name);
+            $story[$name.'En'] = $text($name.'En');
+        }
+        foreach (['brief', 'steps'] as $name) {
+            $story[$name] = $this->parsePairs((string) $form->get($name)->getData(), 'title', 'text');
+            $story[$name.'En'] = $this->parsePairs((string) $form->get($name.'En')->getData(), 'title', 'text');
+        }
+        foreach (['deliverables', 'galleryCaptions'] as $name) {
+            $story[$name] = $this->parseLines((string) $form->get($name)->getData());
+            $story[$name.'En'] = $this->parseLines((string) $form->get($name.'En')->getData());
+        }
+        $story['discreet'] = (bool) $form->get('discreet')->getData();
+        $offer = $form->get('relatedOfferSlug')->getData();
+        $story['relatedOfferSlug'] = is_string($offer) && '' !== $offer ? $offer : null;
+
+        return $story;
     }
 
     /** @return string[] */
@@ -643,8 +690,17 @@ final class AdminProjectController extends AbstractController
             return true;
         }
 
-        $fields = ['challenges', 'challengesEn'];
+        // brief/steps : « Titre | Texte » — un titre sans texte n'a pas de sens.
+        $fields = ['challenges', 'challengesEn', 'brief', 'briefEn', 'steps', 'stepsEn'];
         $valid = true;
+
+        // Le bref du prototype tient en trois temps (situation, action, effet).
+        foreach (['brief', 'briefEn'] as $fieldName) {
+            if (count($this->parseLines((string) $form->get($fieldName)->getData())) > 3) {
+                $valid = false;
+                $form->get($fieldName)->addError(new FormError('Trois lignes au plus : la situation, ce que vous avez fait, ce que cela a changé.'));
+            }
+        }
 
         foreach ($fields as $fieldName) {
             $offenders = $this->findLinesWithoutSeparator((string) $form->get($fieldName)->getData());
@@ -655,6 +711,32 @@ final class AdminProjectController extends AbstractController
                     count($offenders),
                     mb_strimwidth($offenders[0], 0, 80, '…'),
                 )));
+            }
+        }
+
+        // brief/steps : titre ET texte obligatoires. Une ligne « Titre | »
+        // serait stockée avec un texte nul, puis pré-remplie sans « | » à
+        // l'édition suivante : le projet deviendrait impossible à
+        // réenregistrer (contre-audit). Une ligne « | texte » serait, elle,
+        // ignorée sans prévenir.
+        foreach (['brief', 'briefEn', 'steps', 'stepsEn'] as $fieldName) {
+            if (\count($form->get($fieldName)->getErrors()) > 0) {
+                continue;
+            }
+            foreach (preg_split('/\r?\n/', (string) $form->get($fieldName)->getData()) ?: [] as $line) {
+                $line = trim($line);
+                if ('' === $line) {
+                    continue;
+                }
+                [$title, $text] = array_pad(explode('|', $line, 2), 2, '');
+                if ('' === trim($title) || '' === trim($text)) {
+                    $valid = false;
+                    $form->get($fieldName)->addError(new FormError(sprintf(
+                        'Chaque ligne doit avoir un titre ET un texte, de part et d\'autre du « | ». Ligne fautive : "%s".',
+                        mb_strimwidth($line, 0, 80, '…'),
+                    )));
+                    break;
+                }
             }
         }
 
@@ -763,6 +845,20 @@ final class AdminProjectController extends AbstractController
             $form->get('challengesEn')->setData($this->formatPairs($info->getChallengesEn() ?? [], 'problem', 'solution'));
             $form->get('results')->setData($this->formatPairs($info->getResults(), 'label', 'value'));
             $form->get('resultsEn')->setData($this->formatPairs($info->getResultsEn() ?? [], 'label', 'value'));
+            foreach (['result', 'context', 'stake', 'solution'] as $name) {
+                $form->get($name)->setData($info->{'get'.ucfirst($name)}() ?? '');
+                $form->get($name.'En')->setData($info->{'get'.ucfirst($name).'En'}() ?? '');
+            }
+            $form->get('brief')->setData($this->formatPairs($info->getBrief(), 'title', 'text'));
+            $form->get('briefEn')->setData($this->formatPairs($info->getBriefEn() ?? [], 'title', 'text'));
+            $form->get('steps')->setData($this->formatPairs($info->getSteps(), 'title', 'text'));
+            $form->get('stepsEn')->setData($this->formatPairs($info->getStepsEn() ?? [], 'title', 'text'));
+            $form->get('deliverables')->setData($this->formatLines($info->getDeliverables()));
+            $form->get('deliverablesEn')->setData($this->formatLines($info->getDeliverablesEn() ?? []));
+            $form->get('galleryCaptions')->setData($this->formatLines($info->getGalleryCaptions()));
+            $form->get('galleryCaptionsEn')->setData($this->formatLines($info->getGalleryCaptionsEn() ?? []));
+            $form->get('discreet')->setData($info->isDiscreet());
+            $form->get('relatedOfferSlug')->setData($info->getRelatedOfferSlug());
         }
 
         $form->handleRequest($request);

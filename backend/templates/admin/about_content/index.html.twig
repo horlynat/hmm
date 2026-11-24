@@ -68,6 +68,26 @@
 	</div>
 
 	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Vision, mission, ambition</h2></div>
+		<div class="panel-body space-y-4">
+			<p class="text-xs opacity-60">Facultatifs : un texte vide masque le bloc correspondant sur le site.</p>
+			<twig:FieldPair :fr="form.visionPillar" :en="form.visionPillarEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.missionPillar" :en="form.missionPillarEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.ambitionPillar" :en="form.ambitionPillarEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.horizonMidText" :en="form.horizonMidTextEn" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Parcours</h2></div>
+		<div class="panel-body space-y-4">
+			<p class="text-xs opacity-60">Les expériences et formations se gèrent dans leurs propres écrans ; ici, les repères chiffrés et l'encart de fin.</p>
+			<twig:FieldPair :fr="form.journeyStats" :en="form.journeyStatsEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.learningText" :en="form.learningTextEn" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
 		<div class="panel-header"><h2 class="panel-title">Pourquoi moi (4 différenciateurs)</h2></div>
 		<div class="panel-body space-y-4">
 			<hr class="border-gray-100">
@@ -82,6 +102,8 @@
 			<hr class="border-gray-100">
 			<twig:FieldPair :fr="form.why4Title" :en="form.why4TitleEn" />
 			<twig:FieldPair :fr="form.why4Desc" :en="form.why4DescEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.why5Title" :en="form.why5TitleEn" />
+			<twig:FieldPair :fr="form.why5Desc" :en="form.why5DescEn" :isTextarea="true" />
 		</div>
 	</div>
 

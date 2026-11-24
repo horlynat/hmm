@@ -74,9 +74,12 @@ class AdminAboutContentController extends AbstractController
             return $this->redirectToRoute('admin_about_content_index', [], Response::HTTP_SEE_OTHER);
         }
 
+        // Le formulaire lui-même (et non createView()) : render() renvoie
+        // alors 422 sur une soumission invalide (refonte R5), comme pour les
+        // offres — un 200 laissait croire à un enregistrement réussi.
         return $this->render('admin/about_content/index.html.twig', [
             'content' => $content,
-            'form' => $form->createView(),
+            'form' => $form,
         ]);
     }
 

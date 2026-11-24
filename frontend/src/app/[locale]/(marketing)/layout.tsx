@@ -1,12 +1,21 @@
 import type { ReactNode } from "react";
-import { Header, Footer, ScrollTopButton, WhatsappFab } from "@/components/layout";
-import { AiAssistantWidgetLazy as AiAssistantWidget } from "@/components/ai-assistant";
-import { getAiAssistantEntries, getAiAssistantSettings } from "@/lib/api/ai-assistant";
+import { Header } from "@/components/layout";
+import { SiteFooter } from "@/components/proto/SiteFooter";
+import { SiteBand } from "@/components/proto/SiteBand";
+import { SiteAssistant } from "@/components/proto/SiteAssistant";
+import { getAiAssistantSettings } from "@/lib/api/ai-assistant";
+import "../../proto-skin.css";
+import "../../proto-site.css";
 
 /**
- * Chrome du site vitrine (Header/Footer/widgets), imbriqué sous le layout
- * racine `[locale]/layout.tsx` — `/compte` n'en hérite pas (cf. plan de
- * refonte de l'espace compte : header dédié plutôt que celui du site).
+ * Site vitrine — refonte sur le modèle du prototype validé
+ * (« Horlynat | Portail Digital – refonte »), structure du layout comprise :
+ * en-tête, <main>, bandeau freelance (sauf Connexion et Contact), pied de
+ * page, boutons flottants et assistant IA réel.
+ *
+ * `.proto-skin` porte la feuille de style du prototype mise sous espace de
+ * noms (proto-skin.css) ; thème sombre seul (décision de l'utilisateur),
+ * l'espace compte (/compte, layout distinct) n'est pas concerné.
  */
 export default async function MarketingLayout({
   children,
@@ -16,32 +25,20 @@ export default async function MarketingLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const [aiAssistantSettings, aiAssistantEntries] = await Promise.all([
-    getAiAssistantSettings(locale),
-    getAiAssistantEntries(locale),
-  ]);
+  // Message de repli de l'assistant (back-office) ; une panne API ne bloque
+  // pas le rendu : le panneau retombe alors sur le renvoi vers WhatsApp.
+  const aiSettings = await getAiAssistantSettings(locale);
 
-  // Refonte 2026-11 : site vitrine en thème SOMBRE UNIQUEMENT (décision de
-  // l'utilisateur), quel que soit le choix enregistré ou la préférence
-  // système — l'espace compte (/compte, layout distinct) garde son bouton de
-  // thème. La classe `dark` posée ici fait basculer les variables CSS (.dark
-  // dans globals.css) et les variantes `dark:` pour tout le sous-arbre ; le
-  // conteneur peint lui-même son fond (bg-bg-default) car <body>, au-dessus,
-  // resterait clair si la préférence enregistrée est « clair ».
   return (
-    <div className="dark flex min-h-full flex-1 flex-col bg-bg-default text-brand-dark" style={{ colorScheme: "dark" }}>
+    <div className="proto-skin dark flex min-h-full flex-1 flex-col" style={{ colorScheme: "dark" }}>
       <Header />
+      {/* id attendu par le lien d'évitement du layout racine (#main-content). */}
       <main id="main-content" className="flex-1">
         {children}
       </main>
-      <Footer locale={locale} />
-      <ScrollTopButton />
-      <WhatsappFab locale={locale} />
-      {/* Widget décoratif, présent sur toutes les pages vitrine : une panne API
-          le masque simplement plutôt que de faire échouer le rendu. */}
-      {aiAssistantSettings && (
-        <AiAssistantWidget settings={aiAssistantSettings} entries={aiAssistantEntries} />
-      )}
+      <SiteBand />
+      <SiteFooter locale={locale} />
+      <SiteAssistant fallback={aiSettings?.fallback ?? null} />
     </div>
   );
 }

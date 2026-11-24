@@ -1,64 +1,29 @@
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { Card, Reveal } from "@/components/ui";
-import { PageHero } from "@/components/sections/PageHero";
-import { LoginForm } from "@/components/sections/LoginForm";
 import { getCurrentUser } from "@/lib/auth/session";
 import { redirect } from "@/i18n/navigation";
+import { buildPageMetadata } from "@/lib/metadata";
+import { SiteConnexion } from "@/components/auth-proto/SiteConnexion";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "auth.login" });
+  return buildPageMetadata({ locale, pathname: "/connexion", title: t("title"), description: t("subtitle") });
+}
 
 export default async function ConnexionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ tab?: string; view?: string }>;
 }) {
   const { locale } = await params;
+  const { tab, view } = await searchParams;
 
   // Déjà connecté → espace compte.
   const user = await getCurrentUser();
-  if (user) {
-    redirect({ href: "/compte", locale });
-  }
+  if (user) redirect({ href: "/compte", locale });
 
-  const t = await getTranslations({ locale, namespace: "auth.login" });
-
-  const trustItems: [string, string][] = [
-    ["🔒", t("secureBadge1")],
-    ["🛡️", t("secureBadge2")],
-    ["🔏", t("secureBadge3")],
-  ];
-
-  return (
-    <>
-      <PageHero
-        eyebrow={t("eyebrow")}
-        title={t("title")}
-        titleAccent={t("titleAccent")}
-        subtitle={t("subtitle")}
-        aside={
-          <Card variant="soft" className="hero-in p-7" style={{ animationDelay: "0.16s" }}>
-            <ul className="list-none space-y-4 p-0">
-              {trustItems.map(([icon, label]) => (
-                <li key={label} className="flex items-start gap-3">
-                  <span
-                    aria-hidden="true"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-primary/10 text-lg"
-                  >
-                    {icon}
-                  </span>
-                  <span className="pt-1.5 text-sm font-medium">{label}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        }
-      />
-
-      <section className="px-6 py-10">
-        <div className="mx-auto max-w-[440px]">
-          <Reveal delay={0}>
-            <LoginForm />
-          </Reveal>
-        </div>
-      </section>
-    </>
-  );
+  return <SiteConnexion tab={tab === "up" ? "up" : "in"} forgot={view === "forgot"} />;
 }

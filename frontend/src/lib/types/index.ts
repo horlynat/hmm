@@ -45,6 +45,17 @@ export interface ProjectInfo {
   repoUrl: string | null;
   coverImage: Media | null;
   architectureDiagram: Media | null;
+  /** Récit de l'étude de cas (prototype pCase) — chaque bloc est facultatif. */
+  result: string | null;
+  brief: { title: string; text: string | null }[];
+  context: string | null;
+  stake: string | null;
+  steps: { title: string; text: string | null }[];
+  solution: string | null;
+  deliverables: string[];
+  galleryCaptions: string[];
+  discreet: boolean;
+  relatedOfferSlug: string | null;
 }
 
 export interface Project {
@@ -68,6 +79,11 @@ export interface Article {
   content: string;
   tags: Tag[];
   media: Media[];
+  /** Chapô (prototype `.ald2`) ; null -> extrait du contenu. */
+  summary: string | null;
+  relatedOfferSlug: string | null;
+  /** ISO 8601. */
+  publishedAt: string | null;
 }
 
 export interface SkillCategory {
@@ -230,10 +246,27 @@ export interface AboutContent {
   why3Desc: string;
   why4Title: string;
   why4Desc: string;
+  /** 5e différenciateur, facultatif (vide -> non affiché). */
+  why5Title: string;
+  why5Desc: string;
   beyondLanguages: string[];
   beyondInterests: string[];
   ctaTitle: string;
   ctaSub: string;
+  /** Refonte R5 — facultatifs : chaîne vide = bloc masqué. */
+  visionPillar: string;
+  missionPillar: string;
+  ambitionPillar: string;
+  /** Ambition « D'ici trois ans », entre visionTodayText et visionTomorrowText. */
+  horizonMidText: string;
+  learningText: string;
+  journeyStats: AboutJourneyStat[];
+}
+
+/** Repère du parcours (« Depuis 2016 » / « dans le numérique »). */
+export interface AboutJourneyStat {
+  value: string;
+  label: string;
 }
 
 /** Réglages du widget assistant IA — miroir de App\Entity\AiAssistantSettings. */
@@ -259,8 +292,19 @@ export interface AiAssistantChatPayload {
 }
 
 export type AiAssistantChatResult =
-  | { ok: true; answer: string; suggestions: string[] }
+  | {
+      ok: true;
+      answer: string;
+      suggestions: string[];
+      /** Texte de repli (panne, filtre) : ce tour n'est pas renvoyé dans l'historique. */
+      degraded?: boolean;
+    }
   | { ok: false; error: "rate_limited" | "unavailable" | "network_error" };
+
+/** Démo WhatsApp de l'accueil (POST /api/ai-assistant/demo). */
+export type AiDemoResult =
+  | { ok: true; answer: string; event: "order" | "handover" | null }
+  | { ok: false };
 
 /**
  * cf. App\ApiResource\AiContentSummaryApiResource — endpoint dédié au résumé,

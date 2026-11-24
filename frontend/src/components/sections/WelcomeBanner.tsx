@@ -7,7 +7,7 @@ const AUTO_DISMISS_MS = 60_000;
 
 /**
  * Bandeau de bienvenue éphémère, affiché uniquement juste après une connexion
- * (cf. `?welcome=1` pointé par LoginForm) — pas un élément permanent du
+ * (cf. `?welcome=1` posé par LoginPanel) — pas un élément permanent du
  * dashboard, le nom du client reste consultable dans son profil. Disparaît
  * seul après une minute, ou via le bouton de fermeture.
  */

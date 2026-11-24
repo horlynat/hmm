@@ -78,11 +78,13 @@ final class AdminProjectControllerPairValidationTest extends TestCase
      * obligatoire à techStack ET results en plus de challenges — bloquait
      * alors la réédition du projet vitrine en prod, dont les 5 "résultats
      * concrets" sont tous des lignes à une seule partie (légitime, cf.
-     * formatPairs()/parsePairs()). Ce test verrouille que seuls
-     * challenges/challengesEn sont strictement vérifiés : results n'est même
-     * plus interrogé, une ligne sans "|" ne doit jamais y déclencher d'erreur.
+     * formatPairs()/parsePairs()). Ce test verrouille que seuls les champs où
+     * la seconde partie est indispensable sont strictement vérifiés :
+     * challenges (Défi | Solution) et, depuis la refonte, brief et steps du
+     * récit de l'étude de cas (Titre | Texte). results/techStack ne sont même
+     * pas interrogés : une ligne sans "|" ne doit jamais y déclencher d'erreur.
      */
-    public function testOnlyChallengesFieldsAreStrictlyValidated(): void
+    public function testOnlyPairFieldsWithAMandatorySecondPartAreStrictlyValidated(): void
     {
         $method = new \ReflectionMethod(AdminProjectController::class, 'validateShowcasePairFields');
         $controller = (new \ReflectionClass(AdminProjectController::class))->newInstanceWithoutConstructor();
@@ -101,9 +103,17 @@ final class AdminProjectControllerPairValidationTest extends TestCase
         // appel avec 'results' ou 'techStack' ferait échouer ce mock
         // (aucune correspondance dans le map = valeur de retour null,
         // provoquant une TypeError sur getData()/addError() ensuite).
+        $story = [];
+        foreach (['brief', 'briefEn', 'steps', 'stepsEn'] as $name) {
+            $field = $this->createMock(FormInterface::class);
+            $field->method('getData')->willReturn('Titre | Texte');
+            $field->expects(self::never())->method('addError');
+            $story[] = [$name, $field];
+        }
         $form->method('get')->willReturnMap([
             ['challenges', $challengesField],
             ['challengesEn', $challengesEnField],
+            ...$story,
         ]);
 
         $result = $method->invoke($controller, $form);

@@ -83,11 +83,24 @@ function normalizeNonBreakingSpaces(html: string): string {
   return html.replace(/&nbsp;/gi, " ").replace(/\u00a0/g, " ");
 }
 
+/**
+ * Supprime toutes les balises et renvoie le texte brut, en ins\u00e9rant un
+ * espace \u00e0 chaque fermeture de balise avant de les retirer : `sanitize-html`
+ * ne le fait pas lui-m\u00eame (`allowedTags: []`), donc deux \u00e9l\u00e9ments de bloc
+ * adjacents dans la source \u2014 HTML valide, ex. `<h2>Titre</h2><p>Texte</p>`,
+ * que l'\u00e9diteur riche produit couramment sans espace entre eux \u2014 se
+ * retrouveraient sinon coll\u00e9s l'un \u00e0 l'autre dans le texte obtenu
+ * (\u00ab TitreTexte \u00bb), aussi bien dans l'extrait affich\u00e9 que dans le comptage
+ * de mots du temps de lecture.
+ */
+function stripToText(dirty: string): string {
+  const spaced = dirty.replace(/<\/[a-zA-Z0-9]+>/g, "$& ");
+  return sanitizeHtml(spaced, { allowedTags: [], allowedAttributes: {} });
+}
+
 /** Extrait un résumé texte brut du contenu d'un article, pour les meta description / JSON-LD. */
 export function getArticleExcerpt(dirty: string, maxLength = 155): string {
-  const text = sanitizeHtml(dirty, { allowedTags: [], allowedAttributes: {} })
-    .replace(/\s+/g, " ")
-    .trim();
+  const text = stripToText(dirty).replace(/\s+/g, " ").trim();
 
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength - 1).trimEnd()}…`;
@@ -95,7 +108,7 @@ export function getArticleExcerpt(dirty: string, maxLength = 155): string {
 
 /** Temps de lecture estimé (minutes, arrondi au supérieur, jamais 0) — ~200 mots/min en lecture silencieuse. */
 export function getReadingTimeMinutes(dirty: string, wordsPerMinute = 200): number {
-  const text = sanitizeHtml(dirty, { allowedTags: [], allowedAttributes: {} }).trim();
+  const text = stripToText(dirty).trim();
   const wordCount = text.length > 0 ? text.split(/\s+/).length : 0;
   return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
 }
