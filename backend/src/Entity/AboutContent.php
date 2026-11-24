@@ -322,6 +322,30 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private ?string $why4DescEn = null;
 
+    /**
+     * 5e différenciateur (prototype : « Sens du design, pas seulement du
+     * code »). Facultatif, contrairement aux quatre premiers : la fiche déjà
+     * en production reste valide sans lui, et le site ne l'affiche que s'il
+     * est renseigné.
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $why5Title = null;
+
+    #[Assert\Length(max: 255)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $why5TitleEn = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(max: 2000)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $why5Desc = null;
+
+    #[Assert\Length(max: 2000)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $why5DescEn = null;
+
     // --- Au-delà du code ---
 
     /** @var string[] */
@@ -1014,6 +1038,54 @@ class AboutContent
     public function setWhy4DescEn(?string $why4DescEn): static
     {
         $this->why4DescEn = $why4DescEn;
+
+        return $this;
+    }
+
+    public function getWhy5Title(): ?string
+    {
+        return $this->why5Title;
+    }
+
+    public function setWhy5Title(?string $why5Title): static
+    {
+        $this->why5Title = $why5Title;
+
+        return $this;
+    }
+
+    public function getWhy5TitleEn(): ?string
+    {
+        return $this->why5TitleEn;
+    }
+
+    public function setWhy5TitleEn(?string $why5TitleEn): static
+    {
+        $this->why5TitleEn = $why5TitleEn;
+
+        return $this;
+    }
+
+    public function getWhy5Desc(): ?string
+    {
+        return $this->why5Desc;
+    }
+
+    public function setWhy5Desc(?string $why5Desc): static
+    {
+        $this->why5Desc = $why5Desc;
+
+        return $this;
+    }
+
+    public function getWhy5DescEn(): ?string
+    {
+        return $this->why5DescEn;
+    }
+
+    public function setWhy5DescEn(?string $why5DescEn): static
+    {
+        $this->why5DescEn = $why5DescEn;
 
         return $this;
     }

@@ -51,8 +51,29 @@ class Article
     #[ORM\Column]
     #[Assert\NotNull(message: 'La date de publication est obligatoire')]
     #[Assert\Type(\DateTimeImmutable::class)]
-    #[Groups(['api_admin'])]
+    // Public : date affichée sur la fiche article (prototype `.amf`). Les
+    // articles n'ont pas de brouillon ni de programmation (tout article en
+    // base est déjà public) : exposer cette date ne révèle rien de plus.
+    #[Groups(['api_public', 'api_admin'])]
     private \DateTimeImmutable $publishedAt;
+
+    /** Chapô (prototype `.ald2`) : une ou deux phrases sous le titre, et dans les cartes du blog. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(max: 400, maxMessage: 'Le chapô ne peut pas dépasser {{ limit }} caractères')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $summary = null;
+
+    /** Chapô en anglais — optionnel, retombe sur `summary` (FR) côté frontend si vide. */
+    #[Assert\Length(max: 400)]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $summaryEn = null;
+
+    /** Slug de « L'offre liée à ce sujet » (prototype `.aoff`) ; optionnel (cf. Offer::$proofProjectSlug). */
+    #[ORM\Column(length: 60, nullable: true)]
+    #[Assert\Length(max: 60)]
+    #[Assert\Regex(pattern: '/^[a-z0-9]+(?:-[a-z0-9]+)*$/D')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $relatedOfferSlug = null;
 
     /**
      * @var Collection<int, Tag>
@@ -140,6 +161,42 @@ class Article
     public function setContentEn(?string $contentEn): static
     {
         $this->contentEn = $contentEn;
+
+        return $this;
+    }
+
+    public function getSummary(): ?string
+    {
+        return $this->summary;
+    }
+
+    public function setSummary(?string $summary): static
+    {
+        $this->summary = null !== $summary && '' !== trim($summary) ? trim($summary) : null;
+
+        return $this;
+    }
+
+    public function getSummaryEn(): ?string
+    {
+        return $this->summaryEn;
+    }
+
+    public function setSummaryEn(?string $summaryEn): static
+    {
+        $this->summaryEn = null !== $summaryEn && '' !== trim($summaryEn) ? trim($summaryEn) : null;
+
+        return $this;
+    }
+
+    public function getRelatedOfferSlug(): ?string
+    {
+        return $this->relatedOfferSlug;
+    }
+
+    public function setRelatedOfferSlug(?string $relatedOfferSlug): static
+    {
+        $this->relatedOfferSlug = $relatedOfferSlug;
 
         return $this;
     }

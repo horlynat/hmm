@@ -4,8 +4,10 @@ namespace App\Form;
 
 use App\Entity\Article;
 use App\Entity\Tag;
+use App\Repository\OfferRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -15,6 +17,10 @@ use Symfony\Component\Validator\Constraints\File;
 
 class ArticleType extends AbstractType
 {
+    public function __construct(private readonly OfferRepository $offerRepository)
+    {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
@@ -36,6 +42,25 @@ class ArticleType extends AbstractType
                     'maxlength' => 255,
                     'placeholder' => 'Enter the article title'
                 ],
+            ])
+            ->add('summary', TextareaType::class, [
+                'label' => 'Chapô',
+                'required' => false,
+                'help' => 'Une ou deux phrases affichées sous le titre et dans les cartes du blog (400 caractères au plus).',
+                'attr' => ['rows' => 3, 'maxlength' => 400],
+            ])
+            ->add('summaryEn', TextareaType::class, [
+                'label' => 'Chapô (anglais)',
+                'required' => false,
+                'help' => 'Optionnel — reprend le chapô français si laissé vide.',
+                'attr' => ['rows' => 3, 'maxlength' => 400],
+            ])
+            ->add('relatedOfferSlug', ChoiceType::class, [
+                'label' => 'Offre liée à ce sujet',
+                'required' => false,
+                'placeholder' => 'Aucune',
+                'help' => 'Affichée dans la colonne de l’article (« L’offre liée à ce sujet ») si elle est publiée.',
+                'choices' => $this->offerChoices(),
             ])
             ->add('content', TextareaType::class, [
                 'label' => 'Contenu',
@@ -82,6 +107,20 @@ class ArticleType extends AbstractType
                     'class' => 'select2' // exemple si tu utilises Select2 pour un rendu amélioré
                 ],
             ]);
+    }
+
+    /** @return array<string, string> libellé => slug, dans l'ordre du catalogue */
+    private function offerChoices(): array
+    {
+        $choices = [];
+        foreach ($this->offerRepository->findBy([], ['position' => 'ASC']) as $offer) {
+            // Le slug rend chaque libellé unique (deux offres de même titre ne
+            // doivent pas se fondre en un seul choix).
+            $label = sprintf('%s — %s%s', $offer->getTitle(), $offer->getSlug(), $offer->isPublished() ? '' : ' (non publiée)');
+            $choices[$label] = $offer->getSlug();
+        }
+
+        return $choices;
     }
 
     public function configureOptions(OptionsResolver $resolver): void

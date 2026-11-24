@@ -202,6 +202,36 @@
 				{{ form_errors(form.repoUrl, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
 			</div>
 		</div>
+
+		{# Récit de l'étude de cas publique (/realisations/{slug}) : chaque bloc
+		   n'apparaît sur le site que s'il est renseigné. #}
+		<div class="card space-y-4 mt-4">
+			<h3 class="text-sm font-bold">Étude de cas publique</h3>
+			<p class="text-sm opacity-60 mb-0">Le récit affiché sur la page de la réalisation : résultat, bref en trois temps, point de départ, démarche, livrables et galerie.</p>
+			<twig:FieldPair :fr="form.result" :en="form.resultEn" />
+			<twig:FieldPair :fr="form.brief" :en="form.briefEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.context" :en="form.contextEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.stake" :en="form.stakeEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.steps" :en="form.stepsEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.solution" :en="form.solutionEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.deliverables" :en="form.deliverablesEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.galleryCaptions" :en="form.galleryCaptionsEn" :isTextarea="true" />
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+				<div class="field">
+					{{ form_label(form.relatedOfferSlug, null, {'label_attr': {'class': 'field-label'}}) }}
+					<p class="text-[11px] opacity-40 mb-1">{{ form.relatedOfferSlug.vars.help }}</p>
+					{{ form_widget(form.relatedOfferSlug, {'attr': {'class': 'input w-full text-sm'}}) }}
+					{{ form_errors(form.relatedOfferSlug, {'attr': {'class': 'text-danger text-xs mt-1'}}) }}
+				</div>
+				<div class="field">
+					<label class="flex items-center gap-2 text-sm font-bold cursor-pointer">
+						{{ form_widget(form.discreet, {'attr': {'class': 'cursor-pointer'}}) }}
+						{{ form.discreet.vars.label }}
+					</label>
+					<p class="text-[11px] opacity-40 mt-1">{{ form.discreet.vars.help }}</p>
+				</div>
+			</div>
+		</div>
 	</section>
 
 	{# ============================== PLANIFICATION (création uniquement) ============================== #}

@@ -6,9 +6,11 @@ use App\Entity\Project;
 use App\Entity\Skill;
 use App\Enum\BillingTypeEnum;
 use App\Enum\ProjectPriorityEnum;
+use App\Repository\OfferRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
@@ -19,9 +21,14 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\All;
 use Symfony\Component\Validator\Constraints\File;
+use Symfony\Component\Validator\Constraints\Length;
 
 class ProjectType extends AbstractType
 {
+    public function __construct(private readonly OfferRepository $offerRepository)
+    {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
@@ -162,6 +169,132 @@ class ProjectType extends AbstractType
                     'label' => 'Résultats concrets (anglais)',
                     'help' => 'Optionnel — même format, même ordre que la version française.',
                 ])
+                ->add('result', TextType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Résultat en une phrase',
+                    'help' => "Affiché sous le titre de l'étude de cas. Ex. : Une société opérationnelle dès son lancement, sur un outil unique.",
+                    'constraints' => [new Length(max: 255)],
+                ])
+                ->add('resultEn', TextType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Résultat en une phrase (anglais)',
+                    'help' => 'Optionnel — même format, même ordre que la version française.',
+                    'constraints' => [new Length(max: 255)],
+                ])
+                ->add('brief', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Le projet en bref (3 temps)',
+                    'help' => 'Trois lignes au plus, format : Titre | Texte — ex. : La situation | Une société à lancer, sans outil numérique.',
+                    'constraints' => [new Length(max: 4000)],
+                ])
+                ->add('briefEn', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Le projet en bref (3 temps) (anglais)',
+                    'help' => 'Optionnel — même format, même ordre que la version française.',
+                    'constraints' => [new Length(max: 4000)],
+                ])
+                ->add('context', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Le point de départ — contexte',
+                    'help' => 'Premier paragraphe de « Le problème à résoudre ».',
+                    'constraints' => [new Length(max: 2000)],
+                ])
+                ->add('contextEn', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Le point de départ — contexte (anglais)',
+                    'help' => 'Optionnel — même format, même ordre que la version française.',
+                    'constraints' => [new Length(max: 2000)],
+                ])
+                ->add('stake', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Le point de départ — défi',
+                    'help' => 'Second paragraphe de « Le problème à résoudre ».',
+                    'constraints' => [new Length(max: 2000)],
+                ])
+                ->add('stakeEn', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Le point de départ — défi (anglais)',
+                    'help' => 'Optionnel — même format, même ordre que la version française.',
+                    'constraints' => [new Length(max: 2000)],
+                ])
+                ->add('steps', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Démarche (étapes)',
+                    'help' => 'Une étape par ligne, format : Étape | Ce qui a été fait — ex. : Cadrage | Lister les publics et leurs besoins.',
+                    'constraints' => [new Length(max: 4000)],
+                ])
+                ->add('stepsEn', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Démarche (étapes) (anglais)',
+                    'help' => 'Optionnel — même format, même ordre que la version française.',
+                    'constraints' => [new Length(max: 4000)],
+                ])
+                ->add('solution', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Ce qui a été livré — synthèse',
+                    'help' => 'Paragraphe de « Ce qui a été livré ».',
+                    'constraints' => [new Length(max: 2000)],
+                ])
+                ->add('solutionEn', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Ce qui a été livré — synthèse (anglais)',
+                    'help' => 'Optionnel — même format, même ordre que la version française.',
+                    'constraints' => [new Length(max: 2000)],
+                ])
+                ->add('deliverables', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Livrables',
+                    'help' => 'Un livrable par ligne.',
+                    'constraints' => [new Length(max: 4000)],
+                ])
+                ->add('deliverablesEn', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Livrables (anglais)',
+                    'help' => 'Optionnel — même format, même ordre que la version française.',
+                    'constraints' => [new Length(max: 4000)],
+                ])
+                ->add('galleryCaptions', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Légendes de la galerie',
+                    'help' => "Une légende par ligne, dans l'ordre des images du projet. Sans image correspondante, l'emplacement « Capture réelle à venir » est affiché.",
+                    'constraints' => [new Length(max: 4000)],
+                ])
+                ->add('galleryCaptionsEn', TextareaType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Légendes de la galerie (anglais)',
+                    'help' => 'Optionnel — même format, même ordre que la version française.',
+                    'constraints' => [new Length(max: 4000)],
+                ])
+                ->add('discreet', CheckboxType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'label' => 'Projet discret',
+                    'help' => "Affiche la note « Pourquoi certains détails ne sont pas publiés » (architecture et protections non décrites publiquement).",
+                ])
+                ->add('relatedOfferSlug', ChoiceType::class, [
+                    'mapped' => false,
+                    'required' => false,
+                    'placeholder' => 'Aucune',
+                    'label' => 'Offre « Vous avez un besoin semblable ? »',
+                    'help' => "Offre proposée en fin d'étude de cas, si elle est publiée.",
+                    'choices' => $this->offerChoices(),
+                ])
                 ->add('repoUrl', TextType::class, [
                     'mapped' => false,
                     'required' => false,
@@ -224,6 +357,18 @@ class ProjectType extends AbstractType
                     'label' => 'Échéance',
                 ]);
         }
+    }
+
+    /** @return array<string, string> libellé => slug, dans l'ordre du catalogue */
+    private function offerChoices(): array
+    {
+        $choices = [];
+        foreach ($this->offerRepository->findBy([], ['position' => 'ASC']) as $offer) {
+            $label = sprintf('%s — %s%s', $offer->getTitle(), $offer->getSlug(), $offer->isPublished() ? '' : ' (non publiée)');
+            $choices[$label] = $offer->getSlug();
+        }
+
+        return $choices;
     }
 
     public function configureOptions(OptionsResolver $resolver): void

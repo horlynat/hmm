@@ -106,6 +106,10 @@ class AboutContentType extends AbstractType
             ->add('why4TitleEn', TextType::class, ['label' => 'Différenciateur 4 — titre (anglais)', 'required' => false])
             ->add('why4Desc', TextareaType::class, ['label' => 'Différenciateur 4 — description'])
             ->add('why4DescEn', TextareaType::class, ['label' => 'Différenciateur 4 — description (anglais)', 'required' => false])
+            ->add('why5Title', TextType::class, ['label' => 'Différenciateur 5 — titre (facultatif)', 'required' => false])
+            ->add('why5TitleEn', TextType::class, ['label' => 'Différenciateur 5 — titre (anglais)', 'required' => false])
+            ->add('why5Desc', TextareaType::class, ['label' => 'Différenciateur 5 — description (facultatif)', 'required' => false])
+            ->add('why5DescEn', TextareaType::class, ['label' => 'Différenciateur 5 — description (anglais)', 'required' => false])
 
             // --- Au-delà du code ---
             ->add('beyondLanguages', TextareaType::class, [
