@@ -104,7 +104,7 @@ export async function CaseStudy({
             {info && info.brief.length > 0 && (
               <div className="br3">
                 {info.brief.slice(0, 3).map((b, k) => (
-                  <div key={b.title}>
+                  <div key={k}>
                     <span className="n">{k + 1}</span>
                     <b>{b.title}</b>
                     {b.text && <p>{b.text}</p>}
@@ -151,8 +151,8 @@ export async function CaseStudy({
               <span className="kick">{t("stepsKick")}</span>
               <h2>{t("stepsTitle")}</h2>
               <ol className="road">
-                {steps.map((s) => (
-                  <li key={s.title}>
+                {steps.map((s, k) => (
+                  <li key={k}>
                     <b>{s.title}</b>
                     {s.text && <p>{s.text}</p>}
                   </li>
@@ -168,8 +168,8 @@ export async function CaseStudy({
               {info?.solution && <p className="t">{info.solution}</p>}
               {deliverables.length > 0 && (
                 <div className="liv">
-                  {deliverables.map((s) => (
-                    <div key={s}>
+                  {deliverables.map((s, k) => (
+                    <div key={k}>
                       <ProtoIcon name="ok" />
                       <span>{s}</span>
                     </div>
@@ -187,10 +187,13 @@ export async function CaseStudy({
               <span className="kick">{t("galleryKick")}</span>
               <h2>{t("galleryTitle")}</h2>
               <div className="gal">
-                {captions.map((caption, k) => {
+                {/* Autant d'emplacements que de légendes ou d'images : une image
+                    sans légende reste affichée (légende = texte alternatif). */}
+                {Array.from({ length: Math.max(captions.length, gallery.length) }, (_, k) => {
                   const m = gallery[k];
+                  const caption = captions[k] ?? m?.altText ?? "";
                   return (
-                    <figure key={`${k}-${caption}`}>
+                    <figure key={k}>
                       {m ? (
                         <div className="gim">
                           <Image src={getMediaUrl(m.filePath)} alt={m.altText ?? ""} fill sizes="(max-width: 900px) 100vw, 520px" />
@@ -204,7 +207,7 @@ export async function CaseStudy({
                           <span>{t("galleryPending")}</span>
                         </div>
                       )}
-                      <figcaption>{caption}</figcaption>
+                      {caption && <figcaption>{caption}</figcaption>}
                     </figure>
                   );
                 })}

@@ -23,6 +23,29 @@ interface RawProjectInfo extends ProjectInfo {
   galleryCaptionsEn?: string[] | null;
 }
 
+/**
+ * Listes du récit : seules les entrées bien formées sont gardées. Le
+ * formulaire admin n'en produit pas d'autres, mais une écriture API forgée
+ * (`brief: [null]`, titre objet…) ne doit jamais faire tomber la page.
+ */
+function pairList(value: unknown): { title: string; text: string | null }[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const { title, text } = item as { title?: unknown; text?: unknown };
+    if (typeof title !== "string" || title === "") return [];
+    return [{ title, text: typeof text === "string" ? text : null }];
+  });
+}
+
+function stringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string" && v !== "") : [];
+}
+
+function textOrNull(value: unknown): string | null {
+  return typeof value === "string" && value !== "" ? value : null;
+}
+
 /** Champs ajoutés après coup : absents (ancienne API) ou null en base. */
 type RawStory = Partial<Pick<ProjectInfo, "result" | "context" | "stake" | "solution" | "relatedOfferSlug" | "discreet">> & {
   brief?: ProjectInfo["brief"] | null;
@@ -58,16 +81,16 @@ function localizeProjectInfo(info: RawProjectInfo | null, locale: string): Proje
   const story = info as RawStory;
   return {
     ...rest,
-    result: pickLocalized(story.result ?? null, resultEn, locale),
-    context: pickLocalized(story.context ?? null, contextEn, locale),
-    stake: pickLocalized(story.stake ?? null, stakeEn, locale),
-    solution: pickLocalized(story.solution ?? null, solutionEn, locale),
-    brief: pickLocalizedList(story.brief ?? [], briefEn, locale),
-    steps: pickLocalizedList(story.steps ?? [], stepsEn, locale),
-    deliverables: pickLocalizedList(story.deliverables ?? [], deliverablesEn, locale),
-    galleryCaptions: pickLocalizedList(story.galleryCaptions ?? [], galleryCaptionsEn, locale),
+    result: pickLocalized(textOrNull(story.result), textOrNull(resultEn), locale),
+    context: pickLocalized(textOrNull(story.context), textOrNull(contextEn), locale),
+    stake: pickLocalized(textOrNull(story.stake), textOrNull(stakeEn), locale),
+    solution: pickLocalized(textOrNull(story.solution), textOrNull(solutionEn), locale),
+    brief: pickLocalizedList(pairList(story.brief), pairList(briefEn), locale),
+    steps: pickLocalizedList(pairList(story.steps), pairList(stepsEn), locale),
+    deliverables: pickLocalizedList(stringList(story.deliverables), stringList(deliverablesEn), locale),
+    galleryCaptions: pickLocalizedList(stringList(story.galleryCaptions), stringList(galleryCaptionsEn), locale),
     discreet: story.discreet === true,
-    relatedOfferSlug: story.relatedOfferSlug ?? null,
+    relatedOfferSlug: textOrNull(story.relatedOfferSlug),
     role: pickLocalized(info.role, roleEn, locale),
     objectives: pickLocalizedList(info.objectives, objectivesEn, locale),
     techStack: pickLocalizedList(info.techStack, techStackEn, locale),

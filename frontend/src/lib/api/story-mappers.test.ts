@@ -79,6 +79,30 @@ describe("getProjects — récit de l'étude de cas", () => {
   });
 });
 
+describe("getProjects — données forgées", () => {
+  it("écarte les entrées mal formées au lieu de faire tomber la page", async () => {
+    const info = {
+      ...baseInfo,
+      result: { evil: true },
+      brief: [null, { title: { x: 1 }, text: "t" }, { title: "Bon", text: 42 }, "texte"],
+      steps: "pas une liste",
+      deliverables: ["Site", null, 3, ""],
+      galleryCaptions: [{}, "Légende"],
+      relatedOfferSlug: ["x"],
+    };
+    apiFetch.mockResolvedValue({ member: [project(info)] });
+    const [p] = await getProjects("fr");
+    expect(p.info).toMatchObject({
+      result: null,
+      brief: [{ title: "Bon", text: null }],
+      steps: [],
+      deliverables: ["Site"],
+      galleryCaptions: ["Légende"],
+      relatedOfferSlug: null,
+    });
+  });
+});
+
 describe("getArticles — chapô, offre liée, date", () => {
   const article = { id: 1, slug: "a", title: "T", content: "<p>x</p>", tags: [], media: [] };
 

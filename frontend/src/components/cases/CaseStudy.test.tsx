@@ -48,7 +48,7 @@ function project(info: Partial<ProjectInfo> | null, description = "<p>Descriptio
     title: "Plateforme",
     description,
     link: "",
-    status: "in_progress",
+    status: "en_cours",
     priority: null,
     billingType: null,
     progress: 0,
@@ -104,6 +104,14 @@ describe("CaseStudy — récit du prototype (pCase)", () => {
     expect(container.querySelector(".liv span")?.textContent).toBe("Verrou optimiste");
     expect(container.querySelector(".gal")).toBeNull();
     expect(container.querySelector(".disc")).toBeNull();
+  });
+
+  it("garde visibles les images au-delà des légendes", async () => {
+    const media = [1, 2, 3].map((id) => ({ id, filePath: `/uploads/p${id}.png`, altText: `Image ${id}`, type: "image", mimeType: "image/png" }));
+    const p = { ...project({ galleryCaptions: ["Légende 1"] }), media } as unknown as Project;
+    const { container } = await renderCase(p);
+    expect(container.querySelectorAll(".gal figure")).toHaveLength(3);
+    expect([...container.querySelectorAll(".gal figcaption")].map((f) => f.textContent)).toEqual(["Légende 1", "Image 2", "Image 3"]);
   });
 
   it("n'interprète jamais le texte du back-office comme du HTML", async () => {
