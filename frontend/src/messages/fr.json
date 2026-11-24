@@ -1036,85 +1036,16 @@
   },
   "legal": {
     "mentions": {
-      "title": "Mentions légales",
-      "lastUpdate": "Dernière mise à jour",
-      "editorTitle": "Éditeur du site",
-      "editorText": "Ce site est édité à titre professionnel par Horlynat MAMPASSI MBAMA, développeur full-stack indépendant basé à Brazzaville, République du Congo.",
-      "hostingTitle": "Hébergement",
-      "hostingText": "Le site est hébergé sur un serveur privé virtuel (VPS) [nom et adresse de l'hébergeur à compléter] et distribué via Cloudflare, Inc. (États-Unis), qui assure la résolution DNS, la mise en cache (CDN) et la terminaison SSL/TLS.",
-      "ipTitle": "Propriété intellectuelle",
-      "ipText": "L'ensemble des contenus présents sur ce site (textes, visuels, code, identité visuelle) est la propriété de Horlynat MAMPASSI MBAMA, sauf mention contraire.",
-      "moreTitle": "Pour aller plus loin",
-      "moreText": "Les informations relatives à la collecte et au traitement de vos données personnelles sont détaillées dans notre <privacy>politique de confidentialité</privacy>. Les règles d'utilisation du site sont précisées dans nos <terms>conditions générales d'utilisation</terms>."
+      "title": "Mentions légales"
     },
     "privacy": {
-      "title": "Politique de confidentialité",
-      "lastUpdate": "Dernière mise à jour",
-      "intro": "Cette politique explique quelles données personnelles sont collectées sur ce site, pourquoi, pendant combien de temps, et comment vous pouvez exercer vos droits — conformément aux principes du RGPD (Règlement Général sur la Protection des Données).",
-      "controllerTitle": "Responsable du traitement",
-      "controllerText": "Horlynat MAMPASSI MBAMA, développeur full-stack indépendant basé à Brazzaville, République du Congo, est responsable du traitement des données collectées sur ce site.",
-      "dataTitle": "Données collectées",
-      "dataContact": "Formulaires de contact et de devis : nom, email, téléphone (selon le canal choisi), description de votre projet ou de votre demande.",
-      "dataAccount": "Création de compte (client ou freelance) : nom, email, mot de passe — jamais stocké en clair, haché par le serveur.",
-      "dataProject": "Demande de devis : catégorie de prestation, budget indicatif, délai souhaité, et toute précision apportée via l'assistant de qualification.",
-      "dataFreelance": "Inscription freelance : spécialités, disponibilité, portfolio et présentation libre, fournis à votre initiative.",
-      "dataTechnical": "Donnée technique : votre adresse IP est utilisée de façon transitoire (non stockée) pour limiter les tentatives abusives d'envoi de formulaires.",
-      "dataAiAssistant": "Assistant IA conversationnel : le texte des questions que vous lui posez est transmis à des prestataires IA tiers pour générer une réponse (voir « Destinataires des données »). Aucune trace de ce texte n'est conservée dans notre propre base — seules des métadonnées anonymisées le sont (longueur, coût, horodatage, empreinte non réversible de l'adresse IP).",
-      "purposeTitle": "Finalité du traitement",
-      "purposeText": "Ces informations sont utilisées uniquement pour qualifier votre demande, vous recontacter, gérer votre compte le cas échéant, établir un devis ou organiser un rendez-vous. Elles ne sont ni revendues ni utilisées à des fins publicitaires.",
-      "legalBasisTitle": "Base légale",
-      "legalBasisText": "Le traitement repose sur votre consentement explicite (cases à cocher des formulaires), sur l'exécution du contrat lorsque vous créez un compte, et sur l'intérêt légitime pour la prévention des abus (limitation du nombre de tentatives d'envoi).",
-      "retentionTitle": "Durée de conservation",
-      "retentionText": "Les données d'un compte (client ou freelance) sont conservées tant que le compte reste actif. Les demandes de devis ou de rendez-vous non suivies d'effet sont conservées le temps nécessaire à leur traitement, puis supprimées. Les métadonnées anonymisées des échanges avec l'assistant IA sont supprimées automatiquement après 90 jours.",
-      "recipientsTitle": "Destinataires des données",
-      "recipientsText": "Vos données sont accessibles uniquement à Horlynat MAMPASSI MBAMA, responsable du traitement. Aucune donnée n'est vendue, louée ou partagée avec des tiers à des fins commerciales ou publicitaires ; ce site n'utilise aucun outil d'analytics ou de tracking tiers. Exception technique : les questions posées à l'assistant IA sont transmises à Google (Gemini, recherche de contenu pertinent) et Anthropic (Claude, génération de la réponse), deux prestataires situés hors Union européenne agissant comme sous-traitants techniques pour cette seule fonctionnalité, dans le cadre de leurs conditions d'utilisation API respectives — jamais à des fins publicitaires de notre part.",
-      "rightsTitle": "Vos droits",
-      "rightsText": "Conformément aux principes du RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation et d'opposition concernant vos données personnelles, ainsi que d'un droit à la portabilité pour les données que vous avez fournies.",
-      "rightsContact": "Pour exercer l'un de ces droits, contactez-nous via le <link>formulaire de contact</link>.",
-      "securityTitle": "Sécurité",
-      "securityText": "Les échanges avec le site sont chiffrés (HTTPS/TLS). Les mots de passe sont hachés par le serveur et ne sont jamais stockés ni transmis en clair. La session de connexion est conservée dans un cookie protégé (httpOnly), inaccessible aux scripts du navigateur.",
-      "cookiesTitle": "Cookies",
-      "cookiesText": "Ce site utilise un nombre volontairement réduit de cookies, tous strictement nécessaires à son fonctionnement. Le détail est disponible dans notre <link>politique de cookies</link>."
+      "title": "Politique de confidentialité"
     },
     "cookies": {
-      "title": "Politique de cookies",
-      "lastUpdate": "Dernière mise à jour",
-      "intro": "Cette page liste, de façon exhaustive et honnête, tout ce que ce site stocke dans votre navigateur : il n'y a rien de caché.",
-      "essentialTitle": "Cookies strictement nécessaires",
-      "essentialText": "Ce site utilise deux cookies, tous deux indispensables à son fonctionnement de base. Aucun consentement n'est requis pour ces cookies au titre du RGPD et de la directive ePrivacy, puisqu'ils sont strictement nécessaires au service demandé.",
-      "sessionCookiePurpose": "Cookie de session : garde votre connexion active lorsque vous êtes identifié sur votre espace client ou freelance.",
-      "sessionCookieDuration": "Httponly et sécurisé, expire avec votre session de connexion.",
-      "localeCookiePurpose": "Mémorise la langue choisie (français ou anglais) pour vous éviter de la resélectionner à chaque visite.",
-      "localeCookieDuration": "Environ 1 an, ou jusqu'à changement de langue.",
-      "localStorageTitle": "Stockage local",
-      "localStorageText": "Le thème d'affichage (clair ou sombre) que vous choisissez est mémorisé dans le stockage local de votre navigateur (localStorage), et non dans un cookie. Il reste sur votre appareil jusqu'à ce que vous le changiez ou effaciez les données de ce site.",
-      "noTrackingTitle": "Aucun cookie de mesure ou de publicité",
-      "noTrackingText": "Ce site n'utilise aucun outil d'analytics, de mesure d'audience, de publicité ou de réseau social tiers. Aucune donnée de navigation n'est collectée ou partagée à des fins statistiques ou publicitaires.",
-      "noBannerTitle": "Pourquoi il n'y a pas de bandeau de consentement",
-      "noBannerText": "Un bandeau de consentement n'est légalement requis que pour les cookies non essentiels (mesure d'audience, publicité, etc.). Comme ce site n'en utilise aucun, aucun bandeau ne vous est présenté — un choix assumé de simplicité plutôt qu'une case à cocher pour la forme.",
-      "controlTitle": "Garder le contrôle",
-      "controlText": "Vous pouvez à tout moment supprimer les cookies et le stockage local de ce site depuis les réglages de votre navigateur. La suppression du cookie de session vous déconnectera simplement de votre espace."
+      "title": "Politique de cookies"
     },
     "terms": {
-      "title": "Conditions générales d'utilisation",
-      "lastUpdate": "Dernière mise à jour",
-      "intro": "Les présentes conditions régissent l'utilisation de ce site, qu'il s'agisse de sa simple consultation ou de la création et de l'utilisation d'un compte client ou freelance.",
-      "objectTitle": "Objet",
-      "objectText": "Ce site présente le profil professionnel de Horlynat MAMPASSI MBAMA et permet de le contacter, de demander un devis, de prendre rendez-vous, de créer un compte client pour confier un projet, ou de créer un profil freelance pour candidater à des collaborations.",
-      "accessTitle": "Accès au site",
-      "accessText": "La consultation du site est libre et gratuite. La création d'un compte (client ou freelance) et l'accès aux fonctionnalités associées nécessitent la fourniture d'informations exactes lors de l'inscription.",
-      "accountsTitle": "Comptes client et freelance",
-      "accountsText": "Vous êtes responsable de la confidentialité de votre mot de passe et de toute activité effectuée depuis votre compte. Un compte freelance est soumis à validation avant activation complète ; la création d'un compte ne constitue pas un engagement contractuel de collaboration.",
-      "contentTitle": "Propriété intellectuelle",
-      "contentText": "L'ensemble des contenus présents sur ce site (textes, visuels, code, identité visuelle) est la propriété de Horlynat MAMPASSI MBAMA, sauf mention contraire, et ne peut être reproduit sans autorisation préalable.",
-      "aiTitle": "Assistant IA",
-      "aiText": "L'assistant conversationnel présent sur ce site répond à partir d'informations prédéfinies sur le profil de Horlynat MAMPASSI MBAMA. Il ne constitue pas un engagement contractuel.",
-      "liabilityTitle": "Responsabilité",
-      "liabilityText": "Ce site est fourni « en l'état ». Bien qu'un soin particulier soit apporté à l'exactitude des informations publiées, leur exhaustivité ou leur actualité ne peuvent être garanties. Horlynat MAMPASSI MBAMA ne saurait être tenu responsable d'une interruption temporaire du service ou d'une erreur de contenu.",
-      "lawTitle": "Droit applicable",
-      "lawText": "Les présentes conditions sont soumises au droit applicable au lieu d'établissement de l'éditeur. Tout litige relève, à défaut de résolution amiable, des juridictions compétentes.",
-      "changesTitle": "Modification des conditions",
-      "changesText": "Ces conditions peuvent être mises à jour à tout moment ; la version en vigueur est celle publiée sur cette page. Il est conseillé de la consulter régulièrement."
+      "title": "Conditions générales d'utilisation"
     }
   },
   "notFound": {
@@ -2121,7 +2052,7 @@
     "packTitle": "Une formule complète",
     "packOnce": "Prix unique, payé une seule fois",
     "packNoSub": "Sans abonnement",
-    "packSplit": "Payable en deux fois : 60 % à la commande ({deposit}), 40 % à la mise en service ({balance}).",
+    "packSplit": "Payable en deux fois : 60 % à la conclusion du contrat ({deposit}), 40 % à la mise en service ({balance}).",
     "packNext": "Et ensuite ?",
     "packNextItems": [
       "Les améliorations que j’apporte au produit vous sont offertes.",
@@ -2292,7 +2223,8 @@
     "faqTestimonial": [
       "Une réduction est-elle possible ?",
       "Oui : si vous acceptez que la mise en place de votre assistant soit filmée pour un témoignage, le prix est revu à la baisse. La réduction est fixée dans la proposition écrite."
-    ]
+    ],
+    "packSplitFrom": "Payable en deux fois : 60 % à la conclusion du contrat, 40 % à la livraison."
   },
   "casePage": {
     "crumb": "Réalisations",

@@ -40,7 +40,11 @@ export const cookiesContent: Record<"fr" | "en", CookiesStrings> = {
             </div>
             <div>
               <b>Protection contre les attaques</b>
-              <span>Filtrer les robots et les abus. Nécessaire.</span>
+              <span>Filtrer les robots et les abus, y compris par Cloudflare, qui peut déposer un cookie technique à cet effet. Nécessaire.</span>
+            </div>
+            <div>
+              <b>Devise d’affichage</b>
+              <span>Mémoriser la devise choisie pour afficher les prix. Nécessaire au service demandé.</span>
             </div>
             <div>
               <b>Mesure d’audience</b>
@@ -103,7 +107,11 @@ export const cookiesContent: Record<"fr" | "en", CookiesStrings> = {
             </div>
             <div>
               <b>Protection against attacks</b>
-              <span>Filters bots and abuse. Necessary.</span>
+              <span>Filters bots and abuse, including through Cloudflare, which may set a technical cookie for this purpose. Necessary.</span>
+            </div>
+            <div>
+              <b>Display currency</b>
+              <span>Remembers the currency chosen to display prices. Necessary for the service requested.</span>
             </div>
             <div>
               <b>Audience measurement</b>

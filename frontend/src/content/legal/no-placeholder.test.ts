@@ -17,13 +17,13 @@ function sourceFiles(dir: string): string[] {
 
 describe("mentions provisoires", () => {
   it("aucun bloc « todo » dans le code publié", () => {
-    const offenders = sourceFiles(join(process.cwd(), "src")).filter((f) => /className=["']todo["']/.test(readFileSync(f, "utf8")));
+    const offenders = sourceFiles(join(process.cwd(), "src")).filter((f) => /className=\{?["'`][^"'`]*\btodo\b/.test(readFileSync(f, "utf8")));
     expect(offenders).toEqual([]);
   });
 
   it("aucun crochet provisoire dans les pages légales ni les traductions", () => {
     const files = [...sourceFiles(join(process.cwd(), "src/content/legal")), join(process.cwd(), "src/messages/fr.json"), join(process.cwd(), "src/messages/en.json")];
-    const pattern = /\[(?:X ?%|X (?:jours|days|mois|months)|durée|duration|date|jours et heures|days and hours|à définir|to be defined|À confirmer|To be confirmed)[^\]]*\]/i;
+    const pattern = /\[(?:X\b|durée|duration|date|jours et heures|days and hours|à définir|to be defined|à confirmer|to be confirmed|préciser|specify|nom |name |à faire valider|to be validated)[^\]]*\]/i;
     const offenders = files.filter((f) => pattern.test(readFileSync(f, "utf8")));
     expect(offenders).toEqual([]);
   });

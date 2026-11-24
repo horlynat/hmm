@@ -236,11 +236,13 @@ export async function OfferDetail({
                         {price}
                         {o.priceOnce && <em>{t("packNoSub")}</em>}
                       </b>
+                      {/* Montants seulement pour un prix unique : un prix « à partir de » est
+                          fixé dans la proposition, l'échéancier aussi. */}
                       <span>
-                        {t("packSplit", {
+                        {o.priceOnce ? t("packSplit", {
                           deposit: formatFcfa(splitPayment(o.price).deposit, locale),
                           balance: formatFcfa(splitPayment(o.price).balance, locale),
-                        })}
+                        }) : t("packSplitFrom")}
                       </span>
                     </div>
                     <div className="pkp">

@@ -175,7 +175,7 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
           <p>
             Moi seul. Lorsqu’un freelance participe à votre projet, il n’accède qu’aux éléments nécessaires à sa tâche, sous engagement écrit de
             confidentialité, et vous en êtes informé à l’avance. Prestataires techniques : LWS (hébergement du site, en France),{" "}
-            Anthropic et Google (services d’IA), Meta (WhatsApp). Vos données ne sont jamais vendues ni utilisées pour de la
+            Cloudflare (acheminement et protection du trafic du site), Anthropic et Google (services d’IA), Meta (WhatsApp). Vos données ne sont jamais vendues ni utilisées pour de la
             publicité.
           </p>
         ),
@@ -185,9 +185,9 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
         title: "Données hors du Congo",
         body: (
           <p>
-            L’hébergement, le service d’IA et WhatsApp peuvent traiter des données à l’étranger. Je choisis des prestataires offrant des garanties de
-            protection, comme les clauses contractuelles types de la Commission européenne pour les personnes situées dans l’Union. Le site est hébergé en France, dans l’Union européenne. Anthropic, Google et Meta peuvent
-            traiter des données aux États-Unis, dans le cadre de ces clauses contractuelles types.
+            L’acheminement du trafic, les services d’IA et WhatsApp peuvent traiter des données à l’étranger. Je choisis des prestataires offrant des garanties de
+            protection, comme les clauses contractuelles types de la Commission européenne pour les personnes situées dans l’Union. Le site est hébergé en France, dans l’Union européenne. Cloudflare, Anthropic, Google et Meta
+            peuvent traiter des données aux États-Unis, dans le cadre de ces clauses contractuelles types.
           </p>
         ),
       },
@@ -197,8 +197,10 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
         body: (
           <p>
             Vos questions à l’assistant du site et aux assistants WhatsApp sont traitées par Anthropic (Claude), dont les conditions commerciales
-            interdisent l’utilisation de ces données pour entraîner ses modèles. Google (Gemini) ne traite que les contenus publiés du site (résumés,
-            traductions), jamais vos messages. Aucune décision
+            interdisent l’utilisation de ces données pour entraîner ses modèles. Google (Gemini) ne reçoit pas ces questions : il résume les
+            contenus que je publie (réalisations, articles, parcours) pour alimenter l’assistant, et m’aide à traduire les textes que je saisis
+            dans mon outil de gestion, qui peuvent reprendre des éléments que vous m’avez transmis (description d’un projet réalisé, témoignage).
+            Aucune décision
             vous concernant n’est prise automatiquement par l’IA.
           </p>
         ),
@@ -399,7 +401,7 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
           <p>
             Me alone. When a freelancer works on your project, they access only what their task requires, under a written confidentiality commitment, and
             you are informed in advance. Technical providers: LWS (site hosting, in France),{" "}
-            Anthropic and Google (AI services), Meta (WhatsApp). Your data is never sold or used for advertising.
+            Cloudflare (routing and protection of the site’s traffic), Anthropic and Google (AI services), Meta (WhatsApp). Your data is never sold or used for advertising.
           </p>
         ),
       },
@@ -408,9 +410,9 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
         title: "Data outside the Congo",
         body: (
           <p>
-            Hosting, the AI service and WhatsApp may process data abroad. I choose providers offering protection guarantees, such as the European
-            Commission’s standard contractual clauses for people located in the Union. The site is hosted in France, in the European Union. Anthropic, Google and Meta may process
-            data in the United States, under these standard contractual clauses.
+            Traffic routing, the AI services and WhatsApp may process data abroad. I choose providers offering protection guarantees, such as the European
+            Commission’s standard contractual clauses for people located in the Union. The site is hosted in France, in the European Union. Cloudflare, Anthropic, Google and Meta may
+            process data in the United States, under these standard contractual clauses.
           </p>
         ),
       },
@@ -420,8 +422,9 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
         body: (
           <p>
             Your questions to the site assistant and to the WhatsApp assistants are processed by Anthropic (Claude), whose commercial terms prohibit
-            using this data to train its models. Google (Gemini) only processes the site’s published content (summaries, translations), never your
-            messages. No decision concerning you is
+            using this data to train its models. Google (Gemini) does not receive these questions: it summarises the content I publish (projects,
+            articles, background) to feed the assistant, and helps me translate the texts I enter in my management tool, which may include
+            elements you sent me (description of a completed project, testimonial). No decision concerning you is
             made automatically by the AI.
           </p>
         ),
