@@ -52,7 +52,7 @@ final class ClientIpRateLimitKeyTest extends TestCase
             ['id' => $id, 'policy' => 'fixed_window', 'limit' => $limit, 'interval' => '1 hour'],
             new InMemoryStorage(),
         );
-        $throttler = new PublicSubmissionThrottler($factory('f'), $factory('r'), $factory('a'), $factory('s'), $factory('q'), $requestStack);
+        $throttler = new PublicSubmissionThrottler($factory('f'), $factory('r'), $factory('a'), $factory('s'), $factory('q'), $factory('d'), $requestStack);
 
         for ($i = 1; $i <= 3; ++$i) {
             $requestStack->push(Request::create('/', server: ['REMOTE_ADDR' => sprintf('2001:db8:dead:beef::%x', random_int(1, 0xFFFF) + $i)]));

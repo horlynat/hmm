@@ -20,6 +20,7 @@ final class PublicSubmissionThrottler
         #[Autowire(service: 'limiter.ai_assistant_chat')] private readonly RateLimiterFactory $aiAssistantLimiter,
         #[Autowire(service: 'limiter.support_ticket_guest_access')] private readonly RateLimiterFactory $supportTicketGuestLimiter,
         #[Autowire(service: 'limiter.quote_qualify')] private readonly RateLimiterFactory $quoteQualifyLimiter,
+        #[Autowire(service: 'limiter.ai_demo_chat')] private readonly RateLimiterFactory $aiDemoLimiter,
         private readonly RequestStack $requestStack,
     ) {
     }
@@ -62,6 +63,18 @@ final class PublicSubmissionThrottler
     public function assertQuoteQualifyAllowed(): void
     {
         $this->assert($this->quoteQualifyLimiter);
+    }
+
+    /**
+     * Démo WhatsApp de l'accueil (vraie IA) : limiteur DISTINCT de celui de
+     * l'assistant, pour que jouer avec la démo n'épuise pas le quota de
+     * questions sur les offres (et inversement).
+     *
+     * @throws TooManyRequestsException
+     */
+    public function assertAiDemoAllowed(): void
+    {
+        $this->assert($this->aiDemoLimiter);
     }
 
     private function assert(RateLimiterFactory $factory): void

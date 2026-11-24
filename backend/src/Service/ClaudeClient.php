@@ -38,11 +38,12 @@ final class ClaudeClient
     }
 
     /**
-     * $useSonnet vient de App\Service\AiAssistantModelSelector : Sonnet
-     * (CLAUDE_MODEL) pour les échanges complexes/commerciaux, Haiku
-     * (CLAUDE_MODEL_FALLBACK) pour les questions simples type FAQ — ce même
-     * modèle Haiku sert aussi de repli de résilience si l'autre échoue
-     * (surcharge, quota, 5xx), dans les deux sens.
+     * $useSonnet : Sonnet (CLAUDE_MODEL) pour l'assistant du site et le
+     * wizard de devis, Haiku (CLAUDE_MODEL_FALLBACK) pour la démo WhatsApp
+     * (décision explicite de l'utilisateur, 2026-11-24 — cf. docblocks de
+     * App\State\AiAssistantChatProcessor et App\State\AiDemoChatProcessor).
+     * Ce même modèle Haiku sert aussi de repli de résilience si l'autre
+     * échoue (surcharge, quota, 5xx), dans les deux sens.
      *
      * @param array<int, array{role: string, text: string}> $history
      *
@@ -113,9 +114,9 @@ final class ClaudeClient
                 // — facturé au tarif de sortie comme le texte visible, donc
                 // du coût pur sans bénéfice pour un assistant censé "rester
                 // bref, professionnel et factuel" (cf. system prompt). Sans
-                // rapport avec la sélection du modèle (Sonnet/Haiku) via
-                // AiAssistantModelSelector — ça concerne le raisonnement interne
-                // d'un appel déjà choisi, pas lequel des deux modèles appeler.
+                // rapport avec le choix du modèle (Sonnet/Haiku, décidé par
+                // l'appelant) — ça concerne le raisonnement interne d'un
+                // appel déjà choisi, pas lequel des deux modèles appeler.
                 'thinking' => ['type' => 'disabled'],
                 // Bloc unique avec cache_control : voir le commentaire de classe.
                 'system' => [[
