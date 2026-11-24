@@ -176,7 +176,10 @@ final class AiAssistantIngestionVisibilityTest extends KernelTestCase
     {
         $kept = $this->project(ProjectStatusEnum::IN_PROGRESS);
         $this->service()->ingest('Project', (int) $kept->getId());
-        $orphanId = 987654321;
+        // Identifiant aléatoire et nettoyage préalable : le test ne dépend
+        // d'aucun résidu d'une exécution précédente.
+        $orphanId = random_int(900000000, 999999999);
+        $this->chunks()->deleteByEntity('Project', $orphanId);
         $this->em->persist((new AiAssistantDocumentChunk())
             ->setEntityType('Project')->setEntityId($orphanId)->setChunkIndex(0)
             ->setChunkText('projet supprimé')->setChunkSummary('projet supprimé')->setMetadata(['is_public' => true, 'label' => 'x']));
@@ -191,6 +194,8 @@ final class AiAssistantIngestionVisibilityTest extends KernelTestCase
         self::assertSame([], $this->chunks()->findByEntity('Project', $orphanId));
         self::assertCount(1, $this->chunks()->findByEntity('Project', (int) $kept->getId()));
         self::assertSame($callsBefore, $this->geminiCalls, 'La purge n\'appelle jamais Gemini.');
+        $this->chunks()->deleteByEntity('Project', $orphanId);
+        $this->em->flush();
     }
 
     public function testProjectThatBecomesHiddenLeavesTheAssistant(): void

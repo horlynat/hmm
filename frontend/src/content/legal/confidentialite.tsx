@@ -176,8 +176,9 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
             Moi seul. Lorsqu’un freelance participe à votre projet, il n’accède qu’aux éléments nécessaires à sa tâche, sous engagement écrit de
             confidentialité, et vous en êtes informé à l’avance. Prestataires techniques : LWS (hébergement du site, en France),{" "}
             Cloudflare (acheminement et protection du trafic du site), Anthropic et Google (services d’IA), Meta (WhatsApp), ipapi.co et
-            ip-api.com (localisation approximative, ville et pays, de l’adresse IP lors des connexions à l’espace, pour la sécurité de
-            votre compte). Les sauvegardes du site sont chiffrées avant d’être conservées hors site. Vos données ne sont jamais vendues ni utilisées pour de la
+            ip-api.com (localisation approximative de l’adresse IP, ville, pays et coordonnées, lors des connexions et des tentatives de
+            connexion à l’espace, pour la sécurité des comptes). Des copies de sauvegarde sont conservées hors site : la base de données y
+            est chiffrée, les fichiers que vous me transmettez y sont copiés tels quels. Vos données ne sont jamais vendues ni utilisées pour de la
             publicité.
           </p>
         ),
@@ -405,8 +406,9 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
             Me alone. When a freelancer works on your project, they access only what their task requires, under a written confidentiality commitment, and
             you are informed in advance. Technical providers: LWS (site hosting, in France),{" "}
             Cloudflare (routing and protection of the site’s traffic), Anthropic and Google (AI services), Meta (WhatsApp), ipapi.co and
-            ip-api.com (approximate location, city and country, of the IP address when you sign in to the area, for the security of your
-            account). Site backups are encrypted before being stored off-site. Your data is never sold or used for advertising.
+            ip-api.com (approximate location of the IP address, city, country and coordinates, during sign-ins and sign-in attempts to the
+            area, for account security). Backup copies are kept off-site: the database is encrypted there, the files you send me are copied
+            as they are. Your data is never sold or used for advertising.
           </p>
         ),
       },
