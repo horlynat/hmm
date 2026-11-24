@@ -1,7 +1,8 @@
 {# templates/admin/offer/_form.html.twig #}
 <twig:LocaleToggle />
+{% set currentCover = offer.coverImage %}
 
-{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
+{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}, 'enctype': 'multipart/form-data'}) }}
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
@@ -38,6 +39,26 @@
 					{{ form_errors(form[field], {'attr': {'class': 'field-error'}}) }}
 				</div>
 			{% endfor %}
+
+			<div class="field">
+				{{ form_label(form.coverImage, null, {'label_attr': {'class': 'field-label'}}) }}
+				<p class="text-[11px] opacity-40 mb-2">{{ form.coverImage.vars.help }} — JPG, PNG, WebP ou SVG, 5 Mo max.</p>
+				{% if currentCover %}
+					<img src="{{ currentCover.filePath }}" alt="{{ currentCover.altText }}" class="w-full h-28 object-cover rounded-lg border border-gray-200 dark:border-gray-800 mb-2">
+					<label class="flex items-center gap-2 text-xs text-danger cursor-pointer mb-2">
+						{{ form_widget(form.removeCoverImage, {'attr': {'class': 'cursor-pointer'}}) }}
+						Retirer l'image actuelle
+					</label>
+				{% else %}
+					{# Toujours rendre le champ : sinon form_end() ci-dessous le considère
+					   "non affiché" et l'ajoute sans style en bas du formulaire (cf. même
+					   remarque dans templates/admin/project/_form.html.twig). #}
+					{{ form_widget(form.removeCoverImage, {'attr': {'hidden': 'hidden'}}) }}
+				{% endif %}
+				{{ form_widget(form.coverImage, {'attr': {'class': 'w-full text-xs opacity-70 file:mr-3 file:py-2 file:px-3 file:rounded-sm file:border-0 file:text-xs file:font-bold file:bg-brand-light file:text-brand-primary hover:file:opacity-80 cursor-pointer'}}) }}
+				<p class="text-[11px] opacity-40 mt-1">{{ currentCover ? 'Envoyer un fichier remplace automatiquement l\'image actuelle.' : 'Sans image, le carrousel et la fiche affichent l\'aperçu dessiné ci-dessus.' }}</p>
+				{{ form_errors(form.coverImage, {'attr': {'class': 'field-error'}}) }}
+			</div>
 
 			<div class="pt-2">
 				<button type="submit" class="btn btn-primary w-full gap-2">

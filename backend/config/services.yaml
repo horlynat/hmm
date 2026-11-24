@@ -79,6 +79,16 @@ services:
             $targetDirectory: '%app.upload_dir%'
             $allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'application/pdf']
 
+    # Instance dédiée à l'image illustrative d'une offre (Offer::coverImage,
+    # cf. AdminOfferController) : même raisonnement que app.media_uploader.project
+    # (SVG autorisé, nettoyé avant écriture) — pas de PDF, qui n'a pas de sens
+    # comme illustration de carrousel ou de fiche d'offre.
+    app.media_uploader.offer:
+        class: App\Service\MediaUploader
+        arguments:
+            $targetDirectory: '%app.upload_dir%'
+            $allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
+
     App\Service\JWTService:
         arguments:
             $secret: '%env(APP_JWTSECRET)%'

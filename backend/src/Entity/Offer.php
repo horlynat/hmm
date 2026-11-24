@@ -103,6 +103,17 @@ class Offer
     #[Groups(['offer_public'])]
     private string $previewType = 'screens';
 
+    /**
+     * Image illustrative réelle (carrousel de l'accueil, fiche détaillée) ;
+     * absente = repli sur l'illustration SVG de `previewType`, comme avant
+     * ce champ. Même mécanisme que ProjectInfo::coverImage (Media autonome,
+     * pas de suppression physique automatique en cas de remplacement).
+     */
+    #[ORM\ManyToOne(targetEntity: Media::class)]
+    #[ORM\JoinColumn(name: 'cover_image_id', nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['offer_public'])]
+    private ?Media $coverImage = null;
+
     #[ORM\Column(length: 10)]
     #[Assert\Choice(choices: self::SITUATIONS)]
     #[Groups(['offer_public'])]
@@ -377,6 +388,9 @@ class Offer
 
     public function getPreviewType(): string { return $this->previewType; }
     public function setPreviewType(?string $previewType): static { $this->previewType = $previewType ?? ''; return $this; }
+
+    public function getCoverImage(): ?Media { return $this->coverImage; }
+    public function setCoverImage(?Media $coverImage): static { $this->coverImage = $coverImage; return $this; }
 
     public function getSituation(): string { return $this->situation; }
     public function setSituation(?string $situation): static { $this->situation = $situation ?? ''; return $this; }
