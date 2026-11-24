@@ -13,30 +13,30 @@ class Media
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['api_public', 'api_admin'])]
+    #[Groups(['api_public', 'api_admin', 'offer_public'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le chemin du fichier est obligatoire.")]
     #[Assert\Length(max: 255)]
-    #[Groups(['api_public', 'api_admin'])]
+    #[Groups(['api_public', 'api_admin', 'offer_public'])]
     private string $filePath = '';
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255)]
-    #[Groups(['api_public', 'api_admin'])]
+    #[Groups(['api_public', 'api_admin', 'offer_public'])]
     private ?string $altText = null;
 
     #[ORM\Column(length: 100, nullable: true)]
-    #[Groups(['api_public', 'api_admin'])]
+    #[Groups(['api_public', 'api_admin', 'offer_public'])]
     private ?string $mimeType = null;
 
     #[ORM\Column(type: 'integer', nullable: true)]
-    #[Groups(['api_public', 'api_admin'])]
+    #[Groups(['api_public', 'api_admin', 'offer_public'])]
     private ?int $size = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    #[Groups(['api_public', 'api_admin'])]
+    #[Groups(['api_public', 'api_admin', 'offer_public'])]
     private ?\DateTimeImmutable $uploadedAt = null;
 
     /**
@@ -45,7 +45,7 @@ class Media
      */
     #[ORM\Column(length: 50, nullable: true)]
     #[Assert\Choice(choices: ['image', 'video', 'audio', 'document'])]
-    #[Groups(['api_public', 'api_admin'])]
+    #[Groups(['api_public', 'api_admin', 'offer_public'])]
     private ?string $type = null;
 
     /**

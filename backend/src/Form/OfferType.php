@@ -7,11 +7,13 @@ use App\Form\DataTransformer\OfferLinesTransformer;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\File;
 
 final class OfferType extends AbstractType
 {
@@ -52,7 +54,29 @@ final class OfferType extends AbstractType
             ->add('featured', CheckboxType::class, ['label' => 'Offre vedette', 'required' => false])
             ->add('category', ChoiceType::class, ['label' => 'Famille', 'choices' => ['Ingénierie (dev)' => 'dev', 'Audit et conseil (aud)' => 'aud']])
             ->add('icon', ChoiceType::class, ['label' => 'Icône', 'choices' => $choices(Offer::ICONS)])
-            ->add('previewType', ChoiceType::class, ['label' => 'Aperçu illustré', 'choices' => $choices(Offer::PREVIEWS)])
+            ->add('previewType', ChoiceType::class, ['label' => 'Aperçu illustré (repli si aucune image)', 'choices' => $choices(Offer::PREVIEWS)])
+            // Image réelle (Offer::coverImage) — non mappée : gérée à part en
+            // contrôleur comme ProjectInfo::coverImage, pour créer/remplacer le
+            // Media associé (cf. AdminOfferController::syncCoverImageFromForm).
+            // Absente => reste l'illustration de `previewType` ci-dessus.
+            ->add('coverImage', FileType::class, [
+                'mapped' => false,
+                'required' => false,
+                'label' => 'Image illustrative (remplace l\'aperçu dessiné)',
+                'help' => "Photo ou visuel réel affiché dans le carrousel de l'accueil et la fiche de l'offre.",
+                'constraints' => [
+                    new File(
+                        maxSize: '5M',
+                        mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
+                        mimeTypesMessage: 'Formats autorisés : JPG, PNG, WebP, SVG.'
+                    ),
+                ],
+            ])
+            ->add('removeCoverImage', CheckboxType::class, [
+                'mapped' => false,
+                'required' => false,
+                'label' => 'Retirer l\'image illustrative actuelle',
+            ])
             ->add('situation', ChoiceType::class, ['label' => 'Situation (filtre des offres)', 'choices' => $choices(Offer::SITUATIONS)])
             ->add('proofProjectSlug', TextType::class, ['label' => 'Projet cité en preuve (slug)', 'required' => false])
             ->add('price', IntegerType::class, ['label' => 'Prix (FCFA)', 'empty_data' => '0'])

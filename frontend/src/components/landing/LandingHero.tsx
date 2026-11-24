@@ -8,7 +8,8 @@ import type { Offer } from "@/lib/types";
 import { whatsappLink } from "@/lib/whatsapp";
 import { formatFcfa } from "@/lib/format/fcfa";
 import { useReducedMotion } from "@/lib/useReducedMotion";
-import { IdBadgeArt, OfferVisual, ProtoIcon } from "@/components/proto/ProtoSvg";
+import { IdBadgeArt, ProtoIcon } from "@/components/proto/ProtoSvg";
+import { OfferVisualOrPhoto } from "./offerHelpers";
 
 /** Durée d'une diapositive — identique au prototype (DUR = 7000). */
 export const SLIDE_DURATION_MS = 7000;
@@ -153,7 +154,7 @@ export function LandingHero({ offers }: { offers: Offer[] }) {
                     </div>
                   </div>
                   <div className="vis">
-                    <OfferVisual slug={offer.slug} previewType={offer.previewType} />
+                    <OfferVisualOrPhoto offer={offer} sizes="(max-width: 900px) 100vw, 520px" />
                   </div>
                 </div>
               );

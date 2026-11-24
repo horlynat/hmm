@@ -11,6 +11,7 @@ export function makeOffer(overrides: Partial<Offer> = {}): Offer {
     category: "dev",
     icon: "shop",
     previewType: "chat",
+    coverImage: null,
     situation: "clients",
     proofProjectSlug: null,
     price: 199999,
