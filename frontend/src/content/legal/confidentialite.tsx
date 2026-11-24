@@ -178,7 +178,7 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
             Cloudflare (acheminement et protection du trafic du site), Anthropic et Google (services d’IA), Meta (WhatsApp), ipapi.co et
             ip-api.com (localisation approximative de l’adresse IP, ville, pays et coordonnées, lors des connexions et des tentatives de
             connexion à l’espace, pour la sécurité des comptes). Des copies de sauvegarde sont conservées hors site : la base de données y
-            est chiffrée, les fichiers que vous me transmettez y sont copiés tels quels. Vos données ne sont jamais vendues ni utilisées pour de la
+            est chiffrée, les fichiers téléversés sur le site y sont copiés tels quels. Vos données ne sont jamais vendues ni utilisées pour de la
             publicité.
           </p>
         ),
@@ -407,8 +407,8 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
             you are informed in advance. Technical providers: LWS (site hosting, in France),{" "}
             Cloudflare (routing and protection of the site’s traffic), Anthropic and Google (AI services), Meta (WhatsApp), ipapi.co and
             ip-api.com (approximate location of the IP address, city, country and coordinates, during sign-ins and sign-in attempts to the
-            area, for account security). Backup copies are kept off-site: the database is encrypted there, the files you send me are copied
-            as they are. Your data is never sold or used for advertising.
+            area, for account security). Backup copies are kept off-site: the database is encrypted there, the files uploaded to the site are
+            copied as they are. Your data is never sold or used for advertising.
           </p>
         ),
       },
