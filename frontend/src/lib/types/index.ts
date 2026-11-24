@@ -160,6 +160,8 @@ export interface Offer {
   category: "dev" | "aud";
   icon: string;
   previewType: string;
+  /** Photo réelle (back-office) ; absente = repli sur l'illustration de `previewType`. */
+  coverImage: Media | null;
   situation: "clients" | "appli" | "secu" | "assur";
   proofProjectSlug: string | null;
   price: number;

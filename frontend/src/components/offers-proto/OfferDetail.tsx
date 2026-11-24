@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Offer, Project } from "@/lib/types";
 import { formatFcfa } from "@/lib/format/fcfa";
-import { splitPayment } from "@/components/landing/offerHelpers";
+import { OfferVisualOrPhoto, splitPayment } from "@/components/landing/offerHelpers";
 import { getExcerpt } from "@/lib/text";
 import { whatsappLink } from "@/lib/whatsapp";
 import { OfferVisual, ProtoIcon } from "@/components/proto/ProtoSvg";
@@ -158,7 +158,7 @@ export async function OfferDetail({
               </div>
             </div>
             <div className="vis">
-              <OfferVisual slug={o.previewType === "flow" ? "automatisation" : o.slug} previewType={o.previewType} />
+              <OfferVisualOrPhoto offer={o} visualSlug={o.previewType === "flow" ? "automatisation" : o.slug} sizes="(max-width: 900px) 100vw, 400px" />
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import "server-only";
 import { apiFetch, extractCollection, pickLocalized, pickLocalizedList } from "./client";
-import type { Offer, OfferCalendarStep, OfferPackBlock } from "@/lib/types";
+import type { Media, Offer, OfferCalendarStep, OfferPackBlock } from "@/lib/types";
 
 // Contenu commercial, modifié occasionnellement depuis le back-office — la
 // fraîcheur réelle vient du webhook /api/revalidate (tag "offers", déclenché
@@ -16,8 +16,9 @@ const OFFERS_REVALIDATE_SECONDS = 60 * 60 * 24;
  * l'offre dans le carrousel.
  */
 interface RawOffer
-  extends Omit<Offer, "heroPosition" | "proofProjectSlug" | "includes" | "beforeItems" | "afterItems" | "calendar" | "pack"> {
+  extends Omit<Offer, "heroPosition" | "coverImage" | "proofProjectSlug" | "includes" | "beforeItems" | "afterItems" | "calendar" | "pack"> {
   heroPosition?: number | null;
+  coverImage?: Media | null;
   proofProjectSlug?: string | null;
   titleEn?: string | null;
   shortTitleEn?: string | null;
@@ -50,6 +51,7 @@ function localizeOffer(raw: RawOffer, locale: string): Offer {
   return {
     ...rest,
     heroPosition: typeof raw.heroPosition === "number" ? raw.heroPosition : null,
+    coverImage: raw.coverImage ?? null,
     proofProjectSlug: raw.proofProjectSlug ?? null,
     title: pickLocalized(raw.title, titleEn, locale),
     shortTitle: pickLocalized(raw.shortTitle, shortTitleEn, locale),

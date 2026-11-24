@@ -57,6 +57,21 @@ describe("offres de l'API", () => {
     expect(heroOffers(offers).map((o) => o.slug)).toEqual(["c", "a"]);
   });
 
+  it("une offre sans image (coverImage omise) retombe sur l'illustration (null)", async () => {
+    apiFetch.mockResolvedValue({ member: [raw("a", 1)] });
+
+    const [offer] = await getOffers("fr");
+    expect(offer.coverImage).toBeNull();
+  });
+
+  it("une offre avec une image réelle la renvoie telle quelle", async () => {
+    const media = { id: 9, filePath: "/uploads/offers/photo.jpg", altText: "Photo", mimeType: "image/jpeg", size: 1000, uploadedAt: "2026-11-25T00:00:00+00:00", type: "image" as const };
+    apiFetch.mockResolvedValue({ member: [{ ...raw("a", 1), coverImage: media }] });
+
+    const [offer] = await getOffers("fr");
+    expect(offer.coverImage).toEqual(media);
+  });
+
   it("API en panne : aucune offre, pas d'exception", async () => {
     apiFetch.mockResolvedValue(null);
 
