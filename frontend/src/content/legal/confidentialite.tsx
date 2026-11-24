@@ -175,7 +175,9 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
           <p>
             Moi seul. Lorsqu’un freelance participe à votre projet, il n’accède qu’aux éléments nécessaires à sa tâche, sous engagement écrit de
             confidentialité, et vous en êtes informé à l’avance. Prestataires techniques : LWS (hébergement du site, en France),{" "}
-            Cloudflare (acheminement et protection du trafic du site), Anthropic et Google (services d’IA), Meta (WhatsApp). Vos données ne sont jamais vendues ni utilisées pour de la
+            Cloudflare (acheminement et protection du trafic du site), Anthropic et Google (services d’IA), Meta (WhatsApp), ipapi.co et
+            ip-api.com (localisation approximative, ville et pays, de l’adresse IP lors des connexions à l’espace, pour la sécurité de
+            votre compte). Les sauvegardes du site sont chiffrées avant d’être conservées hors site. Vos données ne sont jamais vendues ni utilisées pour de la
             publicité.
           </p>
         ),
@@ -185,9 +187,10 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
         title: "Données hors du Congo",
         body: (
           <p>
-            L’acheminement du trafic, les services d’IA et WhatsApp peuvent traiter des données à l’étranger. Je choisis des prestataires offrant des garanties de
-            protection, comme les clauses contractuelles types de la Commission européenne pour les personnes situées dans l’Union. Le site est hébergé en France, dans l’Union européenne. Cloudflare, Anthropic, Google et Meta
-            peuvent traiter des données aux États-Unis, dans le cadre de ces clauses contractuelles types.
+            L’acheminement du trafic, les services d’IA, la localisation des adresses IP et WhatsApp peuvent traiter des données à
+            l’étranger. Je choisis des prestataires offrant des garanties de
+            protection, comme les clauses contractuelles types de la Commission européenne pour les personnes situées dans l’Union. Le site est hébergé en France, dans l’Union européenne. Cloudflare, Anthropic, Google, Meta et
+            ipapi.co peuvent traiter des données aux États-Unis, dans le cadre de ces clauses contractuelles types.
           </p>
         ),
       },
@@ -401,7 +404,9 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
           <p>
             Me alone. When a freelancer works on your project, they access only what their task requires, under a written confidentiality commitment, and
             you are informed in advance. Technical providers: LWS (site hosting, in France),{" "}
-            Cloudflare (routing and protection of the site’s traffic), Anthropic and Google (AI services), Meta (WhatsApp). Your data is never sold or used for advertising.
+            Cloudflare (routing and protection of the site’s traffic), Anthropic and Google (AI services), Meta (WhatsApp), ipapi.co and
+            ip-api.com (approximate location, city and country, of the IP address when you sign in to the area, for the security of your
+            account). Site backups are encrypted before being stored off-site. Your data is never sold or used for advertising.
           </p>
         ),
       },
@@ -410,9 +415,9 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
         title: "Data outside the Congo",
         body: (
           <p>
-            Traffic routing, the AI services and WhatsApp may process data abroad. I choose providers offering protection guarantees, such as the European
-            Commission’s standard contractual clauses for people located in the Union. The site is hosted in France, in the European Union. Cloudflare, Anthropic, Google and Meta may
-            process data in the United States, under these standard contractual clauses.
+            Traffic routing, the AI services, IP address location and WhatsApp may process data abroad. I choose providers offering protection guarantees, such as the European
+            Commission’s standard contractual clauses for people located in the Union. The site is hosted in France, in the European Union. Cloudflare, Anthropic, Google, Meta and
+            ipapi.co may process data in the United States, under these standard contractual clauses.
           </p>
         ),
       },
