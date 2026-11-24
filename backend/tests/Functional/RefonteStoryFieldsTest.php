@@ -201,6 +201,10 @@ final class RefonteStoryFieldsTest extends FunctionalTestCase
         yield 'bref de 4 lignes' => [['brief' => "A | a\nB | b\nC | c\nD | d"], 'brief'];
         yield 'étape sans séparateur' => [['steps' => 'Cadrage sans texte'], 'steps'];
         yield 'bref EN sans séparateur' => [['briefEn' => 'Situation only'], 'briefEn'];
+        // Contre-audit : « Titre | » serait stocké sans texte puis pré-rempli
+        // sans « | » — projet impossible à réenregistrer ensuite.
+        yield 'étape sans texte après le séparateur' => [['steps' => 'Cadrage |'], 'steps'];
+        yield 'bref sans titre' => [['brief' => '| Un texte sans titre'], 'brief'];
         yield 'résultat trop long' => [['result' => str_repeat('x', 256)], 'result'];
         yield 'contexte trop long' => [['context' => str_repeat('x', 2001)], 'context'];
     }
@@ -230,6 +234,22 @@ final class RefonteStoryFieldsTest extends FunctionalTestCase
         $this->client->request('POST', $form->getUri(), $values);
         self::assertResponseIsSuccessful(); // formulaire ré-affiché, pas de redirection
         self::assertStringContainsString('relatedOfferSlug', (string) $this->client->getResponse()->getContent());
+        $this->em()->clear();
+        self::assertNull($this->em()->find(Project::class, $project->getId())?->getInfo());
+    }
+
+    public function testUnpublishedOfferCannotBeLinked(): void
+    {
+        $this->offer('offre-brouillon-test', published: false);
+        $project = $this->project();
+        $this->loginAdmin();
+        $crawler = $this->client->request('GET', '/admin/project/'.$project->getId().'/update');
+        self::assertStringNotContainsString('offre-brouillon-test', (string) $this->client->getResponse()->getContent());
+        $form = $crawler->filter('form[name="project"]')->form();
+        $values = $form->getPhpValues();
+        $values['project']['relatedOfferSlug'] = 'offre-brouillon-test';
+        $this->client->request('POST', $form->getUri(), $values);
+        self::assertFalse($this->client->getResponse()->isRedirect(), 'Offre non publiée refusée.');
         $this->em()->clear();
         self::assertNull($this->em()->find(Project::class, $project->getId())?->getInfo());
     }

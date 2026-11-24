@@ -363,8 +363,10 @@ class ProjectType extends AbstractType
     private function offerChoices(): array
     {
         $choices = [];
-        foreach ($this->offerRepository->findBy([], ['position' => 'ASC']) as $offer) {
-            $label = sprintf('%s — %s%s', $offer->getTitle(), $offer->getSlug(), $offer->isPublished() ? '' : ' (non publiée)');
+        // Offres publiées seulement : le slug choisi est exposé par l'API
+        // publique, il ne doit jamais révéler une offre en préparation.
+        foreach ($this->offerRepository->findBy(['published' => true], ['position' => 'ASC']) as $offer) {
+            $label = sprintf('%s — %s', $offer->getTitle(), $offer->getSlug());
             $choices[$label] = $offer->getSlug();
         }
 

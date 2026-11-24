@@ -113,10 +113,12 @@ class ArticleType extends AbstractType
     private function offerChoices(): array
     {
         $choices = [];
-        foreach ($this->offerRepository->findBy([], ['position' => 'ASC']) as $offer) {
+        // Offres publiées seulement : le slug choisi est exposé par l'API
+        // publique, il ne doit jamais révéler une offre en préparation.
+        foreach ($this->offerRepository->findBy(['published' => true], ['position' => 'ASC']) as $offer) {
             // Le slug rend chaque libellé unique (deux offres de même titre ne
             // doivent pas se fondre en un seul choix).
-            $label = sprintf('%s — %s%s', $offer->getTitle(), $offer->getSlug(), $offer->isPublished() ? '' : ' (non publiée)');
+            $label = sprintf('%s — %s', $offer->getTitle(), $offer->getSlug());
             $choices[$label] = $offer->getSlug();
         }
 

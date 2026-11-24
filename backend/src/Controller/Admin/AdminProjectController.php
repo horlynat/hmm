@@ -714,6 +714,32 @@ final class AdminProjectController extends AbstractController
             }
         }
 
+        // brief/steps : titre ET texte obligatoires. Une ligne « Titre | »
+        // serait stockée avec un texte nul, puis pré-remplie sans « | » à
+        // l'édition suivante : le projet deviendrait impossible à
+        // réenregistrer (contre-audit). Une ligne « | texte » serait, elle,
+        // ignorée sans prévenir.
+        foreach (['brief', 'briefEn', 'steps', 'stepsEn'] as $fieldName) {
+            if (\count($form->get($fieldName)->getErrors()) > 0) {
+                continue;
+            }
+            foreach (preg_split('/\r?\n/', (string) $form->get($fieldName)->getData()) ?: [] as $line) {
+                $line = trim($line);
+                if ('' === $line) {
+                    continue;
+                }
+                [$title, $text] = array_pad(explode('|', $line, 2), 2, '');
+                if ('' === trim($title) || '' === trim($text)) {
+                    $valid = false;
+                    $form->get($fieldName)->addError(new FormError(sprintf(
+                        'Chaque ligne doit avoir un titre ET un texte, de part et d\'autre du « | ». Ligne fautive : "%s".',
+                        mb_strimwidth($line, 0, 80, '…'),
+                    )));
+                    break;
+                }
+            }
+        }
+
         return $valid;
     }
 
