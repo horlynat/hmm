@@ -67,7 +67,7 @@ export async function SiteContact({ locale, offerSlug }: { locale: string; offer
                 <b>{t("callTitle")}</b>
                 <small>{siteConfig.phoneDisplay}</small>
                 <small className="sub2">
-                  <span className="todo">{t("callHours")}</span>
+                  {t("callHours")}
                 </small>
               </span>
             </a>

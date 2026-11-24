@@ -55,7 +55,7 @@ export const mentionsLegalesContent: Record<"fr" | "en", MentionsLegalesStrings>
         title: "Hébergement",
         body: (
           <p>
-            <span className="todo">[Nom de l’hébergeur, adresse, pays, contact]</span>
+            LWS – Ligne Web Services SAS, 10 rue Penthièvre, 75008 Paris, France. Contact : www.lws.fr
           </p>
         ),
       },
@@ -133,7 +133,7 @@ export const mentionsLegalesContent: Record<"fr" | "en", MentionsLegalesStrings>
         title: "Hosting",
         body: (
           <p>
-            <span className="todo">[Host name, address, country, contact]</span>
+            LWS – Ligne Web Services SAS, 10 rue Penthièvre, 75008 Paris, France. Contact: www.lws.fr
           </p>
         ),
       },

@@ -136,13 +136,13 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
             <div>
               <b>Demande sans suite</b>
               <span>
-                <span className="todo">[12 mois]</span> après le dernier échange
+                3 ans après le dernier échange
               </span>
             </div>
             <div>
               <b>Dossier client</b>
               <span>
-                Le temps de la mission et du suivi, puis <span className="todo">[durée]</span>
+                Le temps de la mission et du suivi, puis 5 ans
               </span>
             </div>
             <div>
@@ -152,7 +152,7 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
             <div>
               <b>Rapports d’audit et failles découvertes</b>
               <span>
-                Remis à vous seul, puis supprimés de mes outils <span className="todo">[sous X jours]</span> après la mission
+                Remis à vous seul, puis supprimés de mes outils dans les 30 jours suivant la mission
               </span>
             </div>
             <div>
@@ -162,7 +162,7 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
             <div>
               <b>Conversations de l’assistant du site</b>
               <span>
-                <span className="todo">[durée]</span>
+                90 jours, puis suppression automatique
               </span>
             </div>
           </div>
@@ -174,8 +174,8 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
         body: (
           <p>
             Moi seul. Lorsqu’un freelance participe à votre projet, il n’accède qu’aux éléments nécessaires à sa tâche, sous engagement écrit de
-            confidentialité, et vous en êtes informé à l’avance. Prestataires techniques : <span className="todo">[hébergeur du site]</span>,{" "}
-            <span className="todo">[fournisseur du service d’IA]</span>, Meta (WhatsApp). Vos données ne sont jamais vendues ni utilisées pour de la
+            confidentialité, et vous en êtes informé à l’avance. Prestataires techniques : LWS (hébergement du site, en France),{" "}
+            Anthropic et Google (services d’IA), Meta (WhatsApp). Vos données ne sont jamais vendues ni utilisées pour de la
             publicité.
           </p>
         ),
@@ -186,8 +186,8 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
         body: (
           <p>
             L’hébergement, le service d’IA et WhatsApp peuvent traiter des données à l’étranger. Je choisis des prestataires offrant des garanties de
-            protection, comme les clauses contractuelles types de la Commission européenne pour les personnes situées dans l’Union.{" "}
-            <span className="todo">[Préciser le pays et la garantie de chaque prestataire]</span>
+            protection, comme les clauses contractuelles types de la Commission européenne pour les personnes situées dans l’Union. Le site est hébergé en France, dans l’Union européenne. Anthropic, Google et Meta peuvent
+            traiter des données aux États-Unis, dans le cadre de ces clauses contractuelles types.
           </p>
         ),
       },
@@ -196,8 +196,9 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
         title: "Intelligence artificielle",
         body: (
           <p>
-            L’assistant du site et les assistants WhatsApp reposent sur un service d’IA externe. Je le configure pour que vos données ne servent pas à
-            entraîner ses modèles, lorsque le service le permet. <span className="todo">[À confirmer selon le fournisseur retenu]</span> Aucune décision
+            Vos questions à l’assistant du site et aux assistants WhatsApp sont traitées par Anthropic (Claude), dont les conditions commerciales
+            interdisent l’utilisation de ces données pour entraîner ses modèles. Google (Gemini) ne traite que les contenus publiés du site (résumés,
+            traductions), jamais vos messages. Aucune décision
             vous concernant n’est prise automatiquement par l’IA.
           </p>
         ),
@@ -359,13 +360,13 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
             <div>
               <b>Request with no follow-up</b>
               <span>
-                <span className="todo">[12 months]</span> after the last exchange
+                3 years after the last exchange
               </span>
             </div>
             <div>
               <b>Client file</b>
               <span>
-                The duration of the mission and follow-up, then <span className="todo">[duration]</span>
+                The duration of the mission and follow-up, then 5 years
               </span>
             </div>
             <div>
@@ -375,7 +376,7 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
             <div>
               <b>Audit reports and flaws found</b>
               <span>
-                Given to you alone, then deleted from my tools <span className="todo">[within X days]</span> after the mission
+                Given to you alone, then deleted from my tools within 30 days of the mission
               </span>
             </div>
             <div>
@@ -385,7 +386,7 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
             <div>
               <b>Site assistant conversations</b>
               <span>
-                <span className="todo">[duration]</span>
+                90 days, then automatic deletion
               </span>
             </div>
           </div>
@@ -397,8 +398,8 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
         body: (
           <p>
             Me alone. When a freelancer works on your project, they access only what their task requires, under a written confidentiality commitment, and
-            you are informed in advance. Technical providers: <span className="todo">[site host]</span>,{" "}
-            <span className="todo">[AI service provider]</span>, Meta (WhatsApp). Your data is never sold or used for advertising.
+            you are informed in advance. Technical providers: LWS (site hosting, in France),{" "}
+            Anthropic and Google (AI services), Meta (WhatsApp). Your data is never sold or used for advertising.
           </p>
         ),
       },
@@ -408,8 +409,8 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
         body: (
           <p>
             Hosting, the AI service and WhatsApp may process data abroad. I choose providers offering protection guarantees, such as the European
-            Commission’s standard contractual clauses for people located in the Union.{" "}
-            <span className="todo">[Specify the country and the guarantee of each provider]</span>
+            Commission’s standard contractual clauses for people located in the Union. The site is hosted in France, in the European Union. Anthropic, Google and Meta may process
+            data in the United States, under these standard contractual clauses.
           </p>
         ),
       },
@@ -418,8 +419,9 @@ export const confidentialiteContent: Record<"fr" | "en", ConfidentialiteStrings>
         title: "Artificial intelligence",
         body: (
           <p>
-            The site assistant and the WhatsApp assistants rely on an external AI service. I configure it so your data is not used to train its models,
-            where the service allows it. <span className="todo">[To be confirmed depending on the provider chosen]</span> No decision concerning you is
+            Your questions to the site assistant and to the WhatsApp assistants are processed by Anthropic (Claude), whose commercial terms prohibit
+            using this data to train its models. Google (Gemini) only processes the site’s published content (summaries, translations), never your
+            messages. No decision concerning you is
             made automatically by the AI.
           </p>
         ),

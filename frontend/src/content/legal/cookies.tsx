@@ -45,7 +45,7 @@ export const cookiesContent: Record<"fr" | "en", CookiesStrings> = {
             <div>
               <b>Mesure d’audience</b>
               <span>
-                <span className="todo">[Aucune, ou outil retenu sans cookie]</span>
+                Aucune
               </span>
             </div>
           </div>
@@ -108,7 +108,7 @@ export const cookiesContent: Record<"fr" | "en", CookiesStrings> = {
             <div>
               <b>Audience measurement</b>
               <span>
-                <span className="todo">[None, or a cookie-free tool]</span>
+                None
               </span>
             </div>
           </div>

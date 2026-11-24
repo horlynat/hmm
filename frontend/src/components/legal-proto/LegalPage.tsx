@@ -3,6 +3,9 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { NavHref } from "@/config/site";
 
+/** Dernière mise à jour du contenu des pages légales (src/content/legal) — à changer à chaque modification. */
+export const LEGAL_UPDATED_AT = "2026-11-24";
+
 export interface LegalSection {
   id: string;
   title: string;
@@ -60,7 +63,11 @@ export async function LegalPage({
               </section>
             ))}
             <p className="dm" style={{ fontSize: "14px", marginTop: "8px" }}>
-              {updatedLabel} : <span className="todo">[date]</span>
+              {updatedLabel}
+              {locale === "en" ? ": " : " : "}
+              <time dateTime={LEGAL_UPDATED_AT}>
+                {new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", { dateStyle: "long", timeZone: "UTC" }).format(new Date(LEGAL_UPDATED_AT))}
+              </time>
             </p>
           </div>
         </div>

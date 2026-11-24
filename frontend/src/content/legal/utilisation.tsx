@@ -71,7 +71,7 @@ export const utilisationContent: Record<"fr" | "en", UtilisationStrings> = {
                 <i>✓</i>garder strictement confidentiels les projets et les données auxquels ils accèdent, y compris après la collaboration ;
               </li>
               <li>
-                <i>✓</i>ne pas démarcher directement les clients rencontrés par l’espace pendant <span className="todo">[durée]</span> ;
+                <i>✓</i>ne pas démarcher directement les clients rencontrés par l’espace, pendant la collaboration et la durée prévue dans leur engagement écrit ;
               </li>
               <li>
                 <i>✓</i>respecter les délais et la qualité convenus pour chaque tâche.
@@ -116,8 +116,8 @@ export const utilisationContent: Record<"fr" | "en", UtilisationStrings> = {
         title: "Évolution",
         body: (
           <p>
-            Ces conditions peuvent évoluer ; la version en ligne fait foi.{" "}
-            <span className="todo">[Droit applicable et tribunal compétent, à faire valider par un juriste]</span>
+            Ces conditions peuvent évoluer ; la version en ligne fait foi. Elles sont régies par le droit de la République du Congo ; à défaut d’accord
+            amiable, le litige est porté devant les juridictions compétentes de Brazzaville.
           </p>
         ),
       },
@@ -184,7 +184,7 @@ export const utilisationContent: Record<"fr" | "en", UtilisationStrings> = {
                 <i>✓</i>keep strictly confidential the projects and data they access, including after the collaboration ends;
               </li>
               <li>
-                <i>✓</i>not directly solicit clients met through the area for <span className="todo">[duration]</span>;
+                <i>✓</i>not directly solicit clients met through the area, during the collaboration and for the period set out in their written commitment;
               </li>
               <li>
                 <i>✓</i>meet the timelines and quality agreed for each task.
@@ -229,8 +229,8 @@ export const utilisationContent: Record<"fr" | "en", UtilisationStrings> = {
         title: "Changes",
         body: (
           <p>
-            These terms may change; the version published online is authoritative.{" "}
-            <span className="todo">[Applicable law and competent court, to be validated by a lawyer]</span>
+            These terms may change; the version published online is authoritative. They are governed by the law of the Republic of the Congo; failing an amicable
+            agreement, the dispute is brought before the competent courts of Brazzaville.
           </p>
         ),
       },

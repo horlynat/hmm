@@ -31,8 +31,8 @@ export const conditionsContent: Record<"fr" | "en", ConditionsStrings> = {
         title: "Prix et paiement",
         body: (
           <p>
-            Prix en francs CFA (XAF). Acompte de <span className="todo">[X %]</span> à la commande, solde à la livraison. Paiement par Mobile Money (MTN,
-            Airtel) ou virement bancaire. <span className="todo">[Préciser vos numéros de paiement et les pénalités de retard éventuelles]</span> Les frais
+            Prix en francs CFA (XAF). Acompte de 60 % à la conclusion du contrat, solde de 40 % à la livraison. Paiement par Mobile Money
+            (MTN MoMo, Airtel Money) ou virement bancaire. Les frais
             de service externes (hébergement, abonnement WhatsApp Business, service d’IA) sont indiqués à part dans la proposition et restent à votre
             charge, sauf mention contraire.
           </p>
@@ -53,7 +53,7 @@ export const conditionsContent: Record<"fr" | "en", ConditionsStrings> = {
         title: "Livraison et validation",
         body: (
           <p>
-            Je vous livre une version à tester. Vous disposez de <span className="todo">[X jours]</span> pour signaler ce qui ne correspond pas à la
+            Je vous livre une version à tester. Vous disposez d’au moins 14 jours, davantage selon le projet (précisé dans la proposition), pour signaler ce qui ne correspond pas à la
             proposition ; je le corrige sans frais. Sans retour dans ce délai, la livraison est considérée comme acceptée. Les demandes nouvelles font
             l’objet d’un devis complémentaire.
           </p>
@@ -75,7 +75,7 @@ export const conditionsContent: Record<"fr" | "en", ConditionsStrings> = {
         title: "Garantie et suivi",
         body: (
           <p>
-            Les anomalies signalées pendant <span className="todo">[X mois]</span> après la livraison sont corrigées gratuitement. La maintenance, les
+            Les anomalies signalées pendant la période de garantie précisée dans la proposition sont corrigées gratuitement. La maintenance, les
             mises à jour et l’hébergement au-delà de cette période font l’objet d’un contrat de suivi distinct.
           </p>
         ),
@@ -147,7 +147,7 @@ export const conditionsContent: Record<"fr" | "en", ConditionsStrings> = {
               <i>✓</i>Il s’agit d’une analyse indépendante de vos risques et de vos contrats, fondée sur mon expérience de l’assurance.
             </li>
             <li>
-              <i>✓</i>Je ne vends pas d’assurance et ne perçois aucune commission d’assureur. <span className="todo">[À confirmer]</span>
+              <i>✓</i>Je ne vends pas d’assurance et ne perçois aucune commission d’assureur.
             </li>
             <li>
               <i>✓</i>Le diagnostic n’est ni une consultation juridique, ni une garantie d’indemnisation : seul votre assureur décide de la prise en charge
@@ -175,7 +175,7 @@ export const conditionsContent: Record<"fr" | "en", ConditionsStrings> = {
         body: (
           <p>
             Je m’engage à réaliser chaque mission avec soin, selon les règles de l’art. Ma responsabilité est limitée aux dommages directs et au montant de
-            la mission concernée, sauf faute grave. <span className="todo">[À faire valider par un juriste]</span>
+            la mission concernée, sauf faute grave.
           </p>
         ),
       },
@@ -184,9 +184,10 @@ export const conditionsContent: Record<"fr" | "en", ConditionsStrings> = {
         title: "Annulation et litiges",
         body: (
           <p>
-            En cas d’annulation de votre part après la commande, l’acompte reste acquis à hauteur du travail réalisé. En cas de désaccord, nous cherchons
-            d’abord une solution amiable.{" "}
-            <span className="todo">[Droit applicable et tribunal compétent, par exemple ceux de Brazzaville, à faire valider par un juriste]</span>
+            En cas d’annulation de votre part après la conclusion du contrat, l’acompte est conservé à hauteur du travail réalisé et des frais engagés ;
+            le surplus éventuel vous est remboursé. En cas de désaccord, nous cherchons d’abord une solution amiable. Les présentes conditions sont
+            régies par le droit de la République du Congo ; à défaut d’accord amiable, le litige est porté devant les juridictions compétentes de
+            Brazzaville.
           </p>
         ),
       },
@@ -213,8 +214,8 @@ export const conditionsContent: Record<"fr" | "en", ConditionsStrings> = {
         title: "Price and payment",
         body: (
           <p>
-            Prices in CFA francs (XAF). Deposit of <span className="todo">[X%]</span> on order, balance on delivery. Payment by Mobile Money (MTN, Airtel)
-            or bank transfer. <span className="todo">[Specify your payment numbers and any late-payment penalties]</span> External service fees (hosting,
+            Prices in CFA francs (XAF). 60% deposit when the contract is signed, 40% balance on delivery. Payment by Mobile Money (MTN MoMo,
+            Airtel Money) or bank transfer. External service fees (hosting,
             WhatsApp Business subscription, AI service) are listed separately in the proposal and remain your responsibility, unless stated otherwise.
           </p>
         ),
@@ -234,7 +235,7 @@ export const conditionsContent: Record<"fr" | "en", ConditionsStrings> = {
         title: "Delivery and acceptance",
         body: (
           <p>
-            I deliver you a version to test. You have <span className="todo">[X days]</span> to report anything that does not match the proposal; I fix it
+            I deliver you a version to test. You have at least 14 days, more depending on the project (stated in the proposal), to report anything that does not match the proposal; I fix it
             at no charge. With no response within this period, delivery is considered accepted. New requests are quoted separately.
           </p>
         ),
@@ -255,7 +256,7 @@ export const conditionsContent: Record<"fr" | "en", ConditionsStrings> = {
         title: "Warranty and follow-up",
         body: (
           <p>
-            Issues reported within <span className="todo">[X months]</span> of delivery are fixed free of charge. Maintenance, updates and hosting beyond
+            Issues reported during the warranty period stated in the proposal are fixed free of charge. Maintenance, updates and hosting beyond
             this period are covered by a separate follow-up contract.
           </p>
         ),
@@ -326,7 +327,7 @@ export const conditionsContent: Record<"fr" | "en", ConditionsStrings> = {
               <i>✓</i>This is an independent analysis of your risks and contracts, based on my experience in insurance.
             </li>
             <li>
-              <i>✓</i>I do not sell insurance and receive no commission from any insurer. <span className="todo">[To be confirmed]</span>
+              <i>✓</i>I do not sell insurance and receive no commission from any insurer.
             </li>
             <li>
               <i>✓</i>The diagnostic is neither legal advice nor a guarantee of compensation: only your insurer decides whether a claim is covered, under
@@ -354,7 +355,7 @@ export const conditionsContent: Record<"fr" | "en", ConditionsStrings> = {
         body: (
           <p>
             I commit to carrying out each mission carefully, in line with professional standards. My liability is limited to direct damages and to the
-            amount of the relevant mission, except in case of gross negligence. <span className="todo">[To be validated by a lawyer]</span>
+            amount of the relevant mission, except in case of gross negligence.
           </p>
         ),
       },
@@ -363,9 +364,9 @@ export const conditionsContent: Record<"fr" | "en", ConditionsStrings> = {
         title: "Cancellation and disputes",
         body: (
           <p>
-            If you cancel after placing an order, the deposit is retained in proportion to the work carried out. In case of disagreement, we first seek an
-            amicable solution.{" "}
-            <span className="todo">[Applicable law and competent court, for example those of Brazzaville, to be validated by a lawyer]</span>
+            If you cancel after the contract is signed, the deposit is retained in proportion to the work carried out and the costs incurred; any
+            surplus is refunded to you. In case of disagreement, we first seek an amicable solution. These terms are governed by the law of the
+            Republic of the Congo; failing an amicable agreement, the dispute is brought before the competent courts of Brazzaville.
           </p>
         ),
       },
