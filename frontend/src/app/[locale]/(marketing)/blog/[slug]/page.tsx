@@ -27,7 +27,8 @@ export async function generateMetadata({
   const article = await getArticleBySlug(slug, locale);
   if (!article) return {};
 
-  const description = getArticleExcerpt(article.content);
+  // Chapô du back-office (rédigé pour ça) ; à défaut, extrait du contenu.
+  const description = article.summary ?? getArticleExcerpt(article.content);
   const image = article.media[0] ? getMediaUrl(article.media[0].filePath) : `${SITE_URL}/${locale}/opengraph-image`;
 
   // Canonical et hreflang propres à l'article (cf. offres/[slug]).
@@ -66,12 +67,15 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
 
   const image = article.media[0] ? getMediaUrl(article.media[0].filePath) : undefined;
   const url = `${SITE_URL}${getPathname({ locale, href: { pathname: "/blog/[slug]", params: { slug: article.slug } } })}`;
+  // Date réelle du back-office ; une valeur illisible est ignorée (aucune date inventée).
+  const publishedAt = article.publishedAt && !Number.isNaN(Date.parse(article.publishedAt)) ? article.publishedAt : null;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: article.title,
-    description: getArticleExcerpt(article.content),
+    description: article.summary ?? getArticleExcerpt(article.content),
     image: image ? [image] : undefined,
+    datePublished: publishedAt ?? undefined,
     author: { "@type": "Person", name: siteConfig.name },
     keywords: article.tags.length ? article.tags.map((t) => t.name).join(", ") : undefined,
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
@@ -81,10 +85,7 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }} />
-      {/* Pas de date de publication exposée par l'API aujourd'hui (Article
-          n'a pas de champ publishedAt côté back-office) : aucune date
-          inventée, le bloc date du gabarit reste simplement masqué. */}
-      <ArticleDetail locale={locale} article={article} articles={articles} publishedAt={null} />
+      <ArticleDetail locale={locale} article={article} articles={articles} publishedAt={publishedAt} />
     </>
   );
 }

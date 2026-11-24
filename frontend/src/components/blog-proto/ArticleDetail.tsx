@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { Link, getPathname } from "@/i18n/navigation";
 import type { Article } from "@/lib/types";
 import { getAboutContent } from "@/lib/api/about-content";
+import { getOffers } from "@/lib/api/offers";
+import { formatFcfa } from "@/lib/format/fcfa";
 import { getArticleExcerpt, getReadingTimeMinutes, sanitizeArticleHtml } from "@/lib/sanitize";
 import { splitArticleSections } from "@/lib/articleToc";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -19,12 +21,9 @@ import { AskAssistantRow } from "./AskAssistantRow";
 /**
  * Fiche d'un article — markup du prototype (`.artp2 .arh .arhg .agrid
  * .amain .abody2 .ase .aend .aauth2 .ashare2 .aside .atoc .aq .amore`),
- * alimentée par l'article du back-office : sommaire et ancres dérivés des
- * vrais titres H2 du contenu, date et temps de lecture réels. Le bloc
- * « offre liée » du prototype (`.aoff`) n'a pas d'équivalent dans le modèle
- * de données (Article ne porte aucune relation vers Offer) : plutôt que de
- * deviner un lien par rapprochement de texte, il n'est pas affiché — à
- * ajouter si un champ dédié est un jour créé côté back-office.
+ * alimentée par l'article du back-office : chapô, sommaire et ancres dérivés
+ * des vrais titres H2 du contenu, date et temps de lecture réels, offre liée
+ * (`.aoff`, choisie au back-office et affichée seulement si publiée).
  */
 const dateFormatter = (locale: string) => new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", { dateStyle: "long" });
 
@@ -40,12 +39,17 @@ export async function ArticleDetail({
   /** ISO 8601, quand le back-office l'expose ; sinon aucune date n'est affichée (pas de date inventée). */
   publishedAt: string | null;
 }) {
-  const [t, tc, tf, about] = await Promise.all([
+  const [t, tc, tf, th, about, offers] = await Promise.all([
     getTranslations({ locale, namespace: "blogPage" }),
     getTranslations({ locale, namespace: "catalog" }),
     getTranslations({ locale, namespace: "landing.footer" }),
+    getTranslations({ locale, namespace: "landing.hero" }),
     getAboutContent(locale),
+    article.relatedOfferSlug ? getOffers(locale) : Promise.resolve([]),
   ]);
+  // Offre choisie au back-office ; seules les offres publiées sont listées
+  // (getOffers), une offre dépubliée n'apparaît donc jamais.
+  const offer = article.relatedOfferSlug ? (offers.find((o) => o.slug === article.relatedOfferSlug) ?? null) : null;
 
   const minutes = getReadingTimeMinutes(article.content);
   const { introHtml, sections } = splitArticleSections(sanitizeArticleHtml(article.content));
@@ -69,7 +73,7 @@ export async function ArticleDetail({
               </p>
               {article.tags.length > 0 && <span className="achip">{articleLabel(article)}</span>}
               <h1>{article.title}</h1>
-              <p className="ald2">{getArticleExcerpt(article.content, 220)}</p>
+              <p className="ald2">{article.summary ?? getArticleExcerpt(article.content, 220)}</p>
               <div className="ameta2">
                 <span className="avs">
                   {about?.profileImagePath ? (
@@ -159,6 +163,26 @@ export async function ArticleDetail({
 
           <aside className="aside" aria-label={t("toc")}>
             <ArticleToc sections={sections} minutes={minutes} />
+            {offer && (
+              <Link className="aoff" href={{ pathname: "/offres/[slug]", params: { slug: offer.slug } }}>
+                <span className="kk">{t("offerKick")}</span>
+                <b>{offer.title}</b>
+                <p>{offer.cardText}</p>
+                <span className="aofm">
+                  <span>
+                    <small>{offer.priceOnce ? th("priceOnce") : th("priceFrom")}</small>
+                    {formatFcfa(offer.price, locale)}
+                  </span>
+                  <span>
+                    <small>{t("offerDelay")}</small>
+                    {offer.delay}
+                  </span>
+                </span>
+                <span className="b b-p sm">
+                  {t("offerCta")} <ProtoIcon name="ar" />
+                </span>
+              </Link>
+            )}
             <div className="aq">
               <b>{t("askSideTitle")}</b>
               <p>{t("askSideText")}</p>
@@ -183,7 +207,7 @@ export async function ArticleDetail({
                     <div>
                       {a.tags.length > 0 && <span className="dom">{a.tags.map((tg) => tg.name).join(" · ")}</span>}
                       <h3>{a.title}</h3>
-                      <p>{getArticleExcerpt(a.content, 140)}</p>
+                      <p>{a.summary ?? getArticleExcerpt(a.content, 140)}</p>
                     </div>
                   </Link>
                 ))}

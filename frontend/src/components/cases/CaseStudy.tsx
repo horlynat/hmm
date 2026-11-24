@@ -13,11 +13,12 @@ import { ProjectImage } from "@/components/landing/SiteHome";
 
 /**
  * Étude de cas d'une réalisation — markup du prototype (pCase : `.ph.cx .cxg
- * .device .brief .facts4 .story .chap .road .liv .gal .chips .same .nxp
- * .mbar`), alimentée par la fiche projet du back-office (ProjectInfo) :
- * résultats chiffrés -> repères, objectifs -> démarche, défis -> livrables,
- * technologies, médias -> galerie. Chaque bloc sans donnée est masqué ; aucun
- * emplacement « capture à venir » n'est publié.
+ * .res .device .brief .br3 .facts4 .story .chap .road .liv .gal .disc .chips
+ * .same .nxp .mbar`), alimentée par la fiche projet du back-office
+ * (ProjectInfo) : résultat, bref en trois temps, repères (rôle + résultats
+ * chiffrés), point de départ, démarche, livrables, galerie légendée, note
+ * « projet discret », technologies. Chaque bloc sans donnée est masqué ; les
+ * fiches antérieures au récit retombent sur description, objectifs et défis.
  */
 export function httpUrl(value: string | null): string | null {
   if (!value) return null;
@@ -50,9 +51,11 @@ export async function CaseStudy({
     ...(info?.role ? [{ label: t("role"), value: info.role }] : []),
     ...(info?.results ?? []).map((r) => ({ label: r.label, value: r.value ?? "" })),
   ].slice(0, 4);
-  const objectives = info?.objectives ?? [];
+  const steps: { title: string; text: string | null }[] =
+    info && info.steps.length > 0 ? info.steps : (info?.objectives ?? []).map((o) => ({ title: o, text: null }));
+  const deliverables = info && info.deliverables.length > 0 ? info.deliverables : (info?.challenges ?? []).map((c) => c.solution).filter(Boolean);
+  const captions = info?.galleryCaptions ?? [];
   const stack = info?.techStack ?? [];
-  const solutions = (info?.challenges ?? []).map((c) => c.solution).filter(Boolean);
   const gallery = (p.media ?? []).filter((m) => m.type === "image" || (m.mimeType ?? "").startsWith("image/"));
   const html = sanitizeArticleHtml(p.description);
   // Liens saisis au back-office : seulement http(s), jamais javascript:/data:.
@@ -71,6 +74,7 @@ export async function CaseStudy({
             <div>
               <span className="tag">{tp(`status.${p.status}`)}</span>
               <h1>{p.title}</h1>
+              {info?.result && <p className="res">{info.result}</p>}
               <p>{getExcerpt(p.description, 320)}</p>
               {(link || repo) && (
                 <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "20px" }}>
@@ -94,62 +98,119 @@ export async function CaseStudy({
         </div>
       </section>
 
-      {facts.length > 0 && (
+      {(facts.length > 0 || (info?.brief.length ?? 0) > 0) && (
         <section className="brief">
           <div className="w">
-            <dl className="facts4" style={{ marginTop: 0 }}>
-              {facts.map((f) => (
-                <div key={f.label + f.value}>
-                  <dt>{f.label}</dt>
-                  <dd>{f.value}</dd>
-                </div>
-              ))}
-            </dl>
+            {info && info.brief.length > 0 && (
+              <div className="br3">
+                {info.brief.slice(0, 3).map((b, k) => (
+                  <div key={b.title}>
+                    <span className="n">{k + 1}</span>
+                    <b>{b.title}</b>
+                    {b.text && <p>{b.text}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {facts.length > 0 && (
+              <dl className="facts4" style={info && info.brief.length > 0 ? undefined : { marginTop: 0 }}>
+                {facts.map((f) => (
+                  <div key={f.label + f.value}>
+                    <dt>{f.label}</dt>
+                    <dd>{f.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
           </div>
         </section>
       )}
 
       <section className="sec">
         <div className="w story">
-          {html && (
+          {info?.context || info?.stake ? (
             <div className="chap">
               <span className="kick">{t("startKick")}</span>
               <h2>{t("startTitle")}</h2>
-              {/* HTML du back-office, assaini (liste blanche) avant rendu. */}
-              <div className="t-rich" dangerouslySetInnerHTML={{ __html: html }} />
+              {info.context && <p className="t">{info.context}</p>}
+              {info.stake && <p className="t">{info.stake}</p>}
             </div>
+          ) : (
+            html && (
+              <div className="chap">
+                <span className="kick">{t("startKick")}</span>
+                <h2>{t("startTitle")}</h2>
+                {/* HTML du back-office, assaini (liste blanche) avant rendu. */}
+                <div className="t-rich" dangerouslySetInnerHTML={{ __html: html }} />
+              </div>
+            )
           )}
 
-          {objectives.length > 0 && (
+          {steps.length > 0 && (
             <div className="chap">
               <span className="kick">{t("stepsKick")}</span>
               <h2>{t("stepsTitle")}</h2>
               <ol className="road">
-                {objectives.map((o) => (
-                  <li key={o}>
-                    <b>{o}</b>
+                {steps.map((s) => (
+                  <li key={s.title}>
+                    <b>{s.title}</b>
+                    {s.text && <p>{s.text}</p>}
                   </li>
                 ))}
               </ol>
             </div>
           )}
 
-          {solutions.length > 0 && (
+          {(info?.solution || deliverables.length > 0) && (
             <div className="chap">
               <span className="kick">{t("resultKick")}</span>
               <h2>{t("resultTitle")}</h2>
-              <div className="liv">
-                {solutions.map((s) => (
-                  <div key={s}>
-                    <ProtoIcon name="ok" />
-                    <span>{s}</span>
-                  </div>
-                ))}
-              </div>
+              {info?.solution && <p className="t">{info.solution}</p>}
+              {deliverables.length > 0 && (
+                <div className="liv">
+                  {deliverables.map((s) => (
+                    <div key={s}>
+                      <ProtoIcon name="ok" />
+                      <span>{s}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {gallery.length > 0 && (
+          {captions.length > 0 ? (
+            // Galerie légendée (prototype) : image du projet si elle existe, sinon
+            // l'illustration du projet pour la première et « Capture réelle à
+            // venir » pour les suivantes.
+            <div className="chap">
+              <span className="kick">{t("galleryKick")}</span>
+              <h2>{t("galleryTitle")}</h2>
+              <div className="gal">
+                {captions.map((caption, k) => {
+                  const m = gallery[k];
+                  return (
+                    <figure key={`${k}-${caption}`}>
+                      {m ? (
+                        <div className="gim">
+                          <Image src={getMediaUrl(m.filePath)} alt={m.altText ?? ""} fill sizes="(max-width: 900px) 100vw, 520px" />
+                        </div>
+                      ) : k === 0 ? (
+                        <div className="gim">
+                          <ProjectImage project={p} index={0} sizes="(max-width: 900px) 100vw, 520px" />
+                        </div>
+                      ) : (
+                        <div className="gim ph2">
+                          <span>{t("galleryPending")}</span>
+                        </div>
+                      )}
+                      <figcaption>{caption}</figcaption>
+                    </figure>
+                  );
+                })}
+              </div>
+            </div>
+          ) : gallery.length > 0 && (
             <div className="chap">
               <span className="kick">{t("galleryKick")}</span>
               <h2>{t("galleryTitle")}</h2>
@@ -162,6 +223,16 @@ export async function CaseStudy({
                     {m.altText && <figcaption>{m.altText}</figcaption>}
                   </figure>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {info?.discreet && (
+            <div className="disc">
+              <ProtoIcon name="lock" />
+              <div>
+                <b>{t("discreetTitle")}</b>
+                <p>{t("discreetText")}</p>
               </div>
             </div>
           )}

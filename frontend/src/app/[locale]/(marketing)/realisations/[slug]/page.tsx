@@ -91,7 +91,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const index = ordered.findIndex((p) => p.slug === project.slug);
   const next = ordered.length > 1 ? ordered[(index + 1) % ordered.length] : null;
   // Offre dont cette réalisation est la preuve (back-office › Offres › réalisation liée).
-  const offer = offers.find((o) => o.proofProjectSlug === project.slug) ?? null;
+  // Offre choisie au back-office pour cette étude de cas ; à défaut, l'offre
+  // qui cite ce projet en preuve. Seules les offres publiées sont listées.
+  const offer =
+    (project.info?.relatedOfferSlug ? offers.find((o) => o.slug === project.info?.relatedOfferSlug) : undefined) ??
+    offers.find((o) => o.proofProjectSlug === project.slug) ??
+    null;
 
   const image = project.info?.coverImage ? getMediaUrl(project.info.coverImage.filePath) : undefined;
   const jsonLd = {

@@ -17,7 +17,8 @@ export async function SiteBlog({ locale }: { locale: string }) {
     getTranslations({ locale, namespace: "catalog" }),
     getArticles(locale),
   ]);
-  const excerpts = new Map(articles.map((a) => [a.slug, getArticleExcerpt(a.content, 180)]));
+  // Chapô du back-office ; à défaut, extrait du contenu.
+  const excerpts = new Map(articles.map((a) => [a.slug, a.summary ?? getArticleExcerpt(a.content, 180)]));
 
   return (
     <BlogFilter

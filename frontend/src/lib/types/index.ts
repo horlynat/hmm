@@ -45,6 +45,17 @@ export interface ProjectInfo {
   repoUrl: string | null;
   coverImage: Media | null;
   architectureDiagram: Media | null;
+  /** Récit de l'étude de cas (prototype pCase) — chaque bloc est facultatif. */
+  result: string | null;
+  brief: { title: string; text: string | null }[];
+  context: string | null;
+  stake: string | null;
+  steps: { title: string; text: string | null }[];
+  solution: string | null;
+  deliverables: string[];
+  galleryCaptions: string[];
+  discreet: boolean;
+  relatedOfferSlug: string | null;
 }
 
 export interface Project {
@@ -68,6 +79,11 @@ export interface Article {
   content: string;
   tags: Tag[];
   media: Media[];
+  /** Chapô (prototype `.ald2`) ; null -> extrait du contenu. */
+  summary: string | null;
+  relatedOfferSlug: string | null;
+  /** ISO 8601. */
+  publishedAt: string | null;
 }
 
 export interface SkillCategory {
@@ -230,6 +246,9 @@ export interface AboutContent {
   why3Desc: string;
   why4Title: string;
   why4Desc: string;
+  /** 5e différenciateur, facultatif (vide -> non affiché). */
+  why5Title: string;
+  why5Desc: string;
   beyondLanguages: string[];
   beyondInterests: string[];
   ctaTitle: string;

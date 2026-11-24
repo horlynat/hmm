@@ -6,9 +6,13 @@ import type { Article } from "@/lib/types";
 // garde le défaut de client.ts (1h) plutôt que le filet de sécurité de 24h.
 const ARTICLES_REVALIDATE_SECONDS = 60 * 60;
 
-interface RawArticle extends Article {
+interface RawArticle extends Omit<Article, "summary" | "relatedOfferSlug" | "publishedAt"> {
   titleEn?: string | null;
   contentEn?: string | null;
+  summary?: string | null;
+  summaryEn?: string | null;
+  relatedOfferSlug?: string | null;
+  publishedAt?: string | null;
 }
 
 /** `locale` explicite — cf. commentaire dans projects.ts (bug de mémoïsation de `getLocale()`). */
@@ -18,10 +22,13 @@ export async function getArticles(locale: string): Promise<Article[]> {
     revalidate: ARTICLES_REVALIDATE_SECONDS,
   });
   return extractCollection<RawArticle>(payload)
-    .map(({ titleEn, contentEn, ...article }) => ({
+    .map(({ titleEn, contentEn, summaryEn, ...article }) => ({
       ...article,
       title: pickLocalized(article.title, titleEn, locale),
       content: pickLocalized(article.content, contentEn, locale),
+      summary: pickLocalized(article.summary ?? null, summaryEn, locale),
+      relatedOfferSlug: article.relatedOfferSlug ?? null,
+      publishedAt: article.publishedAt ?? null,
     }))
     .sort((a, b) => b.id - a.id);
 }

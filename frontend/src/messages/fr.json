@@ -2313,7 +2313,10 @@
     "ctaText": "Décrivez-moi votre besoin : je vous dis comment je l’aborderais, et sous quel délai.",
     "mbarSmall": "Un projet semblable ?",
     "mbarBig": "Parlons-en",
-    "mbarMessage": "Bonjour Horlynat, j'ai un projet semblable à « {title} »."
+    "mbarMessage": "Bonjour Horlynat, j'ai un projet semblable à « {title} ».",
+    "galleryPending": "Capture réelle à venir",
+    "discreetTitle": "Pourquoi certains détails ne sont pas publiés",
+    "discreetText": "Cette plateforme est en production. Par principe de sécurité, son architecture et ses mesures de protection ne sont pas décrites publiquement. Je les présente volontiers lors d’un échange confidentiel."
   },
   "aboutPage": {
     "crumb": "À propos",
@@ -2509,7 +2512,10 @@
       "ia": "IA"
     },
     "keyTakeaway": "À retenir",
-    "tocMinutes": "{minutes} min"
+    "tocMinutes": "{minutes} min",
+    "offerKick": "L’offre liée à ce sujet",
+    "offerDelay": "Délai",
+    "offerCta": "Voir l’offre"
   },
   "contactPage": {
     "metaTitle": "Contact",

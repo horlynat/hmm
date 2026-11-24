@@ -13,7 +13,23 @@ interface RawProjectInfo extends ProjectInfo {
   techStackEn?: ProjectInfo["techStack"] | null;
   challengesEn?: ProjectInfo["challenges"] | null;
   resultsEn?: ProjectInfo["results"] | null;
+  resultEn?: string | null;
+  contextEn?: string | null;
+  stakeEn?: string | null;
+  solutionEn?: string | null;
+  briefEn?: ProjectInfo["brief"] | null;
+  stepsEn?: ProjectInfo["steps"] | null;
+  deliverablesEn?: string[] | null;
+  galleryCaptionsEn?: string[] | null;
 }
+
+/** Champs ajoutés après coup : absents (ancienne API) ou null en base. */
+type RawStory = Partial<Pick<ProjectInfo, "result" | "context" | "stake" | "solution" | "relatedOfferSlug" | "discreet">> & {
+  brief?: ProjectInfo["brief"] | null;
+  steps?: ProjectInfo["steps"] | null;
+  deliverables?: string[] | null;
+  galleryCaptions?: string[] | null;
+};
 
 interface RawProject extends Omit<Project, "info"> {
   titleEn?: string | null;
@@ -23,9 +39,35 @@ interface RawProject extends Omit<Project, "info"> {
 
 function localizeProjectInfo(info: RawProjectInfo | null, locale: string): ProjectInfo | null {
   if (!info) return null;
-  const { roleEn, objectivesEn, techStackEn, challengesEn, resultsEn, ...rest } = info;
+  const {
+    roleEn,
+    objectivesEn,
+    techStackEn,
+    challengesEn,
+    resultsEn,
+    resultEn,
+    contextEn,
+    stakeEn,
+    solutionEn,
+    briefEn,
+    stepsEn,
+    deliverablesEn,
+    galleryCaptionsEn,
+    ...rest
+  } = info;
+  const story = info as RawStory;
   return {
     ...rest,
+    result: pickLocalized(story.result ?? null, resultEn, locale),
+    context: pickLocalized(story.context ?? null, contextEn, locale),
+    stake: pickLocalized(story.stake ?? null, stakeEn, locale),
+    solution: pickLocalized(story.solution ?? null, solutionEn, locale),
+    brief: pickLocalizedList(story.brief ?? [], briefEn, locale),
+    steps: pickLocalizedList(story.steps ?? [], stepsEn, locale),
+    deliverables: pickLocalizedList(story.deliverables ?? [], deliverablesEn, locale),
+    galleryCaptions: pickLocalizedList(story.galleryCaptions ?? [], galleryCaptionsEn, locale),
+    discreet: story.discreet === true,
+    relatedOfferSlug: story.relatedOfferSlug ?? null,
     role: pickLocalized(info.role, roleEn, locale),
     objectives: pickLocalizedList(info.objectives, objectivesEn, locale),
     techStack: pickLocalizedList(info.techStack, techStackEn, locale),

@@ -9,7 +9,7 @@ import type { AboutContent, AboutJourneyStat } from "@/lib/types";
 const ABOUT_CONTENT_REVALIDATE_SECONDS = 60 * 60 * 24;
 
 interface RawAboutContent
-  extends Omit<AboutContent, "visionPillar" | "missionPillar" | "ambitionPillar" | "horizonMidText" | "learningText" | "journeyStats"> {
+  extends Omit<AboutContent, "visionPillar" | "missionPillar" | "ambitionPillar" | "horizonMidText" | "learningText" | "journeyStats" | "why5Title" | "why5Desc"> {
   heroEyebrowEn?: string | null;
   heroTitleEn?: string | null;
   heroTitleAccentEn?: string | null;
@@ -42,6 +42,10 @@ interface RawAboutContent
   ctaSubEn?: string | null;
   // Refonte R5 : optionnels ici aussi — un backend antérieur à la migration
   // (déploiements séparés) ne les renvoie pas encore.
+  why5Title?: string | null;
+  why5TitleEn?: string | null;
+  why5Desc?: string | null;
+  why5DescEn?: string | null;
   visionPillar?: string | null;
   visionPillarEn?: string | null;
   missionPillar?: string | null;
@@ -109,6 +113,8 @@ export async function getAboutContent(locale: string): Promise<AboutContent | nu
     why3Desc: pickLocalized(raw.why3Desc, raw.why3DescEn, locale),
     why4Title: pickLocalized(raw.why4Title, raw.why4TitleEn, locale),
     why4Desc: pickLocalized(raw.why4Desc, raw.why4DescEn, locale),
+    why5Title: pickLocalized(raw.why5Title ?? "", raw.why5TitleEn, locale),
+    why5Desc: pickLocalized(raw.why5Desc ?? "", raw.why5DescEn, locale),
     beyondLanguages: pickLocalizedList(raw.beyondLanguages, raw.beyondLanguagesEn, locale),
     beyondInterests: pickLocalizedList(raw.beyondInterests, raw.beyondInterestsEn, locale),
     ctaTitle: pickLocalized(raw.ctaTitle, raw.ctaTitleEn, locale),

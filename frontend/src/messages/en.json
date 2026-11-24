@@ -2313,7 +2313,10 @@
     "ctaText": "Tell me about your need: I will explain how I would approach it, and how long it would take.",
     "mbarSmall": "A similar project?",
     "mbarBig": "Let’s talk",
-    "mbarMessage": "Hello Horlynat, I have a project similar to “{title}”."
+    "mbarMessage": "Hello Horlynat, I have a project similar to “{title}”.",
+    "galleryPending": "Real screenshot coming soon",
+    "discreetTitle": "Why some details are not published",
+    "discreetText": "This platform is in production. As a security principle, its architecture and protective measures are not described publicly. I am happy to present them in a confidential conversation."
   },
   "aboutPage": {
     "crumb": "About",
@@ -2509,7 +2512,10 @@
       "ia": "AI"
     },
     "keyTakeaway": "Key takeaway",
-    "tocMinutes": "{minutes} min"
+    "tocMinutes": "{minutes} min",
+    "offerKick": "The offer related to this topic",
+    "offerDelay": "Lead time",
+    "offerCta": "See the offer"
   },
   "contactPage": {
     "metaTitle": "Contact",

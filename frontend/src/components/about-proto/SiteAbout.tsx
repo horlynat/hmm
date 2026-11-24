@@ -73,6 +73,8 @@ export async function SiteAbout({ locale }: { locale: string }) {
         [about.why2Title, about.why2Desc],
         [about.why3Title, about.why3Desc],
         [about.why4Title, about.why4Desc],
+        // 5e point du prototype, facultatif au back-office (filtré si vide).
+        [about.why5Title, about.why5Desc],
       ].filter(([b]) => b)
     : [];
   const sortedExperiences = [...experiences].sort((a, b) => b.startDate.localeCompare(a.startDate));

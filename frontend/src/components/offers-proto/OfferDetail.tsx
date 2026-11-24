@@ -325,7 +325,8 @@ export async function OfferDetail({
                   <div>
                     <span className="tag">{tp(`status.${proof.status}`)}</span>
                     <h3>{proof.title}</h3>
-                    <p className="mut">{getExcerpt(proof.description, 160)}</p>
+                    {/* Résultat en une phrase (prototype PX.result) ; à défaut, extrait de la description. */}
+                    <p className="mut">{proof.info?.result ?? getExcerpt(proof.description, 160)}</p>
                     <span className="lnk">
                       {t("proofSee")} <ProtoIcon name="ar" />
                     </span>
