@@ -77,6 +77,10 @@ final class AiAssistantIngestionService
 
         $sourceText = $this->extractSourceText($entityType, $entity);
         if ('' === trim($sourceText)) {
+            // Plus rien à dire : l'ancien chunk ne doit pas survivre au contenu vidé.
+            $this->chunkRepository->deleteByEntity($entityType, $entityId);
+            $this->entityManager->flush();
+
             return;
         }
 

@@ -130,6 +130,48 @@ final class AiAssistantIngestionVisibilityTest extends KernelTestCase
         self::assertCount(1, $this->chunks()->findByEntity('Project', (int) $project->getId()));
     }
 
+    public function testDeletedProjectLeavesTheAssistant(): void
+    {
+        $project = $this->project(ProjectStatusEnum::IN_PROGRESS);
+        $id = (int) $project->getId();
+        $this->service()->ingest('Project', $id);
+        self::assertCount(1, $this->chunks()->findByEntity('Project', $id));
+
+        /** @var \Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport $transport */
+        $transport = static::getContainer()->get('messenger.transport.async');
+        $transport->reset();
+
+        // Suppression réelle (comme AdminProjectController::delete) : le
+        // subscriber doit mettre en file une réingestion de ce projet.
+        $this->created = array_values(array_filter($this->created, static fn (object $e): bool => $e !== $project));
+        $this->em->remove($project);
+        $this->em->flush();
+
+        $queued = array_filter(
+            $transport->getSent(),
+            static fn (\Symfony\Component\Messenger\Envelope $e): bool => $e->getMessage() instanceof \App\Message\AiAssistantIngestMessage
+                && 'Project' === $e->getMessage()->entityType && $id === $e->getMessage()->entityId,
+        );
+        self::assertCount(1, $queued, 'La suppression doit déclencher la purge des chunks.');
+
+        $this->service()->ingest('Project', $id);
+        self::assertSame([], $this->chunks()->findByEntity('Project', $id));
+    }
+
+    public function testEmptiedContentLeavesTheAssistant(): void
+    {
+        $project = $this->project(ProjectStatusEnum::IN_PROGRESS);
+        $id = (int) $project->getId();
+        $this->service()->ingest('Project', $id);
+        self::assertCount(1, $this->chunks()->findByEntity('Project', $id));
+
+        $project->setTitle('')->setDescription('');
+        $this->em->flush();
+        $this->service()->ingest('Project', $id);
+
+        self::assertSame([], $this->chunks()->findByEntity('Project', $id));
+    }
+
     public function testProjectThatBecomesHiddenLeavesTheAssistant(): void
     {
         $project = $this->project(ProjectStatusEnum::COMPLETED);
