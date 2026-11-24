@@ -10,6 +10,7 @@ import { loginSchema, type LoginValues } from "@/lib/validation/schemas";
 import { FieldWrap } from "./FieldWrap";
 import { PasswordVisibilityToggle } from "./PasswordVisibilityToggle";
 import { ProtoIcon } from "@/components/proto/ProtoSvg";
+import { useFocusHeadingOnChange } from "@/lib/useFocusHeadingOnChange";
 
 /**
  * Panneau « Se connecter » (prototype `authBox()`, `L.tab==='in'`), étapes
@@ -69,9 +70,12 @@ export function LoginPanel({ onForgot }: { onForgot: () => void }) {
     );
   }
 
+  // Focus sur le titre du nouvel écran (formulaire -> succès…), cf. useFocusHeadingOnChange.
+  const focusRef = useFocusHeadingOnChange(challengeToken ? "2fa" : "login");
+
   if (challengeToken) {
     return (
-      <form className="auth" noValidate onSubmit={onSubmitTwoFactor}>
+      <form ref={focusRef} className="auth" noValidate onSubmit={onSubmitTwoFactor}>
         <h2 tabIndex={-1}>{t("twoFactorTitle")}</h2>
         <p className="mut">{t("twoFactorLede")}</p>
         <div className={twoFactorError ? "fl2 err" : "fl2"} id="f-otp">
@@ -110,7 +114,7 @@ export function LoginPanel({ onForgot }: { onForgot: () => void }) {
   }
 
   return (
-    <form className="auth" noValidate onSubmit={handleSubmit(onSubmit)}>
+    <form ref={focusRef} className="auth" noValidate onSubmit={handleSubmit(onSubmit)}>
       <h2 tabIndex={-1}>{t("loginTitle")}</h2>
       <p className="mut">{t("loginLede")}</p>
       <FieldWrap id="le" label={tl("emailLabel")} error={errors.email?.message}>

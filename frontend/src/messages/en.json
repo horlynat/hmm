@@ -2554,7 +2554,8 @@
     "quickSuccessText": "Thank you, I will reply within the day.",
     "quickConsent": "I agree that this information will be used to respond to my request, in accordance with the <privacy>privacy policy</privacy>.",
     "quickErrorConsent": "Check this box to send your request.",
-    "quickSubjectOther": "Other need"
+    "quickSubjectOther": "Other need",
+    "segLabel": "Type of request"
   },
   "authPage": {
     "title": "Your space, ",
@@ -2629,7 +2630,8 @@
     "resendLink": "Resend confirmation email",
     "nameRequired": "Enter your name.",
     "emailRequired": "Enter a valid email address.",
-    "codeRequired": "The code must have 6 digits."
+    "codeRequired": "The code must have 6 digits.",
+    "tabsLabel": "Sign in or create an account"
   },
   "notFoundPage": {
     "crumb": "Home",

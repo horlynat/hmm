@@ -11,6 +11,7 @@ import { mapActionError } from "@/lib/validation/errors";
 import { ProtoIcon } from "@/components/proto/ProtoSvg";
 import { FieldWrap } from "./FieldWrap";
 import { RhfPasswordField } from "./RhfPasswordField";
+import { useFocusHeadingOnChange } from "@/lib/useFocusHeadingOnChange";
 
 /** Formulaire client du prototype (`.g2 .fl2 .cons`), logique identique à `ClientForm`. */
 export function ClientSignupForm({ onChangeRole }: { onChangeRole: () => void }) {
@@ -46,9 +47,12 @@ export function ClientSignupForm({ onChangeRole }: { onChangeRole: () => void })
     }
   }
 
+  // Focus sur le titre du nouvel écran (formulaire -> succès…), cf. useFocusHeadingOnChange.
+  const focusRef = useFocusHeadingOnChange(status === "success");
+
   if (status === "success") {
     return (
-      <div className="auth" role="status">
+      <div ref={focusRef} className="auth" role="status">
         <span className="okb">
           <ProtoIcon name="ok" size={22} />
         </span>
@@ -59,7 +63,7 @@ export function ClientSignupForm({ onChangeRole }: { onChangeRole: () => void })
   }
 
   return (
-    <form className="auth" noValidate onSubmit={handleSubmit(onSubmit)}>
+    <form ref={focusRef} className="auth" noValidate onSubmit={handleSubmit(onSubmit)}>
       <button type="button" className="linkbtn back" onClick={onChangeRole}>
         <ProtoIcon name="al" />
         {t("changeRole")}

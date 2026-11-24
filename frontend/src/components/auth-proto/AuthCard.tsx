@@ -4,11 +4,14 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { whatsappLink } from "@/lib/whatsapp";
 import { siteConfig } from "@/config/site";
+import { useFocusHeadingOnChange } from "@/lib/useFocusHeadingOnChange";
+import { useTabKeyboard } from "@/lib/useTabKeyboard";
 import { LoginPanel } from "./LoginPanel";
 import { ForgotPanel } from "./ForgotPanel";
 import { RegisterPanel } from "./RegisterPanel";
 
 type Tab = "in" | "up";
+const TABS: Tab[] = ["in", "up"];
 
 /**
  * Carte d'authentification complète (prototype `pLogin()`/`authBox()` :
@@ -28,6 +31,11 @@ export function AuthCard({ initialTab, initialForgot }: { initialTab: Tab; initi
     setForgot(false);
     setRole(null);
   }
+
+  // Comme aRender() du prototype : onglet, mot de passe oublié, choix ou
+  // changement de profil -> focus sur le titre du nouvel écran.
+  const boxRef = useFocusHeadingOnChange(`${tab}|${forgot}|${role}`);
+  const { tabProps } = useTabKeyboard(TABS, tab);
 
   const showFreelanceSide = tab === "up" && role === "free";
   const points = showFreelanceSide ? (t.raw("freelancePoints") as [string, string][]) : (t.raw("clientPoints") as [string, string][]);
@@ -64,15 +72,15 @@ export function AuthCard({ initialTab, initialForgot }: { initialTab: Tab; initi
         </p>
       </div>
       <div className="acard">
-        <div className="atabs" role="tablist">
-          <button type="button" role="tab" aria-selected={tab === "in"} onClick={() => selectTab("in")}>
+        <div className="atabs" role="tablist" aria-label={t("tabsLabel")}>
+          <button type="button" role="tab" id="atab-in" aria-controls="abox" {...tabProps("in")} onClick={() => selectTab("in")}>
             {t("tabIn")}
           </button>
-          <button type="button" role="tab" aria-selected={tab === "up"} onClick={() => selectTab("up")}>
+          <button type="button" role="tab" id="atab-up" aria-controls="abox" {...tabProps("up")} onClick={() => selectTab("up")}>
             {t("tabUp")}
           </button>
         </div>
-        <div id="abox">
+        <div id="abox" ref={boxRef} role="tabpanel" aria-labelledby={`atab-${tab}`}>
           {tab === "in" ? (
             forgot ? (
               <ForgotPanel onBack={() => setForgot(false)} />

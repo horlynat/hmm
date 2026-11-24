@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { verifyEmailToken } from "@/lib/auth/actions";
 import { ProtoIcon } from "@/components/proto/ProtoSvg";
+import { useFocusHeadingOnChange } from "@/lib/useFocusHeadingOnChange";
 
 /** Consomme le token de vérification au montage — logique identique à `VerifyEmailStatus`. */
 export function VerifyEmailStatusPanel({ token }: { token: string }) {
@@ -27,9 +28,12 @@ export function VerifyEmailStatusPanel({ token }: { token: string }) {
     };
   }, [token]);
 
+  // Focus sur le titre du nouvel écran (formulaire -> succès…), cf. useFocusHeadingOnChange.
+  const focusRef = useFocusHeadingOnChange(status);
+
   if (status === "pending") {
     return (
-      <div className="auth" role="status">
+      <div ref={focusRef} className="auth" role="status">
         <h2 tabIndex={-1}>{t("confirmTitle")}</h2>
         <p className="mut">{t("verifying")}</p>
       </div>
@@ -38,7 +42,7 @@ export function VerifyEmailStatusPanel({ token }: { token: string }) {
 
   if (status === "success") {
     return (
-      <div className="auth" role="status">
+      <div ref={focusRef} className="auth" role="status">
         <span className="okb">
           <ProtoIcon name="ok" size={22} />
         </span>
@@ -52,7 +56,7 @@ export function VerifyEmailStatusPanel({ token }: { token: string }) {
   }
 
   return (
-    <div className="auth" role="alert">
+    <div ref={focusRef} className="auth" role="alert">
       <h2 tabIndex={-1}>{t("confirmTitle")}</h2>
       <p className="qerr" style={{ marginTop: 0 }}>
         {serverError || t("confirmError")}

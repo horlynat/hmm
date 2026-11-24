@@ -10,6 +10,7 @@ import { resetPasswordSchema, type ResetPasswordValues } from "@/lib/validation/
 import { ProtoIcon } from "@/components/proto/ProtoSvg";
 import { FieldWrap } from "./FieldWrap";
 import { RhfPasswordField } from "./RhfPasswordField";
+import { useFocusHeadingOnChange } from "@/lib/useFocusHeadingOnChange";
 
 /** Choix d'un nouveau mot de passe depuis le lien reçu par e-mail — logique identique à `ResetPasswordForm`. */
 export function ResetPasswordPanel({ token }: { token: string }) {
@@ -37,9 +38,12 @@ export function ResetPasswordPanel({ token }: { token: string }) {
     }
   }
 
+  // Focus sur le titre du nouvel écran (formulaire -> succès…), cf. useFocusHeadingOnChange.
+  const focusRef = useFocusHeadingOnChange(status === "success");
+
   if (status === "success") {
     return (
-      <div className="auth" role="status">
+      <div ref={focusRef} className="auth" role="status">
         <span className="okb">
           <ProtoIcon name="ok" size={22} />
         </span>
@@ -53,7 +57,7 @@ export function ResetPasswordPanel({ token }: { token: string }) {
   }
 
   return (
-    <form className="auth" noValidate onSubmit={handleSubmit(onSubmit)}>
+    <form ref={focusRef} className="auth" noValidate onSubmit={handleSubmit(onSubmit)}>
       <h2 tabIndex={-1}>{t("title")}</h2>
       <p className="mut">{t("subtitle")}</p>
       <RhfPasswordField id="rp" label={t("passwordLabel")} error={errors.password?.message} register={register} name="password" watched={password} withMeter />

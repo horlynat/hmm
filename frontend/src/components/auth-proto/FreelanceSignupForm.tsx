@@ -12,6 +12,7 @@ import { SPECIALTY_KEYS } from "@/lib/profileFields";
 import { ProtoIcon } from "@/components/proto/ProtoSvg";
 import { FieldWrap } from "./FieldWrap";
 import { RhfPasswordField } from "./RhfPasswordField";
+import { useFocusHeadingOnChange } from "@/lib/useFocusHeadingOnChange";
 
 const DISPO_KEYS = ["dispoImmediate", "dispo2Weeks", "dispo1Month", "dispoDiscuss"] as const;
 
@@ -77,9 +78,12 @@ export function FreelanceSignupForm({ onChangeRole }: { onChangeRole?: () => voi
     }
   }
 
+  // Focus sur le titre du nouvel écran (formulaire -> succès…), cf. useFocusHeadingOnChange.
+  const focusRef = useFocusHeadingOnChange(status === "success");
+
   if (status === "success") {
     return (
-      <div className="auth" role="status">
+      <div ref={focusRef} className="auth" role="status">
         <span className="okb">
           <ProtoIcon name="ok" size={22} />
         </span>
@@ -90,7 +94,7 @@ export function FreelanceSignupForm({ onChangeRole }: { onChangeRole?: () => voi
   }
 
   return (
-    <form className="auth" noValidate onSubmit={handleSubmit(onSubmit)}>
+    <form ref={focusRef} className="auth" noValidate onSubmit={handleSubmit(onSubmit)}>
       {onChangeRole && (
         <button type="button" className="linkbtn back" onClick={onChangeRole}>
           <ProtoIcon name="al" />

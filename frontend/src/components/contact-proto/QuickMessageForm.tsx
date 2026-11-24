@@ -7,6 +7,7 @@ import { submitContactMessage } from "@/actions/contact";
 import { isValidEmail } from "@/lib/quoteWizard/validators";
 import type { Offer } from "@/lib/types";
 import { ProtoIcon } from "@/components/proto/ProtoSvg";
+import { useFocusHeadingOnChange } from "@/lib/useFocusHeadingOnChange";
 
 /**
  * Onglet « Message rapide » (prototype `directForm()` : `.g2 .fl2 .fi .e
@@ -60,9 +61,12 @@ export function QuickMessageForm({ offers }: { offers: Offer[] }) {
     }
   }
 
+  // Focus sur le titre du nouvel écran (formulaire -> succès…), cf. useFocusHeadingOnChange.
+  const focusRef = useFocusHeadingOnChange(sent);
+
   if (sent) {
     return (
-      <div className="qdone" role="status">
+      <div ref={focusRef} className="qdone" role="status">
         <span className="okb">
           <ProtoIcon name="ok" size={22} />
         </span>
@@ -73,7 +77,7 @@ export function QuickMessageForm({ offers }: { offers: Offer[] }) {
   }
 
   return (
-    <form noValidate onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+    <form ref={focusRef} noValidate onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
       <div className="hp" aria-hidden="true">
         <label htmlFor="quick-hp">{t("honeypotLabel")}</label>
         <input id="quick-hp" name="website" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />

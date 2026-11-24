@@ -8,6 +8,7 @@ import { requestPasswordReset } from "@/lib/auth/actions";
 import { forgotPasswordSchema, type ForgotPasswordValues } from "@/lib/validation/schemas";
 import { ProtoIcon } from "@/components/proto/ProtoSvg";
 import { FieldWrap } from "./FieldWrap";
+import { useFocusHeadingOnChange } from "@/lib/useFocusHeadingOnChange";
 
 /** Panneau « Mot de passe oublié » (prototype `L.step===3/4`), logique identique à `ForgotPasswordForm`. */
 export function ForgotPanel({ onBack }: { onBack: () => void }) {
@@ -30,9 +31,12 @@ export function ForgotPanel({ onBack }: { onBack: () => void }) {
     else setServerError(result.error || tf("error"));
   }
 
+  // Focus sur le titre du nouvel écran (formulaire -> succès…), cf. useFocusHeadingOnChange.
+  const focusRef = useFocusHeadingOnChange(sent);
+
   if (sent) {
     return (
-      <div className="auth" role="status">
+      <div ref={focusRef} className="auth" role="status">
         <span className="okb">
           <ProtoIcon name="ok" size={22} />
         </span>
@@ -46,7 +50,7 @@ export function ForgotPanel({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <form className="auth" noValidate onSubmit={handleSubmit(onSubmit)}>
+    <form ref={focusRef} className="auth" noValidate onSubmit={handleSubmit(onSubmit)}>
       <h2 tabIndex={-1}>{t("forgotTitle")}</h2>
       <p className="mut">{t("forgotLede")}</p>
       <FieldWrap id="re" label={tf("emailLabel")} error={errors.email?.message}>

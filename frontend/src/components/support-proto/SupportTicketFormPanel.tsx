@@ -8,6 +8,7 @@ import { submitSupportTicket } from "@/actions/supportTicket";
 import { supportTicketSchema, type SupportTicketValues } from "@/lib/validation/schemas";
 import { ProtoIcon } from "@/components/proto/ProtoSvg";
 import { FieldWrap } from "@/components/auth-proto/FieldWrap";
+import { useFocusHeadingOnChange } from "@/lib/useFocusHeadingOnChange";
 
 /** Nouveau ticket de support (`.ph .acard .auth`), logique identique à `SupportTicketForm`. */
 export function SupportTicketFormPanel() {
@@ -33,9 +34,12 @@ export function SupportTicketFormPanel() {
     }
   }
 
+  // Focus sur le titre du nouvel écran (formulaire -> succès…), cf. useFocusHeadingOnChange.
+  const focusRef = useFocusHeadingOnChange(status === "success");
+
   if (status === "success") {
     return (
-      <div className="auth" role="status">
+      <div ref={focusRef} className="auth" role="status">
         <span className="okb">
           <ProtoIcon name="ok" size={22} />
         </span>
@@ -46,7 +50,7 @@ export function SupportTicketFormPanel() {
   }
 
   return (
-    <form className="auth" noValidate onSubmit={handleSubmit(onSubmit)}>
+    <form ref={focusRef} className="auth" noValidate onSubmit={handleSubmit(onSubmit)}>
       <h2 tabIndex={-1}>
         {t("title")} {t("titleAccent")}
       </h2>
