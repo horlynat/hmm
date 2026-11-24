@@ -336,7 +336,8 @@ final class RefonteStoryFieldsTest extends FunctionalTestCase
                 continue;
             }
             if ('' === trim((string) $field->getValue())) {
-                $values[$name] = 'Valeur de test';
+                // Base vierge (CI) : les repères exigent « valeur | libellé ».
+                $values[$name] = 'journeyStats' === $short ? '2016 | dans le numérique' : 'Valeur de test';
             }
         }
 

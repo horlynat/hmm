@@ -177,6 +177,10 @@ final class AboutContentR5Test extends FunctionalTestCase
         yield 'formation avec BOM' => [['about_content[learningText]' => "x\u{FEFF}y"]];
         yield 'formation anglaise avec U+2028' => [['about_content[learningTextEn]' => "a\u{2028}b"]];
         yield 'vision en UTF-8 invalide' => [['about_content[visionPillar]' => "x\xC3\x28"]];
+        // Champ obligatoire vidé (attribut HTML `required` contourné) : avant,
+        // null arrivait dans un setter `string` => TypeError => 500.
+        yield 'bio obligatoire vide' => [['about_content[bioP3]' => '']];
+        yield 'titre obligatoire blanc' => [['about_content[heroTitle]' => '   ']];
     }
 
     /**

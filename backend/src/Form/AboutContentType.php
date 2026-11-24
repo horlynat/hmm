@@ -11,6 +11,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\File;
+use Symfony\Component\Validator\Constraints\NotBlank;
 
 class AboutContentType extends AbstractType
 {
@@ -156,6 +157,27 @@ class AboutContentType extends AbstractType
                 'invalid_message' => 'Format invalide — '.$statsHelp,
             ]);
             $builder->get($field)->addModelTransformer(new OfferLinesTransformer(OfferLinesTransformer::MODE_STAT, $nullable));
+        }
+
+        // Champs texte obligatoires : vides, ils arrivaient à null dans un
+        // setter `string` (TypeError => 500 dès que l'attribut HTML `required`
+        // est contourné). Vide => '' puis erreur de formulaire (422).
+        // Les champs du hero portent déjà #[Assert\NotBlank] sur l'entité :
+        // pas de second NotBlank (sinon deux messages d'erreur).
+        $entityNotBlank = ['heroEyebrow', 'heroTitle', 'heroTitleAccent', 'heroSub'];
+        foreach ($builder->all() as $name => $child) {
+            $type = $child->getType()->getInnerType()::class;
+            if (!$child->getRequired() || !$child->getMapped() || !\in_array($type, [TextType::class, TextareaType::class], true)) {
+                continue;
+            }
+            $constraints = $child->getOption('constraints') ?? [];
+            if (!\in_array($name, $entityNotBlank, true)) {
+                $constraints[] = new NotBlank(normalizer: 'trim', message: 'Ce champ est obligatoire.');
+            }
+            $builder->add($name, $type, array_merge($child->getOptions(), [
+                'empty_data' => '',
+                'constraints' => $constraints,
+            ]));
         }
     }
 
