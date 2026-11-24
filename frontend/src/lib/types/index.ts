@@ -292,8 +292,19 @@ export interface AiAssistantChatPayload {
 }
 
 export type AiAssistantChatResult =
-  | { ok: true; answer: string; suggestions: string[] }
+  | {
+      ok: true;
+      answer: string;
+      suggestions: string[];
+      /** Texte de repli (panne, filtre) : ce tour n'est pas renvoyé dans l'historique. */
+      degraded?: boolean;
+    }
   | { ok: false; error: "rate_limited" | "unavailable" | "network_error" };
+
+/** Démo WhatsApp de l'accueil (POST /api/ai-assistant/demo). */
+export type AiDemoResult =
+  | { ok: true; answer: string; event: "order" | "handover" | null }
+  | { ok: false };
 
 /**
  * cf. App\ApiResource\AiContentSummaryApiResource — endpoint dédié au résumé,

@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "unavailable" }, { status: 502 });
     }
 
-    const data = (await res.json()) as { answer?: string; suggestions?: string[] };
+    const data = (await res.json()) as { answer?: string; suggestions?: string[]; degraded?: boolean };
     if (!data.answer) {
       return NextResponse.json({ ok: false, error: "unavailable" }, { status: 502 });
     }
@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
       ok: true,
       answer: data.answer,
       suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
+      degraded: data.degraded === true,
     });
   } catch (error) {
     console.error("[ai-assistant] POST /assistant/chat failed", error);

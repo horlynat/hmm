@@ -1986,7 +1986,8 @@
       "talkAnswer": "With pleasure: Horlynat will reply to you personally on WhatsApp, usually the same day.",
       "writeHorlynat": "Write to Horlynat",
       "typing": "The assistant is typing",
-      "whatsapp": "Write on WhatsApp"
+      "whatsapp": "Write on WhatsApp",
+      "stop": "Stop the answer"
     }
   },
   "catalog": {

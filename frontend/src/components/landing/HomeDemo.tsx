@@ -1,31 +1,37 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import { ProtoIcon } from "@/components/proto/ProtoSvg";
+import type { AiDemoResult } from "@/lib/types";
 
 /**
- * Démo « Votre assistant WhatsApp, en action » de l'accueil — copie du
- * comportement du prototype (demoAns / bump / demoSay) : réponses SCRIPTÉES
- * d'une boutique d'exemple, indicateur de frappe de 900 ms, compteurs et
- * alertes du tableau de bord mis à jour. Aucune donnée ne quitte le
- * navigateur (pas d'appel réseau) ; le persona IA « boutique » relèvera d'un
- * lot séparé.
+ * Démo « Votre assistant WhatsApp, en action » de l'accueil — boîte de
+ * dialogue du prototype (phone .scr .log .qs), branchée sur la VRAIE IA :
+ * POST /api/ai-assistant/demo (proxy Next → App\ApiResource\
+ * AiDemoChatApiResource, persona « Boutique Ndinga », limiteur et plafond
+ * budgétaire dédiés). L'ancien jeu de réponses scriptées (answer/bump sur
+ * mots-clés) devient le FILET DE SECOURS : toute panne, tout refus du
+ * garde-fou (`degraded`), ou limite de débit atteinte retombe sur lui plutôt
+ * que d'afficher une erreur — la démo ne doit jamais paraître cassée.
  *
- * Mots-clés : sources de RegExp écrites dans les fichiers de traduction
- * (jamais une saisie du visiteur) ; la saisie est seulement TESTÉE contre
- * elles et rendue comme texte React.
+ * Mots-clés du filet de secours : sources de RegExp écrites dans les
+ * fichiers de traduction (jamais une saisie du visiteur) ; la saisie est
+ * seulement TESTÉE contre elles. Toute réponse (scriptée ou IA) est rendue
+ * comme texte React, jamais en HTML.
  */
 type Bubble = { who: "u" | "b"; text: string; typing?: number };
 type Alert = { kind: string; title: string; meta: string; fresh?: boolean };
 
 const DELAY_MS = 900;
 const MAX_LEN = 300;
+const MAX_HISTORY = 6;
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
 export function HomeDemo() {
   const t = useTranslations("landing.demo");
+  const locale = useLocale();
   const reduce = useReducedMotion();
   const match = t.raw("match") as Record<string, string>;
   const initialAlerts = (t.raw("alerts") as [string, string, string][]).map(([kind, title, meta]) => ({ kind, title, meta }));
@@ -42,10 +48,26 @@ export function HomeDemo() {
   const inputRef = useRef<HTMLInputElement>(null);
   const timers = useRef<number[]>([]);
   const seq = useRef(0);
+  const alive = useRef(true);
+  const logSnapshot = useRef(log);
+  // Un second envoi pendant qu'une réponse est en cours calculerait un
+  // historique qui finit par un tour "user" (la bulle de frappe en cours en
+  // est exclue, cf. filtre ci-dessous) — rejeté par le backend (422,
+  // App\Validator\ConversationHistory), donc silencieusement rabattu sur le
+  // repli scripté au lieu de la vraie IA (contre-audit). Un seul envoi à la
+  // fois évite ce cas plutôt que de le rattraper après coup.
+  const sending = useRef(false);
+
+  useEffect(() => {
+    logSnapshot.current = log;
+  }, [log]);
 
   useEffect(() => {
     const pending = timers.current;
-    return () => pending.forEach((id) => window.clearTimeout(id));
+    return () => {
+      alive.current = false;
+      pending.forEach((id) => window.clearTimeout(id));
+    };
   }, []);
 
   useEffect(() => {
@@ -64,16 +86,20 @@ export function HomeDemo() {
     return t("answers.default");
   }
 
-  function bump(q: string) {
+  /** Slot déclenché par le filet de secours scripté (cf. docblock de fichier). */
+  function localSlot(q: string): -1 | 1 | 2 {
     const n = norm(q);
+    if (test("countOrder", n)) return 1;
+    if (test("countHandover", n)) return 2;
+    return -1;
+  }
+
+  function applyBump(slot: -1 | 1 | 2) {
     let alert: Alert | null = null;
-    let slot = -1;
-    if (test("countOrder", n)) {
-      slot = 1;
+    if (slot === 1) {
       const [title, meta] = t.raw("newOrder") as [string, string];
       alert = { kind: "ok", title, meta, fresh: true };
-    } else if (test("countHandover", n)) {
-      slot = 2;
+    } else if (slot === 2) {
       const [title, meta] = t.raw("handover") as [string, string];
       alert = { kind: "hi", title, meta, fresh: true };
     }
@@ -85,27 +111,64 @@ export function HomeDemo() {
     }
   }
 
-  function say(raw: string) {
+  async function say(raw: string) {
     const q = raw.trim().slice(0, MAX_LEN);
-    if (!q) return;
-    const reply = answer(q);
-    const id = ++seq.current;
-    setLog((l) => [...l, { who: "u" as const, text: q }, { who: "b" as const, text: "", typing: id }].slice(-60));
-    const delay = reduce ? 0 : DELAY_MS;
-    timers.current.push(
-      window.setTimeout(() => bump(q), delay),
-      window.setTimeout(
-        () => setLog((l) => l.map((b) => (b.typing === id ? { who: "b", text: reply } : b))),
-        delay,
-      ),
-    );
+    if (!q || sending.current) return;
+    sending.current = true;
+    try {
+      const id = ++seq.current;
+      const history = logSnapshot.current
+        .filter((b) => !b.typing && b.text)
+        .slice(-MAX_HISTORY)
+        .map((b) => ({ role: b.who === "b" ? ("assistant" as const) : ("user" as const), text: b.text }));
+      setLog((l) => [...l, { who: "u" as const, text: q }, { who: "b" as const, text: "", typing: id }].slice(-60));
+
+      // Durée minimale de l'indicateur de frappe, en parallèle de l'appel
+      // réseau (pas en plus) : si le réseau est plus lent, elle est déjà
+      // passée ; sinon on attend le reste. Pas de `Date.now()` ici (cf. règle
+      // react-hooks/purity) : on mesure en laissant courir un minuteur, jamais
+      // en comparant des horodatages.
+      const minDelayDone = new Promise<void>((resolve) => {
+        const tid = window.setTimeout(resolve, reduce ? 0 : DELAY_MS);
+        timers.current.push(tid);
+      });
+
+      let reply = "";
+      let slot: -1 | 1 | 2 = -1;
+      try {
+        const res = await fetch("/api/ai-assistant/demo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: q, history, locale }),
+        });
+        const result = (await res.json()) as AiDemoResult;
+        if (result.ok) {
+          reply = result.answer;
+          slot = result.event === "order" ? 1 : result.event === "handover" ? 2 : -1;
+        }
+      } catch {
+        /* panne réseau : repli scripté ci-dessous */
+      }
+      if (!reply) {
+        reply = answer(q);
+        slot = localSlot(q);
+      }
+      if (!alive.current) return;
+
+      await minDelayDone;
+      if (!alive.current) return;
+      applyBump(slot);
+      setLog((l) => l.map((b) => (b.typing === id ? { who: "b", text: reply } : b)));
+    } finally {
+      sending.current = false;
+    }
   }
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const input = inputRef.current;
     if (!input) return;
-    say(input.value);
+    void say(input.value);
     input.value = "";
   }
 
@@ -141,7 +204,7 @@ export function HomeDemo() {
           </div>
           <div className="qs">
             {(t.raw("quick") as string[]).map((q) => (
-              <button key={q} type="button" onClick={() => say(q)}>
+              <button key={q} type="button" onClick={() => void say(q)}>
                 {q}
               </button>
             ))}

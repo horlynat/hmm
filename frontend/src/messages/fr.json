@@ -1986,7 +1986,8 @@
       "talkAnswer": "Avec plaisir : Horlynat vous répond en personne sur WhatsApp, en général dans la journée.",
       "writeHorlynat": "Écrire à Horlynat",
       "typing": "L’assistant écrit",
-      "whatsapp": "Écrire sur WhatsApp"
+      "whatsapp": "Écrire sur WhatsApp",
+      "stop": "Arrêter la réponse"
     }
   },
   "catalog": {
