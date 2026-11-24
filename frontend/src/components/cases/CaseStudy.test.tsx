@@ -111,7 +111,7 @@ describe("CaseStudy — récit du prototype (pCase)", () => {
     const p = { ...project({ galleryCaptions: ["Légende 1"] }), media } as unknown as Project;
     const { container } = await renderCase(p);
     expect(container.querySelectorAll(".gal figure")).toHaveLength(3);
-    expect([...container.querySelectorAll(".gal figcaption")].map((f) => f.textContent)).toEqual(["Légende 1", "Image 2", "Image 3"]);
+    expect([...container.querySelectorAll(".gal figcaption")].map((f) => f.textContent)).toEqual(["Légende 1"]);
   });
 
   it("n'interprète jamais le texte du back-office comme du HTML", async () => {

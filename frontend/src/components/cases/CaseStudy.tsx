@@ -188,10 +188,11 @@ export async function CaseStudy({
               <h2>{t("galleryTitle")}</h2>
               <div className="gal">
                 {/* Autant d'emplacements que de légendes ou d'images : une image
-                    sans légende reste affichée (légende = texte alternatif). */}
+                    sans légende reste affichée, sans légende inventée (le texte
+                    alternatif des téléversements est le titre du projet). */}
                 {Array.from({ length: Math.max(captions.length, gallery.length) }, (_, k) => {
                   const m = gallery[k];
-                  const caption = captions[k] ?? m?.altText ?? "";
+                  const caption = captions[k] ?? "";
                   return (
                     <figure key={k}>
                       {m ? (
