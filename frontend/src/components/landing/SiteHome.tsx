@@ -26,7 +26,7 @@ import { HomeDemo } from "./HomeDemo";
 
 /**
  * Accueil du site — markup et classes du prototype de refonte (copie
- * conforme : src/components/protopages/home.tsx), alimenté par le
+ * conforme de `pHome()` du prototype), alimenté par le
  * back-office : carrousel et grille d'offres (Admin › Contenu › Offres),
  * réalisations (projets publics), portrait et repères (À propos). Les textes
  * fixes viennent des traductions (landing.*), FR et EN.

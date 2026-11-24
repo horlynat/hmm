@@ -1,81 +1,101 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import type { Article } from "@/lib/types";
 import { BlogCover } from "./BlogCover";
+import { BLOG_THEMES, articleLabel, matchesTheme, type BlogTheme } from "./blogThemes";
 import { ProtoIcon } from "@/components/proto/ProtoSvg";
 
 /**
- * Filtrage par thème du prototype (`.bfil`), sur les tags réels des
- * articles publiés — pas une liste de thèmes figée. Le premier article
- * (le plus récent, `id` décroissant) est mis en avant (`.bfeat`), les
- * suivants en grille (`.bgrid`).
+ * Page Blog du prototype (`pBlog()`) : en-tête `.ph` (fil d'Ariane, titre,
+ * chapô et filtres `.bfil` par thème éditorial), puis le premier article mis
+ * en avant (`.bfeat`) et les suivants en grille (`.bgrid`). Les filtres sont
+ * dans l'en-tête comme dans le prototype : l'en-tête (rendu serveur) est donc
+ * reçu en `head`, et la suite de la section (`.askq`) en `children`.
  */
-export function BlogFilter({ articles, excerpts }: { articles: Article[]; excerpts: Map<string, string> }) {
+export function BlogFilter({
+  articles,
+  excerpts,
+  head,
+  children,
+}: {
+  articles: Article[];
+  excerpts: Map<string, string>;
+  head: ReactNode;
+  children?: ReactNode;
+}) {
   const t = useTranslations("blogPage");
-  const [tag, setTag] = useState<number | "tous">("tous");
+  const [theme, setTheme] = useState<BlogTheme | "tous">("tous");
 
-  const topics = useMemo(() => {
-    const seen = new Map<number, string>();
-    for (const a of articles) for (const tg of a.tags) seen.set(tg.id, tg.name);
-    return [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
-  }, [articles]);
-
+  // Plus récent d'abord (id décroissant : le back-office n'expose pas de date).
   const sorted = useMemo(() => [...articles].sort((a, b) => b.id - a.id), [articles]);
-  const filtered = tag === "tous" ? sorted : sorted.filter((a) => a.tags.some((tg) => tg.id === tag));
+  const filtered = sorted.filter((a) => matchesTheme(a, theme));
   const [featured, ...rest] = filtered;
 
   return (
     <>
-      {topics.length > 0 && (
-        <div className="bfil" role="group" aria-label={t("filterLabel")}>
-          <button type="button" aria-pressed={tag === "tous"} onClick={() => setTag("tous")}>
-            {t("filterAll")}
-          </button>
-          {topics.map(([id, name]) => (
-            <button key={id} type="button" aria-pressed={tag === id} onClick={() => setTag(id)}>
-              {name}
+      <section className="ph">
+        <div className="w">
+          {head}
+          <div className="bfil" role="group" aria-label={t("filterLabel")}>
+            <button type="button" aria-pressed={theme === "tous"} onClick={() => setTheme("tous")}>
+              {t("filterAll")}
             </button>
-          ))}
-        </div>
-      )}
-
-      {featured && (
-        <Link className="bfeat" href={{ pathname: "/blog/[slug]", params: { slug: featured.slug } }}>
-          <BlogCover article={featured} large sizes="(max-width: 900px) 100vw, 640px" />
-          <div className="bfb">
-            {featured.tags.length > 0 && <span className="dom">{featured.tags.map((tg) => tg.name).join(" · ")}</span>}
-            <h2>{featured.title}</h2>
-            <p>{excerpts.get(featured.slug)}</p>
-            <span className="lnk">
-              {t("readMore")} <ProtoIcon name="ar" />
-            </span>
+            {BLOG_THEMES.map((th) => (
+              <button key={th} type="button" aria-pressed={theme === th} onClick={() => setTheme(th)}>
+                {t(`themes.${th}`)}
+              </button>
+            ))}
           </div>
-        </Link>
-      )}
-
-      {rest.length > 0 && (
-        <div className={rest.length === 1 ? "bgrid one" : "bgrid"}>
-          {rest.map((a) => (
-            <Link key={a.id} className="bcard" href={{ pathname: "/blog/[slug]", params: { slug: a.slug } }}>
-              <BlogCover article={a} sizes="(max-width: 900px) 100vw, 420px" />
-              <div>
-                {a.tags.length > 0 && <span className="dom">{a.tags.map((tg) => tg.name).join(" · ")}</span>}
-                <h3>{a.title}</h3>
-                <p>{excerpts.get(a.slug)}</p>
+        </div>
+      </section>
+      <section className="sec" style={{ paddingTop: "56px" }}>
+        <div className="w">
+          {featured && (
+            <Link className="bfeat" href={{ pathname: "/blog/[slug]", params: { slug: featured.slug } }}>
+              <BlogCover article={featured} large sizes="(max-width: 900px) 100vw, 640px" />
+              <div className="bfb">
+                {featured.tags.length > 0 && <span className="dom">{articleLabel(featured)}</span>}
+                <h2>{featured.title}</h2>
+                <p>{excerpts.get(featured.slug)}</p>
+                <span className="lnk">
+                  {t("readMore")} <ProtoIcon name="ar" />
+                </span>
               </div>
             </Link>
-          ))}
-        </div>
-      )}
+          )}
 
-      {filtered.length === 0 && (
-        <p className="mut" role="status">
-          {t("noMatch")}
-        </p>
-      )}
+          {rest.length > 0 && (
+            <div className={rest.length === 1 ? "bgrid one" : "bgrid"}>
+              {rest.map((a) => (
+                <Link key={a.id} className="bcard" href={{ pathname: "/blog/[slug]", params: { slug: a.slug } }}>
+                  <BlogCover article={a} sizes="(max-width: 900px) 100vw, 420px" />
+                  <div>
+                    {a.tags.length > 0 && <span className="dom">{articleLabel(a)}</span>}
+                    <h3>{a.title}</h3>
+                    <p>{excerpts.get(a.slug)}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {filtered.length === 0 && (
+            <div className="empty" role="status">
+              <h3>{articles.length === 0 ? t("empty") : t("noMatch")}</h3>
+              {articles.length > 0 && (
+                <button type="button" className="b b-g" style={{ marginTop: "16px" }} onClick={() => setTheme("tous")}>
+                  {t("showAll")}
+                </button>
+              )}
+            </div>
+          )}
+
+          {children}
+        </div>
+      </section>
     </>
   );
 }

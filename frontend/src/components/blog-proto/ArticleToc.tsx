@@ -58,7 +58,7 @@ export function ArticleToc({ sections, minutes }: { sections: ArticleSection[]; 
     <nav className="atoc" aria-label={t("toc")}>
       <div className="atoh">
         <b>{t("toc")}</b>
-        <small>{t("readingTime", { minutes })}</small>
+        <small>{t("tocMinutes", { minutes })}</small>
       </div>
       <div className="atob" aria-hidden="true">
         <i style={{ width: `${progress * 100}%` }} />

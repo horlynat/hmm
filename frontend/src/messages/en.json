@@ -2500,7 +2500,16 @@
     "askSideTitle": "A question about this topic?",
     "askSideText": "Ask it directly: I will answer you in person, usually within the day.",
     "askArticleMessage": "Hello Horlynat, I read your article “{title}” and I have a question.",
-    "noMatch": "No article matches this topic yet."
+    "noMatch": "No article on this topic yet.",
+    "showAll": "See all articles",
+    "themes": {
+      "architecture": "Architecture",
+      "cyber": "Cybersecurity",
+      "risques": "Risk management",
+      "ia": "AI"
+    },
+    "keyTakeaway": "Key takeaway",
+    "tocMinutes": "{minutes} min"
   },
   "contactPage": {
     "metaTitle": "Contact",

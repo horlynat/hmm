@@ -9,7 +9,9 @@ import { whatsappLink } from "@/lib/whatsapp";
 import { siteConfig } from "@/config/site";
 import { SITE_URL } from "@/lib/metadata";
 import { PersonAvatarArt, ProtoIcon } from "@/components/proto/ProtoSvg";
+import type { CSSProperties } from "react";
 import { BlogCover } from "./BlogCover";
+import { articleLabel, articleVisual } from "./blogThemes";
 import { ArticleProgress } from "./ArticleProgress";
 import { ArticleToc } from "./ArticleToc";
 import { AskAssistantRow } from "./AskAssistantRow";
@@ -38,9 +40,10 @@ export async function ArticleDetail({
   /** ISO 8601, quand le back-office l'expose ; sinon aucune date n'est affichée (pas de date inventée). */
   publishedAt: string | null;
 }) {
-  const [t, tc, about] = await Promise.all([
+  const [t, tc, tf, about] = await Promise.all([
     getTranslations({ locale, namespace: "blogPage" }),
     getTranslations({ locale, namespace: "catalog" }),
+    getTranslations({ locale, namespace: "landing.footer" }),
     getAboutContent(locale),
   ]);
 
@@ -49,20 +52,22 @@ export async function ArticleDetail({
   const articleUrl = `${SITE_URL}${getPathname({ locale, href: { pathname: "/blog/[slug]", params: { slug: article.slug } } })}`;
 
   const others = articles.filter((a) => a.slug !== article.slug).slice(0, 3);
-  const cover = article.media[0];
+  // Comme le prototype : la dernière section devient « À retenir » (`.akey`)
+  // dès que l'article en compte plus de deux.
+  const keyIndex = sections.length > 2 ? sections.length - 1 : -1;
 
   return (
     <>
       <ArticleProgress />
-      <article className="artp2">
+      <article className="artp2" style={{ "--h": articleVisual(article)[1] } as CSSProperties}>
         <header className="arh">
           <div className="w arhg">
             <div className="arht">
               <p className="crumb">
                 <Link href="/">{tc("crumbHome")}</Link> / <Link href="/blog">{t("crumb")}</Link>
-                {article.tags[0] && ` / ${article.tags[0].name}`}
+                {article.tags.length > 0 && ` / ${articleLabel(article)}`}
               </p>
-              {article.tags.length > 0 && <span className="achip">{article.tags.map((tg) => tg.name).join(" · ")}</span>}
+              {article.tags.length > 0 && <span className="achip">{articleLabel(article)}</span>}
               <h1>{article.title}</h1>
               <p className="ald2">{getArticleExcerpt(article.content, 220)}</p>
               <div className="ameta2">
@@ -74,28 +79,31 @@ export async function ArticleDetail({
                   )}
                 </span>
                 <span className="amn">
-                  <b>{about?.profileName ?? siteConfig.name}</b>
+                  {/* Prénom seul dans l'en-tête, nom complet dans la carte auteur (prototype). */}
+                  <b>{(about?.profileName ?? siteConfig.name).split(" ")[0]}</b>
                   {about?.profileRole && <small>{about.profileRole}</small>}
                 </span>
                 {publishedAt && (
                   <span className="amf">
                     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3.5" y="5" width="17" height="15" rx="3" />
                       <path d="M8 3v4M16 3v4M3.5 10h17" />
                     </svg>
                     <time dateTime={publishedAt}>{dateFormatter(locale).format(new Date(publishedAt))}</time>
                   </span>
                 )}
                 <span className="amf">
-                  <ProtoIcon name="spark" size={16} />
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 2" />
+                  </svg>
                   {t("readingTime", { minutes })}
                 </span>
               </div>
             </div>
-            {cover && (
-              <div className="arcov">
-                <BlogCover article={article} large sizes="(max-width: 900px) 100vw, 560px" />
-              </div>
-            )}
+            <div className="arcov">
+              <BlogCover article={article} large alignLeft sizes="(max-width: 900px) 100vw, 560px" />
+            </div>
           </div>
         </header>
 
@@ -103,8 +111,9 @@ export async function ArticleDetail({
           <div className="amain">
             <div className="abody2" id="article-body">
               {introHtml && <div className="ase" dangerouslySetInnerHTML={{ __html: introHtml }} />}
-              {sections.map((s) => (
-                <section key={s.id} className="ase" id={s.id}>
+              {sections.map((s, i) => (
+                <section key={s.id} className={i === keyIndex ? "ase akey" : "ase"} id={s.id}>
+                  {i === keyIndex && <span className="kk">{t("keyTakeaway")}</span>}
                   <h2>{s.heading}</h2>
                   {/* HTML assaini côté serveur (sanitizeArticleHtml) avant injection. */}
                   <div dangerouslySetInnerHTML={{ __html: s.bodyHtml }} />
@@ -124,7 +133,7 @@ export async function ArticleDetail({
                 <div>
                   <span className="kk">{t("writtenBy")}</span>
                   <b>{about?.profileName ?? siteConfig.name}</b>
-                  {about?.profileRole && <p>{about.profileRole}</p>}
+                  <p>{tf("tagline")}</p>
                 </div>
                 <Link className="b b-g sm" href="/a-propos">
                   {t("myPath")}
@@ -153,7 +162,7 @@ export async function ArticleDetail({
             <div className="aq">
               <b>{t("askSideTitle")}</b>
               <p>{t("askSideText")}</p>
-              <AskAssistantRow message={t("askArticleMessage", { title: article.title })} />
+              <AskAssistantRow variant="aside" message={t("askArticleMessage", { title: article.title })} />
             </div>
           </aside>
         </div>

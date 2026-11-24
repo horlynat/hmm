@@ -2500,7 +2500,16 @@
     "askSideTitle": "Une question sur ce sujet ?",
     "askSideText": "Posez-la directement : je vous réponds en personne, en général dans la journée.",
     "askArticleMessage": "Bonjour Horlynat, j'ai lu votre article « {title} » et j'ai une question.",
-    "noMatch": "Aucun article ne correspond à ce thème pour le moment."
+    "noMatch": "Aucun article sur ce thème pour l’instant.",
+    "showAll": "Voir tous les articles",
+    "themes": {
+      "architecture": "Architecture",
+      "cyber": "Cybersécurité",
+      "risques": "Gestion des risques",
+      "ia": "IA"
+    },
+    "keyTakeaway": "À retenir",
+    "tocMinutes": "{minutes} min"
   },
   "contactPage": {
     "metaTitle": "Contact",
