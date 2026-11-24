@@ -2121,7 +2121,7 @@
     "packTitle": "A complete package",
     "packOnce": "One-time price, paid once",
     "packNoSub": "No subscription",
-    "packSplit": "Payable in two instalments: a deposit at kick-off, the balance at go-live.",
+    "packSplit": "Payable in two instalments: 60% on order ({deposit}), 40% at go-live ({balance}).",
     "packNext": "And afterwards?",
     "packNextItems": [
       "The improvements I make to the product are free for you.",
@@ -2288,7 +2288,11 @@
           ]
         ]
       }
-    }
+    },
+    "faqTestimonial": [
+      "Is a discount possible?",
+      "Yes: if you agree to have the setup of your assistant filmed for a testimonial, the price is lowered. The discount is set in the written proposal."
+    ]
   },
   "casePage": {
     "crumb": "Projects",

@@ -2121,7 +2121,7 @@
     "packTitle": "Une formule complète",
     "packOnce": "Prix unique, payé une seule fois",
     "packNoSub": "Sans abonnement",
-    "packSplit": "Payable en deux fois : un acompte au lancement, le solde à la mise en service.",
+    "packSplit": "Payable en deux fois : 60 % à la commande ({deposit}), 40 % à la mise en service ({balance}).",
     "packNext": "Et ensuite ?",
     "packNextItems": [
       "Les améliorations que j’apporte au produit vous sont offertes.",
@@ -2288,7 +2288,11 @@
           ]
         ]
       }
-    }
+    },
+    "faqTestimonial": [
+      "Une réduction est-elle possible ?",
+      "Oui : si vous acceptez que la mise en place de votre assistant soit filmée pour un témoignage, le prix est revu à la baisse. La réduction est fixée dans la proposition écrite."
+    ]
   },
   "casePage": {
     "crumb": "Réalisations",

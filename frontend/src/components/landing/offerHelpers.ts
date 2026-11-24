@@ -6,6 +6,15 @@ export function offerIcon(icon: string): ProtoIconName {
   return Object.hasOwn(PROTO_ICONS, icon) ? (icon as ProtoIconName) : "spark";
 }
 
+/** Acompte des conditions de prestation : 60 % à la commande, 40 % à la livraison. */
+export const DEPOSIT_RATE = 0.6;
+
+/** Échéancier d'un prix (FCFA entiers) : acompte arrondi, le solde complète exactement le prix. */
+export function splitPayment(price: number): { deposit: number; balance: number } {
+  const deposit = Math.round(price * DEPOSIT_RATE);
+  return { deposit, balance: price - deposit };
+}
+
 const SITUATIONS: Offer["situation"][] = ["clients", "appli", "secu", "assur"];
 
 /** Accueil : une offre par situation (la vedette d'abord, sinon la première par ordre d'affichage). */

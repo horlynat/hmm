@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Offer, Project } from "@/lib/types";
 import { formatFcfa } from "@/lib/format/fcfa";
+import { splitPayment } from "@/components/landing/offerHelpers";
 import { getExcerpt } from "@/lib/text";
 import { whatsappLink } from "@/lib/whatsapp";
 import { OfferVisual, ProtoIcon } from "@/components/proto/ProtoSvg";
@@ -87,6 +88,8 @@ export async function OfferDetail({
     .slice(0, 3);
   const faq: [string, string][] = [
     ...(o.priceOnce ? [[(t.raw("faqOnce") as string[])[0], t("faqOnce.1", { price })] as [string, string]] : []),
+    // Offre à prix unique (assistant WhatsApp) : réduction contre un témoignage filmé.
+    ...(o.priceOnce ? [t.raw("faqTestimonial") as [string, string]] : []),
     [(t.raw("faqDelay") as string[])[0], t("faqDelay.1", { delay: o.delay })],
     t.raw("faqPrice") as [string, string],
     t.raw("faqAfter") as [string, string],
@@ -233,7 +236,12 @@ export async function OfferDetail({
                         {price}
                         {o.priceOnce && <em>{t("packNoSub")}</em>}
                       </b>
-                      <span>{t("packSplit")}</span>
+                      <span>
+                        {t("packSplit", {
+                          deposit: formatFcfa(splitPayment(o.price).deposit, locale),
+                          balance: formatFcfa(splitPayment(o.price).balance, locale),
+                        })}
+                      </span>
                     </div>
                     <div className="pkp">
                       <small>{t("packNext")}</small>
