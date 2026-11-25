@@ -13,7 +13,15 @@ import { ContactSegments } from "./ContactSegments";
  * (WhatsApp, appel, planification, e-mail, réels) et questionnaire guidé /
  * message rapide (`ContactSegments`, branchés sur les actions existantes).
  */
-export async function SiteContact({ locale, offerSlug }: { locale: string; offerSlug?: string }) {
+export async function SiteContact({
+  locale,
+  offerSlug,
+  initialMode = "quest",
+}: {
+  locale: string;
+  offerSlug?: string;
+  initialMode?: "quest" | "direct";
+}) {
   const [t, tc, user, offers] = await Promise.all([
     getTranslations({ locale, namespace: "contactPage" }),
     getTranslations({ locale, namespace: "catalog" }),
@@ -109,7 +117,7 @@ export async function SiteContact({ locale, offerSlug }: { locale: string; offer
                 {t("offerContext", { title: offerContext.title })}
               </p>
             )}
-            <ContactSegments initialName={user?.fullName ?? undefined} initialEmail={user?.email} offers={offers} />
+            <ContactSegments initialName={user?.fullName ?? undefined} initialEmail={user?.email} offers={offers} initialMode={initialMode} />
           </div>
           <ol className="next3">
             <li>

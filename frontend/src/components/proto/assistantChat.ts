@@ -55,7 +55,7 @@ export type Inline =
 
 export type Block = { kind: "p"; parts: Inline[] } | { kind: "ul"; items: Inline[][] };
 
-const INTERNAL = /^\/(?:(?:offres|realisations|blog)\/[a-z0-9]+(?:-[a-z0-9]+)*|offres|blog|contact|a-propos)$/;
+const INTERNAL = /^\/(?:(?:offres|realisations|blog)\/[a-z0-9]+(?:-[a-z0-9]+)*|offres|blog|contact|contact\?mode=direct|a-propos)$/;
 const EXTERNAL_HOSTS = ["horlynat.com", "github.com", "linkedin.com"];
 
 /** Lien sûr ? Renvoie l'adresse retenue, ou null (rendu alors en texte simple). */

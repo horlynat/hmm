@@ -326,8 +326,9 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         $this->ask(['question' => 'Bonjour', 'locale' => 'fr']);
 
         $system = $this->lastSystemPrompt();
-        self::assertStringContainsString('[Demander un devis](/contact)', $system);
         self::assertStringContainsString('explique le concept clairement avec ton expertise', $system);
+        self::assertStringContainsString('jamais « je n\'ai pas', $system);
+        self::assertStringNotContainsString('réponds honnêtement que tu n\'as pas cette information précise', $system);
         // Contre-audit : l'expertise n'invente jamais ce que livre une offre, et
         // un fait absent sur Horlynat se dit honnêtement (jamais inventé).
         self::assertStringContainsString('jamais à décrire ce que livre une', $system);
@@ -335,12 +336,20 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         self::assertStringContainsString('N\'invente jamais ce fait.', $system);
         self::assertStringContainsString('catalogue fait foi', $system);
         self::assertStringNotContainsString('Combiner plusieurs offres est possible', $system);
-        // 2e contre-audit : jamais de faisabilité implicite ; une question de
-        // parcours n'envoie pas vers un devis ; conditions commerciales incluses.
+        // Jamais de faisabilité implicite ; conditions commerciales incluses.
         self::assertStringContainsString('ne la dis pas faisable', $system);
         self::assertStringNotContainsString('possible à étudier', $system);
-        self::assertMatchesRegularExpression('/sinon\s+\[Écrire à Horlynat\]\(\/contact\) \(parcours/u', $system, 'Parcours, recrutement : lien neutre, jamais le devis.');
         self::assertStringContainsString('commerciale comme garantie', $system);
+        // Devis : offre ou projet DU VISITEUR ; parcours / projets réalisés /
+        // recrutement : message rapide, jamais le devis (3e contre-audit).
+        self::assertMatchesRegularExpression('/offre ou sur le projet du visiteur,\s+sinon\s+\[Envoyer un message\]\(\/contact\?mode=direct\)\s+\(parcours,\s+projets déjà réalisés/u', $system);
+        self::assertStringContainsString('se décline poliment, sans lien', $system);
+        self::assertStringNotContainsString('question personnelle', $system);
+        self::assertStringContainsString('jamais les deux dans', $system);
+        // Les trois règles (repli, intérêt concret, liens) utilisent le libellé local.
+        self::assertGreaterThanOrEqual(3, substr_count($system, '[Demander un devis](/contact)'));
+        self::assertStringNotContainsString('Request a quote', $system);
+        self::assertStringNotContainsString('Send a message', $system);
     }
 
     public function testEnglishPromptUsesEnglishLinkLabels(): void
@@ -348,11 +357,10 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         $this->ask(['question' => 'Hello', 'locale' => 'en']);
 
         $system = $this->lastSystemPrompt();
-        self::assertStringContainsString('[Request a quote](/contact)', $system);
-        self::assertStringContainsString('[Contact Horlynat](/contact)', $system);
+        self::assertGreaterThanOrEqual(3, substr_count($system, '[Request a quote](/contact)'));
+        self::assertStringContainsString('[Send a message](/contact?mode=direct)', $system);
         self::assertStringNotContainsString('Demander un devis', $system);
-        self::assertStringContainsString('jamais « je n\'ai pas', $system);
-        self::assertStringNotContainsString('réponds honnêtement que tu n\'as pas cette information précise', $system);
+        self::assertStringNotContainsString('Envoyer un message', $system);
     }
 
     public function testEnglishCatalogUsesEnglishTextsAndNumberFormat(): void

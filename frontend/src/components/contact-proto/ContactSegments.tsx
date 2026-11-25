@@ -7,7 +7,8 @@ import { useTabKeyboard } from "@/lib/useTabKeyboard";
 import { QuoteWizardProto } from "./QuoteWizardProto";
 import { QuickMessageForm } from "./QuickMessageForm";
 
-type Mode = "quest" | "direct";
+export type ContactMode = "quest" | "direct";
+type Mode = ContactMode;
 const MODES: Mode[] = ["quest", "direct"];
 
 /**
@@ -19,13 +20,15 @@ export function ContactSegments({
   initialName,
   initialEmail,
   offers,
+  initialMode = "quest",
 }: {
   initialName?: string;
   initialEmail?: string;
   offers: Offer[];
+  initialMode?: Mode;
 }) {
   const t = useTranslations("contactPage");
-  const [mode, setMode] = useState<Mode>("quest");
+  const [mode, setMode] = useState<Mode>(initialMode);
   const { tabProps } = useTabKeyboard(MODES, mode);
 
   return (

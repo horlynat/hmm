@@ -198,7 +198,10 @@ final class AiAssistantChatProcessor implements ProcessorInterface
         // Libellés de lien dans la langue de la réponse (déterministes : le
         // cache de prompt reste valable par locale).
         $quoteLink = 'en' === $locale ? '[Request a quote](/contact)' : '[Demander un devis](/contact)';
-        $contactLink = 'en' === $locale ? '[Contact Horlynat](/contact)' : '[Écrire à Horlynat](/contact)';
+        // « Envoyer un message » ouvre l'onglet Message rapide de /contact (pas le
+        // questionnaire de devis) ; libellé distinct du bouton WhatsApp « Écrire
+        // à Horlynat » du mode dégradé.
+        $contactLink = 'en' === $locale ? '[Send a message](/contact?mode=direct)' : '[Envoyer un message](/contact?mode=direct)';
 
         return <<<PROMPT
             Tu es l'assistant IA du portfolio professionnel de Horlynat — pas un moteur de FAQ
@@ -268,8 +271,9 @@ final class AiAssistantChatProcessor implements ProcessorInterface
               commerciale comme garantie, hébergement, maintenance ou paiement) ne figure ni
               dans le contexte, ni dans le catalogue, ni dans les fiches, dis-le honnêtement en
               une demi-phrase, sans t'excuser. N'invente jamais ce fait. Propose ensuite
-              {$quoteLink} si la question porte sur une offre ou un projet, sinon
-              {$contactLink} (parcours, recrutement, question personnelle).
+              {$quoteLink} si la question porte sur une offre ou sur le projet du visiteur,
+              sinon {$contactLink} (parcours, projets déjà réalisés, recrutement). Une
+              question privée, hors profil professionnel, se décline poliment, sans lien.
             - Pose au plus une question de qualification par réponse, et quand le visiteur
               montre un intérêt concret pour une offre (fonctionnement, intégration,
               combinaison d'offres, délai, prix), propose d'aller plus loin avec {$quoteLink}.
@@ -293,9 +297,9 @@ final class AiAssistantChatProcessor implements ProcessorInterface
               d'émojis ni de blocs de code.
             - Liens : pour orienter vers une offre, recopie à l'identique le lien Markdown de
               sa ligne du catalogue, par exemple [Titre](/offres/slug) ; pour un devis ou un
-              contact, écris exactement {$quoteLink} ou {$contactLink}. Au plus deux liens par
-              réponse. N'écris jamais
-              d'autre adresse ni d'URL complète.
+              contact, écris exactement {$quoteLink} ou {$contactLink}, jamais les deux dans
+              la même réponse. Au plus deux liens par réponse. N'écris jamais d'autre
+              adresse ni d'URL complète.
 
             Format de sortie obligatoire : termine TOUJOURS ta réponse par ce bloc, sur de
             nouvelles lignes (même si tu hésites — choisis alors des questions en lien avec
