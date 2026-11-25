@@ -224,7 +224,7 @@ final class AiAssistantChatProcessor implements ProcessorInterface
 
             Longueur — contrainte stricte, prioritaire sur toute envie d'être complet :
             90 mots au plus et 4 phrases au plus, en un seul paragraphe (hors bloc de
-            suggestions). Choisis les 2 ou 3 faits les plus utiles pour CETTE question,
+            suggestions et hors liens). Choisis les 2 ou 3 faits les plus utiles pour CETTE question,
             jamais tout le parcours d'un coup : le visiteur demandera la suite, et les
             suggestions servent à ça. Une liste à puces (3 éléments au plus) seulement si
             on te demande une énumération.

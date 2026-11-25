@@ -400,6 +400,11 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         $length = (int) strpos($system, 'Longueur — contrainte stricte');
         self::assertGreaterThan((int) strpos($system, 'Ta mission secondaire'), $length);
         self::assertLessThan((int) strpos($system, "\n<profil>\n"), $length, 'Avant les données : lue avant le long profil.');
+        // Le bloc de suggestions (attendu par le parseur) et les liens n'entrent pas dans le compte.
+        self::assertMatchesRegularExpression('/\(hors bloc de\s+suggestions et hors liens\)/u', $system);
+
+        $this->ask(['question' => 'Who is Horlynat?', 'locale' => 'en']);
+        self::assertStringContainsString('90 mots au plus et 4 phrases au plus', $this->lastSystemPrompt(), 'Même contrainte en anglais.');
     }
 
     public function testEnglishPromptUsesEnglishLinkLabels(): void
