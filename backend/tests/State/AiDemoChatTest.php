@@ -252,6 +252,20 @@ final class AiDemoChatTest extends WebTestCase
         yield 'coupé après ###EVENT#' => ["C'est 18 000 FCFA.\n###EVENT#", "C'est 18 000 FCFA.", null, []];
         yield 'coupé après ###EVENT##' => ["C'est 18 000 FCFA.\n###EVENT##", "C'est 18 000 FCFA.", null, []];
         yield 'coupé en pleine étiquette tolérante' => ["C'est 18 000 FCFA.\nEVENT: or", "C'est 18 000 FCFA.", null, []];
+        // 3e contre-audit.
+        yield 'étiquette sur la ligne suivante' => ["C'est noté.\n###EVENT###\norder".$s, "C'est noté.", 'order', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'étiquette en chevrons' => ["C'est noté.\n###EVENT### <order>".$s, "C'est noté.", 'order', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'étiquette entre crochets' => ["C'est noté.\n###EVENT### [handover]".$s, "C'est noté.", 'handover', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'étiquette après un tiret' => ["C'est noté.\n###EVENT### - order".$s, "C'est noté.", 'order', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'guillemets et espaces insécables' => ["C'est noté.\n###EVENT### «\u{00A0}handover\u{202F}»".$s, "C'est noté.", 'handover', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'phrase anglaise « Event order? » : jamais un faux évènement' => ["Event order? We only sell groceries here.\n###EVENT### none", 'Event order? We only sell groceries here.', null, []];
+        yield 'phrase anglaise « Event: none of… » jamais vidée' => ["Event: none of our products are discounted today.\n###EVENT### none", 'Event: none of our products are discounted today.', null, []];
+        yield 'phrase « Suggestions : » du vendeur jamais vidée' => ["Suggestions : le riz parfumé ou le lait en poudre.\n###EVENT### none", 'Suggestions : le riz parfumé ou le lait en poudre.', null, []];
+        yield 'phrase « Suggestions : » suivie d\'italique jamais vidée' => ["Suggestions : *riz parfumé* ou *lait en poudre*.\n###EVENT### none", 'Suggestions : riz parfumé ou lait en poudre.', null, []];
+        yield 'phrase « Suggestions : » puis retour à la ligne jamais vidée' => ["Suggestions :\nle riz parfumé.\n###EVENT### none", "Suggestions :\nle riz parfumé.", null, []];
+        yield 'suggestion unique avec tiret jamais scindée' => ["Oui.\n###EVENT### none\n###SUGGESTIONS###\nRiz 25 kg - livré demain ?", 'Oui.', null, ['Riz 25 kg - livré demain ?']];
+        yield 'suggestion qui commence par « Event » ne coupe pas le bloc' => ["Oui.\n###EVENT### none\n###SUGGESTIONS###\nEvent order possible ce soir ?\nLivraison quand ?", 'Oui.', null, ['Event order possible ce soir ?', 'Livraison quand ?']];
+        yield 'gabarit du prompt recopié sur deux lignes' => ["Oui.\n###EVENT### none\n###SUGGESTIONS###\n- <message court (6 mots au plus) que ce client\n  pourrait t'envoyer>\n- Livraison quand ?", 'Oui.', null, ['Livraison quand ?']];
         yield 'titre « # Suggestions » dans la réponse' => ["# Suggestions du jour : riz et huile\nOk.\n###EVENT### none", "Suggestions du jour : riz et huile\nOk.", null, []];
     }
 

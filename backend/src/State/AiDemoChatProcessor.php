@@ -42,9 +42,21 @@ final class AiDemoChatProcessor implements ProcessorInterface
     private const MAX_SUGGESTION = 60;
     /**
      * Étiquette d'évènement après le mot EVENT : décoration Markdown, « : » ou
-     * « = », guillemets facultatifs ; mot entier (« order. » oui, « orderly » non).
+     * « = », au plus un saut de ligne (« ###EVENT###\norder »), ouvrant
+     * facultatif (guillemets, chevron, crochet, tiret), espaces insécables
+     * compris (`\h`) ; mot entier (« order. » oui, « orderly » non).
      */
-    private const EVENT_TAG = '[ \t*_#]*[:=]?[ \t*_]*[«"\'`(]?[ \t]*(order|handover|none)\b';
+    private const EVENT_TAG = '[\h*_#]*[:=]?\h*(?:\R\h*)?[\h*_]*[«"\'`(<\[\-–—]?\h*((?i:order|handover|none))\b';
+    /**
+     * Marqueurs : deux dièses ou plus collés au mot, n'importe où dans la
+     * ligne, ou mot en début de ligne. Sans dièses, une vraie phrase est
+     * protégée : EVENT seulement si l'étiquette termine la ligne (EVENT_LINE_END ;
+     * « Event order? We only… » reste visible), SUGGESTIONS seulement en
+     * majuscules (« Suggestions : … » reste visible) — 3e contre-audit.
+     */
+    private const EVENT_WORD = '(?:#{2,}[\h*_]*|^[\h*_#]*)(?i:EVENT)\b';
+    private const EVENT_LINE_END = '[\h*_»"\'`).>\]]*$';
+    private const SUGGESTIONS_WORD = '(?:#{2,}[\h*_]*(?i:SUGGESTIONS)|^[\h*_#]*SUGGESTIONS)\b';
 
     public function __construct(
         private readonly AiAssistantSettingsRepository $settingsRepository,
@@ -133,11 +145,11 @@ final class AiDemoChatProcessor implements ProcessorInterface
         $visible = [];
         $tail = null;
         foreach ($lines as $i => $line) {
-            if (preg_match('/#{2,}[ \t*_]*\b(?:EVENT|SUGGESTIONS)\b/iu', $line, $m, \PREG_OFFSET_CAPTURE)) {
+            if (preg_match('/#{2,}[\h*_]*\b(?:EVENT|SUGGESTIONS)\b/iu', $line, $m, \PREG_OFFSET_CAPTURE)) {
                 $visible[] = substr($line, 0, (int) $m[0][1]);
                 $tail = substr($line, (int) $m[0][1]);
-            } elseif (preg_match('/^[ \t*_#]*EVENT\b'.self::EVENT_TAG.'/iu', $line)
-                || preg_match('/^[ \t*_#]*SUGGESTIONS\b(?:[ \t:]*$|[ \t:]*[#*])/iu', $line)) {
+            } elseif (preg_match('/^[\h*_#]*EVENT\b'.self::EVENT_TAG.self::EVENT_LINE_END.'/iu', $line)
+                || preg_match('/^[\h*_#]*SUGGESTIONS\b(?:[\h:]*$|[\h:]*[#*])/u', $line)) {
                 $tail = $line;
             }
             if (null !== $tail) {
@@ -151,7 +163,7 @@ final class AiDemoChatProcessor implements ProcessorInterface
             return [self::dropTruncatedMarker(implode("\n", $visible)), null, []];
         }
 
-        $tag = preg_match('/\bEVENT\b'.self::EVENT_TAG.'/iu', $tail, $e) ? strtolower($e[1]) : null;
+        $tag = preg_match('/'.self::EVENT_WORD.self::EVENT_TAG.'/mu', $tail, $e) ? strtolower($e[1]) : null;
         $event = \in_array($tag, AiDemoChatApiResource::EVENTS, true) ? $tag : null;
 
         return [rtrim(implode("\n", $visible)), $event, self::suggestionLines($tail)];
@@ -164,16 +176,17 @@ final class AiDemoChatProcessor implements ProcessorInterface
      */
     private static function suggestionLines(string $tail): array
     {
-        if (!preg_match('/\bSUGGESTIONS\b[ \t*_#:]*/iu', $tail, $m, \PREG_OFFSET_CAPTURE)) {
+        if (!preg_match('/'.self::SUGGESTIONS_WORD.'[\h*_#:]*/mu', $tail, $m, \PREG_OFFSET_CAPTURE)) {
             return [];
         }
         $block = substr($tail, (int) $m[0][1] + \strlen($m[0][0]));
-        if (preg_match('/(?:#{2,}[ \t*_]*|^[ \t*_#]*)\bEVENT\b/imu', $block, $e, \PREG_OFFSET_CAPTURE)) {
+        if (preg_match('/#{2,}[\h*_]*(?i:EVENT)\b|^[\h*_#]*(?i:EVENT)\b'.self::EVENT_TAG.self::EVENT_LINE_END.'/mu', $block, $e, \PREG_OFFSET_CAPTURE)) {
             $block = substr($block, 0, (int) $e[0][1]);
         }
         $lines = array_values(array_filter(preg_split('/\R/u', $block) ?: [], static fn (string $l): bool => '' !== trim($l)));
-        // Tout le bloc sur une ligne : « - Vous livrez ? - Prix ? ».
-        if (1 === \count($lines)) {
+        // Tout le bloc sur une ligne : « - Vous livrez ? - Prix ? » — seulement
+        // s'il commence par une puce (« Riz 25 kg - livré demain ? » reste entier).
+        if (1 === \count($lines) && preg_match('/^\h*[-•–—]\h/u', $lines[0])) {
             $lines = preg_split('/(?:^|[ \t]+)[-•–—][ \t]+/u', $lines[0]) ?: [];
         }
 
@@ -187,9 +200,9 @@ final class AiDemoChatProcessor implements ProcessorInterface
      */
     private static function dropTruncatedMarker(string $text): string
     {
-        $text = (string) preg_replace('/\R[ \t*_]*#{2,}[ \tA-Za-z]{0,16}$/u', '', rtrim($text));
+        $text = (string) preg_replace('/\R[\h*_]*#{2,}[\hA-Za-z]{0,16}$/u', '', rtrim($text));
 
-        return rtrim((string) preg_replace('/\R[ \t*_#]*(?:EVENT|SUGGESTIONS)\b[^\n]{0,12}$/iu', '', $text));
+        return rtrim((string) preg_replace('/\R[\h*_#]*(?:EVENT|SUGGESTIONS)\b[^\n]{0,12}$/u', '', $text));
     }
 
     /**
@@ -211,6 +224,10 @@ final class AiDemoChatProcessor implements ProcessorInterface
             $line = (string) preg_replace('/^[ \t]*(?:[-•*–—][ \t]*)?(?:\d{1,2}[.)][ \t]+)?/u', '', $line);
             // Gabarit du prompt recopié (« <…> ») ou guillemets englobants.
             $line = trim((string) preg_replace('/^[ \t]*([<«"“])(.*)([>»"”])[ \t]*$/u', '$2', $line));
+            // Gabarit du prompt recopié sur plusieurs lignes : jamais un bouton.
+            if (str_contains($line, '<') || str_contains($line, '>')) {
+                continue;
+            }
             $text = mb_substr(self::plain($line), 0, self::MAX_SUGGESTION);
             // Jamais d'adresse e-mail ni de nom de domaine nu dans un bouton
             // (après plain() : le libellé d'un lien Markdown, lui, est gardé).
