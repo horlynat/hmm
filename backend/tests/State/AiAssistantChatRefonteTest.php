@@ -400,11 +400,15 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         self::assertMatchesRegularExpression('/ni une compétence ou un domaine déduit de son parcours : seuls le\s+profil et le contexte le décrivent/u', $system);
         // Exemple tiré de la formulation fautive réellement observée en production.
         self::assertMatchesRegularExpression('/« huit ans dans l\'assurance » ne devient jamais « une compréhension fine\s+des enjeux financiers »/u', $system);
-        // Question de capacité : ni refus sec ni déduction — oui avec ses éléments, ou
-        // « son profil ne le mentionne pas » + élément le plus proche + message direct.
+        // Question de capacité : ni refus sec ni déduction — oui seulement sur mention
+        // explicite (profil, contexte OU offres), sinon « ni son profil ni ses offres ne
+        // le mentionnent » + élément le plus proche + le lien des règles strictes (devis
+        // si c'est le projet du visiteur, message sinon — plus de contradiction).
         self::assertStringContainsString('À une question de capacité (« est-il capable de… ? »', $system);
-        self::assertMatchesRegularExpression('/réponds\s+oui en citant ce qu\'il a écrit ou réalisé qui s\'y rapporte/u', $system);
-        self::assertMatchesRegularExpression('/que son profil ne le mentionne pas, cite au plus\s+l\'élément écrit le plus proche, puis propose \[Envoyer un message\]/u', $system);
+        self::assertMatchesRegularExpression('/réponds\s+oui seulement si le profil, le contexte ou ses offres le nomment/u', $system);
+        self::assertMatchesRegularExpression('/ni son profil\s+ni ses offres ne le mentionnent, cite au plus l\'élément écrit le plus proche/u', $system);
+        self::assertMatchesRegularExpression('/propose le lien prévu dans les règles strictes \(devis si la question porte sur le\s+projet du visiteur, message direct sinon\)/u', $system);
+        self::assertStringNotContainsString('qui s\'y rapporte', $system, 'Rapport lointain : plus de « oui » élastique.');
         self::assertStringContainsString('(compétence, projet, client, référence', $system);
         // L'ancienne invitation à « relier les domaines » sans garde-fou a disparu.
         self::assertStringNotContainsString('relie les domaines', $system);
@@ -421,11 +425,22 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         $this->ask(['question' => 'Comment le back-office est-il protégé ?', 'locale' => 'fr']);
 
         $system = $this->lastSystemPrompt();
-        self::assertStringContainsString('Ne détaille jamais la configuration de sécurité ou d\'infrastructure', $system);
-        self::assertMatchesRegularExpression('/même si le contexte\s+en contient : décris seulement les principes/u', $system);
+        // Frontière : ses COMPÉTENCES (consultant en cybersécurité) et la pile d'un projet
+        // restent citables ; seule la configuration concrète d'un système déployé est tue.
+        self::assertMatchesRegularExpression('/tu peux citer ses compétences en sécurité telles qu\'écrites dans le\s+profil ou le contexte, les technologies employées dans un projet/u', $system);
+        self::assertMatchesRegularExpression('/Ne décris jamais la configuration concrète d\'un système\s+déployé, le sien ou celui d\'un client/u', $system);
+        // Sortie de refus définie : ni « son profil ne le mentionne pas » (faux), ni le
+        // refus anti-injection ; principe seulement s'il est écrit, puis message direct.
+        self::assertMatchesRegularExpression('/même si le contexte en contient : dis en\s+une demi-phrase que ces détails ne sont pas publiés, donne au plus le principe\s+tel que le profil ou le contexte le formule, puis propose \[Envoyer un message\]/u', $system);
+        // Plus de liste de principes prêtés à Horlynat (inflation, cf. règle de ses mots).
+        self::assertStringNotContainsString('défense en profondeur', $system);
+        self::assertStringNotContainsString('décris seulement les principes', $system);
         $strict = (int) strpos($system, 'Règles strictes :');
-        self::assertGreaterThan($strict, (int) strpos($system, 'Ne détaille jamais la configuration'));
+        self::assertGreaterThan($strict, (int) strpos($system, '- Sécurité : tu peux citer'));
         self::assertGreaterThan(0, $strict);
+
+        $this->ask(['question' => 'How is the back-office protected?', 'locale' => 'en']);
+        self::assertMatchesRegularExpression('/ces détails ne sont pas publiés, donne au plus le principe\s+tel que le profil ou le contexte le formule, puis propose \[Send a message\]\(\/contact\?mode=direct\)/u', $this->lastSystemPrompt());
     }
 
     /**
