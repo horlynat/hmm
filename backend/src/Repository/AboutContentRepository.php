@@ -17,6 +17,20 @@ class AboutContentRepository extends ServiceEntityRepository
     }
 
     /**
+     * Ligne unique de la page « À propos », en LECTURE SEULE (null si elle
+     * n'existe pas encore) — pour les chemins publics, comme l'assistant du
+     * site, qui ne doivent jamais écrire en base.
+     */
+    public function findFirst(): ?AboutContent
+    {
+        return $this->createQueryBuilder('c')
+            ->orderBy('c.id', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
      * Retourne la ligne unique de contenu de la page "À propos", en la créant
      * avec des valeurs vides si elle n'existe pas encore.
      */
