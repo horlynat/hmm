@@ -15,6 +15,8 @@ import { rateLimit } from "@/lib/rate-limit";
 const MAX_MESSAGE = 300;
 const MAX_TURN = 400;
 const MAX_HISTORY = 6;
+/** Borne de App\State\AiDemoChatProcessor::MAX_SUGGESTION : au-delà, ce n'est plus une réponse rapide. */
+const MAX_SUGGESTION = 60;
 
 type Turn = { role: "user" | "assistant"; text: string };
 
@@ -59,12 +61,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false }, { status: res.status === 429 ? 429 : 502 });
     }
 
-    const data = (await res.json()) as { answer?: unknown; event?: unknown; degraded?: unknown };
+    const data = (await res.json()) as { answer?: unknown; event?: unknown; degraded?: unknown; suggestions?: unknown };
     if (data.degraded === true || typeof data.answer !== "string" || !data.answer.trim()) {
       return NextResponse.json({ ok: false });
     }
     const event = data.event === "order" || data.event === "handover" ? data.event : null;
-    return NextResponse.json({ ok: true, answer: data.answer, event });
+    const suggestions = Array.isArray(data.suggestions)
+      ? data.suggestions
+          .filter((s): s is string => typeof s === "string" && s.trim() !== "" && s.length <= MAX_SUGGESTION)
+          .slice(0, 3)
+      : [];
+    return NextResponse.json({ ok: true, answer: data.answer, event, suggestions });
   } catch (error) {
     console.error("[ai-demo] POST /assistant/demo failed", error);
     return NextResponse.json({ ok: false }, { status: 502 });

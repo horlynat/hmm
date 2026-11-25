@@ -305,7 +305,7 @@ export type AiAssistantChatResult =
 
 /** Démo WhatsApp de l'accueil (POST /api/ai-assistant/demo). */
 export type AiDemoResult =
-  | { ok: true; answer: string; event: "order" | "handover" | null }
+  | { ok: true; answer: string; event: "order" | "handover" | null; suggestions: string[] }
   | { ok: false };
 
 /**

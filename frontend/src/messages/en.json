@@ -1720,18 +1720,13 @@
     "demo": {
       "kick": "Featured offer",
       "title": "Your WhatsApp assistant, in action",
-      "lede": "What your customer experiences, and what you receive on your side. Write to it to try.",
+      "lede": "Try it as if you were one of your customers: write to the shop and the assistant replies live. Picture it on your own WhatsApp.",
       "shop": "Ndinga Store",
-      "shopSub": "Example shop · AI assistant",
       "welcome": "Hello! Welcome to Ndinga Store. How can I help you?",
-      "user1": "Good evening, do you deliver to Poto-Poto?",
-      "bot1": "Good evening! Yes, we deliver to Poto-Poto today, for any order placed before 2 p.m.",
-      "quick": [
-        "Do you have rice?",
-        "I want to order",
-        "Do you deliver?",
-        "Opening hours?"
-      ],
+      "online": "online",
+      "typingStatus": "typing…",
+      "notice": "Live demo with a fictional shop: write as one of its customers and the AI assistant replies.",
+      "ctaText": "Want the same assistant for your business?",
       "inputLabel": "Your message",
       "placeholder": "Write a message",
       "send": "Send",
