@@ -97,7 +97,7 @@ final class AiAssistantOwnerProfile
 
     /**
      * Formations affichées sur la page À propos, de la plus récente à la plus
-     * ancienne : « Diplôme — Licence de mathématiques, Université X (2010 – 2013) ».
+     * ancienne : « Licence de mathématiques, Université X (2010 – 2013) ».
      *
      * @return list<string>
      */

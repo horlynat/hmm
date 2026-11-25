@@ -20,11 +20,14 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 
 /**
  * L'assistant du site connaît la présentation que Horlynat a rédigée lui-même
- * (pages À propos et Accueil), MOT POUR MOT — avant, il ne lisait ni l'une
- * ni l'autre et ignorait son parcours (constat du propriétaire, 2026-11-25).
+ * (page À propos et ses formations), MOT POUR MOT — avant, il ne la lisait
+ * pas et ignorait son parcours (constat du propriétaire, 2026-11-25).
  *
- * AboutContent et HomeContent sont des lignes uniques : chaque test
- * restaure les valeurs qu'il modifie.
+ * AboutContent est une ligne unique, partagée par toutes les suites : chaque
+ * test tourne dans une transaction ANNULÉE à la fin (la requête HTTP partage
+ * la connexion grâce à disableReboot). Rien n'est jamais validé en base, même
+ * si plusieurs exécutions tournent en même temps — l'ancien schéma
+ * « modifier puis restaurer » polluait la ligne en concurrence (4e contre-audit).
  */
 final class AiAssistantOwnerProfileTest extends WebTestCase
 {
@@ -33,8 +36,6 @@ final class AiAssistantOwnerProfileTest extends WebTestCase
     private string $ip;
     /** @var list<array<string, mixed>> */
     private array $claudeBodies = [];
-    /** @var list<callable(): void> */
-    private array $restore = [];
 
     protected function setUp(): void
     {
@@ -54,6 +55,7 @@ final class AiAssistantOwnerProfileTest extends WebTestCase
         });
         static::getContainer()->set(ClaudeClient::class, new ClaudeClient($http, new NullLogger(), 'test-key', 'claude-sonnet-5', 'claude-haiku-4-5-20251001'));
 
+        $this->em->getConnection()->beginTransaction();
         $settings = static::getContainer()->get(AiAssistantSettingsRepository::class)->getSettings();
         $settings->setAiAssistantEnabled(true);
         $this->em->flush();
@@ -62,13 +64,12 @@ final class AiAssistantOwnerProfileTest extends WebTestCase
     protected function tearDown(): void
     {
         try {
-            foreach (array_reverse($this->restore) as $undo) {
-                $undo();
+            $conn = $this->em->getConnection();
+            while ($conn->isTransactionActive()) {
+                $conn->rollBack();
             }
-            $this->em->flush();
         } finally {
-            // Toujours éteindre le noyau, même si une restauration échoue :
-            // sinon tous les tests suivants échouent en cascade.
+            // Toujours éteindre le noyau, même si l'annulation échoue.
             parent::tearDown();
         }
     }
@@ -84,17 +85,14 @@ final class AiAssistantOwnerProfileTest extends WebTestCase
     }
 
     /**
-     * Modifie un champ de la ligne unique et programme sa restauration.
+     * Modifie un champ de la ligne unique — dans la transaction du test,
+     * annulée au tearDown.
      *
      * @param AboutContent|HomeContent $entity
      */
     private function set(object $entity, string $field, mixed $value): void
     {
-        $getter = 'get'.ucfirst($field);
-        $setter = 'set'.ucfirst($field);
-        $before = $entity->{$getter}();
-        $entity->{$setter}($value);
-        $this->restore[] = static fn () => $entity->{$setter}($before);
+        $entity->{'set'.ucfirst($field)}($value);
     }
 
     private function ask(string $question, string $locale = 'fr'): void
@@ -169,14 +167,6 @@ final class AiAssistantOwnerProfileTest extends WebTestCase
             ->setDescription('Analyse, probabilités, statistiques.');
         $this->em->persist($course);
         $this->em->flush();
-        $courseId = (int) $course->getId();
-        $userId = (int) $user->getId();
-        // SQL direct : les entités peuvent être détachées par la requête HTTP.
-        $this->restore[] = function () use ($courseId, $userId): void {
-            $conn = $this->em->getConnection();
-            $conn->executeStatement('DELETE FROM course WHERE id = ?', [$courseId]);
-            $conn->executeStatement('DELETE FROM user WHERE id = ?', [$userId]);
-        };
 
         $this->ask('Quels diplômes a-t-il ?');
         $fr = $this->profileBlock();
@@ -202,13 +192,6 @@ final class AiAssistantOwnerProfileTest extends WebTestCase
             ->setStartDate(new \DateTimeImmutable($start))->setEndDate(new \DateTimeImmutable($end))->setDescription('');
         $this->em->persist($course);
         $this->em->flush();
-        $courseId = (int) $course->getId();
-        $userId = (int) $user->getId();
-        $this->restore[] = function () use ($courseId, $userId): void {
-            $conn = $this->em->getConnection();
-            $conn->executeStatement('DELETE FROM course WHERE id = ?', [$courseId]);
-            $conn->executeStatement('DELETE FROM user WHERE id = ?', [$userId]);
-        };
     }
 
     /** Même ordre et mêmes années que la page ; un diplôme à venir n'est jamais présenté comme obtenu. */
@@ -300,18 +283,10 @@ final class AiAssistantOwnerProfileTest extends WebTestCase
      */
     public function testAMissingAboutPageIsNeverCreatedFromThePublicChat(): void
     {
-        // Transaction annulée à la fin : la requête HTTP partage cette connexion
-        // (disableReboot) et voit la table vide ; aucune autre connexion ne voit
-        // rien (3e contre-audit : un DELETE en autocommit détruisait la ligne
-        // unique si une autre suite tournait en parallèle).
+        // Dans la transaction du test (annulée au tearDown) : la requête HTTP
+        // partage cette connexion et voit la table vide ; aucune autre ne voit rien.
         $conn = $this->em->getConnection();
-        $conn->beginTransaction();
         $conn->executeStatement('DELETE FROM about_content');
-        $this->restore[] = static function () use ($conn): void {
-            if ($conn->isTransactionActive()) {
-                $conn->rollBack();
-            }
-        };
         $this->em->clear();
 
         $this->ask('Qui est Horlynat ?');
