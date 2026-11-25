@@ -5,7 +5,6 @@ namespace App\Service;
 use App\Entity\AboutContent;
 use App\Entity\Course;
 use App\Repository\AboutContentRepository;
-use App\Enum\CourseTypeEnum;
 use App\Repository\CourseRepository;
 use Psr\Clock\ClockInterface;
 
@@ -66,15 +65,14 @@ final class AiAssistantOwnerProfile
                 $en ? 'Milestones' : 'Repères' => $this->stats($en ? $a->getJourneyStatsEn() : null, $a->getJourneyStats()),
             ]),
             $this->section($en ? 'Vision of the craft' : 'Vision du métier', [
+                // Même ordre que la page : citation, piliers, puis horizon (aboutPage.horizon).
                 $en ? 'Principle' : 'Principe' => $this->pick($en, $a->getVisionLedeEn(), $a->getVisionLede()),
-                // Libellés de la page (aboutPage.horizon) : Aujourd'hui / D'ici trois ans / À long terme.
+                'Vision' => $this->pick($en, $a->getVisionPillarEn(), $a->getVisionPillar()),
+                'Mission' => $this->pick($en, $a->getMissionPillarEn(), $a->getMissionPillar()),
+                'Ambition' => $this->pick($en, $a->getAmbitionPillarEn(), $a->getAmbitionPillar()),
                 $en ? 'Today' : 'Aujourd\'hui' => $this->pick($en, $a->getVisionTodayTextEn(), $a->getVisionTodayText()),
                 $en ? 'Within three years' : 'D\'ici trois ans' => $this->pick($en, $a->getHorizonMidTextEn(), $a->getHorizonMidText()),
                 $en ? 'In the long run' : 'À long terme' => $this->pick($en, $a->getVisionTomorrowTextEn(), $a->getVisionTomorrowText()),
-                'Vision' => $this->pick($en, $a->getVisionPillarEn(), $a->getVisionPillar()),
-                'Mission' => $this->pick($en, $a->getMissionPillarEn(), $a->getMissionPillar()),
-                $en ? 'Ambition' : 'Ambition' => $this->pick($en, $a->getAmbitionPillarEn(), $a->getAmbitionPillar()),
-                $en ? 'Learning' : 'Apprentissage' => $this->pick($en, $a->getLearningTextEn(), $a->getLearningText()),
             ]),
             $this->section($en ? 'Why work with him' : 'Pourquoi travailler avec lui', [
                 '1' => $this->pair($this->pick($en, $a->getWhy1TitleEn(), $a->getWhy1Title()), $this->pick($en, $a->getWhy1DescEn(), $a->getWhy1Desc())),
@@ -83,7 +81,11 @@ final class AiAssistantOwnerProfile
                 '4' => $this->pair($this->pick($en, $a->getWhy4TitleEn(), $a->getWhy4Title()), $this->pick($en, $a->getWhy4DescEn(), $a->getWhy4Desc())),
                 '5' => $this->pair($this->pick($en, $a->getWhy5TitleEn(), $a->getWhy5Title()), $this->pick($en, $a->getWhy5DescEn(), $a->getWhy5Desc())),
             ]),
-            $this->section($en ? 'Education and certifications' : 'Formation et certifications', $this->education($en)),
+            // La page affiche « Toujours en formation » sous les formations, dans Parcours.
+            $this->section($en ? 'Education and certifications' : 'Formation et certifications', [
+                ...$this->education($en),
+                $en ? 'Always learning' : 'Toujours en formation' => $this->pick($en, $a->getLearningTextEn(), $a->getLearningText()),
+            ]),
         ];
 
         $sections = array_values(array_filter($sections, static fn (string $s): bool => '' !== $s));
@@ -125,15 +127,11 @@ final class AiAssistantOwnerProfile
             : ($start === $end ? $start : $start.' – '.$end);
         $title = $this->pick($en, $c->getTitleEn(), $c->getTitle());
         $institution = self::clean($c->getInstitution());
-        $label = $en ? match ($c->getType()) {
-            CourseTypeEnum::DIPLOMA => 'Degree',
-            CourseTypeEnum::CERTIFICATION => 'Certification',
-            CourseTypeEnum::TRAINING => 'Training',
-        } : $c->getType()->getLabel();
-        $head = trim($label.' — '.$title.('' !== $institution ? ', '.$institution : ''));
-        $desc = $this->pick($en, $c->getDescriptionEn(), $c->getDescription());
 
-        return $head.' ('.$years.')'.('' !== $desc ? ' : '.$desc : '');
+        // Ni type (non affiché), ni description : la page n'en montre qu'un extrait,
+        // et c'est la description du CURSUS — l'assistant ne doit jamais en faire
+        // des compétences attestées de Horlynat (3e contre-audit).
+        return $title.('' !== $institution ? ', '.$institution : '').' ('.$years.')';
     }
 
     /** @param array<int|string, string> $fields */
@@ -163,9 +161,11 @@ final class AiAssistantOwnerProfile
         $render = static function (mixed $stats): string {
             $out = [];
             foreach (\is_array($stats) ? $stats : [] as $s) {
-                $text = trim(self::clean(\is_string($s['value'] ?? null) ? $s['value'] : '').' '.self::clean(\is_string($s['label'] ?? null) ? $s['label'] : ''));
-                if ('' !== $text) {
-                    $out[] = $text;
+                // Comme la page (toJourneyStats) : valeur ET libellé requis.
+                $value = self::clean(\is_string($s['value'] ?? null) ? $s['value'] : '');
+                $label = self::clean(\is_string($s['label'] ?? null) ? $s['label'] : '');
+                if ('' !== $value && '' !== $label) {
+                    $out[] = $value.' '.$label;
                 }
             }
 
@@ -176,9 +176,14 @@ final class AiAssistantOwnerProfile
         return '' !== $t ? $t : $render($fallback);
     }
 
+    /** Comme la page : un point sans titre n'est pas affiché, donc pas repris. */
     private function pair(string $title, string $desc): string
     {
-        return trim('' !== $title && '' !== $desc ? $title.' : '.$desc : $title.$desc);
+        if ('' === $title) {
+            return '';
+        }
+
+        return '' !== $desc ? $title.' : '.$desc : $title;
     }
 
     /**

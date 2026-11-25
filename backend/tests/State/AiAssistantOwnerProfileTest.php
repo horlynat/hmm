@@ -184,8 +184,12 @@ final class AiAssistantOwnerProfileTest extends WebTestCase
         $en = $this->profileBlock();
 
         self::assertStringContainsString("Formation et certifications\n", $fr);
-        self::assertStringContainsString('- Diplôme — Licence de mathématiques, Université Marien Ngouabi (2010 – 2013) : Analyse, probabilités, statistiques.', $fr);
-        self::assertStringContainsString('- Degree — BSc in Mathematics, Université Marien Ngouabi (2010 – 2013) : Analyse, probabilités, statistiques.', $en, 'Libellé anglais ; description sans traduction : repli sur le français.');
+        self::assertStringContainsString("\n- Licence de mathématiques, Université Marien Ngouabi (2010 – 2013)\n", $fr."\n");
+        self::assertStringContainsString("\n- BSc in Mathematics, Université Marien Ngouabi (2010 – 2013)\n", $en."\n");
+        // 3e contre-audit : la description est celle du CURSUS (la page n'en montre
+        // qu'un extrait) — jamais présentée comme une compétence de Horlynat.
+        self::assertStringNotContainsString('Analyse, probabilités', $fr.$en);
+        self::assertStringNotContainsString('Diplôme —', $fr, 'Le type n\'est pas affiché sur la page.');
     }
 
     private function course(string $title, string $start, string $end, CourseTypeEnum $type = CourseTypeEnum::DIPLOMA): void
@@ -221,8 +225,8 @@ final class AiAssistantOwnerProfileTest extends WebTestCase
         $web = (int) strpos($profile, 'Intégrateur web');
         $licence = (int) strpos($profile, 'Licence de mathématiques');
         self::assertTrue($phd > 0 && $phd < $web && $web < $licence, 'Du début le plus récent au plus ancien, comme la page.');
-        self::assertStringContainsString('- Formation — Intégrateur web, Institut (2016)', $profile);
-        self::assertStringContainsString('- Diplôme — Doctorat en IA, Institut (à partir de 10/2099, à venir)', $profile);
+        self::assertStringContainsString("\n- Intégrateur web, Institut (2016)\n", $profile."\n");
+        self::assertStringContainsString("\n- Doctorat en IA, Institut (à partir de 10/2099, à venir)\n", $profile."\n");
         self::assertStringNotContainsString('2099 – 2102', $profile);
     }
 
@@ -242,6 +246,25 @@ final class AiAssistantOwnerProfileTest extends WebTestCase
         $this->ask('Qui est Horlynat ?');
 
         self::assertStringNotContainsString('NONAFF', $this->profileBlock());
+    }
+
+    public function testAlwaysLearningSitsWithEducationAndIncompleteItemsAreDroppedLikeOnThePage(): void
+    {
+        $this->set($this->about(), 'learningText', 'Objectif : un doctorat en IA.');
+        $this->set($this->about(), 'why3Title', '');
+        $this->set($this->about(), 'why3Desc', 'DESCRIPTION SANS TITRE');
+        $this->set($this->about(), 'journeyStats', [['value' => 'Depuis 2016', 'label' => 'dans le numérique'], ['value' => 'REPÈRE SANS LIBELLÉ', 'label' => '']]);
+        $this->em->flush();
+
+        $this->ask('Son parcours ?');
+
+        $profile = $this->profileBlock();
+        $education = (int) strpos($profile, 'Formation et certifications');
+        self::assertGreaterThan($education, (int) strpos($profile, '- Toujours en formation : Objectif : un doctorat en IA.'));
+        self::assertGreaterThan(0, $education);
+        self::assertStringNotContainsString('DESCRIPTION SANS TITRE', $profile);
+        self::assertStringNotContainsString('REPÈRE SANS LIBELLÉ', $profile);
+        self::assertStringContainsString('- Repères : Depuis 2016 dans le numérique', $profile);
     }
 
     public function testHorizonUsesThePageLabels(): void
@@ -277,14 +300,17 @@ final class AiAssistantOwnerProfileTest extends WebTestCase
      */
     public function testAMissingAboutPageIsNeverCreatedFromThePublicChat(): void
     {
+        // Transaction annulée à la fin : la requête HTTP partage cette connexion
+        // (disableReboot) et voit la table vide ; aucune autre connexion ne voit
+        // rien (3e contre-audit : un DELETE en autocommit détruisait la ligne
+        // unique si une autre suite tournait en parallèle).
         $conn = $this->em->getConnection();
-        $conn->executeStatement('DROP TEMPORARY TABLE IF EXISTS about_backup');
-        $conn->executeStatement('CREATE TEMPORARY TABLE about_backup AS SELECT * FROM about_content');
+        $conn->beginTransaction();
         $conn->executeStatement('DELETE FROM about_content');
         $this->restore[] = static function () use ($conn): void {
-            $conn->executeStatement('DELETE FROM about_content');
-            $conn->executeStatement('INSERT INTO about_content SELECT * FROM about_backup');
-            $conn->executeStatement('DROP TEMPORARY TABLE about_backup');
+            if ($conn->isTransactionActive()) {
+                $conn->rollBack();
+            }
         };
         $this->em->clear();
 
