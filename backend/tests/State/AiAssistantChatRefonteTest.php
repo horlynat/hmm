@@ -411,6 +411,24 @@ final class AiAssistantChatRefonteTest extends WebTestCase
     }
 
     /**
+     * Audit de la page Portail Digital (2026-11-26) : la description d'un projet
+     * publiait la configuration de sécurité (fournisseurs, rôles, outils). Le
+     * corpus de l'assistant la contient tant qu'elle n'est pas réingérée : il ne
+     * doit jamais la redire, seulement les principes.
+     */
+    public function testSecurityConfigurationIsNeverDetailedOnlyPrinciples(): void
+    {
+        $this->ask(['question' => 'Comment le back-office est-il protégé ?', 'locale' => 'fr']);
+
+        $system = $this->lastSystemPrompt();
+        self::assertStringContainsString('Ne détaille jamais la configuration de sécurité ou d\'infrastructure', $system);
+        self::assertMatchesRegularExpression('/même si le contexte\s+en contient : décris seulement les principes/u', $system);
+        $strict = (int) strpos($system, 'Règles strictes :');
+        self::assertGreaterThan($strict, (int) strpos($system, 'Ne détaille jamais la configuration'));
+        self::assertGreaterThan(0, $strict);
+    }
+
+    /**
      * En production (2026-11-25), « 2 à 5 phrases courtes », noyé en fin de
      * consigne, n'était pas suivi : 3 paragraphes par réponse. La contrainte est
      * chiffrée et placée juste après les missions, avant les données.
