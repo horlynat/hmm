@@ -62,14 +62,23 @@ final class AiAssistantOfferCatalog
 
     private function details(Offer $offer, bool $en): string
     {
-        $pick = static fn (?string $translated, string $fallback): string => self::oneLine(($en ? $translated : null) ?: $fallback);
-        /** @param list<string> $items */
-        $list = static fn (array $items): string => implode(' ; ', array_filter(array_map(self::oneLine(...), $items), static fn (string $s): bool => '' !== $s));
-        /** @param list<string>|null $translated @param list<string> $fallback @return list<string> */
-        $pickList = static fn (?array $translated, array $fallback): array => ($en && null !== $translated && [] !== $translated) ? $translated : $fallback;
+        // Nettoyer AVANT de choisir : une traduction vide une fois nettoyée
+        // (« () », espaces) retombe sur le français au lieu d'effacer le champ.
+        $pick = static function (?string $translated, string $fallback) use ($en): string {
+            $t = $en ? self::oneLine((string) $translated) : '';
 
-        $calendar = $pickList($offer->getCalendarEn(), $offer->getCalendar());
-        $pack = $pickList($offer->getPackEn(), $offer->getPack());
+            return '' !== $t ? $t : self::oneLine($fallback);
+        };
+        $pickList = static function (mixed $translated, mixed $fallback) use ($en): string {
+            $t = $en ? self::joinItems($translated) : '';
+
+            return '' !== $t ? $t : self::joinItems($fallback);
+        };
+        $pickBlocks = static function (mixed $translated, mixed $fallback, callable $render) use ($en): string {
+            $t = $en ? $render($translated) : '';
+
+            return '' !== $t ? $t : $render($fallback);
+        };
 
         $fields = [
             $en ? 'Offer' : 'Offre' => $pick($offer->getTitleEn(), $offer->getTitle()),
@@ -77,17 +86,11 @@ final class AiAssistantOfferCatalog
             $en ? 'For whom' : 'Pour qui' => $pick($offer->getAudienceEn(), $offer->getAudience()),
             $en ? 'Problem solved' : 'Problème résolu' => $pick($offer->getPainEn(), $offer->getPain()),
             $en ? 'Promise' : 'Promesse' => trim($pick($offer->getHeadlineEn(), $offer->getHeadline()).' '.$pick($offer->getLeadTextEn(), $offer->getLeadText())),
-            $en ? 'Included' : 'Inclus' => $list($pickList($offer->getIncludesEn(), $offer->getIncludes())),
-            $en ? 'Pack' : 'Pack' => implode(' ; ', array_map(
-                static fn (array $b): string => self::oneLine((string) ($b['title'] ?? '')).' : '.$list(array_values(array_filter($b['items'] ?? [], 'is_string'))),
-                $pack,
-            )),
-            $en ? 'Before' : 'Avant' => $list($pickList($offer->getBeforeItemsEn(), $offer->getBeforeItems())),
-            $en ? 'After' : 'Après' => $list($pickList($offer->getAfterItemsEn(), $offer->getAfterItems())),
-            $en ? 'Schedule' : 'Calendrier' => implode(' ; ', array_map(
-                static fn (array $c): string => self::oneLine((string) ($c['day'] ?? '')).' '.self::oneLine((string) ($c['text'] ?? '')),
-                $calendar,
-            )),
+            $en ? 'Included' : 'Inclus' => $pickList($offer->getIncludesEn(), $offer->getIncludes()),
+            'Pack' => $pickBlocks($offer->getPackEn(), $offer->getPack(), self::packText(...)),
+            $en ? 'Before' : 'Avant' => $pickList($offer->getBeforeItemsEn(), $offer->getBeforeItems()),
+            $en ? 'After' : 'Après' => $pickList($offer->getAfterItemsEn(), $offer->getAfterItems()),
+            $en ? 'Schedule' : 'Calendrier' => $pickBlocks($offer->getCalendarEn(), $offer->getCalendar(), self::calendarText(...)),
             $en ? 'Client provides' : 'Le client fournit' => $pick($offer->getClientNeedsEn(), $offer->getClientNeeds()),
         ];
 
@@ -99,6 +102,55 @@ final class AiAssistantOfferCatalog
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * Liste de chaînes → « a ; b ». Tolérante : toute valeur qui n'est pas une
+     * chaîne (JSON modifié hors back-office, migration) est ignorée — jamais
+     * une TypeError qui ferait tomber l'assistant entier en mode dégradé.
+     */
+    private static function joinItems(mixed $items): string
+    {
+        if (!\is_array($items)) {
+            return '';
+        }
+        $out = [];
+        foreach ($items as $item) {
+            $text = \is_string($item) ? self::oneLine($item) : '';
+            if ('' !== $text) {
+                $out[] = $text;
+            }
+        }
+
+        return implode(' ; ', $out);
+    }
+
+    /** Bloc qui n'est pas un tableau : `?? null` le lit comme vide, il est ignoré. */
+    private static function packText(mixed $pack): string
+    {
+        $out = [];
+        foreach (\is_array($pack) ? $pack : [] as $block) {
+            $title = \is_string($block['title'] ?? null) ? self::oneLine($block['title']) : '';
+            $items = self::joinItems($block['items'] ?? null);
+            if ('' !== $title || '' !== $items) {
+                $out[] = trim($title.' : '.$items, ' :');
+            }
+        }
+
+        return implode(' ; ', $out);
+    }
+
+    private static function calendarText(mixed $calendar): string
+    {
+        $out = [];
+        foreach (\is_array($calendar) ? $calendar : [] as $step) {
+            $text = trim((\is_string($step['day'] ?? null) ? self::oneLine($step['day']) : '').' '.(\is_string($step['text'] ?? null) ? self::oneLine($step['text']) : ''));
+            if ('' !== $text) {
+                $out[] = $text;
+            }
+        }
+
+        return implode(' ; ', $out);
     }
 
     private function line(Offer $offer, bool $en): string
@@ -133,6 +185,6 @@ final class AiAssistantOfferCatalog
      */
     private static function oneLine(string $text): string
     {
-        return trim((string) preg_replace('/[\s\[\]()|<>]+/u', ' ', $text));
+        return trim((string) preg_replace('/[\s\[\]()|<>＜＞‹›〈〉]+/u', ' ', $text));
     }
 }
