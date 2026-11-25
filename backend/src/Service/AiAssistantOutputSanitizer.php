@@ -15,7 +15,7 @@ final class AiAssistantOutputSanitizer
     private const ALLOWED_LINK_DOMAINS = ['horlynat.com', 'github.com', 'linkedin.com'];
 
     /** Fragments qui ne devraient jamais apparaître dans une réponse saine — signe d'une fuite du system prompt/du contexte délimité. */
-    private const LEAK_MARKERS = ['<context>', '</context>', '<catalogue>', '</catalogue>', '<fiches>', '</fiches>', 'GEMINI_API_KEY', 'ANTHROPIC_API_KEY', 'system prompt', 'system instruction'];
+    private const LEAK_MARKERS = ['<context>', '</context>', '<catalogue>', '</catalogue>', '<fiches>', '</fiches>', '<profil>', '</profil>', 'GEMINI_API_KEY', 'ANTHROPIC_API_KEY', 'system prompt', 'system instruction'];
 
     /**
      * @return array{text: string, leaked: bool}
