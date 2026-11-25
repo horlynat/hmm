@@ -5,7 +5,9 @@ namespace App\Service;
 use App\Entity\AboutContent;
 use App\Entity\Course;
 use App\Repository\AboutContentRepository;
+use App\Enum\CourseTypeEnum;
 use App\Repository\CourseRepository;
+use Psr\Clock\ClockInterface;
 
 /**
  * Présentation de Horlynat rédigée par lui-même (page À propos et ses
@@ -22,9 +24,11 @@ use App\Repository\CourseRepository;
  * Project, Article, Experience et SkillCategory étaient ingérés) : il ne
  * connaissait pas le parcours de son propriétaire (constat 2026-11-25).
  *
- * Seuls les champs AFFICHÉS publiquement sur la page À propos sont repris
- * (SiteAbout.tsx : AboutContent + Course) — rien d'interne (ni photo, ni
- * horodatage, ni auteur). HomeContent n'est PAS repris : depuis la refonte,
+ * Seuls les champs AFFICHÉS sur la page À propos sont repris (SiteAbout.tsx :
+ * AboutContent + Course), donc relus et validés par le propriétaire — ni les
+ * champs saisis au back-office mais affichés nulle part (localisation,
+ * langues, mode de travail, « également », sur-titre, centres d'intérêt :
+ * 2e contre-audit), ni rien d'interne (photo, horodatage, auteur). HomeContent n'est PAS repris : depuis la refonte,
  * l'accueil ne l'affiche plus (anciens champs non relus, doublons de la page
  * À propos qui finiraient par la contredire — contre-audit). Texte
  * déterministe (ordre fixe) : le system prompt reste identique d'un appel à
@@ -35,6 +39,7 @@ final class AiAssistantOwnerProfile
     public function __construct(
         private readonly AboutContentRepository $about,
         private readonly CourseRepository $courses,
+        private readonly ClockInterface $clock,
     ) {
     }
 
@@ -48,12 +53,9 @@ final class AiAssistantOwnerProfile
             $this->section($en ? 'Identity' : 'Identité', [
                 $en ? 'Name' : 'Nom' => $a->getProfileName(),
                 $en ? 'Role' : 'Rôle' => $this->pick($en, $a->getProfileRoleEn(), $a->getProfileRole()),
-                $en ? 'Also' : 'Également' => $this->pick($en, $a->getProfileAlsoEn(), $a->getProfileAlso()),
-                $en ? 'Location' : 'Localisation' => $this->pick($en, $a->getProfileLocationEn(), $a->getProfileLocation()),
-                $en ? 'Work mode' : 'Mode de travail' => $this->pick($en, $a->getProfileWorkModeEn(), $a->getProfileWorkMode()),
                 $en ? 'Availability' : 'Disponibilité' => $this->pick($en, $a->getProfileAvailabilityEn(), $a->getProfileAvailability()),
-                $en ? 'Languages' : 'Langues' => $this->pick($en, $a->getProfileLanguagesEn(), $a->getProfileLanguages()),
-                $en ? 'Headline' : 'Accroche' => trim($this->pick($en, $a->getHeroEyebrowEn(), $a->getHeroEyebrow()).' — '.$this->pick($en, $a->getHeroTitleEn(), $a->getHeroTitle()).' '.$this->pick($en, $a->getHeroTitleAccentEn(), $a->getHeroTitleAccent()), ' —'),
+                // Pas de trim(…, ' —') : trim() coupe octet par octet et corrompait l'UTF-8.
+                $en ? 'Headline' : 'Accroche' => implode(' ', array_filter([$this->pick($en, $a->getHeroTitleEn(), $a->getHeroTitle()), $this->pick($en, $a->getHeroTitleAccentEn(), $a->getHeroTitleAccent())], static fn (string $v): bool => '' !== $v)),
                 $en ? 'In short' : 'En bref' => $this->pick($en, $a->getHeroSubEn(), $a->getHeroSub()),
             ]),
             $this->section($en ? 'Background' : 'Parcours', [
@@ -65,12 +67,13 @@ final class AiAssistantOwnerProfile
             ]),
             $this->section($en ? 'Vision of the craft' : 'Vision du métier', [
                 $en ? 'Principle' : 'Principe' => $this->pick($en, $a->getVisionLedeEn(), $a->getVisionLede()),
+                // Libellés de la page (aboutPage.horizon) : Aujourd'hui / D'ici trois ans / À long terme.
                 $en ? 'Today' : 'Aujourd\'hui' => $this->pick($en, $a->getVisionTodayTextEn(), $a->getVisionTodayText()),
-                $en ? 'His approach' : 'Son approche' => $this->pick($en, $a->getVisionTomorrowTextEn(), $a->getVisionTomorrowText()),
+                $en ? 'Within three years' : 'D\'ici trois ans' => $this->pick($en, $a->getHorizonMidTextEn(), $a->getHorizonMidText()),
+                $en ? 'In the long run' : 'À long terme' => $this->pick($en, $a->getVisionTomorrowTextEn(), $a->getVisionTomorrowText()),
                 'Vision' => $this->pick($en, $a->getVisionPillarEn(), $a->getVisionPillar()),
                 'Mission' => $this->pick($en, $a->getMissionPillarEn(), $a->getMissionPillar()),
                 $en ? 'Ambition' : 'Ambition' => $this->pick($en, $a->getAmbitionPillarEn(), $a->getAmbitionPillar()),
-                $en ? 'Mid-term horizon' : 'Horizon à moyen terme' => $this->pick($en, $a->getHorizonMidTextEn(), $a->getHorizonMidText()),
                 $en ? 'Learning' : 'Apprentissage' => $this->pick($en, $a->getLearningTextEn(), $a->getLearningText()),
             ]),
             $this->section($en ? 'Why work with him' : 'Pourquoi travailler avec lui', [
@@ -81,10 +84,6 @@ final class AiAssistantOwnerProfile
                 '5' => $this->pair($this->pick($en, $a->getWhy5TitleEn(), $a->getWhy5Title()), $this->pick($en, $a->getWhy5DescEn(), $a->getWhy5Desc())),
             ]),
             $this->section($en ? 'Education and certifications' : 'Formation et certifications', $this->education($en)),
-            $this->section($en ? 'Beyond work' : 'Au-delà du travail', [
-                $en ? 'Languages' : 'Langues' => $this->pickList($en, $a->getBeyondLanguagesEn(), $a->getBeyondLanguages()),
-                $en ? 'Interests' : 'Centres d\'intérêt' => $this->pickList($en, $a->getBeyondInterestsEn(), $a->getBeyondInterests()),
-            ]),
         ];
 
         $sections = array_values(array_filter($sections, static fn (string $s): bool => '' !== $s));
@@ -110,14 +109,28 @@ final class AiAssistantOwnerProfile
         return $out;
     }
 
+    private function now(): \DateTimeImmutable
+    {
+        return $this->clock->now();
+    }
+
     private function courseLine(Course $c, bool $en): string
     {
         $start = $c->getStartDate()->format('Y');
         $end = $c->getEndDate()->format('Y');
-        $years = $start === $end ? $start : $start.' – '.$end;
+        // Comme la page (« Dès {mois année} · À venir ») : jamais un diplôme à venir
+        // présenté comme obtenu.
+        $years = $c->getStartDate() > $this->now()
+            ? ($en ? 'starting ' : 'à partir de ').$c->getStartDate()->format('m/Y').($en ? ', upcoming' : ', à venir')
+            : ($start === $end ? $start : $start.' – '.$end);
         $title = $this->pick($en, $c->getTitleEn(), $c->getTitle());
         $institution = self::clean($c->getInstitution());
-        $head = trim($c->getType()->getLabel().' — '.$title.('' !== $institution ? ', '.$institution : ''));
+        $label = $en ? match ($c->getType()) {
+            CourseTypeEnum::DIPLOMA => 'Degree',
+            CourseTypeEnum::CERTIFICATION => 'Certification',
+            CourseTypeEnum::TRAINING => 'Training',
+        } : $c->getType()->getLabel();
+        $head = trim($label.' — '.$title.('' !== $institution ? ', '.$institution : ''));
         $desc = $this->pick($en, $c->getDescriptionEn(), $c->getDescription());
 
         return $head.' ('.$years.')'.('' !== $desc ? ' : '.$desc : '');
@@ -145,13 +158,6 @@ final class AiAssistantOwnerProfile
         return '' !== $t ? $t : self::clean((string) $fallback);
     }
 
-    private function pickList(bool $en, mixed $translated, mixed $fallback): string
-    {
-        $t = $en ? self::join($translated) : '';
-
-        return '' !== $t ? $t : self::join($fallback);
-    }
-
     private function stats(mixed $translated, mixed $fallback): string
     {
         $render = static function (mixed $stats): string {
@@ -175,20 +181,6 @@ final class AiAssistantOwnerProfile
         return trim('' !== $title && '' !== $desc ? $title.' : '.$desc : $title.$desc);
     }
 
-    /** Liste de chaînes ; tout élément qui n'est pas une chaîne est ignoré. */
-    private static function join(mixed $items): string
-    {
-        $out = [];
-        foreach (\is_array($items) ? $items : [] as $item) {
-            $text = \is_string($item) ? self::clean($item) : '';
-            if ('' !== $text) {
-                $out[] = $text;
-            }
-        }
-
-        return implode(' ; ', $out);
-    }
-
     /**
      * Une valeur = une ligne : saisie back-office, jamais de quoi refermer le
      * bloc <profil> (chevrons, y compris homoglyphes), forger un lien Markdown
@@ -199,6 +191,6 @@ final class AiAssistantOwnerProfile
      */
     private static function clean(string $text): string
     {
-        return trim((string) preg_replace('/[\s\p{Z}\p{Cc}\p{Cf}\[\]<>＜＞﹤﹥‹›〈〉⟨⟩˂˃［］《》]+/u', ' ', $text));
+        return trim((string) preg_replace('/[\s\p{Z}\p{Cc}\p{Cf}\[\]<>＜＞﹤﹥‹›〈〉⟨⟩˂˃［］《》ᐸᐳ❬❭〈〉⧼⧽❰❱❮❯]+/u', ' ', $text));
     }
 }
