@@ -1667,28 +1667,28 @@
           "dom": "Ingénierie logicielle",
           "title": "Je perds des ventes parce que je ne réponds pas assez vite",
           "text": "Un assistant IA répond à vos clients sur WhatsApp, jour et nuit.",
-          "offer": "whatsapp",
+          "offer": "whatsapp-ai",
           "icon": "shop"
         },
         {
           "dom": "Architecture logicielle",
           "title": "Mon application ralentit ou plante quand l’activité grandit",
           "text": "Je trouve ce qui bloque et comment évoluer sans tout refaire.",
-          "offer": "architecture",
+          "offer": "architecture-logicielle",
           "icon": "arch"
         },
         {
           "dom": "Cybersécurité",
           "title": "J’ai peur d’être piraté ou de perdre mes données",
           "text": "Je trouve vos failles avant les pirates et je vous aide à les corriger.",
-          "offer": "audit",
+          "offer": "audit-securite",
           "icon": "lock"
         },
         {
           "dom": "Gestion des risques",
           "title": "Je suis assuré, mais suis-je vraiment couvert ?",
           "text": "Je vérifie ce que vos contrats couvrent vraiment, avant un sinistre.",
-          "offer": "risques",
+          "offer": "gestion-des-risques",
           "icon": "umb"
         }
       ]
