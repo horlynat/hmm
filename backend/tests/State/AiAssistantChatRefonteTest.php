@@ -384,6 +384,24 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         self::assertGreaterThan(0, $strict);
     }
 
+    /**
+     * En production (2026-11-25), « 2 à 5 phrases courtes », noyé en fin de
+     * consigne, n'était pas suivi : 3 paragraphes par réponse. La contrainte est
+     * chiffrée et placée juste après les missions, avant les données.
+     */
+    public function testAStrictNumericLengthLimitComesRightAfterTheMissions(): void
+    {
+        $this->ask(['question' => 'Qui est Horlynat ?', 'locale' => 'fr']);
+
+        $system = $this->lastSystemPrompt();
+        self::assertStringContainsString('90 mots au plus et 4 phrases au plus', $system);
+        self::assertStringContainsString('jamais tout le parcours d\'un coup', $system);
+        self::assertStringNotContainsString('2 à 5 phrases', $system);
+        $length = (int) strpos($system, 'Longueur — contrainte stricte');
+        self::assertGreaterThan((int) strpos($system, 'Ta mission secondaire'), $length);
+        self::assertLessThan((int) strpos($system, "\n<profil>\n"), $length, 'Avant les données : lue avant le long profil.');
+    }
+
     public function testEnglishPromptUsesEnglishLinkLabels(): void
     {
         $this->ask(['question' => 'Hello', 'locale' => 'en']);
