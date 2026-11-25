@@ -16,18 +16,38 @@ final class OfferCoverImageTest extends FunctionalTestCase
     /** @var list<int> */
     private array $offerIds = [];
 
+    /** @var list<string> Fichiers déjà présents avant le test (jamais supprimés). */
+    private array $filesBefore = [];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->filesBefore = $this->uploadedFiles();
+    }
+
     protected function tearDown(): void
     {
+        $conn = $this->em()->getConnection();
         if ([] !== $this->offerIds) {
-            $conn = $this->em()->getConnection();
-            $mediaIds = $conn->executeQuery('SELECT cover_image_id FROM offer WHERE id IN (?)', [$this->offerIds], [\Doctrine\DBAL\ArrayParameterType::INTEGER])->fetchFirstColumn();
             $conn->executeStatement('DELETE FROM offer WHERE id IN (?)', [$this->offerIds], [\Doctrine\DBAL\ArrayParameterType::INTEGER]);
-            $mediaIds = array_values(array_filter($mediaIds));
-            if ([] !== $mediaIds) {
-                $conn->executeStatement('DELETE FROM media WHERE id IN (?)', [$mediaIds], [\Doctrine\DBAL\ArrayParameterType::INTEGER]);
-            }
+        }
+        // Tout ce que le test a téléversé — y compris l'image remplacée, que
+        // l'offre ne référence plus : fichier sur disque ET ligne `media`.
+        $created = array_values(array_diff($this->uploadedFiles(), $this->filesBefore));
+        if ([] !== $created) {
+            $paths = array_map(static fn (string $f): string => '/uploads/offers/'.basename($f), $created);
+            $conn->executeStatement('DELETE FROM media WHERE file_path IN (?)', [$paths], [\Doctrine\DBAL\ArrayParameterType::STRING]);
+            array_map('unlink', $created);
         }
         parent::tearDown();
+    }
+
+    /** @return list<string> */
+    private function uploadedFiles(): array
+    {
+        $dir = static::getContainer()->getParameter('app.upload_dir').'/offers';
+
+        return glob($dir.'/*') ?: [];
     }
 
     private function svgFile(string $name = 'photo.svg'): UploadedFile

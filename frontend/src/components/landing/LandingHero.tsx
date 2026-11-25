@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import clsx from "clsx";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -28,7 +29,7 @@ export const SLIDE_DURATION_MS = 7000;
  * Diapositives inactives : `aria-hidden` + `inert` (ni focus ni lecteur
  * d'écran), comme le `tabindex=-1` du prototype mais en plus robuste.
  */
-export function LandingHero({ offers }: { offers: Offer[] }) {
+export function LandingHero({ offers, profilePhotoUrl }: { offers: Offer[]; profilePhotoUrl?: string | null }) {
   const t = useTranslations("landing");
   const locale = useLocale();
   const reduceMotion = useReducedMotion();
@@ -50,9 +51,17 @@ export function LandingHero({ offers }: { offers: Offer[] }) {
 
   const identity = (
     <div className="by2">
-      {/* Le SVG du prototype porte déjà role="img" et son libellé. */}
       <span className="byr">
-        <IdBadgeArt />
+        {profilePhotoUrl ? (
+          // Photo réelle (À propos, back-office) si elle existe, habillée par
+          // la règle `.byr>img` du prototype (cercle, cadrage visage). Surtout
+          // pas `fill` : son `position:absolute; inset:0` en ligne couvrirait
+          // le padding de 4 px, donc l'anneau dégradé du badge (contre-audit).
+          // Sinon inchangé : le SVG du prototype porte role="img" et son libellé.
+          <Image src={profilePhotoUrl} alt={t("identity.name")} width={132} height={132} sizes="132px" />
+        ) : (
+          <IdBadgeArt />
+        )}
       </span>
       <div className="byt">
         <b>{t("identity.name")}</b>

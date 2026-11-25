@@ -168,7 +168,7 @@ export async function SiteHome({ locale }: { locale: string }) {
 
   return (
     <>
-      <LandingHero offers={carousel} />
+      <LandingHero offers={carousel} profilePhotoUrl={about?.profileImagePath ?? null} />
 
       <section className="trust" aria-label={t("trust.label")}>
         <div className="w">

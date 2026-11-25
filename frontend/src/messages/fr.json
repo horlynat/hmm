@@ -1720,18 +1720,13 @@
     "demo": {
       "kick": "Offre vedette",
       "title": "Votre assistant WhatsApp, en action",
-      "lede": "Ce que vit votre client, et ce que vous recevez de votre côté. Écrivez-lui pour essayer.",
+      "lede": "Essayez-le comme si vous étiez l’un de vos clients : écrivez à la boutique, l’assistant répond en direct. Imaginez-le sur votre propre WhatsApp.",
       "shop": "Boutique Ndinga",
-      "shopSub": "Boutique d’exemple · assistant IA",
       "welcome": "Bonjour ! Bienvenue à la Boutique Ndinga. Que puis-je faire pour vous ?",
-      "user1": "Bonsoir, vous livrez à Poto-Poto ?",
-      "bot1": "Bonsoir ! Oui, nous livrons à Poto-Poto aujourd’hui même, pour toute commande passée avant 14 h.",
-      "quick": [
-        "Vous avez du riz ?",
-        "Je veux commander",
-        "Vous livrez ?",
-        "Vos horaires ?"
-      ],
+      "online": "en ligne",
+      "typingStatus": "écrit…",
+      "notice": "Démonstration en direct avec une boutique fictive : écrivez comme l’un de ses clients, l’assistant IA vous répond.",
+      "ctaText": "Le même assistant pour votre activité ?",
       "inputLabel": "Votre message",
       "placeholder": "Écrire un message",
       "send": "Envoyer",
