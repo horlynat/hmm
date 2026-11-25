@@ -82,6 +82,15 @@ class AiDemoChatApiResource
     #[Groups(['demo_output'])]
     private bool $degraded = false;
 
+    /**
+     * Prochains messages qu'un client pourrait envoyer, tirés de l'échange en
+     * cours (jamais une liste figée) : boutons de réponse rapide de la démo.
+     *
+     * @var list<string>
+     */
+    #[Groups(['demo_output'])]
+    private array $suggestions = [];
+
     public function getMessage(): string
     {
         return $this->message;
@@ -152,6 +161,20 @@ class AiDemoChatApiResource
     public function setDegraded(bool $degraded): static
     {
         $this->degraded = $degraded;
+
+        return $this;
+    }
+
+    /** @return list<string> */
+    public function getSuggestions(): array
+    {
+        return $this->suggestions;
+    }
+
+    /** @param list<string> $suggestions */
+    public function setSuggestions(array $suggestions): static
+    {
+        $this->suggestions = $suggestions;
 
         return $this;
     }
