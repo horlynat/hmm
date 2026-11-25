@@ -352,6 +352,23 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         self::assertStringNotContainsString('Send a message', $system);
     }
 
+    /**
+     * Le site est un portfolio (précision du propriétaire, 2026-11-25) : la
+     * mission principale est de présenter la personne, la vente des offres
+     * n'est que secondaire — jamais l'inverse.
+     */
+    public function testRepresentingTheOwnerIsThePrimaryMissionSellingIsSecondary(): void
+    {
+        $this->ask(['question' => 'Qui est Horlynat ?', 'locale' => 'fr']);
+
+        $system = $this->lastSystemPrompt();
+        self::assertMatchesRegularExpression('/Ta mission principale : faire comprendre qui est Horlynat/u', $system);
+        self::assertStringContainsString('sa façon de raisonner', $system);
+        self::assertStringContainsString('Ta mission secondaire', $system);
+        self::assertStringNotContainsString('(c\'est ta mission principale)', $system);
+        self::assertLessThan(strpos($system, 'Ta mission secondaire'), strpos($system, 'Ta mission principale'));
+    }
+
     public function testEnglishPromptUsesEnglishLinkLabels(): void
     {
         $this->ask(['question' => 'Hello', 'locale' => 'en']);
