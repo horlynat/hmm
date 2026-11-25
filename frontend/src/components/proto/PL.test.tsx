@@ -22,3 +22,26 @@ describe("protoToSite", () => {
     expect(protoToSite("/inconnu")).toEqual({ pathname: "/" });
   });
 });
+
+/**
+ * URL finale réelle (vrai Link next-intl, sans mock) : c'est elle que le
+ * visiteur suit — l'objet href seul ne suffit pas (5e contre-audit).
+ */
+describe("PL — URL finale du lien « Envoyer un message »", () => {
+  it.each([
+    ["fr", "/fr/contact?mode=direct"],
+    ["en", "/en/contact?mode=direct"],
+  ])("en %s, mène à %s", async (locale, expected) => {
+    const { render } = await import("@testing-library/react");
+    const { NextIntlClientProvider } = await import("next-intl");
+    const { PL } = await import("./PL");
+    const { container, unmount } = render(
+      <NextIntlClientProvider locale={locale} messages={{}}>
+        <PL href="/contact?mode=direct">lien</PL>
+      </NextIntlClientProvider>,
+    );
+
+    expect(container.querySelector("a")).toHaveAttribute("href", expected);
+    unmount();
+  });
+});

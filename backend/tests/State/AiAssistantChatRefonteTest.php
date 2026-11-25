@@ -374,6 +374,10 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         // Son assistant, pas lui ; aucune intention prêtée hors contexte.
         self::assertStringContainsString('parle toujours de Horlynat à la troisième personne', $system);
         self::assertStringContainsString('sans jamais lui prêter une intention', $system);
+        // 5e contre-audit : la 3e suggestion ne pousse pas au devis sur une question
+        // de profil ; les prix du catalogue ne sont pas une « promesse non vérifiable ».
+        self::assertStringContainsString('devis seulement si un besoin a été exprimé', $system);
+        self::assertStringContainsString('qui ne vient pas du catalogue', $system);
         // La règle « fait absent » vaut pour toute question : elle est dans les règles strictes.
         $strict = (int) strpos($system, 'Règles strictes :');
         self::assertGreaterThan($strict, (int) strpos($system, 'Si un fait précis sur Horlynat'));
