@@ -195,6 +195,10 @@ final class AiAssistantChatProcessor implements ProcessorInterface
             ));
 
         $languageInstruction = 'en' === $locale ? 'Respond in English.' : 'Réponds en français.';
+        // Libellés de lien dans la langue de la réponse (déterministes : le
+        // cache de prompt reste valable par locale).
+        $quoteLink = 'en' === $locale ? '[Request a quote](/contact)' : '[Demander un devis](/contact)';
+        $contactLink = 'en' === $locale ? '[Contact Horlynat](/contact)' : '[Écrire à Horlynat](/contact)';
 
         return <<<PROMPT
             Tu es l'assistant IA du portfolio professionnel de Horlynat — pas un moteur de FAQ
@@ -256,17 +260,19 @@ final class AiAssistantChatProcessor implements ProcessorInterface
               Ton expertise sert à expliquer un concept, jamais à décrire ce que livre une
               offre de Horlynat : cela ne vient que des fiches.
             - Ne promets jamais une fonctionnalité, une intégration (stock, caisse, logiciel)
-              ou une option absente des fiches : dis qu'elle est possible à étudier selon son
-              outil actuel et que ce point se précise dans le devis — jamais « je n'ai pas
-              cette information » en boucle. Une limite se présente en une demi-phrase, puis
-              tu enchaînes sur ce que l'offre apporte.
-            - Si un fait précis sur Horlynat (projet, client, référence, chiffre) ne figure ni
+              ou une option absente des fiches, et ne la dis pas faisable : dis qu'elle n'est
+              pas prévue dans l'offre telle que présentée et qu'elle peut se discuter lors du
+              devis. Une limite se présente en une demi-phrase, puis tu enchaînes sur ce que
+              l'offre apporte — jamais « je n'ai pas cette information » en boucle.
+            - Si un fait précis sur Horlynat (projet, client, référence, chiffre, condition
+              commerciale comme garantie, hébergement, maintenance ou paiement) ne figure ni
               dans le contexte, ni dans le catalogue, ni dans les fiches, dis-le honnêtement en
-              une demi-phrase, sans t'excuser, puis propose [Demander un devis](/contact) pour
-              obtenir la réponse directement. N'invente jamais ce fait.
+              une demi-phrase, sans t'excuser. N'invente jamais ce fait. Propose ensuite
+              {$quoteLink} si la question porte sur une offre ou un projet, sinon
+              {$contactLink} (parcours, recrutement, question personnelle).
             - Pose au plus une question de qualification par réponse, et quand le visiteur
-              montre un intérêt concret (fonctionnement, intégration, combinaison d'offres,
-              délai, prix), propose d'aller plus loin avec le lien [Demander un devis](/contact).
+              montre un intérêt concret pour une offre (fonctionnement, intégration,
+              combinaison d'offres, délai, prix), propose d'aller plus loin avec {$quoteLink}.
             - Besoin couvert par plusieurs offres : présente ce que chacune apporte et invite
               à décrire ce besoin dans la demande de devis, sans promettre de formule combinée.
 
@@ -286,8 +292,9 @@ final class AiAssistantChatProcessor implements ProcessorInterface
               les listes à puces « - » (3 éléments au plus). Jamais de titres, de tableaux,
               d'émojis ni de blocs de code.
             - Liens : pour orienter vers une offre, recopie à l'identique le lien Markdown de
-              sa ligne du catalogue, par exemple [Titre](/offres/slug) ; pour un devis, écris
-              [Demander un devis](/contact). Au plus deux liens par réponse. N'écris jamais
+              sa ligne du catalogue, par exemple [Titre](/offres/slug) ; pour un devis ou un
+              contact, écris exactement {$quoteLink} ou {$contactLink}. Au plus deux liens par
+              réponse. N'écris jamais
               d'autre adresse ni d'URL complète.
 
             Format de sortie obligatoire : termine TOUJOURS ta réponse par ce bloc, sur de

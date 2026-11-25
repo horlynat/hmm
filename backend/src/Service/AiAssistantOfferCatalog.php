@@ -105,9 +105,10 @@ final class AiAssistantOfferCatalog
     }
 
     /**
-     * Liste de chaînes → « a ; b ». Tolérante : toute valeur qui n'est pas une
-     * chaîne (JSON modifié hors back-office, migration) est ignorée — jamais
-     * une TypeError qui ferait tomber l'assistant entier en mode dégradé.
+     * Liste de chaînes → « a ; b ». Tolérante : un ÉLÉMENT qui n'est pas une
+     * chaîne (JSON modifié hors back-office, migration) est ignoré. Une colonne
+     * qui n'est pas un tableau échoue plus tôt, à l'hydratation Doctrine
+     * (propriété typée `array`) : hors de portée de ce service.
      */
     private static function joinItems(mixed $items): string
     {

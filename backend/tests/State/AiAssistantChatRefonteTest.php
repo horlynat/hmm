@@ -147,7 +147,8 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         // ne casse jamais le format « une offre = une ligne » (contre-audit).
         self::assertStringNotContainsString('[piège]', $system);
         self::assertStringNotContainsString('</catalogue>', $this->catalogBody($system));
-        $catalogLines = array_filter(explode("\n", trim($this->catalogBody($system))), static fn (string $l): bool => '' !== $l);
+        // Filtré sur le suffixe : une autre offre publiée restée en base ne fausse pas le compte.
+        $catalogLines = array_filter(explode("\n", trim($this->catalogBody($system))), static fn (string $l): bool => str_contains($l, $suffix));
         self::assertCount(1, $catalogLines, 'Une offre publiée = une ligne du catalogue, jamais plus (pas de « | » ni newline cassant le format).');
         self::assertSame(4, substr_count((string) reset($catalogLines), ' | '), 'Exactement 4 séparateurs « | » : le titre piégé n’en introduit pas un 5e.');
         self::assertFalse($result['degraded'] ?? null);
@@ -276,6 +277,22 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         self::assertStringContainsString('Schedule : D1 Kick-off', $fiches);
     }
 
+    /** 2e contre-audit : pack / calendrier anglais vides une fois nettoyés → français. */
+    public function testEnglishPackAndScheduleEmptyAfterCleaningFallBackToFrench(): void
+    {
+        $suffix = bin2hex(random_bytes(3));
+        $this->offer("fbb-{$suffix}", true, 1000)
+            ->setPack([['title' => 'Répondre', 'items' => ['Accueil']]])->setPackEn([['title' => '()', 'items' => ['[]']]])
+            ->setCalendar([['day' => 'J1', 'text' => 'Cadrage']])->setCalendarEn([['day' => '()', 'text' => '|']]);
+        $this->em->flush();
+
+        $this->ask(['question' => 'Details?', 'locale' => 'en']);
+
+        $fiches = $this->fichesBody($this->lastSystemPrompt());
+        self::assertStringContainsString('Pack : Répondre : Accueil', $fiches);
+        self::assertStringContainsString('Schedule : J1 Cadrage', $fiches);
+    }
+
     public function testHomoglyphChevronsNeverReachTheDetails(): void
     {
         $suffix = bin2hex(random_bytes(3));
@@ -318,6 +335,22 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         self::assertStringContainsString('N\'invente jamais ce fait.', $system);
         self::assertStringContainsString('catalogue fait foi', $system);
         self::assertStringNotContainsString('Combiner plusieurs offres est possible', $system);
+        // 2e contre-audit : jamais de faisabilité implicite ; une question de
+        // parcours n'envoie pas vers un devis ; conditions commerciales incluses.
+        self::assertStringContainsString('ne la dis pas faisable', $system);
+        self::assertStringNotContainsString('possible à étudier', $system);
+        self::assertMatchesRegularExpression('/sinon\s+\[Écrire à Horlynat\]\(\/contact\) \(parcours/u', $system, 'Parcours, recrutement : lien neutre, jamais le devis.');
+        self::assertStringContainsString('commerciale comme garantie', $system);
+    }
+
+    public function testEnglishPromptUsesEnglishLinkLabels(): void
+    {
+        $this->ask(['question' => 'Hello', 'locale' => 'en']);
+
+        $system = $this->lastSystemPrompt();
+        self::assertStringContainsString('[Request a quote](/contact)', $system);
+        self::assertStringContainsString('[Contact Horlynat](/contact)', $system);
+        self::assertStringNotContainsString('Demander un devis', $system);
         self::assertStringContainsString('jamais « je n\'ai pas', $system);
         self::assertStringNotContainsString('réponds honnêtement que tu n\'as pas cette information précise', $system);
     }
