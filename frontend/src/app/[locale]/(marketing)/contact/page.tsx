@@ -24,9 +24,11 @@ export default async function ContactPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ offre?: string }>;
+  searchParams: Promise<{ offre?: string; mode?: string }>;
 }) {
   const { locale } = await params;
-  const { offre } = await searchParams;
-  return <SiteContact locale={locale} offerSlug={offre} />;
+  const { offre, mode } = await searchParams;
+  // `?mode=direct` (lien « Envoyer un message » de l'assistant) ouvre l'onglet
+  // Message rapide ; toute autre valeur garde le questionnaire de devis.
+  return <SiteContact locale={locale} offerSlug={offre} initialMode={mode === "direct" ? "direct" : "quest"} />;
 }

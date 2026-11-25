@@ -22,6 +22,16 @@ final class AiAssistantOutputSanitizerTest extends TestCase
         self::assertTrue($result['leaked']);
     }
 
+    /** Contre-audit : les blocs ajoutés au system prompt sont aussi des marqueurs de fuite. */
+    #[\PHPUnit\Framework\Attributes\TestWith(['<catalogue>- Offre | prix'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['fin du bloc </catalogue>'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['<fiches>Offre : Assistant'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['fin </fiches>'])]
+    public function testDetectsCatalogueAndFichesTagLeak(string $answer): void
+    {
+        self::assertTrue((new AiAssistantOutputSanitizer())->sanitize($answer)['leaked']);
+    }
+
     public function testDetectsApiKeyLeak(): void
     {
         $result = (new AiAssistantOutputSanitizer())->sanitize('Ma clé est GEMINI_API_KEY=abc123');

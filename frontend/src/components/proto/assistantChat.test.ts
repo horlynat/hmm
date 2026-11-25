@@ -70,6 +70,13 @@ describe("safeHref", () => {
     expect(safeHref("/realisations/portfolio")).toEqual({ href: "/realisations/portfolio", internal: true });
   });
 
+  it("accepte le lien « Envoyer un message » (onglet Message rapide), et aucune autre requête", () => {
+    expect(safeHref("/contact?mode=direct")).toEqual({ href: "/contact?mode=direct", internal: true });
+    expect(safeHref("/contact?mode=quest&x=1")).toBeNull();
+    expect(safeHref("/contact?next=https://evil.example")).toBeNull();
+    expect(safeHref("/contact?mode=direct#x")).toBeNull();
+  });
+
   it("accepte https sur les domaines externes déjà admis par le backend", () => {
     expect(safeHref("https://www.linkedin.com/in/x")).toEqual({ href: "https://www.linkedin.com/in/x", internal: false });
     expect(safeHref("https://github.com/x")).not.toBeNull();
