@@ -367,6 +367,17 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         self::assertStringContainsString('Ta mission secondaire', $system);
         self::assertStringNotContainsString('(c\'est ta mission principale)', $system);
         self::assertLessThan(strpos($system, 'Ta mission secondaire'), strpos($system, 'Ta mission principale'));
+        // 4e contre-audit : la vente est cantonnée à la mission secondaire.
+        self::assertStringContainsString('N\'y glisse jamais d\'argument commercial ni de devis.', $system);
+        self::assertStringNotContainsString('Posture commerciale', $system);
+        self::assertStringContainsString('Section commerciale — seulement quand le visiteur parle d\'une offre', $system);
+        // Son assistant, pas lui ; aucune intention prêtée hors contexte.
+        self::assertStringContainsString('parle toujours de Horlynat à la troisième personne', $system);
+        self::assertStringContainsString('sans jamais lui prêter une intention', $system);
+        // La règle « fait absent » vaut pour toute question : elle est dans les règles strictes.
+        $strict = (int) strpos($system, 'Règles strictes :');
+        self::assertGreaterThan($strict, (int) strpos($system, 'Si un fait précis sur Horlynat'));
+        self::assertGreaterThan(0, $strict);
     }
 
     public function testEnglishPromptUsesEnglishLinkLabels(): void

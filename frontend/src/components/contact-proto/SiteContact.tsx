@@ -117,7 +117,9 @@ export async function SiteContact({
                 {t("offerContext", { title: offerContext.title })}
               </p>
             )}
-            <ContactSegments initialName={user?.fullName ?? undefined} initialEmail={user?.email} offers={offers} initialMode={initialMode} />
+            {/* key : un clic vers /contact?mode=direct depuis /contact (assistant global) ne
+                remonte pas la page ; la clé force l'onglet demandé. */}
+            <ContactSegments key={initialMode} initialName={user?.fullName ?? undefined} initialEmail={user?.email} offers={offers} initialMode={initialMode} />
           </div>
           <ol className="next3">
             <li>

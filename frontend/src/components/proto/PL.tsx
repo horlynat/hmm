@@ -9,7 +9,11 @@ type Href = ComponentProps<typeof Link>["href"];
  * écrites dans le code (pages copiées du prototype) passent ici.
  */
 export function protoToSite(path: string): Href {
-  const [route, hash] = path.split("#");
+  const [beforeHash, hash] = path.split("#");
+  // Requête : seule `mode=direct` sur /contact est admise (lien « Envoyer un
+  // message » de l'assistant, cf. safeHref) ; toute autre est ignorée. Sans ce
+  // découpage, « contact?mode=direct » tombait dans `default` → accueil.
+  const [route, query = ""] = beforeHash.split("?");
   const parts = route.split("/").filter(Boolean);
   const withHash = <T extends object>(h: T) => (hash ? { ...h, hash } : h);
 
@@ -33,7 +37,9 @@ export function protoToSite(path: string): Href {
         ? withHash({ pathname: "/blog/[slug]" as const, params: { slug: parts[1] } })
         : withHash({ pathname: "/blog" as const });
     case "contact":
-      return withHash({ pathname: "/contact" as const });
+      return new URLSearchParams(query).get("mode") === "direct"
+        ? withHash({ pathname: "/contact" as const, query: { mode: "direct" } })
+        : withHash({ pathname: "/contact" as const });
     case "connexion":
       return withHash({ pathname: "/connexion" as const });
     case "confidentialite":

@@ -102,6 +102,22 @@ describe("SiteAssistant", () => {
     expect(card).toHaveAttribute("href", expect.stringContaining("offres"));
   });
 
+  it("le lien « Envoyer un message » mène à /contact avec mode=direct, jamais à l'accueil (contre-audit)", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      jsonResponse({ ok: true, answer: "Pour en parler : [Envoyer un message](/contact?mode=direct).", suggestions: [] }),
+    );
+    render(<SiteAssistant fallback={null} />);
+    openDrawer();
+    fireEvent.change(textarea(), { target: { value: "Son parcours ?" } });
+    send();
+
+    await waitFor(() => expect(screen.getAllByText("Envoyer un message").length).toBeGreaterThan(0));
+    for (const el of screen.getAllByText("Envoyer un message")) {
+      const href = JSON.parse(el.closest("a")?.getAttribute("href") ?? "{}");
+      expect(href).toEqual({ pathname: "/contact", query: { mode: "direct" } });
+    }
+  });
+
   it("transforme un lien vers un domaine non admis en texte simple (jamais une balise <a>)", async () => {
     vi.spyOn(global, "fetch").mockResolvedValue(jsonResponse({ ok: true, answer: "Voir [ce site](https://evil.example/phish).", suggestions: [] }));
     render(<SiteAssistant fallback={null} />);
