@@ -219,6 +219,65 @@ final class AiDemoChatTest extends WebTestCase
         yield 'marqueur sans dièses, deux-points' => ["Oui.\nSUGGESTIONS :\n- Je prends 2 sacs\n- Livré quand ?\n###EVENT### none", null];
         yield 'marqueur en minuscules, deux dièses' => ["Oui.\n## suggestions ##\n- Je prends 2 sacs\n- Livré quand ?\n###EVENT### none", null];
         yield 'sans ligne d\'évènement' => ["Oui.\n###SUGGESTIONS###\n- Je prends 2 sacs\n- Livré quand ?", null];
+        // Contre-audit : marqueur d'évènement TOLÉRANT suivi du bloc — le reste
+        // finissait par "\n\n" et « EVENT: order » restait dans la bulle.
+        yield 'évènement tolérant puis bloc' => ["Oui.\nEVENT: order\n###SUGGESTIONS###\n- Je prends 2 sacs\n- Livré quand ?", 'order'];
+        yield 'évènement espacé puis bloc' => ["Oui.\n### EVENT ### order\n###SUGGESTIONS###\n- Je prends 2 sacs\n- Livré quand ?", 'order'];
+        yield 'évènement tolérant, bloc et lignes vides' => ["Oui.\nEVENT: handover\n\n###SUGGESTIONS###\n- Je prends 2 sacs\n- Livré quand ?\n\n", 'handover'];
+        yield 'marqueur collé à la 1re suggestion' => ["Oui.\n###SUGGESTIONS### - Je prends 2 sacs\n- Livré quand ?\n###EVENT### none", null];
+        yield 'deux-points puis dièses' => ["Oui.\nSUGGESTIONS:###\n- Je prends 2 sacs\n- Livré quand ?\n###EVENT### none", null];
+        yield 'liste numérotée' => ["Oui.\n###SUGGESTIONS###\n1. Je prends 2 sacs\n2) Livré quand ?\n###EVENT### none", null];
+    }
+
+    public function testTheEventIsRequestedBeforeTheSuggestionsSoATruncationNeverLosesIt(): void
+    {
+        $this->claudeText = "Oui.\n###EVENT### none";
+        $this->post(['message' => 'Du riz ?', 'locale' => 'fr']);
+
+        $system = (string) ($this->claudeBodies[0]['system'][0]['text'] ?? '');
+        $event = strpos($system, '###EVENT###');
+        $suggestions = strpos($system, '###SUGGESTIONS###');
+        self::assertNotFalse($event);
+        self::assertNotFalse($suggestions);
+        self::assertLessThan($suggestions, $event);
+    }
+
+    /** @return iterable<string, array{string, ?string}> */
+    public static function truncatedAnswers(): iterable
+    {
+        yield 'coupé en plein marqueur de suggestions' => ["Oui, c'est noté.\n###EVENT### order\n###SUGGEST", 'order'];
+        yield 'coupé en plein marqueur, sans évènement' => ["Oui, c'est noté.\n###SUGG", null];
+        yield 'coupé juste après les dièses' => ["Oui, c'est noté.\n###", null];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('truncatedAnswers')]
+    public function testAnAnswerCutByMaxTokensNeverShowsAPartialMarker(string $claudeText, ?string $event): void
+    {
+        $this->claudeText = $claudeText;
+
+        self::assertSame(200, $this->post(['message' => 'Deux sacs', 'locale' => 'fr']));
+
+        self::assertSame("Oui, c'est noté.", $this->json()['answer'] ?? null);
+        self::assertSame($event, $this->json()['event'] ?? null);
+    }
+
+    public function testASentenceStartingWithSuggestionsIsNeverMistakenForTheMarker(): void
+    {
+        $this->claudeText = "Bien sûr.\nSuggestions du jour : le riz parfumé.\n###EVENT### none";
+
+        self::assertSame(200, $this->post(['message' => 'Une idée ?', 'locale' => 'fr']));
+
+        self::assertSame("Bien sûr.\nSuggestions du jour : le riz parfumé.", $this->json()['answer'] ?? null);
+        self::assertSame([], $this->json()['suggestions'] ?? null);
+    }
+
+    public function testDuplicatesAndEmptyLinesNeverTakeOneOfTheThreeSlots(): void
+    {
+        $this->claudeText = "Oui.\n###SUGGESTIONS###\n- **\n- Je prends 2 sacs\n- Je prends 2 sacs\n- Livré quand ?\n- Paiement MoMo ?\n###EVENT### none";
+
+        self::assertSame(200, $this->post(['message' => 'Du riz ?', 'locale' => 'fr']));
+
+        self::assertSame(['Je prends 2 sacs', 'Livré quand ?', 'Paiement MoMo ?'], $this->json()['suggestions'] ?? null);
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('suggestionBlockVariants')]

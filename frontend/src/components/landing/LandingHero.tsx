@@ -53,17 +53,12 @@ export function LandingHero({ offers, profilePhotoUrl }: { offers: Offer[]; prof
     <div className="by2">
       <span className="byr">
         {profilePhotoUrl ? (
-          // Photo réelle (À propos, back-office) si elle existe, au même
-          // habillage circulaire que le SVG du prototype (cf. `.byr>svg` de
-          // proto-skin.css, qui ne cible que la balise <svg>) — sinon
-          // inchangé : le SVG du prototype porte déjà role="img" et son libellé.
-          <Image
-            src={profilePhotoUrl}
-            alt={t("identity.name")}
-            fill
-            sizes="132px"
-            style={{ objectFit: "cover", objectPosition: "50% 22%", borderRadius: "50%" }}
-          />
+          // Photo réelle (À propos, back-office) si elle existe, habillée par
+          // la règle `.byr>img` du prototype (cercle, cadrage visage). Surtout
+          // pas `fill` : son `position:absolute; inset:0` en ligne couvrirait
+          // le padding de 4 px, donc l'anneau dégradé du badge (contre-audit).
+          // Sinon inchangé : le SVG du prototype porte role="img" et son libellé.
+          <Image src={profilePhotoUrl} alt={t("identity.name")} width={132} height={132} sizes="132px" />
         ) : (
           <IdBadgeArt />
         )}

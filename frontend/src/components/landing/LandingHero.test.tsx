@@ -37,4 +37,14 @@ describe("LandingHero — badge d'identité", () => {
     expect(img.getAttribute("src")).toContain("photo.jpg");
     expect(document.querySelector(".byr svg")).not.toBeInTheDocument();
   });
+
+  it("la photo reste dans la zone de contenu du badge : l'anneau dégradé (padding de .byr) reste visible", () => {
+    render(<LandingHero offers={[]} profilePhotoUrl="http://127.0.0.1:8000/uploads/about/photo.jpg" />);
+
+    const img = screen.getByRole("img", { name: fr.landing.identity.name });
+    // Enfant direct, pour que la règle `.byr>img` du prototype s'applique…
+    expect(img.parentElement).toHaveClass("byr");
+    // …et jamais positionnée en absolu (next/image `fill`), qui couvrirait le padding.
+    expect(img.style.position).not.toBe("absolute");
+  });
 });

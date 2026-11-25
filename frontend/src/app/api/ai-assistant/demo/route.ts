@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const event = data.event === "order" || data.event === "handover" ? data.event : null;
     const suggestions = Array.isArray(data.suggestions)
       ? data.suggestions
-          .filter((s): s is string => typeof s === "string" && s.trim() !== "" && s.length <= MAX_SUGGESTION)
+          .filter((s): s is string => typeof s === "string" && s.trim() !== "" && [...s].length <= MAX_SUGGESTION)
           .slice(0, 3)
       : [];
     return NextResponse.json({ ok: true, answer: data.answer, event, suggestions });

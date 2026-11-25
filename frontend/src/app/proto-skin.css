@@ -82,8 +82,8 @@
 .proto-skin .phone.wa .bu .wa-mt{color:rgba(233,237,239,.6)}
 .proto-skin .phone.wa .wa-mt svg{color:#53BDEB}
 .proto-skin .phone.wa .typing i{background:#8696A0}
-.proto-skin .phone.wa .qs{flex:none;gap:6px;padding:8px 10px 2px}
-.proto-skin .phone.wa .qs button{padding:0 13px;border-radius:18px;border:1px solid #2A3942;background:#1F2C34;color:#E9EDEF;font-size:13px}
+.proto-skin .phone.wa .qs{flex:none;flex-wrap:wrap;overflow:visible;gap:6px;padding:8px 10px 2px}
+.proto-skin .phone.wa .qs button{flex:0 1 auto;max-width:100%;text-align:left;padding:6px 13px;border-radius:18px;border:1px solid #2A3942;background:#1F2C34;color:#E9EDEF;font-size:13px}
 .proto-skin .phone.wa .qs button:hover{border-color:#00A884}
 .proto-skin .phone.wa form{flex:none;align-items:center;gap:6px;padding:8px 8px 12px;border-top:0}
 .proto-skin .phone.wa .wa-fld{flex:1;min-width:0;display:flex;align-items:center;gap:9px;min-height:46px;padding:0 13px;border-radius:24px;background:#1F2C34;color:#8696A0}

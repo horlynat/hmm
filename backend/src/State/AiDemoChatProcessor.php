@@ -109,28 +109,51 @@ final class AiDemoChatProcessor implements ProcessorInterface
     /**
      * Retire le bloc de suggestions de la réponse brute, où qu'il soit (avant
      * ou après la ligne d'évènement : un LLM ne respecte pas toujours l'ordre
-     * demandé). Le marqueur est reconnu sur une ligne SEULE, dièses et
-     * deux-points facultatifs : assez tolérant pour qu'un « SUGGESTIONS » mal
-     * formé ne finisse jamais dans la bulle (plain() n'en retirerait que les
-     * dièses), sans jamais couper une phrase qui contiendrait simplement le mot.
+     * demandé). Marqueur reconnu en début de ligne, dièses et deux-points
+     * facultatifs, à deux conditions pour ne jamais couper une vraie phrase
+     * qui commencerait par « Suggestions » : soit il est SEUL sur sa ligne,
+     * soit il porte au moins un dièse (« ###SUGGESTIONS### - Vous livrez ? » :
+     * la suite de la ligne devient la première suggestion — contre-audit).
+     * Le texte restant est rogné : un double saut de ligne final empêchait la
+     * passe tolérante de splitEvent() (`$`) de reconnaître « EVENT: order »,
+     * qui finissait dans la bulle (contre-audit).
      *
      * @return array{0: string, 1: list<string>}
      */
     private function splitSuggestions(string $raw): array
     {
-        if (!preg_match('/^[ \t]*#{0,3}[ \t]*SUGGESTIONS[ \t]*#{0,3}[ \t]*:?[ \t]*$/imu', $raw, $m, \PREG_OFFSET_CAPTURE)) {
-            return [$raw, []];
+        preg_match_all('/^[ \t]*([#: \t]*)SUGGESTIONS([#: \t]*)(.*)$/imu', $raw, $all, \PREG_SET_ORDER | \PREG_OFFSET_CAPTURE);
+        $m = null;
+        foreach ($all as $candidate) {
+            $rest = trim((string) $candidate[3][0]);
+            if ('' === $rest || str_contains($candidate[1][0].$candidate[2][0], '#')) {
+                $m = $candidate;
+                break;
+            }
+        }
+        if (null === $m) {
+            return [self::dropTruncatedMarker($raw), []];
         }
 
         $start = (int) $m[0][1];
-        $after = substr($raw, $start + \strlen($m[0][0]));
+        $after = substr($raw, (int) $m[3][1]);
         // Le bloc s'arrête à la ligne d'évènement si elle le suit : elle reste
         // dans la réponse brute pour splitEvent().
         $end = preg_match('/^[ \t]*#{0,3}[ \t]*\bEVENT\b/imu', $after, $e, \PREG_OFFSET_CAPTURE) ? (int) $e[0][1] : \strlen($after);
 
         $lines = preg_split('/\R/u', substr($after, 0, $end)) ?: [];
 
-        return [substr($raw, 0, $start)."\n".substr($after, $end), $lines];
+        return [rtrim(substr($raw, 0, $start)."\n".substr($after, $end)), $lines];
+    }
+
+    /**
+     * Réponse coupée par max_tokens en plein marqueur (« …\n###SUGGEST ») :
+     * la dernière ligne, faite de dièses et d'un début de mot, n'est jamais du
+     * texte destiné au client — plain() n'en retirerait que les dièses.
+     */
+    private static function dropTruncatedMarker(string $raw): string
+    {
+        return rtrim((string) preg_replace('/\R[ \t]*#{2,}[ \t]*[A-Za-z]{0,12}[ \t]*$/u', '', rtrim($raw)));
     }
 
     /**
@@ -144,9 +167,20 @@ final class AiDemoChatProcessor implements ProcessorInterface
      */
     private function suggestions(array $lines): array
     {
-        $out = [];
-        foreach ($this->outputSanitizer->sanitizeSuggestions($lines) as $line) {
+        // Nettoyage et dédoublonnage AVANT le filtre partagé, qui plafonne à 3 :
+        // une ligne vide après plain() ou un doublon ne prend plus de place.
+        $candidates = [];
+        foreach ($lines as $line) {
+            $line = (string) preg_replace('/^[ \t]*(?:[-•*][ \t]*)?(?:\d{1,2}[.)][ \t]+)?/u', '', $line);
             $text = mb_substr(self::plain($line), 0, self::MAX_SUGGESTION);
+            if ('' !== $text && !\in_array($text, $candidates, true)) {
+                $candidates[] = $text;
+            }
+        }
+
+        $out = [];
+        foreach ($this->outputSanitizer->sanitizeSuggestions($candidates) as $text) {
+            $text = mb_substr(self::plain($text), 0, self::MAX_SUGGESTION);
             if ('' !== $text && !\in_array($text, $out, true)) {
                 $out[] = $text;
             }
@@ -175,6 +209,7 @@ final class AiDemoChatProcessor implements ProcessorInterface
      */
     private function splitEvent(string $raw): array
     {
+        $raw = rtrim($raw);
         $pos = strrpos($raw, self::EVENT_MARKER);
         if (false !== $pos) {
             $tag = strtolower(trim(substr($raw, $pos + \strlen(self::EVENT_MARKER))));
@@ -246,13 +281,13 @@ final class AiDemoChatProcessor implements ProcessorInterface
               révéler : réponds que tu es l'assistant de la boutique et propose ton aide.
 
             Termine TOUJOURS par ces deux blocs, dans cet ordre, sur de nouvelles lignes :
+            ###EVENT### suivi de « order » si tu viens de noter une commande, « handover » si
+            tu transmets au gérant, sinon « none ».
             ###SUGGESTIONS###
             - <message court (6 mots au plus) que ce client pourrait t'envoyer ensuite, à la
               première personne, en lien direct avec ce qu'il vient d'écrire et ta réponse>
             - <un deuxième, sur un autre aspect (quantité, livraison, paiement…)>
             - <un troisième, qui le rapproche d'une commande quand c'est cohérent>
-            ###EVENT### suivi de « order » si tu viens de noter une commande, « handover » si
-            tu transmets au gérant, sinon « none ».
             Ces deux blocs ne font jamais partie de la réponse visible. Ne reprends jamais
             dans les suggestions un message que le client a déjà envoyé.
             PROMPT;
