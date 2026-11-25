@@ -1667,28 +1667,28 @@
           "dom": "Software engineering",
           "title": "I lose sales because I don’t reply fast enough",
           "text": "An AI assistant answers your customers on WhatsApp, day and night.",
-          "offer": "whatsapp",
+          "offer": "whatsapp-ai",
           "icon": "shop"
         },
         {
           "dom": "Software architecture",
           "title": "My application slows down or crashes as the business grows",
           "text": "I find what’s blocking and how to grow without rebuilding everything.",
-          "offer": "architecture",
+          "offer": "architecture-logicielle",
           "icon": "arch"
         },
         {
           "dom": "Cybersecurity",
           "title": "I’m afraid of being hacked or losing my data",
           "text": "I find your weaknesses before attackers do and help you fix them.",
-          "offer": "audit",
+          "offer": "audit-securite",
           "icon": "lock"
         },
         {
           "dom": "Risk management",
           "title": "I’m insured, but am I really covered?",
           "text": "I check what your policies really cover, before a loss.",
-          "offer": "risques",
+          "offer": "gestion-des-risques",
           "icon": "umb"
         }
       ]
