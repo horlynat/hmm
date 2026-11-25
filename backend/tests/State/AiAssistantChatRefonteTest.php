@@ -373,7 +373,7 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         self::assertStringContainsString('Section commerciale — seulement quand le visiteur parle d\'une offre', $system);
         // Son assistant, pas lui ; aucune intention prêtée hors contexte.
         self::assertStringContainsString('parle toujours de Horlynat à la troisième personne', $system);
-        self::assertStringContainsString('sans jamais lui prêter une intention', $system);
+        self::assertStringContainsString('ni lui prêter une intention', $system);
         // 5e contre-audit : la 3e suggestion ne pousse pas au devis sur une question
         // de profil ; les prix du catalogue ne sont pas une « promesse non vérifiable ».
         self::assertStringContainsString('devis seulement si un besoin a été exprimé', $system);
@@ -389,6 +389,24 @@ final class AiAssistantChatRefonteTest extends WebTestCase
      * consigne, n'était pas suivi : 3 paragraphes par réponse. La contrainte est
      * chiffrée et placée juste après les missions, avant les données.
      */
+    /**
+     * En production (2026-11-26), « 8 ans dans l'assurance » devenait « une
+     * compréhension fine des enjeux financiers (modélisation, conformité) » :
+     * une déduction, pas ses mots. Le propriétaire exige ses propres mots.
+     */
+    public function testTheAssistantSticksToTheOwnersWordsAndNeverInfersASkill(): void
+    {
+        $this->ask(['question' => 'Est-il compétent en finance ?', 'locale' => 'fr']);
+
+        $system = $this->lastSystemPrompt();
+        self::assertStringContainsString('Tiens-t\'en à ses', $system);
+        self::assertMatchesRegularExpression('/décris ce qu\'il a fait et écrit, jamais ce que cela impliquerait/u', $system);
+        self::assertMatchesRegularExpression('/jamais en tirer une compétence, une spécialité ou un domaine\s+qu\'il n\'a pas écrit lui-même/u', $system);
+        self::assertMatchesRegularExpression('/ni une compétence ou un domaine déduit de son parcours : seuls ses\s+propres mots le décrivent/u', $system);
+        // L'ancienne invitation à « relier les domaines » sans garde-fou a disparu.
+        self::assertStringNotContainsString('relie les domaines', $system);
+    }
+
     public function testAStrictNumericLengthLimitComesRightAfterTheMissions(): void
     {
         $this->ask(['question' => 'Qui est Horlynat ?', 'locale' => 'fr']);
