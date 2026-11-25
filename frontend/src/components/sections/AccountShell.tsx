@@ -114,8 +114,8 @@ export function AccountShell({ user, isCollaborator, counts, isTwoFactorEnabled,
         <div
           className={
             collapsed
-              ? "mx-auto grid max-w-[1120px] gap-5 md:grid-cols-[72px_1fr] md:items-start"
-              : "mx-auto grid max-w-[1120px] gap-5 md:grid-cols-[220px_1fr] md:items-start"
+              ? "mx-auto grid max-w-[1120px] gap-5 md:grid-cols-[72px_1fr] md:items-start md:gap-0"
+              : "mx-auto grid max-w-[1120px] gap-5 md:grid-cols-[220px_1fr] md:items-start md:gap-0"
           }
         >
           <aside className="sticky top-20 hidden max-h-[calc(100vh-7rem)] overflow-y-auto rounded-[var(--radius-md)] border border-(--border-neutral) bg-(--color-surface-muted) p-3 md:block">
