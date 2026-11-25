@@ -3,13 +3,13 @@
 namespace App\Service;
 
 use App\Entity\AboutContent;
-use App\Entity\HomeContent;
+use App\Entity\Course;
 use App\Repository\AboutContentRepository;
-use App\Repository\HomeContentRepository;
+use App\Repository\CourseRepository;
 
 /**
- * Présentation de Horlynat rédigée par lui-même (pages À propos et Accueil,
- * back-office), transmise MOT POUR MOT à l'assistant du site.
+ * Présentation de Horlynat rédigée par lui-même (page À propos et ses
+ * formations, back-office), transmise MOT POUR MOT à l'assistant du site.
  *
  * Pourquoi pas le pipeline d'ingestion (résumé Gemini de 5 à 8 phrases) :
  * - aucune perte — un résumé effacerait chiffres et nuances (« 8 ans dans
@@ -22,8 +22,11 @@ use App\Repository\HomeContentRepository;
  * Project, Article, Experience et SkillCategory étaient ingérés) : il ne
  * connaissait pas le parcours de son propriétaire (constat 2026-11-25).
  *
- * Seuls les champs AFFICHÉS publiquement sur ces pages sont repris (rien
- * d'interne : ni photo, ni horodatage, ni auteur de modification). Texte
+ * Seuls les champs AFFICHÉS publiquement sur la page À propos sont repris
+ * (SiteAbout.tsx : AboutContent + Course) — rien d'interne (ni photo, ni
+ * horodatage, ni auteur). HomeContent n'est PAS repris : depuis la refonte,
+ * l'accueil ne l'affiche plus (anciens champs non relus, doublons de la page
+ * À propos qui finiraient par la contredire — contre-audit). Texte
  * déterministe (ordre fixe) : le system prompt reste identique d'un appel à
  * l'autre et profite du cache de prompt Claude.
  */
@@ -31,15 +34,15 @@ final class AiAssistantOwnerProfile
 {
     public function __construct(
         private readonly AboutContentRepository $about,
-        private readonly HomeContentRepository $home,
+        private readonly CourseRepository $courses,
     ) {
     }
 
     public function render(string $locale): string
     {
         $en = 'en' === $locale;
-        $a = $this->about->getContent();
-        $h = $this->home->getContent();
+        // Lecture seule : jamais de création de ligne depuis la route publique du chat.
+        $a = $this->about->findFirst() ?? new AboutContent();
 
         $sections = [
             $this->section($en ? 'Identity' : 'Identité', [
@@ -50,7 +53,6 @@ final class AiAssistantOwnerProfile
                 $en ? 'Work mode' : 'Mode de travail' => $this->pick($en, $a->getProfileWorkModeEn(), $a->getProfileWorkMode()),
                 $en ? 'Availability' : 'Disponibilité' => $this->pick($en, $a->getProfileAvailabilityEn(), $a->getProfileAvailability()),
                 $en ? 'Languages' : 'Langues' => $this->pick($en, $a->getProfileLanguagesEn(), $a->getProfileLanguages()),
-                $en ? 'Roles' : 'Rôles' => $this->pickList($en, $h->getHeroRolesEn(), $h->getHeroRoles()),
                 $en ? 'Headline' : 'Accroche' => trim($this->pick($en, $a->getHeroEyebrowEn(), $a->getHeroEyebrow()).' — '.$this->pick($en, $a->getHeroTitleEn(), $a->getHeroTitle()).' '.$this->pick($en, $a->getHeroTitleAccentEn(), $a->getHeroTitleAccent()), ' —'),
                 $en ? 'In short' : 'En bref' => $this->pick($en, $a->getHeroSubEn(), $a->getHeroSub()),
             ]),
@@ -78,15 +80,7 @@ final class AiAssistantOwnerProfile
                 '4' => $this->pair($this->pick($en, $a->getWhy4TitleEn(), $a->getWhy4Title()), $this->pick($en, $a->getWhy4DescEn(), $a->getWhy4Desc())),
                 '5' => $this->pair($this->pick($en, $a->getWhy5TitleEn(), $a->getWhy5Title()), $this->pick($en, $a->getWhy5DescEn(), $a->getWhy5Desc())),
             ]),
-            $this->section($en ? 'Presentation (home page)' : 'Présentation (accueil)', [
-                $en ? 'Badge' : 'Badge' => $this->pick($en, $h->getFounderBadgeEn(), $h->getFounderBadge()),
-                $en ? 'Title' : 'Titre' => $this->pick($en, $h->getAboutTitleEn(), $h->getAboutTitle()),
-                '1' => $this->pick($en, $h->getAboutP1En(), $h->getAboutP1()),
-                '2' => $this->pick($en, $h->getAboutP2En(), $h->getAboutP2()),
-                $en ? 'Highlight' : 'Point fort' => $this->pair($this->pick($en, $h->getAboutHighlightTitleEn(), $h->getAboutHighlightTitle()), $this->pick($en, $h->getAboutHighlightDescEn(), $h->getAboutHighlightDesc())),
-                'Vision' => $this->pick($en, $h->getAboutVisionTextEn(), $h->getAboutVisionText()),
-                'Mission' => $this->pick($en, $h->getAboutMissionTextEn(), $h->getAboutMissionText()),
-            ]),
+            $this->section($en ? 'Education and certifications' : 'Formation et certifications', $this->education($en)),
             $this->section($en ? 'Beyond work' : 'Au-delà du travail', [
                 $en ? 'Languages' : 'Langues' => $this->pickList($en, $a->getBeyondLanguagesEn(), $a->getBeyondLanguages()),
                 $en ? 'Interests' : 'Centres d\'intérêt' => $this->pickList($en, $a->getBeyondInterestsEn(), $a->getBeyondInterests()),
@@ -98,6 +92,35 @@ final class AiAssistantOwnerProfile
         return [] === $sections
             ? ($en ? '(profile not filled in yet)' : '(profil pas encore renseigné)')
             : implode("\n\n", $sections);
+    }
+
+    /**
+     * Formations affichées sur la page À propos, de la plus récente à la plus
+     * ancienne : « Diplôme — Licence de mathématiques, Université X (2010 – 2013) ».
+     *
+     * @return list<string>
+     */
+    private function education(bool $en): array
+    {
+        $out = [];
+        foreach ($this->courses->findBy([], ['startDate' => 'DESC', 'id' => 'ASC']) as $course) {
+            $out[] = $this->courseLine($course, $en);
+        }
+
+        return $out;
+    }
+
+    private function courseLine(Course $c, bool $en): string
+    {
+        $start = $c->getStartDate()->format('Y');
+        $end = $c->getEndDate()->format('Y');
+        $years = $start === $end ? $start : $start.' – '.$end;
+        $title = $this->pick($en, $c->getTitleEn(), $c->getTitle());
+        $institution = self::clean($c->getInstitution());
+        $head = trim($c->getType()->getLabel().' — '.$title.('' !== $institution ? ', '.$institution : ''));
+        $desc = $this->pick($en, $c->getDescriptionEn(), $c->getDescription());
+
+        return $head.' ('.$years.')'.('' !== $desc ? ' : '.$desc : '');
     }
 
     /** @param array<int|string, string> $fields */
@@ -169,10 +192,13 @@ final class AiAssistantOwnerProfile
     /**
      * Une valeur = une ligne : saisie back-office, jamais de quoi refermer le
      * bloc <profil> (chevrons, y compris homoglyphes), forger un lien Markdown
-     * (crochets) ni ajouter une ligne qui se ferait passer pour un autre champ.
+     * (crochets, y compris pleine chasse) ni ajouter une ligne qui se ferait
+     * passer pour un autre champ. Classes Unicode plutôt qu'une liste fixe :
+     * tout séparateur (\p{Z}, U+2028…), caractère de contrôle (\p{Cc}) ou de
+     * format invisible (\p{Cf} : U+200B, inversion de sens U+202E…).
      */
     private static function clean(string $text): string
     {
-        return trim((string) preg_replace('/[\s\[\]<>＜＞‹›〈〉]+/u', ' ', $text));
+        return trim((string) preg_replace('/[\s\p{Z}\p{Cc}\p{Cf}\[\]<>＜＞﹤﹥‹›〈〉⟨⟩˂˃［］《》]+/u', ' ', $text));
     }
 }
