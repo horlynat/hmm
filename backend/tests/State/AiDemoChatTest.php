@@ -229,6 +229,55 @@ final class AiDemoChatTest extends WebTestCase
         yield 'liste numérotée' => ["Oui.\n###SUGGESTIONS###\n1. Je prends 2 sacs\n2) Livré quand ?\n###EVENT### none", null];
     }
 
+    /**
+     * Second contre-audit : formes presque correctes que le modèle produit
+     * réellement — la bulle reste propre ET l'évènement est bien compté.
+     *
+     * @return iterable<string, array{string, string, ?string, list<string>}>
+     */
+    public static function nearlyWellFormedTails(): iterable
+    {
+        $s = "\n###SUGGESTIONS###\n- Je paie par MoMo\n- Livraison quand ?";
+        yield 'EVENT tolérant, point final' => ["C'est noté.\nEVENT: order.".$s, "C'est noté.", 'order', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'EVENT en gras' => ["C'est noté.\n**EVENT:** order".$s, "C'est noté.", 'order', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'EVENT = étiquette' => ["C'est noté.\nEVENT = handover".$s, "C'est noté.", 'handover', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'étiquette entre guillemets français' => ["C'est noté.\n###EVENT### « order »".$s, "C'est noté.", 'order', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'étiquette après deux-points' => ["C'est noté.\n###EVENT###: order".$s, "C'est noté.", 'order', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'étiquette avec point' => ["C'est noté.\n###EVENT### order.".$s, "C'est noté.", 'order', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'étiquette en code' => ["C'est noté.\n###EVENT### `order`".$s, "C'est noté.", 'order', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'tout sur une ligne' => ["C'est noté ! ###EVENT### order ###SUGGESTIONS### - Je paie par MoMo - Livraison quand ?", "C'est noté !", 'order', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'SUGGESTIONS en gras après EVENT tolérant' => ["C'est noté.\nEVENT: order\n**SUGGESTIONS**\n- Je paie par MoMo\n- Livraison quand ?", "C'est noté.", 'order', ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'SUGGESTIONS en gras, sans évènement' => ["C'est noté.\n**SUGGESTIONS**\n- Je paie par MoMo\n- Livraison quand ?", "C'est noté.", null, ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'none reste sans évènement' => ["Bonjour.\nEVENT: none".$s, 'Bonjour.', null, ['Je paie par MoMo', 'Livraison quand ?']];
+        yield 'coupé après ###EVENT#' => ["C'est 18 000 FCFA.\n###EVENT#", "C'est 18 000 FCFA.", null, []];
+        yield 'coupé après ###EVENT##' => ["C'est 18 000 FCFA.\n###EVENT##", "C'est 18 000 FCFA.", null, []];
+        yield 'coupé en pleine étiquette tolérante' => ["C'est 18 000 FCFA.\nEVENT: or", "C'est 18 000 FCFA.", null, []];
+        yield 'titre « # Suggestions » dans la réponse' => ["# Suggestions du jour : riz et huile\nOk.\n###EVENT### none", "Suggestions du jour : riz et huile\nOk.", null, []];
+    }
+
+    /** @param list<string> $suggestions */
+    #[\PHPUnit\Framework\Attributes\DataProvider('nearlyWellFormedTails')]
+    public function testNearlyWellFormedTailsNeverLeakAndKeepTheEvent(string $claudeText, string $answer, ?string $event, array $suggestions): void
+    {
+        $this->claudeText = $claudeText;
+
+        self::assertSame(200, $this->post(['message' => 'Deux sacs', 'locale' => 'fr']));
+
+        $json = $this->json();
+        self::assertSame($answer, $json['answer'] ?? null);
+        self::assertSame($event, $json['event'] ?? null);
+        self::assertSame($suggestions, $json['suggestions'] ?? null);
+    }
+
+    public function testSuggestionArtefactsAreCleanedAndAddressesDropped(): void
+    {
+        $this->claudeText = "Oui.\n###EVENT### none\n###SUGGESTIONS###\n- Voir boutique-ndinga.cg\n- Écrire à contact@ndinga.cg\n– Je veux du riz\n— Vous livrez ?\n- <Je paie par MoMo>";
+
+        self::assertSame(200, $this->post(['message' => 'Du riz ?', 'locale' => 'fr']));
+
+        self::assertSame(['Je veux du riz', 'Vous livrez ?', 'Je paie par MoMo'], $this->json()['suggestions'] ?? null);
+    }
+
     public function testTheEventIsRequestedBeforeTheSuggestionsSoATruncationNeverLosesIt(): void
     {
         $this->claudeText = "Oui.\n###EVENT### none";

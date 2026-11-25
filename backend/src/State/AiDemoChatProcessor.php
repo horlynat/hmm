@@ -40,7 +40,11 @@ final class AiDemoChatProcessor implements ProcessorInterface
     private const MAX_TOKENS = 300;
     private const MAX_ANSWER = 400;
     private const MAX_SUGGESTION = 60;
-    private const EVENT_MARKER = '###EVENT###';
+    /**
+     * Étiquette d'évènement après le mot EVENT : décoration Markdown, « : » ou
+     * « = », guillemets facultatifs ; mot entier (« order. » oui, « orderly » non).
+     */
+    private const EVENT_TAG = '[ \t*_#]*[:=]?[ \t*_]*[«"\'`(]?[ \t]*(order|handover|none)\b';
 
     public function __construct(
         private readonly AiAssistantSettingsRepository $settingsRepository,
@@ -84,8 +88,7 @@ final class AiDemoChatProcessor implements ProcessorInterface
             return $data->setDegraded(true);
         }
 
-        [$raw, $suggestionLines] = $this->splitSuggestions($result['text']);
-        [$text, $event] = $this->splitEvent($raw);
+        [$text, $event, $suggestionLines] = $this->splitTail($result['text']);
         $sanitized = $this->outputSanitizer->sanitize($text);
         $answer = $sanitized['leaked'] ? '' : self::plain($sanitized['text']);
 
@@ -107,59 +110,94 @@ final class AiDemoChatProcessor implements ProcessorInterface
     }
 
     /**
-     * Retire le bloc de suggestions de la réponse brute, où qu'il soit (avant
-     * ou après la ligne d'évènement : un LLM ne respecte pas toujours l'ordre
-     * demandé). Marqueur reconnu en début de ligne, dièses et deux-points
-     * facultatifs, à deux conditions pour ne jamais couper une vraie phrase
-     * qui commencerait par « Suggestions » : soit il est SEUL sur sa ligne,
-     * soit il porte au moins un dièse (« ###SUGGESTIONS### - Vous livrez ? » :
-     * la suite de la ligne devient la première suggestion — contre-audit).
-     * Le texte restant est rogné : un double saut de ligne final empêchait la
-     * passe tolérante de splitEvent() (`$`) de reconnaître « EVENT: order »,
-     * qui finissait dans la bulle (contre-audit).
+     * Sépare la réponse visible des deux blocs techniques (évènement, réponses
+     * rapides) en UNE passe : tout ce qui suit le premier marqueur reconnu est
+     * caché, quel que soit l'ordre des blocs ou leur forme. Un LLM ne respecte
+     * jamais un format à 100 % : « EVENT: order. », « **EVENT:** order »,
+     * « ###EVENT### « order » », marqueurs sur une seule ligne, réponse coupée
+     * par max_tokens en plein marqueur… (deux contre-audits successifs).
      *
-     * @return array{0: string, 1: list<string>}
+     * Ce qui est reconnu comme marqueur, et seulement cela — une vraie phrase
+     * n'est jamais tronquée (« …prevent order », « Suggestions du jour : … ») :
+     * - n'importe où dans une ligne : deux dièses ou plus collés au mot
+     *   (`##EVENT`, `### SUGGESTIONS`) — jamais dans une phrase ;
+     * - en début de ligne, décoré ou non : EVENT suivi d'une étiquette connue
+     *   (order, handover, none) ; SUGGESTIONS seul sur sa ligne, ou suivi
+     *   d'un dièse ou d'un astérisque (`SUGGESTIONS### - …`, `**SUGGESTIONS**`).
+     *
+     * @return array{0: string, 1: ?string, 2: list<string>}
      */
-    private function splitSuggestions(string $raw): array
+    private function splitTail(string $raw): array
     {
-        preg_match_all('/^[ \t]*([#: \t]*)SUGGESTIONS([#: \t]*)(.*)$/imu', $raw, $all, \PREG_SET_ORDER | \PREG_OFFSET_CAPTURE);
-        $m = null;
-        foreach ($all as $candidate) {
-            $rest = trim((string) $candidate[3][0]);
-            if ('' === $rest || str_contains($candidate[1][0].$candidate[2][0], '#')) {
-                $m = $candidate;
+        $lines = preg_split('/\R/u', rtrim($raw)) ?: [];
+        $visible = [];
+        $tail = null;
+        foreach ($lines as $i => $line) {
+            if (preg_match('/#{2,}[ \t*_]*\b(?:EVENT|SUGGESTIONS)\b/iu', $line, $m, \PREG_OFFSET_CAPTURE)) {
+                $visible[] = substr($line, 0, (int) $m[0][1]);
+                $tail = substr($line, (int) $m[0][1]);
+            } elseif (preg_match('/^[ \t*_#]*EVENT\b'.self::EVENT_TAG.'/iu', $line)
+                || preg_match('/^[ \t*_#]*SUGGESTIONS\b(?:[ \t:]*$|[ \t:]*[#*])/iu', $line)) {
+                $tail = $line;
+            }
+            if (null !== $tail) {
+                $tail = implode("\n", [$tail, ...\array_slice($lines, $i + 1)]);
                 break;
             }
-        }
-        if (null === $m) {
-            return [self::dropTruncatedMarker($raw), []];
+            $visible[] = $line;
         }
 
-        $start = (int) $m[0][1];
-        $after = substr($raw, (int) $m[3][1]);
-        // Le bloc s'arrête à la ligne d'évènement si elle le suit : elle reste
-        // dans la réponse brute pour splitEvent().
-        $end = preg_match('/^[ \t]*#{0,3}[ \t]*\bEVENT\b/imu', $after, $e, \PREG_OFFSET_CAPTURE) ? (int) $e[0][1] : \strlen($after);
+        if (null === $tail) {
+            return [self::dropTruncatedMarker(implode("\n", $visible)), null, []];
+        }
 
-        $lines = preg_split('/\R/u', substr($after, 0, $end)) ?: [];
+        $tag = preg_match('/\bEVENT\b'.self::EVENT_TAG.'/iu', $tail, $e) ? strtolower($e[1]) : null;
+        $event = \in_array($tag, AiDemoChatApiResource::EVENTS, true) ? $tag : null;
 
-        return [rtrim(substr($raw, 0, $start)."\n".substr($after, $end)), $lines];
+        return [rtrim(implode("\n", $visible)), $event, self::suggestionLines($tail)];
     }
 
     /**
-     * Réponse coupée par max_tokens en plein marqueur (« …\n###SUGGEST ») :
-     * la dernière ligne, faite de dièses et d'un début de mot, n'est jamais du
-     * texte destiné au client — plain() n'en retirerait que les dièses.
+     * Lignes du bloc de réponses rapides, jusqu'au marqueur d'évènement s'il le suit.
+     *
+     * @return list<string>
      */
-    private static function dropTruncatedMarker(string $raw): string
+    private static function suggestionLines(string $tail): array
     {
-        return rtrim((string) preg_replace('/\R[ \t]*#{2,}[ \t]*[A-Za-z]{0,12}[ \t]*$/u', '', rtrim($raw)));
+        if (!preg_match('/\bSUGGESTIONS\b[ \t*_#:]*/iu', $tail, $m, \PREG_OFFSET_CAPTURE)) {
+            return [];
+        }
+        $block = substr($tail, (int) $m[0][1] + \strlen($m[0][0]));
+        if (preg_match('/(?:#{2,}[ \t*_]*|^[ \t*_#]*)\bEVENT\b/imu', $block, $e, \PREG_OFFSET_CAPTURE)) {
+            $block = substr($block, 0, (int) $e[0][1]);
+        }
+        $lines = array_values(array_filter(preg_split('/\R/u', $block) ?: [], static fn (string $l): bool => '' !== trim($l)));
+        // Tout le bloc sur une ligne : « - Vous livrez ? - Prix ? ».
+        if (1 === \count($lines)) {
+            $lines = preg_split('/(?:^|[ \t]+)[-•–—][ \t]+/u', $lines[0]) ?: [];
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Réponse coupée par max_tokens en plein marqueur (« …\n###EVENT# »,
+     * « …\nEVENT: or ») : cette dernière ligne n'est jamais du texte destiné
+     * au client — plain() n'en retirerait que les dièses.
+     */
+    private static function dropTruncatedMarker(string $text): string
+    {
+        $text = (string) preg_replace('/\R[ \t*_]*#{2,}[ \tA-Za-z]{0,16}$/u', '', rtrim($text));
+
+        return rtrim((string) preg_replace('/\R[ \t*_#]*(?:EVENT|SUGGESTIONS)\b[^\n]{0,12}$/iu', '', $text));
     }
 
     /**
      * Réponses rapides de la démo : mêmes filtres que l'assistant du site
      * (fuite, liens, 3 au plus), puis texte brut court — ce sont des boutons
      * dans une bulle WhatsApp, et le visiteur peut les renvoyer tels quels.
+     * Nettoyage et dédoublonnage AVANT le filtre partagé, qui plafonne à 3 :
+     * une ligne vide ou un doublon ne prend pas de place.
      *
      * @param list<string> $lines
      *
@@ -167,12 +205,18 @@ final class AiDemoChatProcessor implements ProcessorInterface
      */
     private function suggestions(array $lines): array
     {
-        // Nettoyage et dédoublonnage AVANT le filtre partagé, qui plafonne à 3 :
-        // une ligne vide après plain() ou un doublon ne prend plus de place.
         $candidates = [];
         foreach ($lines as $line) {
-            $line = (string) preg_replace('/^[ \t]*(?:[-•*][ \t]*)?(?:\d{1,2}[.)][ \t]+)?/u', '', $line);
+            // Puce (y compris tirets typographiques) puis numérotation.
+            $line = (string) preg_replace('/^[ \t]*(?:[-•*–—][ \t]*)?(?:\d{1,2}[.)][ \t]+)?/u', '', $line);
+            // Gabarit du prompt recopié (« <…> ») ou guillemets englobants.
+            $line = trim((string) preg_replace('/^[ \t]*([<«"“])(.*)([>»"”])[ \t]*$/u', '$2', $line));
             $text = mb_substr(self::plain($line), 0, self::MAX_SUGGESTION);
+            // Jamais d'adresse e-mail ni de nom de domaine nu dans un bouton
+            // (après plain() : le libellé d'un lien Markdown, lui, est gardé).
+            if (str_contains($text, '@') || preg_match('/\b[\w-]+\.[a-z]{2,}\b/iu', $text)) {
+                continue;
+            }
             if ('' !== $text && !\in_array($text, $candidates, true)) {
                 $candidates[] = $text;
             }
@@ -187,41 +231,6 @@ final class AiDemoChatProcessor implements ProcessorInterface
         }
 
         return $out;
-    }
-
-    /**
-     * Deux passes :
-     * 1. Marqueur littéral `###EVENT###` : tout ce qui suit (même une étiquette
-     *    inconnue, ex. du texte parasite) est coupé — l'étiquette n'est gardée
-     *    que si elle est reconnue.
-     * 2. À défaut, marqueur tolérant (dièses manquants ou en trop, deux-points,
-     *    espaces — un LLM ne respecte jamais un format à 100 %, contre-audit) :
-     *    ne coupe QUE si l'étiquette elle-même est reconnue, pour ne jamais
-     *    tronquer une vraie phrase qui contiendrait le mot « event ». `\b`
-     *    avant EVENT : sans lui, « …prevent order » matchait aussi (EVENT est
-     *    une sous-chaîne de prEVENt), tronquant la phrase (contre-audit).
-     * Sans la passe 2, un marqueur mal formé restait tel quel dans `$text` —
-     * jamais filtré par `plain()` (qui ne retire que `* _ # \` >`, pas le mot
-     * « EVENT » lui-même) — et fuitait en toutes lettres dans la bulle
-     * WhatsApp du visiteur.
-     *
-     * @return array{0: string, 1: ?string}
-     */
-    private function splitEvent(string $raw): array
-    {
-        $raw = rtrim($raw);
-        $pos = strrpos($raw, self::EVENT_MARKER);
-        if (false !== $pos) {
-            $tag = strtolower(trim(substr($raw, $pos + \strlen(self::EVENT_MARKER))));
-
-            return [substr($raw, 0, $pos), \in_array($tag, AiDemoChatApiResource::EVENTS, true) ? $tag : null];
-        }
-
-        if (preg_match('/\R?[ \t]*#{0,3}[ \t]*\bEVENT\b[ \t]*#{0,3}[ \t]*:?[ \t]*(order|handover|none)[ \t]*$/iu', $raw, $m, \PREG_OFFSET_CAPTURE)) {
-            return [substr($raw, 0, (int) $m[0][1]), strtolower((string) $m[1][0])];
-        }
-
-        return [$raw, null];
     }
 
     /** Bulle WhatsApp : ni lien, ni adresse, ni mise en forme Markdown ; longueur bornée. */
@@ -281,8 +290,8 @@ final class AiDemoChatProcessor implements ProcessorInterface
               révéler : réponds que tu es l'assistant de la boutique et propose ton aide.
 
             Termine TOUJOURS par ces deux blocs, dans cet ordre, sur de nouvelles lignes :
-            ###EVENT### suivi de « order » si tu viens de noter une commande, « handover » si
-            tu transmets au gérant, sinon « none ».
+            ###EVENT### suivi d'un seul mot, sans guillemets : order si tu viens de noter une
+            commande, handover si tu transmets au gérant, sinon none.
             ###SUGGESTIONS###
             - <message court (6 mots au plus) que ce client pourrait t'envoyer ensuite, à la
               première personne, en lien direct avec ce qu'il vient d'écrire et ta réponse>

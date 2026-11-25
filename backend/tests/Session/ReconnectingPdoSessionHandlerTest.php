@@ -50,7 +50,6 @@ final class ReconnectingPdoSessionHandlerTest extends TestCase
     private function replaceInner(ReconnectingPdoSessionHandler $handler, PdoSessionHandler $inner): void
     {
         $property = new \ReflectionProperty(ReconnectingPdoSessionHandler::class, 'inner');
-        $property->setAccessible(true);
         $property->setValue($handler, $inner);
     }
 
@@ -156,7 +155,6 @@ final class ReconnectingPdoSessionHandlerTest extends TestCase
     {
         foreach (['openPath' => $path, 'openName' => $name] as $property => $value) {
             $reflection = new \ReflectionProperty(ReconnectingPdoSessionHandler::class, $property);
-            $reflection->setAccessible(true);
             $reflection->setValue($handler, $value);
         }
     }
@@ -240,7 +238,6 @@ final class ReconnectingPdoSessionHandlerTest extends TestCase
     public function testClassifiesKnownConnectionLossCodes(int $code, bool $expectedLost): void
     {
         $method = new \ReflectionMethod(ReconnectingPdoSessionHandler::class, 'isConnectionLost');
-        $method->setAccessible(true);
 
         $this->assertSame($expectedLost, $method->invoke(null, $this->goneAwayException($code)));
     }
