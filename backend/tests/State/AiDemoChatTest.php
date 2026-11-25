@@ -292,6 +292,22 @@ final class AiDemoChatTest extends WebTestCase
         self::assertSame(['Je veux du riz', 'Vous livrez ?', 'Je paie par MoMo'], $this->json()['suggestions'] ?? null);
     }
 
+    /**
+     * En production, une suggestion était formulée comme une question du
+     * vendeur (« C'est pour combien de personnes ? ») : le prompt impose le
+     * point de vue du client, contre-exemple compris.
+     */
+    public function testSuggestionsAreRequestedFromTheClientsPointOfView(): void
+    {
+        $this->claudeText = "Oui.\n###EVENT### none";
+        $this->post(['message' => 'Du riz ?', 'locale' => 'fr']);
+
+        $system = (string) ($this->claudeBodies[0]['system'][0]['text'] ?? '');
+        self::assertStringContainsString('que le CLIENT touche pour te répondre', $system);
+        self::assertStringContainsString('jamais une question que le vendeur poserait', $system);
+        self::assertStringContainsString('au moins une suggestion y répond', $system);
+    }
+
     public function testTheEventIsRequestedBeforeTheSuggestionsSoATruncationNeverLosesIt(): void
     {
         $this->claudeText = "Oui.\n###EVENT### none";

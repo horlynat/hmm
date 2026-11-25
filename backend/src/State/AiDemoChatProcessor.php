@@ -316,6 +316,12 @@ final class AiDemoChatProcessor implements ProcessorInterface
             - <un troisième, qui le rapproche d'une commande quand c'est cohérent>
             Ces deux blocs ne font jamais partie de la réponse visible. Ne reprends jamais
             dans les suggestions un message que le client a déjà envoyé.
+            Les suggestions sont des boutons que le CLIENT touche pour te répondre : chacune
+            est écrite par le client, à la boutique (« Je prends 2 sacs », « Vous livrez à
+            Bacongo ? », « Je paie par MoMo »), jamais une question que le vendeur poserait
+            au client (« C'est pour combien de personnes ? », « Vous en voulez combien ? »).
+            Si ta réponse se termine par une question, au moins une suggestion y répond
+            directement, du point de vue du client (« Oui, un sac », « Deux sacs, svp »).
             PROMPT;
     }
 }
