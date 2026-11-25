@@ -385,11 +385,6 @@ final class AiAssistantChatRefonteTest extends WebTestCase
     }
 
     /**
-     * En production (2026-11-25), « 2 à 5 phrases courtes », noyé en fin de
-     * consigne, n'était pas suivi : 3 paragraphes par réponse. La contrainte est
-     * chiffrée et placée juste après les missions, avant les données.
-     */
-    /**
      * En production (2026-11-26), « 8 ans dans l'assurance » devenait « une
      * compréhension fine des enjeux financiers (modélisation, conformité) » :
      * une déduction, pas ses mots. Le propriétaire exige ses propres mots.
@@ -401,12 +396,25 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         $system = $this->lastSystemPrompt();
         self::assertStringContainsString('Tiens-t\'en à ses', $system);
         self::assertMatchesRegularExpression('/décris ce qu\'il a fait et écrit, jamais ce que cela impliquerait/u', $system);
-        self::assertMatchesRegularExpression('/jamais en tirer une compétence, une spécialité ou un domaine\s+qu\'il n\'a pas écrit lui-même/u', $system);
-        self::assertMatchesRegularExpression('/ni une compétence ou un domaine déduit de son parcours : seuls ses\s+propres mots le décrivent/u', $system);
+        self::assertMatchesRegularExpression('/jamais en tirer une compétence, une qualité, une spécialité ou un\s+domaine absents du profil et du contexte/u', $system);
+        self::assertMatchesRegularExpression('/ni une compétence ou un domaine déduit de son parcours : seuls le\s+profil et le contexte le décrivent/u', $system);
+        // Exemple tiré de la formulation fautive réellement observée en production.
+        self::assertMatchesRegularExpression('/« huit ans dans l\'assurance » ne devient jamais « une compréhension fine\s+des enjeux financiers »/u', $system);
+        // Question de capacité : ni refus sec ni déduction — oui avec ses éléments, ou
+        // « son profil ne le mentionne pas » + élément le plus proche + message direct.
+        self::assertStringContainsString('À une question de capacité (« est-il capable de… ? »', $system);
+        self::assertMatchesRegularExpression('/réponds\s+oui en citant ce qu\'il a écrit ou réalisé qui s\'y rapporte/u', $system);
+        self::assertMatchesRegularExpression('/que son profil ne le mentionne pas, cite au plus\s+l\'élément écrit le plus proche, puis propose \[Envoyer un message\]/u', $system);
+        self::assertStringContainsString('(compétence, projet, client, référence', $system);
         // L'ancienne invitation à « relier les domaines » sans garde-fou a disparu.
         self::assertStringNotContainsString('relie les domaines', $system);
     }
 
+    /**
+     * En production (2026-11-25), « 2 à 5 phrases courtes », noyé en fin de
+     * consigne, n'était pas suivi : 3 paragraphes par réponse. La contrainte est
+     * chiffrée et placée juste après les missions, avant les données.
+     */
     public function testAStrictNumericLengthLimitComesRightAfterTheMissions(): void
     {
         $this->ask(['question' => 'Qui est Horlynat ?', 'locale' => 'fr']);
