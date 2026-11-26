@@ -2277,131 +2277,14 @@
     ],
     "quiKick": "Who I am",
     "skillsKick": "Skills",
-    "skillsTitle": "Four fields, one standard of excellence",
-    "skillsLede": "Pick a field: what I do for you, my current tools, and the related services and proof.",
     "skillsTabs": "Fields of expertise",
     "doFor": "What I do for you",
     "tools": "Current tools",
     "linkedOffers": "Services in this field",
     "delay": "Timeline",
     "proof": "See the project: {title}",
-    "skillsNote": "Indicative list: I keep learning the technologies each project requires.",
-    "domains": [
-      {
-        "icon": "arch",
-        "title": "Software engineering and architecture",
-        "short": "Building solid software that grows with the business.",
-        "text": "I design the architecture, develop and launch web platforms, mobile apps and internal tools. Every technical choice is made to last and to evolve without a costly rewrite.",
-        "do": [
-          "Design a platform’s architecture",
-          "Build web and mobile applications",
-          "Design APIs and data models",
-          "Audit and evolve existing software"
-        ],
-        "tools": [
-          "PHP",
-          "Python",
-          "JavaScript",
-          "TypeScript",
-          "SQL",
-          "Dart",
-          "Symfony",
-          "API Platform",
-          "Next.js",
-          "React",
-          "Flutter",
-          "Docker",
-          "Kubernetes",
-          "CI/CD",
-          "Linux"
-        ],
-        "offers": [
-          "application",
-          "architecture",
-          "site"
-        ],
-        "proof": "dbg"
-      },
-      {
-        "icon": "lock",
-        "title": "Cybersecurity",
-        "short": "Security built in from the design stage, then verified.",
-        "text": "I think about the attack surface of each feature before writing it, then I verify: audits, penetration tests, hardening and monitoring.",
-        "do": [
-          "Audits and penetration tests",
-          "Server and application hardening",
-          "Access management and authentication",
-          "Compliance: GDPR, ISO 27001, Congolese law no. 29-2019"
-        ],
-        "tools": [
-          "OWASP",
-          "Penetration testing",
-          "RBAC",
-          "OAuth",
-          "JWT",
-          "Two-factor authentication",
-          "Cloudflare"
-        ],
-        "offers": [
-          "audit"
-        ],
-        "proof": "dbg"
-      },
-      {
-        "icon": "umb",
-        "title": "Risk management",
-        "short": "Since 2018, applied to every project.",
-        "text": "As head of miscellaneous, transport, hull and cargo risks for four years, I learned to spot what can go wrong and to check what a contract really covers.",
-        "do": [
-          "Risk analysis and mapping",
-          "Insurance coverage audits",
-          "Miscellaneous, transport, hull and cargo risks",
-          "Prevention and business continuity"
-        ],
-        "tools": [
-          "Non-life insurance",
-          "Underwriting",
-          "Claims management",
-          "Business continuity"
-        ],
-        "offers": [
-          "risques"
-        ],
-        "proof": ""
-      },
-      {
-        "icon": "spark",
-        "title": "AI and automation",
-        "short": "Assistants and automations that help every day.",
-        "text": "I bring in artificial intelligence where it saves time or wins sales: assistants on WhatsApp and websites, document processing, automation of repetitive tasks.",
-        "do": [
-          "AI assistants on WhatsApp and websites",
-          "Answers based on your own documents",
-          "Automation of repetitive tasks",
-          "Integration with your existing tools"
-        ],
-        "tools": [
-          "Claude",
-          "Gemini",
-          "RAG",
-          "Python",
-          "PyTorch",
-          "TensorFlow",
-          "WhatsApp API"
-        ],
-        "offers": [
-          "whatsapp",
-          "automatisation"
-        ],
-        "proof": "agent"
-      }
-    ],
     "projectsKick": "Projects",
-    "projectsTitle": "Platforms designed, delivered and run",
-    "projectsLede": "Every project is live or being rolled out. Open a case study to understand the approach.",
     "pathKick": "Background",
-    "pathTitle": "From mathematics to business",
-    "pathLede": "Computing, insurance, then entrepreneurship: a path that taught me to build and to anticipate risks.",
     "experience": "Experience",
     "education": "Education",
     "soon": "Upcoming",

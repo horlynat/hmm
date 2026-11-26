@@ -218,25 +218,30 @@ export interface HomeContent {
  * (ligne unique en base, éditable en back-office). Déjà résolu dans la
  * langue courante côté API layer (cf. src/lib/api/about-content.ts).
  */
+/** Domaine de compétence (onglet « Compétences » de la page À propos), langue déjà résolue. */
+export interface SkillDomainContent {
+  icon: import("@/components/proto/assets").ProtoIconName;
+  title: string;
+  short: string;
+  text: string;
+  do: string[];
+  tools: string[];
+  offerSlugs: string[];
+  proofProjectSlug: string | null;
+}
+
 export interface AboutContent {
-  heroEyebrow: string;
   heroTitle: string;
   heroTitleAccent: string;
   heroSub: string;
   profileName: string;
   profileRole: string;
   profileAvailability: string;
-  profileAlso: string;
-  profileLocation: string;
-  profileWorkMode: string;
-  profileLanguages: string;
   /** URL complète (résolue via getMediaUrl), uploadée depuis l'admin — absente tant qu'aucune photo n'a été définie. */
   profileImagePath: string | null;
   bioTitle: string;
   bioP1: string;
   bioP2: string;
-  bioP3: string;
-  visionTitle: string;
   visionLede: string;
   visionTodayText: string;
   visionTomorrowText: string;
@@ -251,9 +256,15 @@ export interface AboutContent {
   /** 5e différenciateur, facultatif (vide -> non affiché). */
   why5Title: string;
   why5Desc: string;
-  beyondLanguages: string[];
-  beyondInterests: string[];
   ctaTitle: string;
+  /** Titres et chapôs des sections (vide = élément masqué). */
+  skillsTitle: string;
+  skillsLede: string;
+  skillsNote: string;
+  projectsTitle: string;
+  projectsLede: string;
+  pathTitle: string;
+  pathLede: string;
   ctaSub: string;
   /** Refonte R5 — facultatifs : chaîne vide = bloc masqué. */
   visionPillar: string;

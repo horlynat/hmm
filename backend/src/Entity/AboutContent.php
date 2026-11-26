@@ -33,14 +33,6 @@ class AboutContent
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     #[Groups(['api_public', 'api_admin'])]
-    private string $heroEyebrow = '';
-
-    #[Groups(['api_public', 'api_admin'])]
-    private ?string $heroEyebrowEn = null;
-
-    #[ORM\Column(length: 255)]
-    #[Assert\NotBlank]
-    #[Groups(['api_public', 'api_admin'])]
     private string $heroTitle = '';
 
     #[Groups(['api_public', 'api_admin'])]
@@ -82,34 +74,6 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private ?string $profileAvailabilityEn = null;
 
-    #[ORM\Column(length: 255)]
-    #[Groups(['api_public', 'api_admin'])]
-    private string $profileAlso = '';
-
-    #[Groups(['api_public', 'api_admin'])]
-    private ?string $profileAlsoEn = null;
-
-    #[ORM\Column(length: 255)]
-    #[Groups(['api_public', 'api_admin'])]
-    private string $profileLocation = '';
-
-    #[Groups(['api_public', 'api_admin'])]
-    private ?string $profileLocationEn = null;
-
-    #[ORM\Column(length: 255)]
-    #[Groups(['api_public', 'api_admin'])]
-    private string $profileWorkMode = '';
-
-    #[Groups(['api_public', 'api_admin'])]
-    private ?string $profileWorkModeEn = null;
-
-    #[ORM\Column(length: 255)]
-    #[Groups(['api_public', 'api_admin'])]
-    private string $profileLanguages = '';
-
-    #[Groups(['api_public', 'api_admin'])]
-    private ?string $profileLanguagesEn = null;
-
     // --- Bio ---
 
     /** Portrait affiché à côté de la bio — chemin relatif (ex: /uploads/about/xxx.jpg), uploadé depuis l'admin (cf. AdminAboutContentController). */
@@ -138,21 +102,7 @@ class AboutContent
     #[Groups(['api_public', 'api_admin'])]
     private ?string $bioP2En = null;
 
-    #[ORM\Column(type: Types::TEXT)]
-    #[Groups(['api_public', 'api_admin'])]
-    private string $bioP3 = '';
-
-    #[Groups(['api_public', 'api_admin'])]
-    private ?string $bioP3En = null;
-
     // --- Vision ---
-
-    #[ORM\Column(length: 255)]
-    #[Groups(['api_public', 'api_admin'])]
-    private string $visionTitle = '';
-
-    #[Groups(['api_public', 'api_admin'])]
-    private ?string $visionTitleEn = null;
 
     #[ORM\Column(type: Types::TEXT)]
     #[Groups(['api_public', 'api_admin'])]
@@ -242,6 +192,94 @@ class AboutContent
     #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
     #[Groups(['api_public', 'api_admin'])]
     private ?string $learningTextEn = null;
+
+    // --- Titres des sections (prototype : Compétences, Réalisations, Parcours) ---
+    //
+    // Facultatifs : vide = élément masqué. Mêmes garde-fous que les autres textes.
+
+    /** Section Compétences — titre. */
+    #[ORM\Column(length: 255)]
+    #[Assert\Length(max: 255)]
+    #[Assert\Regex(pattern: Offer::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private string $skillsTitle = '';
+
+    #[Assert\Length(max: 255)]
+    #[Assert\Regex(pattern: Offer::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $skillsTitleEn = null;
+
+    /** Section Compétences — chapô. */
+    #[ORM\Column(type: Types::TEXT)]
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private string $skillsLede = '';
+
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $skillsLedeEn = null;
+
+    /** Section Compétences — note sous les onglets. */
+    #[ORM\Column(type: Types::TEXT)]
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private string $skillsNote = '';
+
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $skillsNoteEn = null;
+
+    /** Section Réalisations — titre. */
+    #[ORM\Column(length: 255)]
+    #[Assert\Length(max: 255)]
+    #[Assert\Regex(pattern: Offer::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private string $projectsTitle = '';
+
+    #[Assert\Length(max: 255)]
+    #[Assert\Regex(pattern: Offer::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $projectsTitleEn = null;
+
+    /** Section Réalisations — chapô. */
+    #[ORM\Column(type: Types::TEXT)]
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private string $projectsLede = '';
+
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $projectsLedeEn = null;
+
+    /** Section Parcours — titre. */
+    #[ORM\Column(length: 255)]
+    #[Assert\Length(max: 255)]
+    #[Assert\Regex(pattern: Offer::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private string $pathTitle = '';
+
+    #[Assert\Length(max: 255)]
+    #[Assert\Regex(pattern: Offer::SAFE_LINE, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $pathTitleEn = null;
+
+    /** Section Parcours — chapô. */
+    #[ORM\Column(type: Types::TEXT)]
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private string $pathLede = '';
+
+    #[Assert\Length(max: self::PILLAR_MAX)]
+    #[Assert\Regex(pattern: Offer::SAFE_TEXT, message: 'Caractère invisible ou de contrôle interdit.')]
+    #[Groups(['api_public', 'api_admin'])]
+    private ?string $pathLedeEn = null;
 
     /** @var list<array{value: string, label: string}> Repères du parcours (« Depuis 2016 » / « dans le numérique »). */
     #[ORM\Column(type: Types::JSON)]
@@ -348,24 +386,6 @@ class AboutContent
 
     // --- Au-delà du code ---
 
-    /** @var string[] */
-    #[ORM\Column(type: Types::JSON)]
-    #[Groups(['api_public', 'api_admin'])]
-    private array $beyondLanguages = [];
-
-    /** @var string[]|null */
-    #[Groups(['api_public', 'api_admin'])]
-    private ?array $beyondLanguagesEn = null;
-
-    /** @var string[] */
-    #[ORM\Column(type: Types::JSON)]
-    #[Groups(['api_public', 'api_admin'])]
-    private array $beyondInterests = [];
-
-    /** @var string[]|null */
-    #[Groups(['api_public', 'api_admin'])]
-    private ?array $beyondInterestsEn = null;
-
     // --- Appel à l'action final ---
 
     #[ORM\Column(length: 255)]
@@ -392,30 +412,6 @@ class AboutContent
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getHeroEyebrow(): string
-    {
-        return $this->heroEyebrow;
-    }
-
-    public function setHeroEyebrow(string $heroEyebrow): static
-    {
-        $this->heroEyebrow = $heroEyebrow;
-
-        return $this;
-    }
-
-    public function getHeroEyebrowEn(): ?string
-    {
-        return $this->heroEyebrowEn;
-    }
-
-    public function setHeroEyebrowEn(?string $heroEyebrowEn): static
-    {
-        $this->heroEyebrowEn = $heroEyebrowEn;
-
-        return $this;
     }
 
     public function getHeroTitle(): string
@@ -550,102 +546,6 @@ class AboutContent
         return $this;
     }
 
-    public function getProfileAlso(): string
-    {
-        return $this->profileAlso;
-    }
-
-    public function setProfileAlso(string $profileAlso): static
-    {
-        $this->profileAlso = $profileAlso;
-
-        return $this;
-    }
-
-    public function getProfileAlsoEn(): ?string
-    {
-        return $this->profileAlsoEn;
-    }
-
-    public function setProfileAlsoEn(?string $profileAlsoEn): static
-    {
-        $this->profileAlsoEn = $profileAlsoEn;
-
-        return $this;
-    }
-
-    public function getProfileLocation(): string
-    {
-        return $this->profileLocation;
-    }
-
-    public function setProfileLocation(string $profileLocation): static
-    {
-        $this->profileLocation = $profileLocation;
-
-        return $this;
-    }
-
-    public function getProfileLocationEn(): ?string
-    {
-        return $this->profileLocationEn;
-    }
-
-    public function setProfileLocationEn(?string $profileLocationEn): static
-    {
-        $this->profileLocationEn = $profileLocationEn;
-
-        return $this;
-    }
-
-    public function getProfileWorkMode(): string
-    {
-        return $this->profileWorkMode;
-    }
-
-    public function setProfileWorkMode(string $profileWorkMode): static
-    {
-        $this->profileWorkMode = $profileWorkMode;
-
-        return $this;
-    }
-
-    public function getProfileWorkModeEn(): ?string
-    {
-        return $this->profileWorkModeEn;
-    }
-
-    public function setProfileWorkModeEn(?string $profileWorkModeEn): static
-    {
-        $this->profileWorkModeEn = $profileWorkModeEn;
-
-        return $this;
-    }
-
-    public function getProfileLanguages(): string
-    {
-        return $this->profileLanguages;
-    }
-
-    public function setProfileLanguages(string $profileLanguages): static
-    {
-        $this->profileLanguages = $profileLanguages;
-
-        return $this;
-    }
-
-    public function getProfileLanguagesEn(): ?string
-    {
-        return $this->profileLanguagesEn;
-    }
-
-    public function setProfileLanguagesEn(?string $profileLanguagesEn): static
-    {
-        $this->profileLanguagesEn = $profileLanguagesEn;
-
-        return $this;
-    }
-
     public function getProfileImagePath(): ?string
     {
         return $this->profileImagePath;
@@ -726,54 +626,6 @@ class AboutContent
     public function setBioP2En(?string $bioP2En): static
     {
         $this->bioP2En = $bioP2En;
-
-        return $this;
-    }
-
-    public function getBioP3(): string
-    {
-        return $this->bioP3;
-    }
-
-    public function setBioP3(string $bioP3): static
-    {
-        $this->bioP3 = $bioP3;
-
-        return $this;
-    }
-
-    public function getBioP3En(): ?string
-    {
-        return $this->bioP3En;
-    }
-
-    public function setBioP3En(?string $bioP3En): static
-    {
-        $this->bioP3En = $bioP3En;
-
-        return $this;
-    }
-
-    public function getVisionTitle(): string
-    {
-        return $this->visionTitle;
-    }
-
-    public function setVisionTitle(string $visionTitle): static
-    {
-        $this->visionTitle = $visionTitle;
-
-        return $this;
-    }
-
-    public function getVisionTitleEn(): ?string
-    {
-        return $this->visionTitleEn;
-    }
-
-    public function setVisionTitleEn(?string $visionTitleEn): static
-    {
-        $this->visionTitleEn = $visionTitleEn;
 
         return $this;
     }
@@ -1090,62 +942,6 @@ class AboutContent
         return $this;
     }
 
-    /** @return string[] */
-    public function getBeyondLanguages(): array
-    {
-        return $this->beyondLanguages;
-    }
-
-    /** @param string[] $beyondLanguages */
-    public function setBeyondLanguages(array $beyondLanguages): static
-    {
-        $this->beyondLanguages = $beyondLanguages;
-
-        return $this;
-    }
-
-    /** @return string[]|null */
-    public function getBeyondLanguagesEn(): ?array
-    {
-        return $this->beyondLanguagesEn;
-    }
-
-    /** @param string[]|null $beyondLanguagesEn */
-    public function setBeyondLanguagesEn(?array $beyondLanguagesEn): static
-    {
-        $this->beyondLanguagesEn = $beyondLanguagesEn;
-
-        return $this;
-    }
-
-    /** @return string[] */
-    public function getBeyondInterests(): array
-    {
-        return $this->beyondInterests;
-    }
-
-    /** @param string[] $beyondInterests */
-    public function setBeyondInterests(array $beyondInterests): static
-    {
-        $this->beyondInterests = $beyondInterests;
-
-        return $this;
-    }
-
-    /** @return string[]|null */
-    public function getBeyondInterestsEn(): ?array
-    {
-        return $this->beyondInterestsEn;
-    }
-
-    /** @param string[]|null $beyondInterestsEn */
-    public function setBeyondInterestsEn(?array $beyondInterestsEn): static
-    {
-        $this->beyondInterestsEn = $beyondInterestsEn;
-
-        return $this;
-    }
-
     public function getCtaTitle(): string
     {
         return $this->ctaTitle;
@@ -1362,6 +1158,174 @@ class AboutContent
     public function setJourneyStatsEn(?array $journeyStatsEn): static
     {
         $this->journeyStatsEn = $journeyStatsEn;
+
+        return $this;
+    }
+
+    public function getSkillsTitle(): string
+    {
+        return $this->skillsTitle;
+    }
+
+    public function setSkillsTitle(?string $skillsTitle): static
+    {
+        $this->skillsTitle = $skillsTitle ?? '';
+
+        return $this;
+    }
+
+    public function getSkillsTitleEn(): ?string
+    {
+        return $this->skillsTitleEn;
+    }
+
+    public function setSkillsTitleEn(?string $skillsTitleEn): static
+    {
+        $this->skillsTitleEn = $skillsTitleEn;
+
+        return $this;
+    }
+
+    public function getSkillsLede(): string
+    {
+        return $this->skillsLede;
+    }
+
+    public function setSkillsLede(?string $skillsLede): static
+    {
+        $this->skillsLede = $skillsLede ?? '';
+
+        return $this;
+    }
+
+    public function getSkillsLedeEn(): ?string
+    {
+        return $this->skillsLedeEn;
+    }
+
+    public function setSkillsLedeEn(?string $skillsLedeEn): static
+    {
+        $this->skillsLedeEn = $skillsLedeEn;
+
+        return $this;
+    }
+
+    public function getSkillsNote(): string
+    {
+        return $this->skillsNote;
+    }
+
+    public function setSkillsNote(?string $skillsNote): static
+    {
+        $this->skillsNote = $skillsNote ?? '';
+
+        return $this;
+    }
+
+    public function getSkillsNoteEn(): ?string
+    {
+        return $this->skillsNoteEn;
+    }
+
+    public function setSkillsNoteEn(?string $skillsNoteEn): static
+    {
+        $this->skillsNoteEn = $skillsNoteEn;
+
+        return $this;
+    }
+
+    public function getProjectsTitle(): string
+    {
+        return $this->projectsTitle;
+    }
+
+    public function setProjectsTitle(?string $projectsTitle): static
+    {
+        $this->projectsTitle = $projectsTitle ?? '';
+
+        return $this;
+    }
+
+    public function getProjectsTitleEn(): ?string
+    {
+        return $this->projectsTitleEn;
+    }
+
+    public function setProjectsTitleEn(?string $projectsTitleEn): static
+    {
+        $this->projectsTitleEn = $projectsTitleEn;
+
+        return $this;
+    }
+
+    public function getProjectsLede(): string
+    {
+        return $this->projectsLede;
+    }
+
+    public function setProjectsLede(?string $projectsLede): static
+    {
+        $this->projectsLede = $projectsLede ?? '';
+
+        return $this;
+    }
+
+    public function getProjectsLedeEn(): ?string
+    {
+        return $this->projectsLedeEn;
+    }
+
+    public function setProjectsLedeEn(?string $projectsLedeEn): static
+    {
+        $this->projectsLedeEn = $projectsLedeEn;
+
+        return $this;
+    }
+
+    public function getPathTitle(): string
+    {
+        return $this->pathTitle;
+    }
+
+    public function setPathTitle(?string $pathTitle): static
+    {
+        $this->pathTitle = $pathTitle ?? '';
+
+        return $this;
+    }
+
+    public function getPathTitleEn(): ?string
+    {
+        return $this->pathTitleEn;
+    }
+
+    public function setPathTitleEn(?string $pathTitleEn): static
+    {
+        $this->pathTitleEn = $pathTitleEn;
+
+        return $this;
+    }
+
+    public function getPathLede(): string
+    {
+        return $this->pathLede;
+    }
+
+    public function setPathLede(?string $pathLede): static
+    {
+        $this->pathLede = $pathLede ?? '';
+
+        return $this;
+    }
+
+    public function getPathLedeEn(): ?string
+    {
+        return $this->pathLedeEn;
+    }
+
+    public function setPathLedeEn(?string $pathLedeEn): static
+    {
+        $this->pathLedeEn = $pathLedeEn;
 
         return $this;
     }

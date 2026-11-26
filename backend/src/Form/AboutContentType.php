@@ -17,133 +17,71 @@ class AboutContentType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $data = $options['data'];
+        // Ordre = ordre de la page (prototype). Bilingue : chaque champ FR a son
+        // jumeau « En » (facultatif, repli sur le français). Seuls le titre, le
+        // sous-titre et le nom sont obligatoires ; un texte vide masque son bloc.
+        $pair = static function (FormBuilderInterface $b, string $name, string $label, bool $textarea = false, bool $required = false, ?string $help = null): void {
+            $type = $textarea ? TextareaType::class : TextType::class;
+            $attr = $textarea ? ['attr' => ['rows' => 3]] : [];
+            $b->add($name, $type, ['label' => $label, 'required' => $required, 'help' => $help] + $attr);
+            $b->add($name.'En', $type, ['label' => $label.' (anglais)', 'required' => false] + $attr);
+        };
 
-        $builder
-            // --- Hero ---
-            ->add('heroEyebrow', TextType::class, ['label' => 'Accroche (au-dessus du titre)'])
-            ->add('heroEyebrowEn', TextType::class, ['label' => 'Accroche (anglais)', 'required' => false])
-            ->add('heroTitle', TextType::class, ['label' => 'Titre principal'])
-            ->add('heroTitleEn', TextType::class, ['label' => 'Titre principal (anglais)', 'required' => false])
-            ->add('heroTitleAccent', TextType::class, ['label' => 'Titre principal — partie accentuée'])
-            ->add('heroTitleAccentEn', TextType::class, ['label' => 'Titre principal — partie accentuée (anglais)', 'required' => false])
-            ->add('heroSub', TextareaType::class, ['label' => 'Sous-titre'])
-            ->add('heroSubEn', TextareaType::class, ['label' => 'Sous-titre (anglais)', 'required' => false])
+        // --- 1. En-tête : titre, présentation courte, photo ---
+        $pair($builder, 'heroTitle', 'Titre — début', false, true, 'Ex : « Ingénieur et »');
+        $pair($builder, 'heroTitleAccent', 'Titre — partie en couleur', false, true, 'Ex : « architecte logiciel. »');
+        $pair($builder, 'heroSub', 'Courte présentation', true, true);
+        $builder->add('profileName', TextType::class, ['label' => 'Nom sous la photo']);
+        $pair($builder, 'profileRole', 'Titre sous la photo', false, false, 'Ex : « Ingénieur et architecte logiciel »');
+        $pair($builder, 'profileAvailability', 'Pastille de disponibilité', false, false, 'Ex : « Disponible » — vide = pastille masquée');
+        $builder->add('profileImageFile', FileType::class, [
+            'label' => 'Photo (laisser vide pour conserver l\'actuelle)',
+            'mapped' => false,
+            'required' => false,
+            'constraints' => [
+                new File(
+                    maxSize: '5M',
+                    mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+                    mimeTypesMessage: 'Formats autorisés : JPG, PNG, WEBP.',
+                ),
+            ],
+        ]);
 
-            // --- Carte profil ---
-            ->add('profileName', TextType::class, ['label' => 'Nom affiché'])
-            ->add('profileRole', TextType::class, ['label' => 'Intitulé de poste'])
-            ->add('profileRoleEn', TextType::class, ['label' => 'Intitulé de poste (anglais)', 'required' => false])
-            ->add('profileAvailability', TextType::class, ['label' => 'Disponibilité (valeur)', 'help' => 'Ex : Disponible, Complet, Sur liste d\'attente...'])
-            ->add('profileAvailabilityEn', TextType::class, ['label' => 'Disponibilité (anglais)', 'required' => false])
-            ->add('profileAlso', TextType::class, ['label' => 'Aussi (valeur)', 'help' => 'Ex : Cybersécurité · Assurance'])
-            ->add('profileAlsoEn', TextType::class, ['label' => 'Aussi (anglais)', 'required' => false])
-            ->add('profileLocation', TextType::class, ['label' => 'Localisation (valeur)'])
-            ->add('profileLocationEn', TextType::class, ['label' => 'Localisation (anglais)', 'required' => false])
-            ->add('profileWorkMode', TextType::class, ['label' => 'Mode de travail (valeur)'])
-            ->add('profileWorkModeEn', TextType::class, ['label' => 'Mode de travail (anglais)', 'required' => false])
-            ->add('profileLanguages', TextType::class, ['label' => 'Langues (valeur)', 'help' => 'Ex : Français · Anglais'])
-            ->add('profileLanguagesEn', TextType::class, ['label' => 'Langues (anglais)', 'required' => false])
+        // --- 2. Vision ---
+        $pair($builder, 'visionLede', 'Citation', true, false, 'Affichée entre guillemets « … »');
+        $pair($builder, 'visionPillar', 'Carte « Vision »', true);
+        $pair($builder, 'missionPillar', 'Carte « Mission »', true);
+        $pair($builder, 'ambitionPillar', 'Carte « Ambition »', true);
+        $pair($builder, 'visionTodayText', 'Ambition « Aujourd\'hui »', true);
+        $pair($builder, 'horizonMidText', 'Ambition « D\'ici trois ans »', true);
+        $pair($builder, 'visionTomorrowText', 'Ambition « À long terme »', true);
 
-            // --- Bio ---
-            ->add('profileImageFile', FileType::class, [
-                'label' => 'Photo (section Bio — laisser vide pour conserver l\'actuelle)',
-                'mapped' => false,
-                'required' => false,
-                'constraints' => [
-                    new File(
-                        maxSize: '5M',
-                        mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-                        mimeTypesMessage: 'Formats autorisés : JPG, PNG, WEBP.',
-                    ),
-                ],
-            ])
-            ->add('bioTitle', TextType::class, ['label' => 'Bio — titre'])
-            ->add('bioTitleEn', TextType::class, ['label' => 'Bio — titre (anglais)', 'required' => false])
-            ->add('bioP1', TextareaType::class, ['label' => 'Bio — paragraphe 1'])
-            ->add('bioP1En', TextareaType::class, ['label' => 'Bio — paragraphe 1 (anglais)', 'required' => false])
-            ->add('bioP2', TextareaType::class, ['label' => 'Bio — paragraphe 2'])
-            ->add('bioP2En', TextareaType::class, ['label' => 'Bio — paragraphe 2 (anglais)', 'required' => false])
-            ->add('bioP3', TextareaType::class, ['label' => 'Bio — paragraphe 3'])
-            ->add('bioP3En', TextareaType::class, ['label' => 'Bio — paragraphe 3 (anglais)', 'required' => false])
+        // --- 3. Qui je suis ---
+        $pair($builder, 'bioTitle', 'Titre');
+        $pair($builder, 'bioP1', 'Paragraphe 1', true);
+        $pair($builder, 'bioP2', 'Paragraphe 2', true);
+        foreach ([1, 2, 3, 4, 5] as $i) {
+            $pair($builder, "why{$i}Title", "Point {$i} — titre");
+            $pair($builder, "why{$i}Desc", "Point {$i} — texte", true);
+        }
 
-            // --- Vision ---
-            ->add('visionTitle', TextType::class, ['label' => 'Vision — titre'])
-            ->add('visionTitleEn', TextType::class, ['label' => 'Vision — titre (anglais)', 'required' => false])
-            ->add('visionLede', TextareaType::class, ['label' => 'Vision — chapô'])
-            ->add('visionLedeEn', TextareaType::class, ['label' => 'Vision — chapô (anglais)', 'required' => false])
-            ->add('visionTodayText', TextareaType::class, ['label' => 'Vision — "Aujourd\'hui"'])
-            ->add('visionTodayTextEn', TextareaType::class, ['label' => 'Vision — "Aujourd\'hui" (anglais)', 'required' => false])
-            ->add('visionTomorrowText', TextareaType::class, ['label' => 'Vision — "Demain"'])
-            ->add('visionTomorrowTextEn', TextareaType::class, ['label' => 'Vision — "Demain" (anglais)', 'required' => false])
+        // --- 4. Compétences (les domaines se gèrent dans leur propre écran) ---
+        $pair($builder, 'skillsTitle', 'Titre');
+        $pair($builder, 'skillsLede', 'Chapô', true);
+        $pair($builder, 'skillsNote', 'Note sous les onglets', true);
 
-            // --- Vision, mission, ambition ; parcours (refonte R5) ---
-            // Facultatifs : un texte vide masque le bloc correspondant sur le site.
-            ->add('visionPillar', TextareaType::class, ['label' => 'Carte « Vision »', 'required' => false, 'attr' => ['rows' => 3]])
-            ->add('visionPillarEn', TextareaType::class, ['label' => 'Carte « Vision » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
-            ->add('missionPillar', TextareaType::class, ['label' => 'Carte « Mission »', 'required' => false, 'attr' => ['rows' => 3]])
-            ->add('missionPillarEn', TextareaType::class, ['label' => 'Carte « Mission » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
-            ->add('ambitionPillar', TextareaType::class, ['label' => 'Carte « Ambition »', 'required' => false, 'attr' => ['rows' => 3]])
-            ->add('ambitionPillarEn', TextareaType::class, ['label' => 'Carte « Ambition » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
-            ->add('horizonMidText', TextareaType::class, ['label' => 'Ambition « D\'ici trois ans »', 'required' => false, 'help' => 'Entre « Aujourd\'hui » et « Demain » ci-dessus, affichés comme « Aujourd\'hui » et « À long terme ».', 'attr' => ['rows' => 3]])
-            ->add('horizonMidTextEn', TextareaType::class, ['label' => 'Ambition « D\'ici trois ans » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
-            ->add('learningText', TextareaType::class, ['label' => 'Parcours — encart « Toujours en formation »', 'required' => false, 'attr' => ['rows' => 3]])
-            ->add('learningTextEn', TextareaType::class, ['label' => 'Parcours — encart « Toujours en formation » (anglais)', 'required' => false, 'attr' => ['rows' => 3]])
+        // --- 5. Réalisations ---
+        $pair($builder, 'projectsTitle', 'Titre');
+        $pair($builder, 'projectsLede', 'Chapô', true);
 
-            // --- Pourquoi moi ---
-            ->add('why1Title', TextType::class, ['label' => 'Différenciateur 1 — titre'])
-            ->add('why1TitleEn', TextType::class, ['label' => 'Différenciateur 1 — titre (anglais)', 'required' => false])
-            ->add('why1Desc', TextareaType::class, ['label' => 'Différenciateur 1 — description'])
-            ->add('why1DescEn', TextareaType::class, ['label' => 'Différenciateur 1 — description (anglais)', 'required' => false])
-            ->add('why2Title', TextType::class, ['label' => 'Différenciateur 2 — titre'])
-            ->add('why2TitleEn', TextType::class, ['label' => 'Différenciateur 2 — titre (anglais)', 'required' => false])
-            ->add('why2Desc', TextareaType::class, ['label' => 'Différenciateur 2 — description'])
-            ->add('why2DescEn', TextareaType::class, ['label' => 'Différenciateur 2 — description (anglais)', 'required' => false])
-            ->add('why3Title', TextType::class, ['label' => 'Différenciateur 3 — titre'])
-            ->add('why3TitleEn', TextType::class, ['label' => 'Différenciateur 3 — titre (anglais)', 'required' => false])
-            ->add('why3Desc', TextareaType::class, ['label' => 'Différenciateur 3 — description'])
-            ->add('why3DescEn', TextareaType::class, ['label' => 'Différenciateur 3 — description (anglais)', 'required' => false])
-            ->add('why4Title', TextType::class, ['label' => 'Différenciateur 4 — titre'])
-            ->add('why4TitleEn', TextType::class, ['label' => 'Différenciateur 4 — titre (anglais)', 'required' => false])
-            ->add('why4Desc', TextareaType::class, ['label' => 'Différenciateur 4 — description'])
-            ->add('why4DescEn', TextareaType::class, ['label' => 'Différenciateur 4 — description (anglais)', 'required' => false])
-            ->add('why5Title', TextType::class, ['label' => 'Différenciateur 5 — titre (facultatif)', 'required' => false])
-            ->add('why5TitleEn', TextType::class, ['label' => 'Différenciateur 5 — titre (anglais)', 'required' => false])
-            ->add('why5Desc', TextareaType::class, ['label' => 'Différenciateur 5 — description (facultatif)', 'required' => false])
-            ->add('why5DescEn', TextareaType::class, ['label' => 'Différenciateur 5 — description (anglais)', 'required' => false])
+        // --- 6. Parcours (expériences et formations : leurs propres écrans) ---
+        $pair($builder, 'pathTitle', 'Titre');
+        $pair($builder, 'pathLede', 'Chapô', true);
+        $pair($builder, 'learningText', 'Encart « Toujours en formation »', true);
 
-            // --- Au-delà du code ---
-            ->add('beyondLanguages', TextareaType::class, [
-                'mapped' => false,
-                'label' => 'Langues parlées',
-                'help' => 'Une par ligne, ex : Français — natif',
-                'data' => implode("\n", $data?->getBeyondLanguages() ?? []),
-            ])
-            ->add('beyondLanguagesEn', TextareaType::class, [
-                'mapped' => false,
-                'required' => false,
-                'label' => 'Langues parlées (anglais)',
-                'data' => implode("\n", $data?->getBeyondLanguagesEn() ?? []),
-            ])
-            ->add('beyondInterests', TextareaType::class, [
-                'mapped' => false,
-                'label' => 'Centres d\'intérêt',
-                'help' => 'Un par ligne',
-                'data' => implode("\n", $data?->getBeyondInterests() ?? []),
-            ])
-            ->add('beyondInterestsEn', TextareaType::class, [
-                'mapped' => false,
-                'required' => false,
-                'label' => 'Centres d\'intérêt (anglais)',
-                'data' => implode("\n", $data?->getBeyondInterestsEn() ?? []),
-            ])
-
-            // --- Appel à l'action final ---
-            ->add('ctaTitle', TextType::class, ['label' => 'Appel à l\'action — titre'])
-            ->add('ctaTitleEn', TextType::class, ['label' => 'Appel à l\'action — titre (anglais)', 'required' => false])
-            ->add('ctaSub', TextareaType::class, ['label' => 'Appel à l\'action — texte'])
-            ->add('ctaSubEn', TextareaType::class, ['label' => 'Appel à l\'action — texte (anglais)', 'required' => false])
-        ;
+        // --- 7. Appel à l'action final ---
+        $pair($builder, 'ctaTitle', 'Titre');
+        $pair($builder, 'ctaSub', 'Texte', true);
 
         // Repères du parcours : « Depuis 2016 | dans le numérique », un par
         // ligne. Ligne mal formée => erreur de formulaire (422), jamais 500.
@@ -159,19 +97,19 @@ class AboutContentType extends AbstractType
             $builder->get($field)->addModelTransformer(new OfferLinesTransformer(OfferLinesTransformer::MODE_STAT, $nullable));
         }
 
-        // Champs texte obligatoires : vides, ils arrivaient à null dans un
-        // setter `string` (TypeError => 500 dès que l'attribut HTML `required`
-        // est contourné). Vide => '' puis erreur de formulaire (422).
-        // Les champs du hero portent déjà #[Assert\NotBlank] sur l'entité :
-        // pas de second NotBlank (sinon deux messages d'erreur).
-        $entityNotBlank = ['heroEyebrow', 'heroTitle', 'heroTitleAccent', 'heroSub'];
+        // Tout champ texte : vide => '' (jamais null dans un setter `string`,
+        // ce qui ferait une 500 si l'attribut HTML `required` est contourné).
+        // Les obligatoires portent #[Assert\NotBlank] sur l'entité (titre,
+        // sous-titre) ou ici (nom).
         foreach ($builder->all() as $name => $child) {
             $type = $child->getType()->getInnerType()::class;
-            if (!$child->getRequired() || !$child->getMapped() || !\in_array($type, [TextType::class, TextareaType::class], true)) {
+            // Les repères (journeyStats*) ont un transformateur de modèle qu'un
+            // nouvel add() perdrait (→ 500) : on les laisse tels quels.
+            if (!$child->getMapped() || !\in_array($type, [TextType::class, TextareaType::class], true) || str_ends_with($name, 'En') || str_starts_with($name, 'journeyStats')) {
                 continue;
             }
             $constraints = $child->getOption('constraints') ?? [];
-            if (!\in_array($name, $entityNotBlank, true)) {
+            if ('profileName' === $name) {
                 $constraints[] = new NotBlank(normalizer: 'trim', message: 'Ce champ est obligatoire.');
             }
             $builder->add($name, $type, array_merge($child->getOptions(), [

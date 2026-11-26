@@ -2277,131 +2277,14 @@
     ],
     "quiKick": "Qui je suis",
     "skillsKick": "Compétences",
-    "skillsTitle": "Quatre domaines, un même niveau d’exigence",
-    "skillsLede": "Choisissez un domaine : ce que je fais pour vous, mes outils du moment, les offres et la preuve associées.",
     "skillsTabs": "Domaines de compétence",
     "doFor": "Ce que je fais pour vous",
     "tools": "Outils du moment",
     "linkedOffers": "Offres liées à ce domaine",
     "delay": "Délai",
     "proof": "Voir la réalisation : {title}",
-    "skillsNote": "Liste indicative : j’apprends en continu les technologies que chaque projet exige.",
-    "domains": [
-      {
-        "icon": "arch",
-        "title": "Ingénierie et architecture logicielle",
-        "short": "Concevoir des logiciels solides, qui grandissent avec l’activité.",
-        "text": "Je conçois l’architecture, je développe et je mets en service des plateformes web, des applications mobiles et des outils internes. Chaque choix technique est fait pour durer et pour évoluer sans refonte coûteuse.",
-        "do": [
-          "Concevoir l’architecture d’une plateforme",
-          "Développer des applications web et mobiles",
-          "Concevoir des API et modéliser les données",
-          "Auditer et faire évoluer un logiciel existant"
-        ],
-        "tools": [
-          "PHP",
-          "Python",
-          "JavaScript",
-          "TypeScript",
-          "SQL",
-          "Dart",
-          "Symfony",
-          "API Platform",
-          "Next.js",
-          "React",
-          "Flutter",
-          "Docker",
-          "Kubernetes",
-          "CI/CD",
-          "Linux"
-        ],
-        "offers": [
-          "application",
-          "architecture",
-          "site"
-        ],
-        "proof": "dbg"
-      },
-      {
-        "icon": "lock",
-        "title": "Cybersécurité",
-        "short": "La sécurité posée dès la conception, puis vérifiée.",
-        "text": "Je réfléchis à la surface d’attaque de chaque fonctionnalité avant de l’écrire, puis je vérifie : audits, tests d’intrusion, durcissement et surveillance.",
-        "do": [
-          "Audits et tests d’intrusion",
-          "Durcissement des serveurs et des applications",
-          "Gestion des accès et authentification",
-          "Conformité : RGPD, ISO 27001, loi congolaise n° 29-2019"
-        ],
-        "tools": [
-          "OWASP",
-          "Tests d’intrusion",
-          "RBAC",
-          "OAuth",
-          "JWT",
-          "Double authentification",
-          "Cloudflare"
-        ],
-        "offers": [
-          "audit"
-        ],
-        "proof": "dbg"
-      },
-      {
-        "icon": "umb",
-        "title": "Gestion et management des risques",
-        "short": "Depuis 2018, appliquée à chaque projet.",
-        "text": "Responsable des risques divers, transports, corps et facultés pendant quatre ans, j’ai appris à repérer ce qui peut mal tourner et à vérifier ce qu’un contrat couvre vraiment.",
-        "do": [
-          "Analyse et cartographie des risques",
-          "Audit des couvertures d’assurance",
-          "Risques divers, transport, corps et facultés",
-          "Prévention et continuité d’activité"
-        ],
-        "tools": [
-          "Assurance non-vie",
-          "Souscription",
-          "Gestion de sinistres",
-          "Continuité d’activité"
-        ],
-        "offers": [
-          "risques"
-        ],
-        "proof": ""
-      },
-      {
-        "icon": "spark",
-        "title": "IA et automatisation",
-        "short": "Des assistants et des automatisations utiles au quotidien.",
-        "text": "J’intègre l’intelligence artificielle là où elle fait gagner du temps ou des ventes : assistants sur WhatsApp et sur les sites, exploitation des documents, automatisation des tâches répétitives.",
-        "do": [
-          "Assistants IA sur WhatsApp et sur site",
-          "Réponses fondées sur vos propres documents",
-          "Automatisation des tâches répétitives",
-          "Intégration à vos outils existants"
-        ],
-        "tools": [
-          "Claude",
-          "Gemini",
-          "RAG",
-          "Python",
-          "PyTorch",
-          "TensorFlow",
-          "API WhatsApp"
-        ],
-        "offers": [
-          "whatsapp",
-          "automatisation"
-        ],
-        "proof": "agent"
-      }
-    ],
     "projectsKick": "Réalisations",
-    "projectsTitle": "Des plateformes conçues, livrées et exploitées",
-    "projectsLede": "Chaque réalisation est en service ou en cours de déploiement. Ouvrez une étude de cas pour en comprendre la démarche.",
     "pathKick": "Parcours",
-    "pathTitle": "Des mathématiques à l'entreprise",
-    "pathLede": "Informatique, assurance puis entrepreneuriat : un parcours qui m'a appris à construire et à anticiper les risques.",
     "experience": "Expérience",
     "education": "Formation",
     "soon": "À venir",

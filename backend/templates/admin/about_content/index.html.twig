@@ -3,25 +3,18 @@
 {% block title %}Contenu — Page "À propos"{% endblock %}
 
 {% block body %}
-	<twig:PageHeader title='Page "À propos"' subtitle="Hero, profil, bio, vision, différenciateurs, à-côtés — bilingue FR/EN." icon="ti-user" />
+	<twig:PageHeader title='Page "À propos"' subtitle="Tous les textes de la page, dans l'ordre où ils s'affichent — bilingue FR/EN. Un champ vide masque son bloc." icon="ti-user" />
 
 	<twig:LocaleToggle />
 
 	{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
 
 	<div class="panel">
-		<div class="panel-header"><h2 class="panel-title">Hero</h2></div>
+		<div class="panel-header"><h2 class="panel-title">1. En-tête</h2></div>
 		<div class="panel-body space-y-4">
-			<twig:FieldPair :fr="form.heroEyebrow" :en="form.heroEyebrowEn" />
 			<twig:FieldPair :fr="form.heroTitle" :en="form.heroTitleEn" />
 			<twig:FieldPair :fr="form.heroTitleAccent" :en="form.heroTitleAccentEn" />
 			<twig:FieldPair :fr="form.heroSub" :en="form.heroSubEn" :isTextarea="true" />
-		</div>
-	</div>
-
-	<div class="panel">
-		<div class="panel-header"><h2 class="panel-title">Carte profil</h2></div>
-		<div class="panel-body space-y-4">
 			<div class="field">
 				{{ form_label(form.profileName, null, {'label_attr': {'class': 'field-label'}}) }}
 				{{ form_widget(form.profileName, {'attr': {'class': 'input w-full'}}) }}
@@ -29,67 +22,40 @@
 			</div>
 			<twig:FieldPair :fr="form.profileRole" :en="form.profileRoleEn" />
 			<twig:FieldPair :fr="form.profileAvailability" :en="form.profileAvailabilityEn" />
-			<twig:FieldPair :fr="form.profileAlso" :en="form.profileAlsoEn" />
-			<twig:FieldPair :fr="form.profileLocation" :en="form.profileLocationEn" />
-			<twig:FieldPair :fr="form.profileWorkMode" :en="form.profileWorkModeEn" />
-			<twig:FieldPair :fr="form.profileLanguages" :en="form.profileLanguagesEn" />
-		</div>
-	</div>
-
-	<div class="panel">
-		<div class="panel-header"><h2 class="panel-title">Bio</h2></div>
-		<div class="panel-body space-y-4">
 			<div class="field">
 				<span class="field-label">Photo actuelle</span>
 				{% if content.profileImagePath %}
 					<img src="{{ content.profileImagePath }}" alt="Photo de profil" class="h-32 w-32 rounded-md border border-gray-200 dark:border-gray-700 mb-3 object-cover">
 				{% else %}
-					<p class="text-xs opacity-50 mb-3">Aucune photo définie — l'image statique par défaut du site est utilisée.</p>
+					<p class="text-xs opacity-50 mb-3">Aucune photo : une silhouette s'affiche à la place.</p>
 				{% endif %}
 				{{ form_label(form.profileImageFile, null, {'label_attr': {'class': 'field-label'}}) }}
 				{{ form_widget(form.profileImageFile, {'attr': {'class': 'input w-full'}}) }}
 				{{ form_errors(form.profileImageFile, {'attr': {'class': 'field-error'}}) }}
 			</div>
-			<twig:FieldPair :fr="form.bioTitle" :en="form.bioTitleEn" />
-			<twig:FieldPair :fr="form.bioP1" :en="form.bioP1En" :isTextarea="true" />
-			<twig:FieldPair :fr="form.bioP2" :en="form.bioP2En" :isTextarea="true" />
-			<twig:FieldPair :fr="form.bioP3" :en="form.bioP3En" :isTextarea="true" />
 		</div>
 	</div>
 
 	<div class="panel">
-		<div class="panel-header"><h2 class="panel-title">Vision</h2></div>
+		<div class="panel-header"><h2 class="panel-title">2. Vision</h2></div>
 		<div class="panel-body space-y-4">
-			<twig:FieldPair :fr="form.visionTitle" :en="form.visionTitleEn" />
 			<twig:FieldPair :fr="form.visionLede" :en="form.visionLedeEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.visionPillar" :en="form.visionPillarEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.missionPillar" :en="form.missionPillarEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.ambitionPillar" :en="form.ambitionPillarEn" :isTextarea="true" />
 			<twig:FieldPair :fr="form.visionTodayText" :en="form.visionTodayTextEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.horizonMidText" :en="form.horizonMidTextEn" :isTextarea="true" />
 			<twig:FieldPair :fr="form.visionTomorrowText" :en="form.visionTomorrowTextEn" :isTextarea="true" />
 		</div>
 	</div>
 
 	<div class="panel">
-		<div class="panel-header"><h2 class="panel-title">Vision, mission, ambition</h2></div>
+		<div class="panel-header"><h2 class="panel-title">3. Qui je suis</h2></div>
 		<div class="panel-body space-y-4">
-			<p class="text-xs opacity-60">Facultatifs : un texte vide masque le bloc correspondant sur le site.</p>
-			<twig:FieldPair :fr="form.visionPillar" :en="form.visionPillarEn" :isTextarea="true" />
-			<twig:FieldPair :fr="form.missionPillar" :en="form.missionPillarEn" :isTextarea="true" />
-			<twig:FieldPair :fr="form.ambitionPillar" :en="form.ambitionPillarEn" :isTextarea="true" />
-			<twig:FieldPair :fr="form.horizonMidText" :en="form.horizonMidTextEn" :isTextarea="true" />
-		</div>
-	</div>
-
-	<div class="panel">
-		<div class="panel-header"><h2 class="panel-title">Parcours</h2></div>
-		<div class="panel-body space-y-4">
-			<p class="text-xs opacity-60">Les expériences et formations se gèrent dans leurs propres écrans ; ici, les repères chiffrés et l'encart de fin.</p>
-			<twig:FieldPair :fr="form.journeyStats" :en="form.journeyStatsEn" :isTextarea="true" />
-			<twig:FieldPair :fr="form.learningText" :en="form.learningTextEn" :isTextarea="true" />
-		</div>
-	</div>
-
-	<div class="panel">
-		<div class="panel-header"><h2 class="panel-title">Pourquoi moi (4 différenciateurs)</h2></div>
-		<div class="panel-body space-y-4">
+			<p class="text-xs opacity-60">Un titre, deux paragraphes, puis jusqu'à cinq points forts.</p>
+			<twig:FieldPair :fr="form.bioTitle" :en="form.bioTitleEn" />
+			<twig:FieldPair :fr="form.bioP1" :en="form.bioP1En" :isTextarea="true" />
+			<twig:FieldPair :fr="form.bioP2" :en="form.bioP2En" :isTextarea="true" />
 			<hr class="border-gray-100">
 			<twig:FieldPair :fr="form.why1Title" :en="form.why1TitleEn" />
 			<twig:FieldPair :fr="form.why1Desc" :en="form.why1DescEn" :isTextarea="true" />
@@ -102,21 +68,44 @@
 			<hr class="border-gray-100">
 			<twig:FieldPair :fr="form.why4Title" :en="form.why4TitleEn" />
 			<twig:FieldPair :fr="form.why4Desc" :en="form.why4DescEn" :isTextarea="true" />
+			<hr class="border-gray-100">
 			<twig:FieldPair :fr="form.why5Title" :en="form.why5TitleEn" />
 			<twig:FieldPair :fr="form.why5Desc" :en="form.why5DescEn" :isTextarea="true" />
 		</div>
 	</div>
 
 	<div class="panel">
-		<div class="panel-header"><h2 class="panel-title">Au-delà du code</h2></div>
+		<div class="panel-header"><h2 class="panel-title">4. Compétences</h2></div>
 		<div class="panel-body space-y-4">
-			<twig:FieldPair :fr="form.beyondLanguages" :en="form.beyondLanguagesEn" :isTextarea="true" />
-			<twig:FieldPair :fr="form.beyondInterests" :en="form.beyondInterestsEn" :isTextarea="true" />
+			<p class="text-xs opacity-60">Les onglets (domaines de compétence) se gèrent dans <a class="link" href="{{ path('admin_skill_domain_index') }}">Contenu › Domaines de compétence</a>.</p>
+			<twig:FieldPair :fr="form.skillsTitle" :en="form.skillsTitleEn" />
+			<twig:FieldPair :fr="form.skillsLede" :en="form.skillsLedeEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.skillsNote" :en="form.skillsNoteEn" :isTextarea="true" />
 		</div>
 	</div>
 
 	<div class="panel">
-		<div class="panel-header"><h2 class="panel-title">Appel à l'action final</h2></div>
+		<div class="panel-header"><h2 class="panel-title">5. Réalisations</h2></div>
+		<div class="panel-body space-y-4">
+			<p class="text-xs opacity-60">Les réalisations affichées sont celles publiées dans Projets.</p>
+			<twig:FieldPair :fr="form.projectsTitle" :en="form.projectsTitleEn" />
+			<twig:FieldPair :fr="form.projectsLede" :en="form.projectsLedeEn" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">6. Parcours</h2></div>
+		<div class="panel-body space-y-4">
+			<p class="text-xs opacity-60">Les expériences et formations se gèrent dans leurs propres écrans.</p>
+			<twig:FieldPair :fr="form.pathTitle" :en="form.pathTitleEn" />
+			<twig:FieldPair :fr="form.pathLede" :en="form.pathLedeEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.journeyStats" :en="form.journeyStatsEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.learningText" :en="form.learningTextEn" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">7. Appel à l'action final</h2></div>
 		<div class="panel-body space-y-4">
 			<twig:FieldPair :fr="form.ctaTitle" :en="form.ctaTitleEn" />
 			<twig:FieldPair :fr="form.ctaSub" :en="form.ctaSubEn" :isTextarea="true" />

@@ -6,6 +6,7 @@ use App\Entity\AboutContent;
 use App\Entity\Course;
 use App\Repository\AboutContentRepository;
 use App\Repository\CourseRepository;
+use App\Repository\SkillDomainRepository;
 use Psr\Clock\ClockInterface;
 
 /**
@@ -24,7 +25,7 @@ use Psr\Clock\ClockInterface;
  * connaissait pas le parcours de son propriétaire (constat 2026-11-25).
  *
  * Seuls les champs AFFICHÉS sur la page À propos sont repris (SiteAbout.tsx :
- * AboutContent + Course), donc relus et validés par le propriétaire — ni les
+ * AboutContent + SkillDomain + Course), donc relus et validés par le propriétaire — ni les
  * champs saisis au back-office mais affichés nulle part (localisation,
  * langues, mode de travail, « également », sur-titre, centres d'intérêt :
  * 2e contre-audit), ni rien d'interne (photo, horodatage, auteur). HomeContent n'est PAS repris : depuis la refonte,
@@ -38,6 +39,7 @@ final class AiAssistantOwnerProfile
     public function __construct(
         private readonly AboutContentRepository $about,
         private readonly CourseRepository $courses,
+        private readonly SkillDomainRepository $domains,
         private readonly ClockInterface $clock,
     ) {
     }
@@ -61,7 +63,6 @@ final class AiAssistantOwnerProfile
                 $en ? 'Title' : 'Titre' => $this->pick($en, $a->getBioTitleEn(), $a->getBioTitle()),
                 '1' => $this->pick($en, $a->getBioP1En(), $a->getBioP1()),
                 '2' => $this->pick($en, $a->getBioP2En(), $a->getBioP2()),
-                '3' => $this->pick($en, $a->getBioP3En(), $a->getBioP3()),
                 $en ? 'Milestones' : 'Repères' => $this->stats($en ? $a->getJourneyStatsEn() : null, $a->getJourneyStats()),
             ]),
             $this->section($en ? 'Vision of the craft' : 'Vision du métier', [
@@ -81,6 +82,8 @@ final class AiAssistantOwnerProfile
                 '4' => $this->pair($this->pick($en, $a->getWhy4TitleEn(), $a->getWhy4Title()), $this->pick($en, $a->getWhy4DescEn(), $a->getWhy4Desc())),
                 '5' => $this->pair($this->pick($en, $a->getWhy5TitleEn(), $a->getWhy5Title()), $this->pick($en, $a->getWhy5DescEn(), $a->getWhy5Desc())),
             ]),
+            // Onglets « Compétences » de la page (Domaines de compétence, back-office).
+            $this->section($en ? 'Areas of expertise' : 'Domaines de compétence', $this->skillDomains($en)),
             // La page affiche « Toujours en formation » sous les formations, dans Parcours.
             $this->section($en ? 'Education and certifications' : 'Formation et certifications', [
                 ...$this->education($en),
@@ -109,6 +112,46 @@ final class AiAssistantOwnerProfile
         }
 
         return $out;
+    }
+
+    /**
+     * Domaines de compétence affichés (onglets de la page À propos), dans leur
+     * ordre : « Titre : présentation. Ce qu'il fait : … Outils : … ». Les
+     * offres liées n'y sont pas : le catalogue des offres est déjà transmis.
+     *
+     * @return list<string>
+     */
+    private function skillDomains(bool $en): array
+    {
+        $out = [];
+        foreach ($this->domains->findOrdered() as $d) {
+            $title = $this->pick($en, $d->getTitleEn(), $d->getTitle());
+            if ('' === $title) {
+                continue;
+            }
+            $do = $this->list($en ? $d->getDoItemsEn() : null, $d->getDoItems());
+            $tools = $this->list($en ? $d->getToolsEn() : null, $d->getTools());
+            $out[] = implode(' ', array_filter([
+                $title.' :',
+                $this->pick($en, $d->getTextEn(), $d->getText()),
+                '' !== $do ? ($en ? 'What he does: ' : 'Ce qu\'il fait : ').$do.'.' : '',
+                '' !== $tools ? ($en ? 'Current tools: ' : 'Outils du moment : ').$tools.'.' : '',
+            ], static fn (string $v): bool => '' !== $v));
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<string>|null $translated
+     * @param list<string>      $fallback
+     */
+    private function list(?array $translated, array $fallback): string
+    {
+        $render = static fn (array $items): string => implode(' ; ', array_values(array_filter(array_map(static fn (mixed $v): string => \is_string($v) ? self::clean($v) : '', $items), static fn (string $v): bool => '' !== $v)));
+        $t = $render($translated ?? []);
+
+        return '' !== $t ? $t : $render($fallback);
     }
 
     private function now(): \DateTimeImmutable

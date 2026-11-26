@@ -14,6 +14,7 @@ use App\Entity\Offer;
 use App\Entity\Project;
 use App\Entity\ProjectInfo;
 use App\Entity\Skill;
+use App\Entity\SkillDomain;
 use App\Entity\SkillCategory;
 use App\Entity\Tag;
 use App\Entity\Testimonial;
@@ -147,6 +148,7 @@ class FrontendRevalidationSubscriber implements EventSubscriber
             $entity instanceof Testimonial => 'testimonials',
             $entity instanceof Course => 'courses',
             $entity instanceof AboutContent => 'about-content',
+            $entity instanceof SkillDomain => 'skill-domains',
             $entity instanceof AiAssistantSettings, $entity instanceof AiAssistantEntry => 'ai-assistant',
             $entity instanceof Offer => 'offers',
             default => null,

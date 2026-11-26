@@ -327,6 +327,12 @@
 							Page "À propos"
 						</a>
 					{% endif %}
+					{% if canViewAboutContent %}
+						<a href="{{ path('admin_skill_domain_index') }}" class="group flex items-center gap-2 py-[6px] px-2.5 rounded-md text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_skill_domain' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
+							<i class="ti ti-layout-grid text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>
+							Domaines de compétence
+						</a>
+					{% endif %}
 					{% if canViewAiAssistant %}
 						<a href="{{ path('admin_ai_assistant_index') }}" class="group flex items-center gap-2 py-[6px] px-2.5 rounded-md text-(--color-brand-dark) hover:text-(--color-brand-primary) hover:bg-gray-50 transition {% if currentRoute starts with 'admin_ai_assistant' %}text-(--color-brand-primary) bg-brand-light/10 font-medium{% endif %}">
 							<i class="ti ti-message-chatbot text-base text-(--color-brand-dark) group-hover:text-(--color-brand-primary)"></i>

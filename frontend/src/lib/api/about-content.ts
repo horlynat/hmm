@@ -1,5 +1,5 @@
 import "server-only";
-import { apiFetch, extractCollection, pickLocalized, pickLocalizedList } from "./client";
+import { apiFetch, extractCollection, pickLocalized } from "./client";
 import { getMediaUrl } from "@/lib/media";
 import type { AboutContent, AboutJourneyStat } from "@/lib/types";
 
@@ -9,22 +9,15 @@ import type { AboutContent, AboutJourneyStat } from "@/lib/types";
 const ABOUT_CONTENT_REVALIDATE_SECONDS = 60 * 60 * 24;
 
 interface RawAboutContent
-  extends Omit<AboutContent, "visionPillar" | "missionPillar" | "ambitionPillar" | "horizonMidText" | "learningText" | "journeyStats" | "why5Title" | "why5Desc"> {
-  heroEyebrowEn?: string | null;
+  extends Omit<AboutContent, "visionPillar" | "missionPillar" | "ambitionPillar" | "horizonMidText" | "learningText" | "journeyStats" | "why5Title" | "why5Desc" | "skillsTitle" | "skillsLede" | "skillsNote" | "projectsTitle" | "projectsLede" | "pathTitle" | "pathLede"> {
   heroTitleEn?: string | null;
   heroTitleAccentEn?: string | null;
   heroSubEn?: string | null;
   profileRoleEn?: string | null;
   profileAvailabilityEn?: string | null;
-  profileAlsoEn?: string | null;
-  profileLocationEn?: string | null;
-  profileWorkModeEn?: string | null;
-  profileLanguagesEn?: string | null;
   bioTitleEn?: string | null;
   bioP1En?: string | null;
   bioP2En?: string | null;
-  bioP3En?: string | null;
-  visionTitleEn?: string | null;
   visionLedeEn?: string | null;
   visionTodayTextEn?: string | null;
   visionTomorrowTextEn?: string | null;
@@ -36,8 +29,6 @@ interface RawAboutContent
   why3DescEn?: string | null;
   why4TitleEn?: string | null;
   why4DescEn?: string | null;
-  beyondLanguagesEn?: string[] | null;
-  beyondInterestsEn?: string[] | null;
   ctaTitleEn?: string | null;
   ctaSubEn?: string | null;
   // Refonte R5 : optionnels ici aussi — un backend antérieur à la migration
@@ -56,6 +47,20 @@ interface RawAboutContent
   horizonMidTextEn?: string | null;
   learningText?: string | null;
   learningTextEn?: string | null;
+  skillsTitle?: string | null;
+  skillsTitleEn?: string | null;
+  skillsLede?: string | null;
+  skillsLedeEn?: string | null;
+  skillsNote?: string | null;
+  skillsNoteEn?: string | null;
+  projectsTitle?: string | null;
+  projectsTitleEn?: string | null;
+  projectsLede?: string | null;
+  projectsLedeEn?: string | null;
+  pathTitle?: string | null;
+  pathTitleEn?: string | null;
+  pathLede?: string | null;
+  pathLedeEn?: string | null;
   journeyStats?: unknown;
   journeyStatsEn?: unknown;
 }
@@ -85,23 +90,16 @@ export async function getAboutContent(locale: string): Promise<AboutContent | nu
   if (!raw) return null;
 
   return {
-    heroEyebrow: pickLocalized(raw.heroEyebrow, raw.heroEyebrowEn, locale),
     heroTitle: pickLocalized(raw.heroTitle, raw.heroTitleEn, locale),
     heroTitleAccent: pickLocalized(raw.heroTitleAccent, raw.heroTitleAccentEn, locale),
     heroSub: pickLocalized(raw.heroSub, raw.heroSubEn, locale),
     profileName: raw.profileName,
     profileRole: pickLocalized(raw.profileRole, raw.profileRoleEn, locale),
     profileAvailability: pickLocalized(raw.profileAvailability, raw.profileAvailabilityEn, locale),
-    profileAlso: pickLocalized(raw.profileAlso, raw.profileAlsoEn, locale),
-    profileLocation: pickLocalized(raw.profileLocation, raw.profileLocationEn, locale),
-    profileWorkMode: pickLocalized(raw.profileWorkMode, raw.profileWorkModeEn, locale),
-    profileLanguages: pickLocalized(raw.profileLanguages, raw.profileLanguagesEn, locale),
     profileImagePath: raw.profileImagePath ? getMediaUrl(raw.profileImagePath) : null,
     bioTitle: pickLocalized(raw.bioTitle, raw.bioTitleEn, locale),
     bioP1: pickLocalized(raw.bioP1, raw.bioP1En, locale),
     bioP2: pickLocalized(raw.bioP2, raw.bioP2En, locale),
-    bioP3: pickLocalized(raw.bioP3, raw.bioP3En, locale),
-    visionTitle: pickLocalized(raw.visionTitle, raw.visionTitleEn, locale),
     visionLede: pickLocalized(raw.visionLede, raw.visionLedeEn, locale),
     visionTodayText: pickLocalized(raw.visionTodayText, raw.visionTodayTextEn, locale),
     visionTomorrowText: pickLocalized(raw.visionTomorrowText, raw.visionTomorrowTextEn, locale),
@@ -115,8 +113,6 @@ export async function getAboutContent(locale: string): Promise<AboutContent | nu
     why4Desc: pickLocalized(raw.why4Desc, raw.why4DescEn, locale),
     why5Title: pickLocalized(raw.why5Title ?? "", raw.why5TitleEn, locale),
     why5Desc: pickLocalized(raw.why5Desc ?? "", raw.why5DescEn, locale),
-    beyondLanguages: pickLocalizedList(raw.beyondLanguages, raw.beyondLanguagesEn, locale),
-    beyondInterests: pickLocalizedList(raw.beyondInterests, raw.beyondInterestsEn, locale),
     ctaTitle: pickLocalized(raw.ctaTitle, raw.ctaTitleEn, locale),
     ctaSub: pickLocalized(raw.ctaSub, raw.ctaSubEn, locale),
     visionPillar: pickLocalized(raw.visionPillar ?? "", raw.visionPillarEn, locale),
@@ -124,6 +120,13 @@ export async function getAboutContent(locale: string): Promise<AboutContent | nu
     ambitionPillar: pickLocalized(raw.ambitionPillar ?? "", raw.ambitionPillarEn, locale),
     horizonMidText: pickLocalized(raw.horizonMidText ?? "", raw.horizonMidTextEn, locale),
     learningText: pickLocalized(raw.learningText ?? "", raw.learningTextEn, locale),
+    skillsTitle: pickLocalized(raw.skillsTitle ?? "", raw.skillsTitleEn, locale),
+    skillsLede: pickLocalized(raw.skillsLede ?? "", raw.skillsLedeEn, locale),
+    skillsNote: pickLocalized(raw.skillsNote ?? "", raw.skillsNoteEn, locale),
+    projectsTitle: pickLocalized(raw.projectsTitle ?? "", raw.projectsTitleEn, locale),
+    projectsLede: pickLocalized(raw.projectsLede ?? "", raw.projectsLedeEn, locale),
+    pathTitle: pickLocalized(raw.pathTitle ?? "", raw.pathTitleEn, locale),
+    pathLede: pickLocalized(raw.pathLede ?? "", raw.pathLedeEn, locale),
     // Liste anglaise retenue seulement si elle contient au moins un repère
     // valide ; sinon repli sur le français (même règle que pickLocalizedList).
     journeyStats: (() => {

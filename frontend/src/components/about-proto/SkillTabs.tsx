@@ -27,7 +27,7 @@ export type SkillDomain = {
  * .skg .skof3 .skog .skpr`), avec le fondu `.fade` au changement d'onglet.
  * Clavier : flèches gauche/droite/haut/bas, Début, Fin (motif ARIA tabs).
  */
-export function SkillTabs({ domains }: { domains: SkillDomain[] }) {
+export function SkillTabs({ domains, note }: { domains: SkillDomain[]; note?: string }) {
   const t = useTranslations("aboutPage");
   const tl = useTranslations("landing.hero");
   const locale = useLocale();
@@ -153,9 +153,11 @@ export function SkillTabs({ domains }: { domains: SkillDomain[] }) {
           )}
         </div>
       </div>
-      <p className="dm" style={{ fontSize: "14px", marginTop: "18px" }}>
-        {t("skillsNote")}
-      </p>
+      {note && (
+        <p className="dm" style={{ fontSize: "14px", marginTop: "18px" }}>
+          {note}
+        </p>
+      )}
     </>
   );
 }

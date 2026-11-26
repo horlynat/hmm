@@ -1,0 +1,56 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block body %}
+	<twig:PageHeader :title="title" subtitle="Un onglet de la section « Compétences » de la page À propos — bilingue FR/EN." icon="ti-layout-grid">
+		<a href="{{ path('admin_skill_domain_index') }}" class="btn btn-secondary gap-2">
+			<span class="ti ti-arrow-left" aria-hidden="true"></span>
+			<span>Retour à la liste</span>
+		</a>
+	</twig:PageHeader>
+
+	<twig:LocaleToggle />
+
+	{{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': 'novalidate'}}) }}
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Onglet</h2></div>
+		<div class="panel-body space-y-4">
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				{{ form_row(form.position, {'label_attr': {'class': 'field-label'}, 'attr': {'class': 'input w-full'}}) }}
+				{{ form_row(form.icon, {'label_attr': {'class': 'field-label'}, 'attr': {'class': 'input w-full'}}) }}
+			</div>
+			<twig:FieldPair :fr="form.title" :en="form.titleEn" />
+			<twig:FieldPair :fr="form.short" :en="form.shortEn" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Contenu</h2></div>
+		<div class="panel-body space-y-4">
+			<twig:FieldPair :fr="form.text" :en="form.textEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.doItems" :en="form.doItemsEn" :isTextarea="true" />
+			<twig:FieldPair :fr="form.tools" :en="form.toolsEn" :isTextarea="true" />
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-header"><h2 class="panel-title">Liens</h2></div>
+		<div class="panel-body space-y-4">
+			{{ form_row(form.offerSlugs, {'label_attr': {'class': 'field-label'}}) }}
+			{{ form_row(form.proofProjectSlug, {'label_attr': {'class': 'field-label'}, 'attr': {'class': 'input w-full'}}) }}
+		</div>
+	</div>
+
+	<div class="panel">
+		<div class="panel-body flex justify-end">
+			<button type="submit" class="btn btn-primary gap-2">
+				<span class="ti ti-device-floppy" aria-hidden="true"></span>
+				<span>Enregistrer</span>
+			</button>
+		</div>
+	</div>
+
+	{{ form_end(form) }}
+{% endblock %}
