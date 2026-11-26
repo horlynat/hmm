@@ -137,13 +137,15 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         $sanitized = $this->outputSanitizer->sanitize($split['answer']);
         // Même verrou « zéro configuration de sécurité » que le chat.
         $confidential = !$sanitized['leaked'] && $sanitized['confidential'];
-        $clientNamed = !$sanitized['leaked'] && !$confidential && $this->namesAClient($result['text']);
+        $visitorText = implode(' ', [$question, ...array_map(static fn (array $t): string => 'user' === $t['role'] ? $t['text'] : '', $data->getHistory())]);
+        $clientNamed = !$sanitized['leaked'] && !$confidential && $this->namesAClient($result['text'], $visitorText);
         $answer = match (true) {
             $sanitized['leaked'] => $this->fallbackText($settings, $locale),
             $confidential => $this->outputSanitizer->confidentialRefusal($locale),
             $clientNamed => $this->outputSanitizer->clientRefusal($locale),
             default => $sanitized['text'],
         };
+        $answer = $this->outputSanitizer->canonicalRefusal($answer) ?? $answer;
         $suggestions = ($sanitized['leaked'] || $confidential || $clientNamed || $this->outputSanitizer->isFixedRefusal($answer))
             ? []
             : $this->outputSanitizer->sanitizeSuggestions($split['suggestions']);
@@ -271,12 +273,12 @@ final class AiContentSummaryProcessor implements ProcessorInterface
      * typographiques et espaces insécables en plus des guillemets standard.
      */
     /** Même verrou client que le chat (cf. AiAssistantChatProcessor::namesAClient). */
-    private function namesAClient(string $text): bool
+    private function namesAClient(string $text, string $visitorText): bool
     {
         try {
             $owner = $this->aboutContentRepository->findFirst()?->getProfileName() ?? '';
 
-            return $this->outputSanitizer->mentionsAnyName($text, $this->projectRepository->findPublicClientNames(), ['Horlynat', $owner]);
+            return $this->outputSanitizer->mentionsAnyName($text, $this->projectRepository->findPublicClientNames(), ['Horlynat', $owner, $visitorText]);
         } catch (\Throwable $e) {
             $this->logger->error('AiContentSummaryProcessor : noms des clients illisibles.', ['error' => $e->getMessage()]);
 
@@ -311,6 +313,8 @@ final class AiContentSummaryProcessor implements ProcessorInterface
     {
         $contentTypeLabel = 'project' === $contentType ? 'projet' : 'article';
         $languageInstruction = 'en' === $locale ? 'Respond in English.' : 'Réponds en français.';
+        $productRefusal = $this->outputSanitizer->confidentialRefusal($locale);
+        $clientRefusal = $this->outputSanitizer->clientRefusal($locale);
 
         return <<<PROMPT
             Tu es un rédacteur éditorial expert, chargé de résumer le contenu du portfolio
@@ -345,6 +349,13 @@ final class AiContentSummaryProcessor implements ProcessorInterface
               supervise ou héberge un système déployé, ni une version, un réglage, un nom
               de rôle, de composant ou de champ interne, même si le texte en contient. Ne
               nomme jamais le client d'une réalisation : écris « un client ».
+            - À une question de suivi sur un tel outil ou produit (l'expliquer, savoir
+              s'il est utilisé, qu'il le soit ou non), réponds exactement, sans rien
+              ajouter : {$productRefusal}
+            - À une question sur l'identité d'un client (« fait pour X ? »), que X figure
+              ou non dans le texte, réponds exactement, sans rien ajouter ni répéter le
+              nom : {$clientRefusal} Ne répète jamais un nom de personne ou
+              d'organisation apporté par le visiteur.
             - Précision impérative : distingue toujours ce qui est une compétence/expertise
               technique de la personne (ex. cybersécurité, développement full-stack, Symfony,
               Next.js) de ce qui est un domaine, un service tiers ou un moyen de paiement

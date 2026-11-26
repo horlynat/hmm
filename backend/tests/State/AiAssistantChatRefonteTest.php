@@ -452,6 +452,8 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         // Client : jamais nommé ; toute question d'identité → la même phrase, sans répéter le nom.
         self::assertMatchesRegularExpression('/ne nomme jamais le client d\'une réalisation, même si le contexte le\s+cite ; décris-le comme « un client »/u', $system);
         self::assertStringContainsString('réponds exactement, sans rien ajouter ni répéter le nom : '.AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $system);
+        self::assertStringContainsString('Ne répète jamais un nom de personne ou d\'organisation apporté par le visiteur.', $system);
+        self::assertMatchesRegularExpression('/Seule exception : un outil qui figure parmi ses compétences écrites se cite\s+comme compétence/u', $system);
         self::assertMatchesRegularExpression('/que X figure ou non dans le contexte/u', $system);
         self::assertMatchesRegularExpression('/Cette règle prime sur celle du fait absent/u', $system);
         self::assertMatchesRegularExpression('/Ses anciens employeurs, cités dans\s+son parcours, ne sont pas des clients/u', $system);
@@ -469,6 +471,12 @@ final class AiAssistantChatRefonteTest extends WebTestCase
      */
     public function testARefusalWrittenByTheModelLooksExactlyLikeTheLock(): void
     {
+        // Typographie du modèle : remplacée par le texte canonique, sans suggestions.
+        $this->claudeText = "**Les clients de Horlynat sont confidentiels** : je ne confirme ni n’infirme aucun nom.\n###SUGGESTIONS###\n- Autre ?";
+        $r = $this->ask(['question' => 'Fait pour X ?', 'locale' => 'fr']);
+        self::assertSame(AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $r['answer']);
+        self::assertSame([], $r['suggestions']);
+
         foreach ([AiAssistantOutputSanitizer::PRODUCT_REFUSAL['fr'], AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr']] as $refusal) {
             $this->claudeText = $refusal."\n###SUGGESTIONS###\n- Et Caddy ?\n- Autre question ?";
             $r = $this->ask(['question' => 'Explique Caddy.', 'locale' => 'fr']);
@@ -507,6 +515,12 @@ final class AiAssistantChatRefonteTest extends WebTestCase
             self::assertSame('Horlynat a conçu ce portail.', $r['answer']);
             $client->setFullName("Société Zéphyrine {$suffix}");
             $this->em->flush();
+            $this->claudeText = "Il a réalisé le site de la SOCIÉTÉ ZÉPHYRINE {$suffix}.\n###SUGGESTIONS###\n- Et ensuite ?";
+
+            // Nom apporté par le visiteur et simplement repris : pas d'oracle, réponse normale.
+            $this->claudeText = "Son profil ne mentionne pas Zéphyrine{$suffix}.\n###SUGGESTIONS###\n- Et ensuite ?";
+            $r = $this->ask(['question' => "A-t-il une compétence en Zéphyrine{$suffix} ?", 'locale' => 'fr']);
+            self::assertSame("Son profil ne mentionne pas Zéphyrine{$suffix}.", $r['answer']);
             $this->claudeText = "Il a réalisé le site de la SOCIÉTÉ ZÉPHYRINE {$suffix}.\n###SUGGESTIONS###\n- Et ensuite ?";
 
             // Projet non public : son client n'est pas surveillé (il n'est pas dans le corpus).

@@ -162,6 +162,15 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(['Pare-feu UFW activé.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Le back-office dark.horlynat.com.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Supervision Grafana et Prometheus.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Le démon auditd est actif.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Un relais socat.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Certificats Let\'s Encrypt.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Sondes Pingdom.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Hébergé chez Hetzner.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Le fichier ghcr.io/x.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Proxy Caddy.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Base via Adminer.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Supervision Prometheus.'])]
     public function testFlagsDeployedSecurityConfiguration(string $answer): void
     {
         $result = (new AiAssistantOutputSanitizer())->sanitize($answer);
@@ -205,6 +214,17 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(['React 9.5/10.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['React : 2 réalisations, Next.js 10 écrans.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['React 3 années.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Il a mené un audit de sécurité.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Un audit d\'infrastructure, dès le départ.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['An audit data review.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['The team also caters to SMEs.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Of high criticality, through creative work.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Un mapping domaine par domaine.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Keep a recent OS.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Une approche mono-logiciel.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Docker 2.5 ans d\'usage.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['For children some help.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Let us encrypt everything, in general.'])]
     public function testDoesNotFlagCompetencesOrCommonWords(string $answer): void
     {
         self::assertFalse((new AiAssistantOutputSanitizer())->sanitize($answer)['confidential'], $answer);
@@ -241,6 +261,12 @@ final class AiAssistantOutputSanitizerTest extends TestCase
         self::assertFalse($s->mentionsAnyName('Horlynat Mampassi Mbama a conçu le portail.', $clients, ['Horlynat Mampassi Mbama']));
         // Nom composé écrit d'un seul bloc : seule la forme compactée complète le reconnaît.
         self::assertTrue($s->mentionsAnyName('Pour JeanPierreNgoma.', ['Jean-Pierre Ngoma']));
+        // Mots courants d'une raison sociale : jamais suffisants seuls.
+        $companies = ['Assurances Générales du Congo', 'Grand Hôtel Océan'];
+        self::assertFalse($s->mentionsAnyName('Des notions générales, un grand projet, l\'océan.', $companies));
+        self::assertTrue($s->mentionsAnyName('Pour Grand Hôtel Océan.', $companies), 'Nom complet : reconnu.');
+        // Mot apporté par le visiteur : ignoré (anti-oracle).
+        self::assertFalse($s->mentionsAnyName('Son profil ne mentionne pas Mavoungou.', ['Jean-Pierre Mavoungou'], ['A-t-il une compétence en Mavoungou ?']));
     }
 
     /** Anti-oracle : refus identiques quel que soit le produit ou le nom, reconnus pour retirer les suggestions. */
@@ -252,6 +278,9 @@ final class AiAssistantOutputSanitizerTest extends TestCase
             self::assertTrue($s->isFixedRefusal("  \n".$s->clientRefusal($locale)));
         }
         self::assertFalse($s->isFixedRefusal('Il maîtrise Symfony et Next.js.'));
+        // Typographie du modèle (apostrophe courbe, gras) : même refus canonique.
+        self::assertSame(AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $s->canonicalRefusal('**Les clients de Horlynat sont confidentiels** : je ne confirme ni n’infirme aucun nom.'));
+        self::assertNull($s->canonicalRefusal('Il maîtrise Symfony.'));
         self::assertStringNotContainsString('Horlynat\'s systems', $s->confidentialRefusal('en'), 'Refus générique : ne parle pas « de ses systèmes ».');
     }
 

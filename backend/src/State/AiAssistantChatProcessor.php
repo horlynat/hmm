@@ -143,7 +143,7 @@ final class AiAssistantChatProcessor implements ProcessorInterface
         // remplacée par un refus poli (pas un mode dégradé : le service fonctionne).
         $confidential = !$sanitized['leaked'] && $sanitized['confidential'];
         // Client d'une réalisation cité malgré la consigne : même logique de refus.
-        $clientNamed = !$sanitized['leaked'] && !$confidential && $this->namesAClient($result['text']);
+        $clientNamed = !$sanitized['leaked'] && !$confidential && $this->namesAClient($result['text'], $this->visitorText($question, $data->getHistory()));
         $answer = match (true) {
             $sanitized['leaked'] => $this->fallbackText($settings, $locale),
             $confidential => $this->outputSanitizer->confidentialRefusal($locale),
@@ -154,8 +154,9 @@ final class AiAssistantChatProcessor implements ProcessorInterface
         // Sur repli/fuite/refus, on ne renvoie aucune suggestion : elle porterait sur une
         // réponse qui n'a jamais été montrée au visiteur. Le front garde alors les
         // puces précédentes plutôt que de vider la barre (cf. AiAssistantWidget).
-        // Aucune suggestion après un refus — imposé par le verrou OU suivi par le
-        // modèle : les deux chemins restent indiscernables (anti-oracle).
+        // Refus écrit par le modèle (consigne suivie) : remplacé par le texte
+        // canonique, sans suggestions — strictement identique au refus du verrou.
+        $answer = $this->outputSanitizer->canonicalRefusal($answer) ?? $answer;
         $suggestions = ($sanitized['leaked'] || $confidential || $this->outputSanitizer->isFixedRefusal($answer))
             ? []
             : $this->outputSanitizer->sanitizeSuggestions($split['suggestions']);
@@ -365,6 +366,7 @@ final class AiAssistantChatProcessor implements ProcessorInterface
               cite ; décris-le comme « un client ». À toute question sur l'identité d'un client
               (son nom, « a-t-il travaillé pour X ? »), que X figure ou non dans le contexte,
               réponds exactement, sans rien ajouter ni répéter le nom : {$clientRefusal}
+              Ne répète jamais un nom de personne ou d'organisation apporté par le visiteur.
               Cette règle prime sur celle du fait absent. Ses anciens employeurs, cités dans
               son parcours, ne sont pas des clients.
             - Sécurité — zéro information de configuration : tu peux citer ses compétences en
@@ -377,6 +379,8 @@ final class AiAssistantChatProcessor implements ProcessorInterface
               comparer, ou savoir s'il est utilisé, chez lui ou chez un client, qu'il le soit
               ou non —, ainsi que sur une version, un réglage, un nom de rôle, de composant
               ou de champ interne, réponds exactement, sans rien ajouter : {$productRefusal}
+              Seule exception : un outil qui figure parmi ses compétences écrites se cite
+              comme compétence (« il le maîtrise »), jamais pour dire où ni s'il est déployé.
               Ne nomme jamais de tels éléments toi-même, même si le contexte en contient.
               L'hébergement proposé dans une offre se décrit par sa fiche, jamais par le nom
               d'un hébergeur. En cas de doute, applique cette règle.
@@ -406,20 +410,41 @@ final class AiAssistantChatProcessor implements ProcessorInterface
 
     /**
      * Vrai si le texte cite le client d'une réalisation publique. Les mots du nom
-     * du propriétaire (souvent « client » de ses propres projets) sont ignorés.
+     * du propriétaire (souvent « client » de ses propres projets) et ceux apportés
+     * par le visiteur sont ignorés.
      * Base indisponible : on ne refuse pas pour autant — la consigne reste.
      */
-    private function namesAClient(string $text): bool
+    private function namesAClient(string $text, string $visitorText): bool
     {
         try {
             $owner = $this->aboutContentRepository->findFirst()?->getProfileName() ?? '';
 
-            return $this->outputSanitizer->mentionsAnyName($text, $this->projectRepository->findPublicClientNames(), ['Horlynat', $owner]);
+            // Les mots apportés par le visiteur (question, historique) ne comptent
+            // pas : les reprendre ne lui apprend rien, et refuser alors ferait du
+            // verrou un oracle (« a-t-il une compétence en <nom> ? »).
+            return $this->outputSanitizer->mentionsAnyName($text, $this->projectRepository->findPublicClientNames(), ['Horlynat', $owner, $visitorText]);
         } catch (\Throwable $e) {
             $this->logger->error('AiAssistantChatProcessor : noms des clients illisibles.', ['error' => $e->getMessage()]);
 
             return false;
         }
+    }
+
+    /**
+     * Texte écrit par le visiteur (question et ses tours d'historique).
+     *
+     * @param array<int, array{role: string, text: string}> $history
+     */
+    private function visitorText(string $question, array $history): string
+    {
+        $parts = [$question];
+        foreach ($history as $turn) {
+            if ('user' === $turn['role']) {
+                $parts[] = $turn['text'];
+            }
+        }
+
+        return implode(' ', $parts);
     }
 
     private function fallbackText(AiAssistantSettings $settings, string $locale): string

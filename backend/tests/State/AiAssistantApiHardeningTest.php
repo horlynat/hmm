@@ -223,6 +223,8 @@ final class AiAssistantApiHardeningTest extends WebTestCase
             // La consigne du résumé l'interdit aussi, et protège le nom des clients.
             $prompt = (string) (json_decode($this->claudeBody, true)['system'][0]['text'] ?? '');
             self::assertStringContainsString('Zéro information de configuration', $prompt);
+            self::assertStringContainsString(\App\Service\AiAssistantOutputSanitizer::PRODUCT_REFUSAL['fr'], $prompt);
+            self::assertStringContainsString(\App\Service\AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $prompt);
             self::assertMatchesRegularExpression('/Ne\s+nomme jamais le client d\'une réalisation : écris « un client »/u', $prompt);
             $this->claudeText = "Un résumé sain.\n###SUGGESTIONS###\n- Et ensuite ?";
             self::assertSame(200, $this->post('/api/assistant/summarize', ['slug' => $public->getSlug(), 'contentType' => 'project', 'locale' => 'fr']));

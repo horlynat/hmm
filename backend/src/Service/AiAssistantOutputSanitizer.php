@@ -34,12 +34,10 @@ final class AiAssistantOutputSanitizer
      * lettres et chiffres seuls) pour résister aux séparateurs et homoglyphes.
      */
     private const SECURITY_CONFIG_COMPACT = [
-        'adminer', 'akamai', 'alpinelinux', 'apparmor', 'auditd', 'auth0', 'caddy', 'centos', 'certbot',
-        'champleurre', 'cloudflare', 'contabo', 'crowdstrike', 'darkhorlynat', 'datadog', 'debian', 'digitalocean',
-        'drenso', 'fastly', 'fullstrict', 'ghcr', 'grafana', 'haproxy', 'hetzner', 'imperva', 'keycloak', 'letsencrypt',
-        'lexik', 'linode', 'modsecurity', 'monolog', 'nelmio', 'ntfy', 'ovhcloud', 'pingdom', 'prometheus', 'rockylinux',
-        'scaleway', 'scheb', 'socat', 'sucuri', 'traefik', 'ubuntu', 'unattendedupgrades', 'uptimekuma', 'uptimerobot',
-        'vultr', 'wazuh', 'zabbix',
+        'akamai', 'alpinelinux', 'apparmor', 'auth0', 'certbot', 'champleurre', 'cloudflare', 'contabo', 'crowdstrike',
+        'darkhorlynat', 'datadog', 'debian', 'digitalocean', 'fullstrict', 'grafana', 'haproxy', 'hetzner', 'imperva',
+        'keycloak', 'linode', 'modsecurity', 'nelmio', 'ntfy', 'ovhcloud', 'rockylinux', 'scaleway', 'sucuri', 'traefik',
+        'ubuntu', 'unattendedupgrades', 'uptimekuma', 'uptimerobot', 'vultr', 'wazuh', 'zabbix',
     ];
 
     /** Mots courants qui contiennent un terme surveillé une fois compactés : neutralisés avant comparaison. */
@@ -51,6 +49,12 @@ final class AiAssistantOutputSanitizer
      * seule forme de code (CamelCase).
      */
     private const SECURITY_CONFIG_PATTERNS = [
+        // Termes qui naissent aussi du collage de deux mots courants (« audit de »,
+        // « also caters », « a recent OS », « children some », « high criticality ») :
+        // en mot entier seulement.
+        '/\b(?:adminer|auditd|caddy|centos|drenso|fastly|ghcr|lexik|pingdom|prometheus|scheb|socat)\b/iu',
+        '/\bmonolog(?!ue)/iu',
+        '/\blet\W?s\W*encrypt\b/iu',
         '/\bnetdata\b/iu',
         '/\bcrowdsec\b/iu',
         '/\bfail2ban\b/iu',
@@ -71,7 +75,7 @@ final class AiAssistantOutputSanitizer
         // une forme de version — « 8.4 », « v2 », « version 8 » — jamais un nombre
         // seul, qui compte presque toujours autre chose (« PHP 8 ans », « Docker
         // (2024) », « React 3 projets », « 9.5/10 »).
-        '/\b(?:PHP|Symfony|API\s*Platform|Doctrine|MySQL|MariaDB|PostgreSQL|Next\.?js|Node(?:\.js)?|React|Redis|Docker(?:\s*Compose)?)[\s(@:_,-]*(?:(?:en\s+)?version\s*\d+(?:\.\d+)*|v\.?\s*\d+(?:\.\d+)*|\d+\.\d+(?:\.\d+)*(?!\s*\/))/iu',
+        '/\b(?:PHP|Symfony|API\s*Platform|Doctrine|MySQL|MariaDB|PostgreSQL|Next\.?js|Node(?:\.js)?|React|Redis|Docker(?:\s*Compose)?)[\s(@:_,-]*(?:(?:en\s+)?version\s*\d+(?:\.\d+)*|v\.?\s*\d+(?:\.\d+)*|\d+\.\d+(?:\.\d+)*(?!\s*(?:\/|ans?\b|years?\b|mois\b|months?\b)))/iu',
     ];
 
     /**
@@ -93,7 +97,7 @@ final class AiAssistantOutputSanitizer
     private const ROLE_LIST = '/\b(?:user|editor|moderator|manager|admin)s?\b(?:\s*(?:,|\/|;|\bet\b|\band\b|\bou\b|\bor\b)\s*\b(?:user|editor|moderator|manager|admin)s?\b){2,}/iu';
 
     /** Abréviations dont le point ne termine pas la phrase (découpage des résumés). */
-    private const ABBREVIATIONS = ['ex.', 'cf.', 'M.', 'Mme.', 'e.g.', 'i.e.', 'etc.', 'p.', 'n°.', 'vs.'];
+    private const ABBREVIATIONS = ['ex.', 'cf.', 'M.', 'Mme.', 'e.g.', 'i.e.', 'p.', 'n°.', 'vs.'];
 
     /** Refus générique « outil / produit » : la consigne impose exactement cette phrase. */
     public const PRODUCT_REFUSAL = [
@@ -116,6 +120,10 @@ final class AiAssistantOutputSanitizer
         'clinique', 'company', 'compagnie', 'congo', 'conseil', 'consulting', 'digital', 'ecole', 'entreprise', 'entreprises',
         'etablissement', 'etablissements', 'group', 'groupe', 'hotel', 'international', 'madame', 'mairie', 'ministere',
         'monsieur', 'pharmacie', 'pointe', 'noire', 'restaurant', 'sarl', 'services', 'societe', 'solutions', 'universite',
+        // Adjectifs et noms courants d'une raison sociale.
+        'africaine', 'afrique', 'atlantique', 'central', 'centrale', 'commerce', 'energie', 'general', 'generale', 'generales',
+        'grand', 'grande', 'industrie', 'industries', 'mobile', 'money', 'national', 'nationale', 'nationales', 'nouvelle',
+        'ocean', 'petrole', 'petroles', 'premier', 'royal', 'telecom', 'transport', 'transports', 'union',
     ];
 
     private static ?\Transliterator $transliterator = null;
@@ -159,15 +167,27 @@ final class AiAssistantOutputSanitizer
      */
     public function isFixedRefusal(string $answer): bool
     {
-        $normalized = (string) preg_replace('/\s+/u', ' ', trim($answer));
+        return null !== $this->canonicalRefusal($answer);
+    }
+
+    /**
+     * Le refus imposé (texte canonique) que la réponse reprend, même avec une
+     * autre typographie (apostrophe courbe, gras, espaces) — null sinon.
+     * L'appelant remplace la réponse par ce texte : les deux chemins (modèle
+     * obéissant, verrou) produisent alors une sortie strictement identique.
+     */
+    public function canonicalRefusal(string $answer): ?string
+    {
+        $normalize = static fn (string $t): string => (string) preg_replace('/\s+/u', ' ', trim(str_replace(['’', '‘', '*', '_'], ["'", "'", '', ''], $t)));
+        $normalized = $normalize($answer);
         foreach ([...array_values(self::PRODUCT_REFUSAL), ...array_values(self::CLIENT_REFUSAL)] as $refusal) {
-            $firstSentence = (string) preg_split('/[.:]/u', $refusal, 2)[0];
+            $firstSentence = $normalize((string) preg_split('/[.:]/u', $refusal, 2)[0]);
             if (str_starts_with($normalized, $firstSentence)) {
-                return true;
+                return $refusal;
             }
         }
 
-        return false;
+        return null;
     }
 
     /**
@@ -212,7 +232,10 @@ final class AiAssistantOutputSanitizer
     {
         $compactText = $this->compact($text);
         $wordsText = ' '.$this->words($text).' ';
-        $ignoredWords = array_fill_keys(self::GENERIC_NAME_WORDS, true);
+        // Mots apportés par l'appelant (propriétaire, visiteur) : ignorés partout.
+        // Mots génériques : jamais suffisants seuls, mais le nom complet compte.
+        $ignoredWords = [];
+        $genericWords = array_fill_keys(self::GENERIC_NAME_WORDS, true);
         foreach ($ignored as $i) {
             foreach (explode(' ', $this->words($i)) as $w) {
                 $ignoredWords[$w] = true;
@@ -223,7 +246,7 @@ final class AiAssistantOutputSanitizer
             $nameWords = array_values(array_filter(explode(' ', $this->words($name)), static fn (string $w): bool => '' !== $w));
             // Nom composé : sa forme compactée complète (« Jean-Pierre Mavoungou »
             // écrit « jeanpierre mavoungou », « J.-P. Mavoungou »…).
-            // Nom fait uniquement de mots ignorés (le propriétaire, « Groupe Congo ») : jamais surveillé.
+            // Nom fait uniquement de mots du propriétaire ou du visiteur : jamais surveillé.
             if ([] === array_filter($nameWords, static fn (string $w): bool => !isset($ignoredWords[$w]))) {
                 continue;
             }
@@ -233,7 +256,7 @@ final class AiAssistantOutputSanitizer
             }
             // Chaque mot de 4 lettres ou plus, en mot entier (« M. Mavoungou »).
             foreach ($nameWords as $word) {
-                if (\strlen($word) >= 4 && !isset($ignoredWords[$word]) && str_contains($wordsText, ' '.$word.' ')) {
+                if (\strlen($word) >= 4 && !isset($ignoredWords[$word]) && !isset($genericWords[$word]) && str_contains($wordsText, ' '.$word.' ')) {
                     return true;
                 }
             }
