@@ -99,7 +99,8 @@ final class QuoteQualifyProcessor implements ProcessorInterface
             );
 
             return \array_slice(
-                $this->outputSanitizer->sanitizeSuggestions($this->parseQuestions($result['text'])),
+                // Questions sur le système du prospect (« sous PHP 7.4 ? ») : légitimes ici.
+                $this->outputSanitizer->sanitizeSuggestions($this->parseQuestions($result['text']), filterSecurityConfig: false),
                 0,
                 self::MAX_QUESTIONS,
             );

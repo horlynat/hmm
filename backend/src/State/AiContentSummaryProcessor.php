@@ -121,7 +121,7 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         $effectiveQuestion = '' !== $question ? $question : $this->defaultSeedQuestion($locale);
 
         try {
-            $systemPrompt = $this->buildSystemPrompt($resolved['title'], $resolved['content'], $data->getContentType(), $locale);
+            $systemPrompt = $this->buildSystemPrompt($this->outputSanitizer->withoutSecurityConfig($resolved['title']), $resolved['content'], $data->getContentType(), $locale);
             $result = $this->claudeClient->ask($systemPrompt, $data->getHistory(), $effectiveQuestion, true);
         } catch (\Throwable $e) {
             $this->logger->error('AiContentSummaryProcessor : pipeline en échec.', ['error' => $e->getMessage()]);
@@ -133,8 +133,17 @@ final class AiContentSummaryProcessor implements ProcessorInterface
 
         $split = $this->splitAnswerAndSuggestions($result['text']);
         $sanitized = $this->outputSanitizer->sanitize($split['answer']);
-        $answer = $sanitized['leaked'] ? $this->fallbackText($settings, $locale) : $sanitized['text'];
-        $suggestions = $sanitized['leaked'] ? [] : $this->outputSanitizer->sanitizeSuggestions($split['suggestions']);
+        // Même verrou « zéro configuration de sécurité » que le chat.
+        $confidential = !$sanitized['leaked'] && $sanitized['confidential'];
+        $answer = match (true) {
+            $sanitized['leaked'] => $this->fallbackText($settings, $locale),
+            $confidential => $this->outputSanitizer->confidentialRefusal($locale),
+            default => $sanitized['text'],
+        };
+        $answer = $this->outputSanitizer->canonicalRefusal($answer) ?? $answer;
+        $suggestions = ($sanitized['leaked'] || $confidential || $this->outputSanitizer->isFixedRefusal($answer))
+            ? []
+            : $this->outputSanitizer->sanitizeSuggestions($split['suggestions']);
         $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
 
         $this->usageRecorder->recordCall(
@@ -144,7 +153,11 @@ final class AiContentSummaryProcessor implements ProcessorInterface
             mb_strlen($answer),
             $latencyMs,
             [],
-            $sanitized['leaked'] ? 'output_leak_suspected' : null,
+            match (true) {
+                $sanitized['leaked'] => 'output_leak_suspected',
+                $confidential => 'security_config_blocked',
+                default => null,
+            },
         );
 
         $data->setAnswer($answer);
@@ -218,10 +231,7 @@ final class AiContentSummaryProcessor implements ProcessorInterface
                 $lines[] = 'Objectifs : '.implode(' ; ', $objectives).'.';
             }
 
-            $techStack = $this->pickLocalizedList($info->getTechStack(), $info->getTechStackEn(), $locale);
-            if ([] !== $techStack) {
-                $lines[] = 'Stack technique : '.implode(', ', array_map(static fn (array $tech) => (string) $tech['name'], $techStack)).'.';
-            }
+            // Pile technique jamais transmise (zéro information de configuration).
 
             $results = $this->pickLocalizedList($info->getResults(), $info->getResultsEn(), $locale);
             if ([] !== $results) {
@@ -229,7 +239,7 @@ final class AiContentSummaryProcessor implements ProcessorInterface
             }
         }
 
-        return implode("\n", array_filter($lines, static fn (string $line) => '' !== $line));
+        return $this->outputSanitizer->withoutSecurityConfig(implode("\n", array_filter($lines, static fn (string $line) => '' !== $line)));
     }
 
     private function pickLocalized(string $fr, ?string $en, string $locale): string
@@ -258,7 +268,10 @@ final class AiContentSummaryProcessor implements ProcessorInterface
      */
     private function plainExcerpt(string $html, int $maxLength): string
     {
-        $text = html_entity_decode(strip_tags($html), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
+        $text = (string) preg_replace('/<\/(?:p|li|h[1-6]|div|tr|blockquote)>|<br\s*\/?>/i', "\n", $html);
+        $text = html_entity_decode(strip_tags($text), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
+        // Zéro information de configuration : retirée avant tout envoi à Claude.
+        $text = $this->outputSanitizer->withoutSecurityConfig($text);
         $text = trim(preg_replace('/\s+/u', ' ', $text) ?? $text);
 
         if (mb_strlen($text) <= $maxLength) {
@@ -280,6 +293,8 @@ final class AiContentSummaryProcessor implements ProcessorInterface
     {
         $contentTypeLabel = 'project' === $contentType ? 'projet' : 'article';
         $languageInstruction = 'en' === $locale ? 'Respond in English.' : 'Réponds en français.';
+        $productRefusal = $this->outputSanitizer->confidentialRefusal($locale);
+        $clientRefusal = $this->outputSanitizer->clientRefusal($locale);
 
         return <<<PROMPT
             Tu es un rédacteur éditorial expert, chargé de résumer le contenu du portfolio
@@ -307,8 +322,20 @@ final class AiContentSummaryProcessor implements ProcessorInterface
               te surprends à écrire cette forme, reformule entièrement. Utilise des verbes
               d'action forts, pas des verbes mous ("aborder", "traiter", "concerner").
             - Chaque phrase doit apporter une information CONCRÈTE tirée du texte ci-dessus
-              (un fait, un chiffre, une techno, un résultat) — jamais de formule vague type
+              (un fait, un chiffre, un résultat) — jamais de formule vague type
               "ce contenu aborde plusieurs sujets intéressants".
+            - Zéro information de configuration : ne nomme jamais un outil, une
+              bibliothèque, un service, un fournisseur ou un hébergeur qui protège, route,
+              supervise ou héberge un système déployé, ni une version, un réglage, un nom
+              de rôle, de composant ou de champ interne, même si le texte en contient. Ne
+              nomme jamais le client d'une réalisation : écris « un client ».
+            - À une question de suivi sur un tel outil ou produit (l'expliquer, savoir
+              s'il est utilisé, qu'il le soit ou non), réponds exactement, sans rien
+              ajouter : {$productRefusal}
+            - À une question sur l'identité d'un client (« fait pour X ? »), que X figure
+              ou non dans le texte, réponds exactement, sans rien ajouter ni répéter le
+              nom : {$clientRefusal} Ne répète jamais un nom de personne ou
+              d'organisation apporté par le visiteur.
             - Précision impérative : distingue toujours ce qui est une compétence/expertise
               technique de la personne (ex. cybersécurité, développement full-stack, Symfony,
               Next.js) de ce qui est un domaine, un service tiers ou un moyen de paiement

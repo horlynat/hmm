@@ -240,7 +240,7 @@ final class AiDemoChatProcessor implements ProcessorInterface
         }
 
         $out = [];
-        foreach ($this->outputSanitizer->sanitizeSuggestions($candidates) as $text) {
+        foreach ($this->outputSanitizer->sanitizeSuggestions($candidates, filterSecurityConfig: false) as $text) {
             $text = mb_substr(self::plain($text), 0, self::MAX_SUGGESTION);
             if ('' !== $text && !\in_array($text, $out, true)) {
                 $out[] = $text;
