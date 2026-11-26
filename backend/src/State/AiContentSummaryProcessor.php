@@ -10,6 +10,7 @@ use App\Entity\Project;
 use App\Enum\ProjectStatusEnum;
 use App\Exception\AiAssistantUnavailableException;
 use App\Repository\AiAssistantSettingsRepository;
+use App\Repository\AboutContentRepository;
 use App\Repository\ArticleRepository;
 use App\Repository\ProjectRepository;
 use App\Service\AiAssistantBudgetGuard;
@@ -58,6 +59,7 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         private readonly LoggerInterface $logger,
         private readonly ArticleRepository $articleRepository,
         private readonly ProjectRepository $projectRepository,
+        private readonly AboutContentRepository $aboutContentRepository,
     ) {
     }
 
@@ -135,12 +137,16 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         $sanitized = $this->outputSanitizer->sanitize($split['answer']);
         // Même verrou « zéro configuration de sécurité » que le chat.
         $confidential = !$sanitized['leaked'] && $sanitized['confidential'];
+        $clientNamed = !$sanitized['leaked'] && !$confidential && $this->namesAClient($result['text']);
         $answer = match (true) {
             $sanitized['leaked'] => $this->fallbackText($settings, $locale),
             $confidential => $this->outputSanitizer->confidentialRefusal($locale),
+            $clientNamed => $this->outputSanitizer->clientRefusal($locale),
             default => $sanitized['text'],
         };
-        $suggestions = ($sanitized['leaked'] || $confidential) ? [] : $this->outputSanitizer->sanitizeSuggestions($split['suggestions']);
+        $suggestions = ($sanitized['leaked'] || $confidential || $clientNamed || $this->outputSanitizer->isFixedRefusal($answer))
+            ? []
+            : $this->outputSanitizer->sanitizeSuggestions($split['suggestions']);
         $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
 
         $this->usageRecorder->recordCall(
@@ -150,7 +156,12 @@ final class AiContentSummaryProcessor implements ProcessorInterface
             mb_strlen($answer),
             $latencyMs,
             [],
-            $sanitized['leaked'] ? 'output_leak_suspected' : ($confidential ? 'security_config_blocked' : null),
+            match (true) {
+                $sanitized['leaked'] => 'output_leak_suspected',
+                $clientNamed => 'client_name_blocked',
+                $confidential => 'security_config_blocked',
+                default => null,
+            },
         );
 
         $data->setAnswer($answer);
@@ -259,9 +270,26 @@ final class AiContentSummaryProcessor implements ProcessorInterface
      * `&lt;script&gt;`. `ENT_QUOTES | ENT_HTML5` couvre apostrophes
      * typographiques et espaces insécables en plus des guillemets standard.
      */
+    /** Même verrou client que le chat (cf. AiAssistantChatProcessor::namesAClient). */
+    private function namesAClient(string $text): bool
+    {
+        try {
+            $owner = $this->aboutContentRepository->findFirst()?->getProfileName() ?? '';
+
+            return $this->outputSanitizer->mentionsAnyName($text, $this->projectRepository->findPublicClientNames(), ['Horlynat', $owner]);
+        } catch (\Throwable $e) {
+            $this->logger->error('AiContentSummaryProcessor : noms des clients illisibles.', ['error' => $e->getMessage()]);
+
+            return false;
+        }
+    }
+
     private function plainExcerpt(string $html, int $maxLength): string
     {
-        $text = html_entity_decode(strip_tags($html), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
+        $text = (string) preg_replace('/<\/(?:p|li|h[1-6]|div|tr|blockquote)>|<br\s*\/?>/i', "\n", $html);
+        $text = html_entity_decode(strip_tags($text), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
+        // Zéro information de configuration : retirée avant tout envoi à Claude.
+        $text = $this->outputSanitizer->withoutSecurityConfig($text);
         $text = trim(preg_replace('/\s+/u', ' ', $text) ?? $text);
 
         if (mb_strlen($text) <= $maxLength) {

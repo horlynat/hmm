@@ -76,7 +76,9 @@ final class AiAssistantIngestionService
             return;
         }
 
-        $sourceText = $this->extractSourceText($entityType, $entity);
+        // Première barrière : la configuration de sécurité ne part jamais chez
+        // Gemini (phrase par phrase, ligne par ligne) — ni dans le texte stocké.
+        $sourceText = $this->outputSanitizer->withoutSecurityConfig($this->extractSourceText($entityType, $entity));
         if ('' === trim($sourceText)) {
             // Plus rien à dire : l'ancien chunk ne doit pas survivre au contenu vidé.
             $this->chunkRepository->deleteByEntity($entityType, $entityId);
@@ -100,6 +102,12 @@ final class AiAssistantIngestionService
         $this->chunkRepository->deleteByEntity($entityType, $entityId);
         $this->entityManager->flush();
 
+        $cleanSummary = $this->outputSanitizer->withoutSecurityConfig($summary['summary']);
+        if ('' === trim($cleanSummary)) {
+            // Rien de publiable : aucun chunk plutôt qu'un chunk vide.
+            return;
+        }
+
         // Deuxième barrière (la consigne de Gemini est la première) : toute phrase
         // du résumé qui nomme la configuration de sécurité est retirée avant
         // stockage — c'est ce résumé, et lui seul, qui atteint le chat public.
@@ -108,7 +116,7 @@ final class AiAssistantIngestionService
             ->setEntityId($entityId)
             ->setChunkIndex(0)
             ->setChunkText($sourceText)
-            ->setChunkSummary($this->outputSanitizer->withoutSecurityConfig($summary['summary']))
+            ->setChunkSummary($cleanSummary)
             ->setMetadata(['is_public' => true, 'label' => $this->extractLabel($entityType, $entity)]);
 
         $this->entityManager->persist($chunk);
@@ -120,14 +128,14 @@ final class AiAssistantIngestionService
         return match ($entityType) {
             'Project' => $this->extractProjectText($entity),
             'Article' => $entity instanceof Article
-                ? trim(sprintf("%s\n\n%s", $entity->getTitle(), $entity->getContent()))
+                ? trim(sprintf("%s\n\n%s", $entity->getTitle(), self::plainText($entity->getContent())))
                 : '',
             'Experience' => $entity instanceof Experience
                 ? trim(sprintf(
                     "%s chez %s\n\n%s",
                     $entity->getRole(),
                     $entity->getCompany(),
-                    $entity->getDescription(),
+                    self::plainText((string) $entity->getDescription()),
                 ))
                 : '',
             'SkillCategory' => $entity instanceof SkillCategory ? $this->extractSkillCategoryText($entity) : '',
@@ -156,8 +164,7 @@ final class AiAssistantIngestionService
         }
 
         // Texte brut : le HTML de l'éditeur riche n'a rien à faire dans un résumé.
-        $text = html_entity_decode(strip_tags((string) preg_replace('/<[^>]*>/', '$0 ', $entity->getDescription())), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
-        $parts = [$entity->getTitle(), trim((string) preg_replace('/\s+/u', ' ', $text))];
+        $parts = [$entity->getTitle(), self::plainText($entity->getDescription())];
 
         $info = $entity->getInfo();
         if (null !== $info) {
@@ -188,5 +195,18 @@ final class AiAssistantIngestionService
             $entity instanceof SkillCategory => 'Compétences — ' . $entity->getName(),
             default => $entityType,
         };
+    }
+
+    /**
+     * Texte brut d'un contenu HTML du back-office : les fins de bloc deviennent
+     * des retours à la ligne (découpage phrase par phrase du filtre de sécurité),
+     * les balises disparaissent, les entités sont décodées.
+     */
+    private static function plainText(string $html): string
+    {
+        $text = (string) preg_replace('/<\/(?:p|li|h[1-6]|div|tr|blockquote)>|<br\s*\/?>/i', "\n", $html);
+        $text = html_entity_decode(strip_tags((string) preg_replace('/<[^>]*>/', '$0 ', $text)), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
+
+        return trim((string) preg_replace(['/[ \t]+/u', '/ *\R+ */u'], [' ', "\n"], $text));
     }
 }

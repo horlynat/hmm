@@ -5,48 +5,59 @@ namespace App\Service;
 /**
  * Nettoyage de la réponse Claude avant retour au client — plafonnement de
  * longueur, détection de fuite du system prompt/des balises de délimitation
- * du contexte RAG, liste blanche de domaines dans les liens markdown (cf.
- * §4.5 du document d'architecture assistant IA).
+ * du contexte RAG, liste blanche d'hôtes dans les liens markdown (cf. §4.5 du
+ * document d'architecture assistant IA), et verrous « zéro information de
+ * sécurité » / « client confidentiel » (exigences du propriétaire, 2026-11-26).
+ *
+ * Principe anti-oracle (3e contre-audit) : un refus ne doit jamais permettre
+ * de déduire ce qui est réellement déployé ou qui est réellement client. Les
+ * refus sont donc génériques, identiques à ce que la consigne impose pour TOUT
+ * outil ou TOUT nom (utilisé ou non), toujours sans suggestions, et la liste
+ * surveillée mêle composants réels et produits courants non utilisés.
  */
 final class AiAssistantOutputSanitizer
 {
     private const MAX_LENGTH = 2000;
 
-    private const ALLOWED_LINK_DOMAINS = ['horlynat.com', 'github.com', 'linkedin.com'];
+    /** Hôtes publics autorisés dans un lien (jamais un sous-domaine interne). */
+    private const ALLOWED_LINK_HOSTS = ['horlynat.com', 'www.horlynat.com', 'github.com', 'www.github.com', 'linkedin.com', 'www.linkedin.com'];
 
     /** Fragments qui ne devraient jamais apparaître dans une réponse saine — signe d'une fuite du system prompt/du contexte délimité. */
     private const LEAK_MARKERS = ['<context>', '</context>', '<catalogue>', '</catalogue>', '<fiches>', '</fiches>', '<profil>', '</profil>', 'GEMINI_API_KEY', 'ANTHROPIC_API_KEY', 'system prompt', 'system instruction'];
 
     /**
-     * Identifiants de la configuration de sécurité réellement déployée (périmètre,
-     * routage, authentification, supervision, rôles et entités internes). Le
-     * propriétaire exige « zéro information de sécurité » : la consigne du prompt
-     * ne suffit pas (un modèle peut désobéir, le corpus peut en contenir), donc
-     * toute réponse qui en nomme un est remplacée — verrou déterministe.
-     * Comparés sur le texte compacté (minuscules, lettres et chiffres seuls) pour
-     * résister aux séparateurs (« Cloud-flare », « t r a e f i k », « Zero_Trust »).
+     * Produits et fournisseurs d'infrastructure, de sécurité, d'authentification,
+     * de supervision et d'hébergement. La liste MÊLE volontairement des composants
+     * réellement déployés et des produits courants qui ne le sont pas : le refus
+     * étant identique pour tous, il ne révèle rien (anti-oracle). Ordre
+     * alphabétique, sans distinction. Comparés sur le texte compacté (minuscules,
+     * lettres et chiffres seuls) pour résister aux séparateurs et homoglyphes.
      */
     private const SECURITY_CONFIG_COMPACT = [
-        'traefik', 'cloudflare', 'lexik', 'scheb', 'uptimerobot', 'ubuntu', 'debian', 'monolog',
-        'champleurre', 'fullstrict', 'accesszerotrust', 'zerotrustaccess',
-        // Composants réellement déployés (composer.json, infra) — contre-audit 5dd6646.
-        'adminer', 'ntfy', 'nelmio', 'drenso', 'socat',
+        'adminer', 'akamai', 'alpinelinux', 'apparmor', 'auditd', 'auth0', 'caddy', 'centos', 'certbot',
+        'champleurre', 'cloudflare', 'contabo', 'crowdstrike', 'darkhorlynat', 'datadog', 'debian', 'digitalocean',
+        'drenso', 'fastly', 'fullstrict', 'ghcr', 'grafana', 'haproxy', 'hetzner', 'imperva', 'keycloak', 'letsencrypt',
+        'lexik', 'linode', 'modsecurity', 'monolog', 'nelmio', 'ntfy', 'ovhcloud', 'pingdom', 'prometheus', 'rockylinux',
+        'scaleway', 'scheb', 'socat', 'sucuri', 'traefik', 'ubuntu', 'unattendedupgrades', 'uptimekuma', 'uptimerobot',
+        'vultr', 'wazuh', 'zabbix',
     ];
 
     /** Mots courants qui contiennent un terme surveillé une fois compactés : neutralisés avant comparaison. */
     private const COMPACT_SAFE_WORDS = ['monologue'];
 
     /**
-     * Termes ambigus une fois compactés (« a better stack », « monologue », « each
-     * project task ») : vérifiés sur le texte, avec frontières de mot — et, pour les
-     * noms d'entités internes, seulement sous leur forme de code (CamelCase).
+     * Termes ambigus une fois compactés : frontières de mot exigées (« Internet
+     * data », « crowd security », « a better stack »), entités internes sous leur
+     * seule forme de code (CamelCase).
      */
     private const SECURITY_CONFIG_PATTERNS = [
-        // Mots qui existent aussi dans la langue courante une fois compactés
-        // (« Internet data », « crowd security ») : frontières de mot exigées.
         '/\bnetdata\b/iu',
         '/\bcrowdsec\b/iu',
         '/\bfail2ban\b/iu',
+        '/\bufw\b/iu',
+        '/\bnginx\b/iu',
+        '/\bokta\b/iu',
+        '/\bsentry\b/iu',
         // « Better Stack » (le service) ou « betterstack », jamais « a better stack ».
         '/\bBetter[\s_-]*Stack\b/u',
         '/\bbetter[_-]?stack\b(?<!better stack)/iu',
@@ -56,10 +67,11 @@ final class AiAssistantOutputSanitizer
         '/\brole[_-](?:user|editor|moderator|manager|admin|super[_-]?admin)\b/iu',
         '/\bsuper[_\s-]?admin\b/iu',
         '/\b(?:ProjectExpense|ProjectHistory|ProjectTask|TimeEntry|SupportTicket)\b/u',
-        // Versions des composants (recherche de vulnérabilités connues) : « PHP 8.4 »,
-        // « Symfony (8.1) », « Next.js@16 », « PHP version 8 », « v2 »… mais jamais un
-        // nombre qui compte autre chose (« PHP 8 ans », « React 3 projets », « 9/10 »).
-        '/\b(?:PHP|Symfony|API\s*Platform|Doctrine|MySQL|MariaDB|PostgreSQL|Next\.?js|Node(?:\.js)?|React|Nginx|Redis|Docker(?:\s*Compose)?)[\s(@:_,-]*(?:(?:en\s+)?version\s*|v\.?\s*)?(?:\d+\.\d+(?:\.\d+)*|v\d+|\d+(?!\d|[.,]\d|\/|\s*(?:ans?|années?|years?|jours?|days?|mois|months?|semaines?|weeks?|projets?|projects?|pages?|fois|times|FCFA|XAF|%|sur|out)\b))/iu',
+        // Versions de composants (recherche de vulnérabilités connues) : seulement
+        // une forme de version — « 8.4 », « v2 », « version 8 » — jamais un nombre
+        // seul, qui compte presque toujours autre chose (« PHP 8 ans », « Docker
+        // (2024) », « React 3 projets », « 9.5/10 »).
+        '/\b(?:PHP|Symfony|API\s*Platform|Doctrine|MySQL|MariaDB|PostgreSQL|Next\.?js|Node(?:\.js)?|React|Redis|Docker(?:\s*Compose)?)[\s(@:_,-]*(?:(?:en\s+)?version\s*\d+(?:\.\d+)*|v\.?\s*\d+(?:\.\d+)*|\d+\.\d+(?:\.\d+)*(?!\s*\/))/iu',
     ];
 
     /**
@@ -79,6 +91,34 @@ final class AiAssistantOutputSanitizer
      * « user / admin / manager ») : 3 jetons distincts ou plus, enchaînés.
      */
     private const ROLE_LIST = '/\b(?:user|editor|moderator|manager|admin)s?\b(?:\s*(?:,|\/|;|\bet\b|\band\b|\bou\b|\bor\b)\s*\b(?:user|editor|moderator|manager|admin)s?\b){2,}/iu';
+
+    /** Abréviations dont le point ne termine pas la phrase (découpage des résumés). */
+    private const ABBREVIATIONS = ['ex.', 'cf.', 'M.', 'Mme.', 'e.g.', 'i.e.', 'etc.', 'p.', 'n°.', 'vs.'];
+
+    /** Refus générique « outil / produit » : la consigne impose exactement cette phrase. */
+    public const PRODUCT_REFUSAL = [
+        'fr' => 'Je ne détaille pas les outils, produits ou fournisseurs précis des systèmes en production, qu\'ils soient utilisés ou non. Pour échanger sur l\'approche de Horlynat en matière de sécurité, [Envoyer un message](/contact?mode=direct).',
+        'en' => 'I do not go into the specific tools, products or providers of production systems, whether they are used or not. To discuss Horlynat\'s approach to security, [Send a message](/contact?mode=direct).',
+    ];
+
+    /** Refus « client » : la consigne impose exactement cette phrase, sans répéter le nom demandé. */
+    public const CLIENT_REFUSAL = [
+        'fr' => 'Les clients de Horlynat sont confidentiels : je ne confirme ni n\'infirme aucun nom. Pour échanger sur ses réalisations, [Envoyer un message](/contact?mode=direct).',
+        'en' => 'Horlynat\'s clients are confidential: I neither confirm nor deny any name. To discuss his projects, [Send a message](/contact?mode=direct).',
+    ];
+
+    /**
+     * Mots génériques d'une raison sociale : jamais suffisants, seuls, pour
+     * reconnaître un client (« Boulangerie Émeraude » ≠ « une boulangerie »).
+     */
+    private const GENERIC_NAME_WORDS = [
+        'agence', 'assurance', 'assurances', 'association', 'banque', 'boulangerie', 'brazzaville', 'cabinet', 'centre',
+        'clinique', 'company', 'compagnie', 'congo', 'conseil', 'consulting', 'digital', 'ecole', 'entreprise', 'entreprises',
+        'etablissement', 'etablissements', 'group', 'groupe', 'hotel', 'international', 'madame', 'mairie', 'ministere',
+        'monsieur', 'pharmacie', 'pointe', 'noire', 'restaurant', 'sarl', 'services', 'societe', 'solutions', 'universite',
+    ];
+
+    private static ?\Transliterator $transliterator = null;
 
     /**
      * @return array{text: string, leaked: bool, confidential: bool}
@@ -100,47 +140,29 @@ final class AiAssistantOutputSanitizer
         return ['text' => $text, 'leaked' => $leaked, 'confidential' => $this->revealsSecurityConfig($rawAnswer)];
     }
 
-    /** Refus fixe qui remplace une réponse nommant la configuration de sécurité. */
+    /** Refus qui remplace une réponse nommant un outil ou un produit surveillé. */
     public function confidentialRefusal(string $locale): string
     {
-        return 'en' === $locale
-            ? 'Security configuration details for Horlynat\'s systems are not published. To talk about his security approach, [Send a message](/contact?mode=direct).'
-            : 'Les détails de configuration de sécurité des systèmes de Horlynat ne sont pas publiés. Pour échanger sur son approche de la sécurité, [Envoyer un message](/contact?mode=direct).';
+        return self::PRODUCT_REFUSAL['en' === $locale ? 'en' : 'fr'];
     }
 
-    /**
-     * Retire d'un texte (résumé ingéré) chaque phrase qui nomme la configuration
-     * de sécurité, et garde les autres telles quelles.
-     */
-    public function withoutSecurityConfig(string $text): string
-    {
-        $sentences = preg_split('/(?<=[.!?…])\s+/u', trim($text)) ?: [$text];
-        $kept = array_filter($sentences, fn (string $s): bool => !$this->revealsSecurityConfig($s));
-
-        return implode(' ', $kept);
-    }
-
-    /** Refus fixe qui remplace une réponse citant le nom d'un client. */
+    /** Refus qui remplace une réponse citant le nom d'un client. */
     public function clientRefusal(string $locale): string
     {
-        return 'en' === $locale
-            ? 'The names of Horlynat\'s clients are confidential. To discuss his projects, [Send a message](/contact?mode=direct).'
-            : 'Le nom des clients de Horlynat est confidentiel. Pour échanger sur ses réalisations, [Envoyer un message](/contact?mode=direct).';
+        return self::CLIENT_REFUSAL['en' === $locale ? 'en' : 'fr'];
     }
 
     /**
-     * Vrai si le texte cite l'un des noms donnés (comparaison compactée, mêmes
-     * replis que le verrou de sécurité : séparateurs, accents, homoglyphes).
-     * Les noms de moins de 5 lettres sont ignorés (faux positifs certains).
-     *
-     * @param list<string> $names
+     * Vrai si la réponse est l'un des refus imposés (produit ou client), qu'elle
+     * vienne du modèle (consigne suivie) ou du verrou : l'appelant retire alors
+     * les suggestions dans les deux cas, pour que rien ne les distingue.
      */
-    public function mentionsAnyName(string $text, array $names): bool
+    public function isFixedRefusal(string $answer): bool
     {
-        $compactText = $this->compact($text);
-        foreach ($names as $name) {
-            $n = $this->compact($name);
-            if (\strlen($n) >= 5 && str_contains($compactText, $n)) {
+        $normalized = (string) preg_replace('/\s+/u', ' ', trim($answer));
+        foreach ([...array_values(self::PRODUCT_REFUSAL), ...array_values(self::CLIENT_REFUSAL)] as $refusal) {
+            $firstSentence = (string) preg_split('/[.:]/u', $refusal, 2)[0];
+            if (str_starts_with($normalized, $firstSentence)) {
                 return true;
             }
         }
@@ -148,25 +170,82 @@ final class AiAssistantOutputSanitizer
         return false;
     }
 
-    private function compact(string $text): string
+    /**
+     * Retire d'un texte (source ou résumé envoyé à une IA) chaque phrase — ou
+     * ligne, ou proposition séparée par « ; » — qui nomme la configuration de
+     * sécurité, et garde les autres telles quelles, séparateurs compris.
+     */
+    public function withoutSecurityConfig(string $text): string
     {
-        $latin = \Transliterator::create('Any-Latin; Latin-ASCII')?->transliterate(strtr($text, self::CONFUSABLES));
-        $decomposed = \Normalizer::normalize(false === $latin || null === $latin ? $text : $latin, \Normalizer::FORM_KD);
+        $protected = str_replace(self::ABBREVIATIONS, array_map(static fn (string $a): string => str_replace('.', "\u{E000}", $a), self::ABBREVIATIONS), $text);
+        $parts = preg_split('/((?<=[.!?…;])[ \t]+|\R+)/u', $protected, -1, \PREG_SPLIT_DELIM_CAPTURE) ?: [$protected];
 
-        return (string) preg_replace('/[^\p{Ll}\p{Nd}]+/u', '', mb_strtolower(false === $decomposed ? $text : $decomposed));
+        $out = '';
+        $dropNextSeparator = false;
+        foreach ($parts as $i => $part) {
+            if (1 === $i % 2) { // séparateur capturé
+                if (!$dropNextSeparator) {
+                    $out .= $part;
+                }
+                continue;
+            }
+            $restored = str_replace("\u{E000}", '.', $part);
+            $dropNextSeparator = '' !== trim($restored) && $this->revealsSecurityConfig($restored);
+            if (!$dropNextSeparator) {
+                $out .= $restored;
+            }
+        }
+
+        return trim((string) preg_replace('/[ \t]+(\R)/u', '$1', $out));
     }
 
-    /** Vrai si le texte nomme un élément de la configuration de sécurité déployée. */
+    /**
+     * Vrai si le texte cite l'un des noms donnés : le nom complet (comparaison
+     * compactée) ou l'un de ses mots de 4 lettres ou plus (frontières de mot :
+     * « M. Mavoungou », « Mavoungou Jean-Pierre »). Les mots de $ignored (nom du
+     * propriétaire) ne déclenchent jamais rien.
+     *
+     * @param list<string> $names
+     * @param list<string> $ignored
+     */
+    public function mentionsAnyName(string $text, array $names, array $ignored = []): bool
+    {
+        $compactText = $this->compact($text);
+        $wordsText = ' '.$this->words($text).' ';
+        $ignoredWords = array_fill_keys(self::GENERIC_NAME_WORDS, true);
+        foreach ($ignored as $i) {
+            foreach (explode(' ', $this->words($i)) as $w) {
+                $ignoredWords[$w] = true;
+            }
+        }
+
+        foreach ($names as $name) {
+            $nameWords = array_values(array_filter(explode(' ', $this->words($name)), static fn (string $w): bool => '' !== $w));
+            // Nom composé : sa forme compactée complète (« Jean-Pierre Mavoungou »
+            // écrit « jeanpierre mavoungou », « J.-P. Mavoungou »…).
+            // Nom fait uniquement de mots ignorés (le propriétaire, « Groupe Congo ») : jamais surveillé.
+            if ([] === array_filter($nameWords, static fn (string $w): bool => !isset($ignoredWords[$w]))) {
+                continue;
+            }
+            $full = implode('', $nameWords);
+            if (\count($nameWords) > 1 && \strlen($full) >= 4 && str_contains($compactText, $full)) {
+                return true;
+            }
+            // Chaque mot de 4 lettres ou plus, en mot entier (« M. Mavoungou »).
+            foreach ($nameWords as $word) {
+                if (\strlen($word) >= 4 && !isset($ignoredWords[$word]) && str_contains($wordsText, ' '.$word.' ')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /** Vrai si le texte nomme un élément surveillé (outil, produit, rôle, entité interne, version). */
     public function revealsSecurityConfig(string $text): bool
     {
-        // Lettres et chiffres seuls, après décomposition des accents et des formes de
-        // compatibilité (pleine chasse, ligatures) : « Ｔｒａｅｆｉｋ », « Tr-æfik »… Les
-        // marques diacritiques détachées (\p{Mn}) tombent avec le reste.
-        // Homoglyphes cyrilliques/grecs (« Сloudflare », « Trаefik ») repliés vers
-        // l'ASCII avant toute comparaison.
-        $latin = \Transliterator::create('Any-Latin; Latin-ASCII')?->transliterate(strtr($text, self::CONFUSABLES));
-        $decomposed = \Normalizer::normalize(false === $latin || null === $latin ? $text : $latin, \Normalizer::FORM_KD);
-        $decomposed = false === $decomposed ? $text : $decomposed;
+        $decomposed = $this->decompose($text);
         $lower = str_replace(self::COMPACT_SAFE_WORDS, ' ', mb_strtolower($decomposed));
         $compact = (string) preg_replace('/[^\p{Ll}\p{Nd}]+/u', '', $lower);
         foreach (self::SECURITY_CONFIG_COMPACT as $term) {
@@ -200,12 +279,14 @@ final class AiAssistantOutputSanitizer
      * retire la puce, coupe la longueur (ce sont des libellés de bouton, pas des
      * réponses), retire tout lien markdown, et applique la même détection de fuite
      * que sanitize() — Claude pourrait tout aussi bien fuiter dans une suggestion.
+     * $filterSecurityConfig = false pour les questions de qualification d'un devis,
+     * qui portent légitimement sur le système du prospect (« sous PHP 7.4 ? »).
      *
      * @param string[] $rawLines
      *
      * @return string[] au plus 3 suggestions
      */
-    public function sanitizeSuggestions(array $rawLines): array
+    public function sanitizeSuggestions(array $rawLines, bool $filterSecurityConfig = true): array
     {
         $suggestions = [];
 
@@ -224,7 +305,7 @@ final class AiAssistantOutputSanitizer
                 }
             }
 
-            if ($isLeaked || $this->revealsSecurityConfig($text)) {
+            if ($isLeaked || ($filterSecurityConfig && $this->revealsSecurityConfig($text))) {
                 continue;
             }
 
@@ -239,20 +320,38 @@ final class AiAssistantOutputSanitizer
         return $suggestions;
     }
 
+    private function decompose(string $text): string
+    {
+        // Homoglyphes cyrilliques/grecs repliés par la forme, puis ASCII, puis
+        // décomposition (pleine chasse, ligatures, accents détachés).
+        self::$transliterator ??= \Transliterator::create('Any-Latin; Latin-ASCII');
+        $latin = self::$transliterator?->transliterate(strtr($text, self::CONFUSABLES));
+        $decomposed = \Normalizer::normalize(false === $latin || null === $latin ? $text : $latin, \Normalizer::FORM_KD);
+
+        return false === $decomposed ? $text : $decomposed;
+    }
+
+    private function compact(string $text): string
+    {
+        return (string) preg_replace('/[^\p{Ll}\p{Nd}]+/u', '', mb_strtolower($this->decompose($text)));
+    }
+
+    /** Mots en minuscules ASCII séparés par une espace (« M. Mavoungou-Ngoma » → « m mavoungou ngoma »). */
+    private function words(string $text): string
+    {
+        return trim((string) preg_replace('/[^\p{Ll}\p{Nd}]+/u', ' ', mb_strtolower($this->decompose($text))));
+    }
+
     private function stripDisallowedLinks(string $text): string
     {
         return (string) preg_replace_callback(
             '/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/i',
-            function (array $matches): string {
-                $host = parse_url($matches[2], PHP_URL_HOST) ?: '';
-                foreach (self::ALLOWED_LINK_DOMAINS as $allowed) {
-                    if ($host === $allowed || str_ends_with($host, '.' . $allowed)) {
-                        return $matches[0];
-                    }
-                }
+            static function (array $matches): string {
+                $host = strtolower((string) (parse_url($matches[2], PHP_URL_HOST) ?: ''));
 
-                // Domaine hors liste blanche : on garde le libellé, on retire le lien.
-                return $matches[1];
+                // Hôte hors liste blanche (y compris un sous-domaine interne) :
+                // on garde le libellé, on retire le lien.
+                return \in_array($host, self::ALLOWED_LINK_HOSTS, true) ? $matches[0] : $matches[1];
             },
             $text,
         );

@@ -166,14 +166,17 @@ final class AiAssistantIngestionVisibilityTest extends KernelTestCase
     public function testIngestedSummaryNeverCarriesSecurityConfiguration(): void
     {
         $project = $this->project(ProjectStatusEnum::IN_PROGRESS);
-        $project->setDescription('<h2>Le projet</h2><p>Un portail <strong>bilingue</strong> &amp; sûr.</p>');
+        $project->setDescription('<h2>Le projet</h2><p>Un portail <strong>bilingue</strong> &amp; sûr.</p><p>Protégé par Traefik et UFW.</p>');
         $this->em->flush();
         $this->geminiSummary = 'Un portail bilingue. Protégé par Cloudflare Access et Traefik. Les demandes arrivent cadrées.';
 
         $this->service()->ingest('Project', (int) $project->getId());
 
         $sent = json_decode((string) end($this->geminiBodies), true);
-        self::assertStringEndsWith("Le projet Un portail bilingue & sûr.", $sent['contents'][0]['parts'][0]['text']);
+        // Texte brut, par blocs ; la phrase de configuration ne part jamais chez Gemini.
+        self::assertStringEndsWith("Le projet\nUn portail bilingue & sûr.", $sent['contents'][0]['parts'][0]['text']);
+        self::assertStringNotContainsString('Traefik', (string) json_encode($sent));
+        self::assertStringNotContainsString('Traefik', (string) $this->chunks()->findByEntity('Project', (int) $project->getId())[0]->getChunkText(), 'Ni dans le texte stocké.');
         $instruction = $sent['systemInstruction']['parts'][0]['text'];
         self::assertStringContainsString("N'y mets JAMAIS", $instruction);
         self::assertStringContainsString("le nom d'un client", $instruction);
@@ -258,6 +261,17 @@ final class AiAssistantIngestionVisibilityTest extends KernelTestCase
 
         $project->setStatus(ProjectStatusEnum::SUSPENDED);
         $this->em->flush();
+        $this->service()->ingest('Project', (int) $project->getId());
+
+        self::assertSame([], $this->chunks()->findByEntity('Project', (int) $project->getId()));
+    }
+
+    /** Résumé entièrement fait de configuration : aucun chunk plutôt qu'un chunk vide. */
+    public function testASummaryLeftEmptyAfterFilteringIsNotStored(): void
+    {
+        $project = $this->project(ProjectStatusEnum::IN_PROGRESS);
+        $this->geminiSummary = 'Protégé par Traefik. Supervisé par Netdata.';
+
         $this->service()->ingest('Project', (int) $project->getId());
 
         self::assertSame([], $this->chunks()->findByEntity('Project', (int) $project->getId()));

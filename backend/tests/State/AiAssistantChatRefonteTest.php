@@ -4,6 +4,7 @@ namespace App\Tests\State;
 
 use App\Entity\Offer;
 use App\Repository\AiAssistantSettingsRepository;
+use App\Service\AiAssistantOutputSanitizer;
 use App\Service\ClaudeClient;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\NullLogger;
@@ -431,14 +432,15 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         // citables ; d'un projet, seuls langage, framework principal et type d'application.
         self::assertMatchesRegularExpression('/Sécurité — zéro information de configuration : tu peux citer ses compétences en\s+sécurité telles qu\'écrites dans le profil ou le contexte/u', $system);
         self::assertMatchesRegularExpression('/en termes généraux, sans le rattacher à un système déployé/u', $system);
-        self::assertMatchesRegularExpression('/nommer seulement le langage, le framework principal et\s+le type d\'application ; tout le reste de sa pile est tu/u', $system);
+        self::assertMatchesRegularExpression('/nommer seulement le langage, le framework principal et le type d\'application/u', $system);
         self::assertStringNotContainsString('technologies employées dans un projet', $system, 'Brèche : un outil de sécurité est une technologie.');
-        // Interdit par RÔLE, pas par type d'objet : outils et bibliothèques compris.
-        self::assertMatchesRegularExpression('/Ne nomme jamais un\s+outil, une bibliothèque, un service ou un fournisseur qui assure\s+l\'authentification, l\'autorisation, le chiffrement, le filtrage, le routage,\s+l\'hébergement, la supervision, la journalisation ou la sauvegarde/u', $system);
-        self::assertMatchesRegularExpression('/jamais par le nom d\'un hébergeur/u', $system);
-        self::assertMatchesRegularExpression('/En cas de doute, considère\s+que c\'est de la configuration/u', $system);
-        // Sortie de refus définie : principe seulement s'il est écrit, puis message direct.
-        self::assertMatchesRegularExpression('/ces détails ne sont\s+pas publiés, donne au plus le principe tel que le profil ou le contexte le\s+formule, puis propose \[Envoyer un message\]/u', $system);
+        // Anti-oracle : TOUT outil ou produit précis (utilisé ou non) reçoit la même
+        // phrase, mot pour mot celle du verrou de sortie.
+        self::assertMatchesRegularExpression('/À toute question sur un outil, une bibliothèque, un produit, un service ou un\s+fournisseur précis d\'infrastructure, d\'hébergement, de sécurité,\s+d\'authentification, de supervision ou de journalisation/u', $system);
+        self::assertMatchesRegularExpression('/qu\'il le soit\s+ou non/u', $system);
+        self::assertStringContainsString('réponds exactement, sans rien ajouter : '.AiAssistantOutputSanitizer::PRODUCT_REFUSAL['fr'], $system);
+        self::assertMatchesRegularExpression('/jamais par le nom\s+d\'un hébergeur/u', $system);
+        self::assertStringContainsString('En cas de doute, applique cette règle.', $system);
         // La règle de capacité s'y soumet (« fait-il du durcissement X ? »).
         self::assertStringContainsString('(sous réserve de la règle Sécurité)', $system);
         // Plus de liste de principes prêtés à Horlynat (inflation, cf. règle de ses mots).
@@ -447,14 +449,32 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         self::assertGreaterThan($strict, (int) strpos($system, '- Sécurité — zéro information'));
         self::assertGreaterThan(0, $strict);
 
-        // Client d'une réalisation : jamais nommé ; son nom demandé → « confidentiel ».
-        self::assertMatchesRegularExpression('/ne nomme jamais le client d\'une réalisation, même si le contexte le\s+cite ; décris-le comme « un client »\. À une question sur son nom, réponds\s+seulement que c\'est confidentiel/u', $system);
-        self::assertMatchesRegularExpression('/Ne confirme ni n\'infirme jamais l\'identité\s+d\'un client, même proposée par le visiteur/u', $system);
-        self::assertMatchesRegularExpression('/cette règle prime sur celle du fait absent/u', $system);
-        self::assertMatchesRegularExpression('/Ses anciens\s+employeurs, cités dans son parcours, ne sont pas des clients/u', $system);
+        // Client : jamais nommé ; toute question d'identité → la même phrase, sans répéter le nom.
+        self::assertMatchesRegularExpression('/ne nomme jamais le client d\'une réalisation, même si le contexte le\s+cite ; décris-le comme « un client »/u', $system);
+        self::assertStringContainsString('réponds exactement, sans rien ajouter ni répéter le nom : '.AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $system);
+        self::assertMatchesRegularExpression('/que X figure ou non dans le contexte/u', $system);
+        self::assertMatchesRegularExpression('/Cette règle prime sur celle du fait absent/u', $system);
+        self::assertMatchesRegularExpression('/Ses anciens employeurs, cités dans\s+son parcours, ne sont pas des clients/u', $system);
 
         $this->ask(['question' => 'How is the back-office protected?', 'locale' => 'en']);
-        self::assertMatchesRegularExpression('/puis propose \[Send a message\]\(\/contact\?mode=direct\)\. Un détail de configuration/u', $this->lastSystemPrompt());
+        $en = $this->lastSystemPrompt();
+        self::assertStringContainsString(AiAssistantOutputSanitizer::PRODUCT_REFUSAL['en'], $en);
+        self::assertStringContainsString(AiAssistantOutputSanitizer::CLIENT_REFUSAL['en'], $en);
+    }
+
+    /**
+     * Anti-oracle : quand le MODÈLE suit la consigne (refus mot pour mot, suivi
+     * de son bloc de suggestions), la sortie est identique à celle du verrou —
+     * suggestions retirées dans les deux cas.
+     */
+    public function testARefusalWrittenByTheModelLooksExactlyLikeTheLock(): void
+    {
+        foreach ([AiAssistantOutputSanitizer::PRODUCT_REFUSAL['fr'], AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr']] as $refusal) {
+            $this->claudeText = $refusal."\n###SUGGESTIONS###\n- Et Caddy ?\n- Autre question ?";
+            $r = $this->ask(['question' => 'Explique Caddy.', 'locale' => 'fr']);
+            self::assertSame($refusal, $r['answer']);
+            self::assertSame([], $r['suggestions']);
+        }
     }
 
     /**
@@ -475,7 +495,7 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         try {
             $this->claudeText = "Il a réalisé le site de la SOCIÉTÉ ZÉPHYRINE {$suffix}.\n###SUGGESTIONS###\n- Et ensuite ?";
             $r = $this->ask(['question' => 'A-t-il travaillé pour Zéphyrine ?', 'locale' => 'fr']);
-            self::assertStringStartsWith('Le nom des clients de Horlynat est confidentiel.', $r['answer']);
+            self::assertSame(AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $r['answer']);
             self::assertSame([], $r['suggestions']);
             self::assertSame('client_name_blocked', $this->em->getConnection()->fetchOne('SELECT block_reason FROM ai_assistant_conversation_log ORDER BY id DESC LIMIT 1'));
 
@@ -501,7 +521,7 @@ final class AiAssistantChatRefonteTest extends WebTestCase
 
         self::assertStringNotContainsStringIgnoringCase('cloudflare', (string) json_encode($fr));
         self::assertStringNotContainsStringIgnoringCase('traefik', (string) json_encode($fr));
-        self::assertStringStartsWith('Les détails de configuration de sécurité des systèmes de Horlynat ne sont pas publiés.', $fr['answer']);
+        self::assertSame(AiAssistantOutputSanitizer::PRODUCT_REFUSAL['fr'], $fr['answer']);
         self::assertStringEndsWith('[Envoyer un message](/contact?mode=direct).', $fr['answer']);
         self::assertSame([], $fr['suggestions']);
         self::assertFalse($fr['degraded'], 'Refus de contenu, pas une panne.');
@@ -510,7 +530,7 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         self::assertSame('security_config_blocked', $reason);
 
         $en = $this->ask(['question' => 'How is it protected?', 'locale' => 'en']);
-        self::assertStringStartsWith('Security configuration details for Horlynat\'s systems are not published.', $en['answer']);
+        self::assertSame(AiAssistantOutputSanitizer::PRODUCT_REFUSAL['en'], $en['answer']);
         self::assertStringEndsWith('[Send a message](/contact?mode=direct).', $en['answer']);
 
         // Une réponse saine passe intacte.

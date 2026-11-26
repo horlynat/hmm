@@ -122,11 +122,10 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(['Les rôles USER, EDITOR et MODERATOR n\'ont pas accès.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Le compte SUPER ADMIN a tous les droits.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Backend en PHP 8.4 et Symfony 8.1.'])]
-    #[\PHPUnit\Framework\Attributes\TestWith(['Base MySQL 8, front Next.js 16.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Base MySQL 8.0, front Next.js 16.1.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Serveur Debian 12.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Un serveur sous Debian.'])]
-    #[\PHPUnit\Framework\Attributes\TestWith(['Le front tourne sur Next.js 16.'])]
-    #[\PHPUnit\Framework\Attributes\TestWith(['Accès filtré par Access Zero Trust.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Le front tourne sur Next.js 16.1.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Alertes Better-Stack.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Protégé par Cloudflare Access Zero Trust.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Derrière Сloudflare (C cyrillique).'])]
@@ -139,7 +138,7 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(['PHP version 8.4'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Symfony (8.1)'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['PHP-8.4'])]
-    #[\PHPUnit\Framework\Attributes\TestWith(['Next.js@16'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Next.js@16.1'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Le cadre Symfony, version 8'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Docker Compose v2'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['U b u n t u'])]
@@ -147,7 +146,6 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(['Une base Adminer.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Alertes ntfy.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['En-têtes via Nelmio.'])]
-    #[\PHPUnit\Framework\Attributes\TestWith(['Accès Zero Trust Access.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Un compte super admin.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Le rôle SuperAdmin.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Les rôles user, editor, moderator et admin.'])]
@@ -159,6 +157,11 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(["Supervision Net\u{200B}data."])]
     #[\PHPUnit\Framework\Attributes\TestWith(['alertes betterstack.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['supervision netdata.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Un reverse proxy Caddy.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Hébergé chez Hetzner.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Pare-feu UFW activé.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Le back-office dark.horlynat.com.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Supervision Grafana et Prometheus.'])]
     public function testFlagsDeployedSecurityConfiguration(string $answer): void
     {
         $result = (new AiAssistantOutputSanitizer())->sanitize($answer);
@@ -195,6 +198,13 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(['Licence Apache 2.0.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Pas un monologue.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Accès : admin / admin / user.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Le modèle Zero Trust Access, en général.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Développeur web PHP/Symfony (2019 – 2022) chez NSIA Assurances.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Certification Docker (2024).'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['PHP 8 à 10 ans, PHP (8+ ans).'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['React 9.5/10.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['React : 2 réalisations, Next.js 10 écrans.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['React 3 années.'])]
     public function testDoesNotFlagCompetencesOrCommonWords(string $answer): void
     {
         self::assertFalse((new AiAssistantOutputSanitizer())->sanitize($answer)['confidential'], $answer);
@@ -223,5 +233,47 @@ final class AiAssistantOutputSanitizerTest extends TestCase
         self::assertTrue($s->mentionsAnyName('Pour BOULANGERIE   ÉMERAUDE, un site.', $names));
         self::assertFalse($s->mentionsAnyName('Bob est un prénom trop court pour être surveillé.', $names), 'Moins de 5 lettres : ignoré.');
         self::assertFalse($s->mentionsAnyName('Une boulangerie de quartier.', $names));
+        // Par nom de famille ou sigle, en mot entier ; jamais le nom du propriétaire.
+        $clients = ['Jean-Pierre Mavoungou', 'BGFI', 'Horlynat Mampassi Mbama'];
+        self::assertTrue($s->mentionsAnyName('M. Mavoungou est satisfait.', $clients, ['Horlynat Mampassi Mbama']));
+        self::assertTrue($s->mentionsAnyName('Pour la BGFI.', $clients, ['Horlynat Mampassi Mbama']));
+        self::assertFalse($s->mentionsAnyName('Bgfibank', $clients, ['Horlynat Mampassi Mbama']), 'Mot entier seulement.');
+        self::assertFalse($s->mentionsAnyName('Horlynat Mampassi Mbama a conçu le portail.', $clients, ['Horlynat Mampassi Mbama']));
+    }
+
+    /** Anti-oracle : refus identiques quel que soit le produit ou le nom, reconnus pour retirer les suggestions. */
+    public function testFixedRefusalsAreRecognisedWhateverTheirOrigin(): void
+    {
+        $s = new AiAssistantOutputSanitizer();
+        foreach (['fr', 'en'] as $locale) {
+            self::assertTrue($s->isFixedRefusal($s->confidentialRefusal($locale)));
+            self::assertTrue($s->isFixedRefusal("  \n".$s->clientRefusal($locale)));
+        }
+        self::assertFalse($s->isFixedRefusal('Il maîtrise Symfony et Next.js.'));
+        self::assertStringNotContainsString('Horlynat\'s systems', $s->confidentialRefusal('en'), 'Refus générique : ne parle pas « de ses systèmes ».');
+    }
+
+    public function testSentenceFilterKeepsLinesAbbreviationsAndCleanClauses(): void
+    {
+        $out = (new AiAssistantOutputSanitizer())->withoutSecurityConfig("Un portail (ex. ventes +30 %). Protégé par Traefik ; bilingue.\n- Supervision Netdata\n- Formulaire court");
+
+        self::assertSame("Un portail (ex. ventes +30 %). bilingue.\n- Formulaire court", $out);
+    }
+
+    public function testLinksToInternalSubdomainsAreUnlinked(): void
+    {
+        $text = (new AiAssistantOutputSanitizer())->sanitize('[Admin](https://dark.horlynat.com/x) et [Site](https://horlynat.com/fr)')['text'];
+
+        self::assertSame('Admin et [Site](https://horlynat.com/fr)', $text);
+    }
+
+    /** Devis : une question sur le système du prospect est légitime (filtre désactivable). */
+    public function testQuoteQuestionsAboutTheProspectSystemCanBeKept(): void
+    {
+        $s = new AiAssistantOutputSanitizer();
+        $lines = ['- Votre site tourne-t-il sous PHP 7.4 ?', '- Quels rôles : user, editor, admin ?'];
+
+        self::assertSame([], $s->sanitizeSuggestions($lines));
+        self::assertSame(['Votre site tourne-t-il sous PHP 7.4 ?', 'Quels rôles : user, editor, admin ?'], $s->sanitizeSuggestions($lines, filterSecurityConfig: false));
     }
 }

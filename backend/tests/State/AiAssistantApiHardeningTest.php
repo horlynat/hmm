@@ -194,7 +194,7 @@ final class AiAssistantApiHardeningTest extends WebTestCase
         try {
             self::assertSame(200, $this->post('/api/assistant/summarize', ['slug' => $public->getSlug(), 'contentType' => 'project', 'locale' => 'fr']));
             $body = $this->json();
-            self::assertStringStartsWith('Les détails de configuration de sécurité', (string) ($body['answer'] ?? ''));
+            self::assertSame(\App\Service\AiAssistantOutputSanitizer::PRODUCT_REFUSAL['fr'], $body['answer'] ?? null);
             self::assertStringNotContainsStringIgnoringCase('traefik', (string) json_encode($body));
             self::assertSame([], $body['suggestions'] ?? null);
             $last = $this->em->getRepository(AiAssistantConversationLog::class)->findOneBy([], ['id' => 'DESC']);
