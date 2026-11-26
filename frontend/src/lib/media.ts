@@ -6,6 +6,18 @@ export function getMediaUrl(filePath: string): string {
 }
 
 /**
+ * Vrai pour un fichier SVG (y compris `.svgz`, et une éventuelle requête ou
+ * ancre après l'extension). Dans ce portfolio, un SVG en couverture de
+ * réalisation est toujours un schéma au fond assorti au cadre qui l'affiche,
+ * jamais une photo — il s'affiche donc entier (« contain »), sans recadrage ;
+ * une image matricielle (une vraie capture) se recadre pour remplir le cadre
+ * (« cover »), cf. ProjectImage.
+ */
+export function isSvgFile(filePath: string): boolean {
+  return /\.svgz?(?:$|[?#])/i.test(filePath);
+}
+
+/**
  * Photo de profil d'un utilisateur, ou `null` s'il n'en a pas — l'appelant
  * affiche alors des initiales générées localement (composant `Avatar`).
  *

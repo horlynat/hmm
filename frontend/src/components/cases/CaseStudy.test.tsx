@@ -16,7 +16,7 @@ vi.mock("@/i18n/navigation", () => ({
   ),
 }));
 vi.mock("@/components/proto/ProtoSections", () => ({ ProtoCta: () => null }));
-vi.mock("@/components/landing/SiteHome", () => ({ ProjectImage: () => <span data-testid="project-art" /> }));
+vi.mock("@/components/landing/SiteHome", () => ({ ProjectImage: ({ fit }: { fit?: string }) => <span data-testid="project-art" data-fit={fit ?? "cover"} /> }));
 
 const { CaseStudy } = await import("./CaseStudy");
 
@@ -123,9 +123,14 @@ describe("CaseStudy — récit du prototype (pCase)", () => {
     expect(text).toContain("Un portail qui présente le travail. Il qualifie les demandes.");
     // Repères : rôle sans le préfixe répété, résultats chiffrés.
     expect([...container.querySelectorAll(".facts4 dd")].map((d) => d.textContent)).toEqual(["Architecte logiciel", "6 semaines"]);
+    // La grille des repères s'adapte à leur nombre (2 ici), sans colonnes vides.
+    expect(container.querySelector(".facts4")?.classList.contains("n2")).toBe(true);
+    // Défis : liste numérotée ; résultats : icône alignée sur la première ligne.
+    expect(container.querySelector("ol.dfs li .n")?.textContent).toBe("1");
+    expect(container.querySelector(".liv.ben")).not.toBeNull();
     // Défis relevés : problème → solution, numérotés ; une entrée incomplète est ignorée.
-    expect([...container.querySelectorAll(".defis b")].map((b) => b.textContent)).toEqual(["Pic de charge"]);
-    expect(container.querySelector(".defis p")?.textContent).toBe("Verrou optimiste");
+    expect([...container.querySelectorAll(".dfs li b")].map((b) => b.textContent)).toEqual(["Pic de charge"]);
+    expect(container.querySelector(".dfs li p")?.textContent).toBe("Verrou optimiste");
     // Ce que ça apporte : « Titre : texte » → titre en gras.
     expect(container.querySelector(".liv b")?.textContent).toBe("En production : ");
     expect(container.querySelector(".liv span")?.textContent).toBe("En production : Accessible publiquement");

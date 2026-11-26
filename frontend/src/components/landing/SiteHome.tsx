@@ -6,7 +6,7 @@ import { getProjects } from "@/lib/api/projects";
 import { getAboutContent } from "@/lib/api/about-content";
 import { sortProjectsForDisplay } from "@/lib/projects/sortForDisplay";
 import { formatFcfa } from "@/lib/format/fcfa";
-import { getMediaUrl } from "@/lib/media";
+import { getMediaUrl, isSvgFile } from "@/lib/media";
 import { getExcerpt } from "@/lib/text";
 import { whatsappLink } from "@/lib/whatsapp";
 import type { Project } from "@/lib/types";
@@ -40,20 +40,30 @@ export function ProjectImage({
   project,
   index,
   sizes,
+  fit,
 }: {
   project: Project;
   index: number;
   sizes: string;
+  /**
+   * « cover » recadre pour remplir le cadre (adapté à une vraie capture
+   * d'écran) ; « contain » montre l'image entière, sans recadrage (adapté à
+   * un schéma dont le fond se fond dans le cadre). Par défaut, déduit du
+   * fichier : un SVG (toujours un schéma dans ce portfolio, jamais une
+   * photo) passe en « contain » ; tout le reste en « cover ».
+   */
+  fit?: "cover" | "contain";
 }) {
   const cover = project.info?.coverImage;
   if (cover) {
+    const resolvedFit = fit ?? (isSvgFile(cover.filePath) ? "contain" : "cover");
     return (
       <Image
         src={getMediaUrl(cover.filePath)}
         alt={cover.altText ?? ""}
         fill
         sizes={sizes}
-        style={{ objectFit: "cover" }}
+        style={{ objectFit: resolvedFit }}
       />
     );
   }
