@@ -18,7 +18,31 @@ final class AiAssistantOutputSanitizer
     private const LEAK_MARKERS = ['<context>', '</context>', '<catalogue>', '</catalogue>', '<fiches>', '</fiches>', '<profil>', '</profil>', 'GEMINI_API_KEY', 'ANTHROPIC_API_KEY', 'system prompt', 'system instruction'];
 
     /**
-     * @return array{text: string, leaked: bool}
+     * Identifiants de la configuration de sécurité réellement déployée (périmètre,
+     * routage, authentification, supervision, rôles et entités internes). Le
+     * propriétaire exige « zéro information de sécurité » : la consigne du prompt
+     * ne suffit pas (un modèle peut désobéir, le corpus peut en contenir), donc
+     * toute réponse qui en nomme un est remplacée — verrou déterministe.
+     * Comparés sur le texte compacté (minuscules, lettres et chiffres seuls) pour
+     * résister aux séparateurs (« Cloud-flare », « t r a e f i k », « Zero_Trust »).
+     */
+    private const SECURITY_CONFIG_COMPACT = ['traefik', 'cloudflare', 'lexik', 'scheb', 'netdata', 'uptimerobot', 'crowdsec', 'fail2ban', 'honeypot', 'champleurre', 'fullstrict'];
+
+    /**
+     * Termes ambigus une fois compactés (« a better stack », « monologue », « each
+     * project task ») : vérifiés sur le texte, avec frontières de mot — et, pour les
+     * noms d'entités internes, seulement sous leur forme de code (CamelCase).
+     */
+    private const SECURITY_CONFIG_PATTERNS = [
+        '/\bubuntu\b/iu',
+        '/\bmonolog(?!ue)/iu',
+        '/\bBetter\s*Stack\b/u',
+        '/\brole[\s_-]*(?:user|editor|moderator|manager|admin|super)/iu',
+        '/\b(?:ProjectExpense|ProjectHistory|ProjectTask|TimeEntry|SupportTicket)\b/u',
+    ];
+
+    /**
+     * @return array{text: string, leaked: bool, confidential: bool}
      */
     public function sanitize(string $rawAnswer): array
     {
@@ -34,7 +58,31 @@ final class AiAssistantOutputSanitizer
         $text = mb_substr(trim($rawAnswer), 0, self::MAX_LENGTH);
         $text = $this->stripDisallowedLinks($text);
 
-        return ['text' => $text, 'leaked' => $leaked];
+        return ['text' => $text, 'leaked' => $leaked, 'confidential' => $this->revealsSecurityConfig($rawAnswer)];
+    }
+
+    /** Vrai si le texte nomme un élément de la configuration de sécurité déployée. */
+    public function revealsSecurityConfig(string $text): bool
+    {
+        // Lettres et chiffres seuls, après décomposition des accents et des formes de
+        // compatibilité (pleine chasse, ligatures) : « Ｔｒａｅｆｉｋ », « Tr-æfik »… Les
+        // marques diacritiques détachées (\p{Mn}) tombent avec le reste.
+        $decomposed = \Normalizer::normalize($text, \Normalizer::FORM_KD);
+        $decomposed = false === $decomposed ? $text : $decomposed;
+        $compact = (string) preg_replace('/[^\p{Ll}\p{Nd}]+/u', '', mb_strtolower($decomposed));
+        foreach (self::SECURITY_CONFIG_COMPACT as $term) {
+            if (str_contains($compact, $term)) {
+                return true;
+            }
+        }
+        $plain = (string) preg_replace('/\p{Mn}+/u', '', $decomposed);
+        foreach (self::SECURITY_CONFIG_PATTERNS as $pattern) {
+            if (1 === preg_match($pattern, $plain)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -67,7 +115,7 @@ final class AiAssistantOutputSanitizer
                 }
             }
 
-            if ($isLeaked) {
+            if ($isLeaked || $this->revealsSecurityConfig($text)) {
                 continue;
             }
 

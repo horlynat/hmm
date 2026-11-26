@@ -27,6 +27,8 @@ final class AiAssistantChatRefonteTest extends WebTestCase
     /** @var list<array<string, mixed>> */
     private array $claudeBodies = [];
     private bool $claudeDown = false;
+    /** Réponse simulée de Claude (null = réponse par défaut). */
+    private ?string $claudeText = null;
     /** @var list<Offer> */
     private array $created = [];
     /** @var list<int> Offres modifiées en SQL brut : supprimées en SQL, jamais réhydratées. */
@@ -47,7 +49,7 @@ final class AiAssistantChatRefonteTest extends WebTestCase
 
             return new MockResponse((string) json_encode([
                 'model' => 'claude-sonnet-5',
-                'content' => [['type' => 'text', 'text' => "Voici l'offre : [Assistant](/offres/assistant).\n###SUGGESTIONS###\n- Quel délai ?"]],
+                'content' => [['type' => 'text', 'text' => $this->claudeText ?? "Voici l'offre : [Assistant](/offres/assistant).\n###SUGGESTIONS###\n- Quel délai ?"]],
                 'usage' => ['input_tokens' => 1000, 'output_tokens' => 100],
             ]));
         });
@@ -425,22 +427,58 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         $this->ask(['question' => 'Comment le back-office est-il protégé ?', 'locale' => 'fr']);
 
         $system = $this->lastSystemPrompt();
-        // Frontière : ses COMPÉTENCES (consultant en cybersécurité) et la pile d'un projet
-        // restent citables ; seule la configuration concrète d'un système déployé est tue.
-        self::assertMatchesRegularExpression('/tu peux citer ses compétences en sécurité telles qu\'écrites dans le\s+profil ou le contexte, les technologies employées dans un projet/u', $system);
-        self::assertMatchesRegularExpression('/Ne décris jamais la configuration concrète d\'un système\s+déployé, le sien ou celui d\'un client/u', $system);
-        // Sortie de refus définie : ni « son profil ne le mentionne pas » (faux), ni le
-        // refus anti-injection ; principe seulement s'il est écrit, puis message direct.
-        self::assertMatchesRegularExpression('/même si le contexte en contient : dis en\s+une demi-phrase que ces détails ne sont pas publiés, donne au plus le principe\s+tel que le profil ou le contexte le formule, puis propose \[Envoyer un message\]/u', $system);
+        // Frontière : ses COMPÉTENCES (consultant en cybersécurité) et les concepts restent
+        // citables ; d'un projet, seuls langage, framework principal et type d'application.
+        self::assertMatchesRegularExpression('/Sécurité — zéro information de configuration : tu peux citer ses compétences en\s+sécurité telles qu\'écrites dans le profil ou le contexte/u', $system);
+        self::assertMatchesRegularExpression('/en termes généraux, sans le rattacher à un système déployé/u', $system);
+        self::assertMatchesRegularExpression('/nommer seulement le langage, le framework principal et\s+le type d\'application ; tout le reste de sa pile est tu/u', $system);
+        self::assertStringNotContainsString('technologies employées dans un projet', $system, 'Brèche : un outil de sécurité est une technologie.');
+        // Interdit par RÔLE, pas par type d'objet : outils et bibliothèques compris.
+        self::assertMatchesRegularExpression('/Ne nomme jamais un\s+outil, une bibliothèque, un service ou un fournisseur qui assure\s+l\'authentification, l\'autorisation, le chiffrement, le filtrage, le routage,\s+l\'hébergement, la supervision, la journalisation ou la sauvegarde/u', $system);
+        self::assertMatchesRegularExpression('/jamais par le nom d\'un hébergeur/u', $system);
+        self::assertMatchesRegularExpression('/En cas de doute, considère\s+que c\'est de la configuration/u', $system);
+        // Sortie de refus définie : principe seulement s'il est écrit, puis message direct.
+        self::assertMatchesRegularExpression('/ces détails ne sont\s+pas publiés, donne au plus le principe tel que le profil ou le contexte le\s+formule, puis propose \[Envoyer un message\]/u', $system);
+        // La règle de capacité s'y soumet (« fait-il du durcissement X ? »).
+        self::assertStringContainsString('(sous réserve de la règle Sécurité)', $system);
         // Plus de liste de principes prêtés à Horlynat (inflation, cf. règle de ses mots).
         self::assertStringNotContainsString('défense en profondeur', $system);
-        self::assertStringNotContainsString('décris seulement les principes', $system);
         $strict = (int) strpos($system, 'Règles strictes :');
-        self::assertGreaterThan($strict, (int) strpos($system, '- Sécurité : tu peux citer'));
+        self::assertGreaterThan($strict, (int) strpos($system, '- Sécurité — zéro information'));
         self::assertGreaterThan(0, $strict);
 
         $this->ask(['question' => 'How is the back-office protected?', 'locale' => 'en']);
-        self::assertMatchesRegularExpression('/ces détails ne sont pas publiés, donne au plus le principe\s+tel que le profil ou le contexte le formule, puis propose \[Send a message\]\(\/contact\?mode=direct\)/u', $this->lastSystemPrompt());
+        self::assertMatchesRegularExpression('/puis propose \[Send a message\]\(\/contact\?mode=direct\)\. Un détail de configuration/u', $this->lastSystemPrompt());
+    }
+
+    /**
+     * Verrou déterministe : même si le modèle désobéit (corpus encore non nettoyé),
+     * une réponse qui nomme la configuration déployée n'atteint jamais le visiteur.
+     */
+    public function testAnAnswerNamingTheDeployedSecurityConfigIsReplacedByARefusal(): void
+    {
+        $this->claudeText = "Le back-office est derrière Cloudflare Access puis Traefik, avec ROLE_SUPER_ADMIN.\n###SUGGESTIONS###\n- Quel WAF Cloudflare ?\n- Et la 2FA ?";
+        $fr = $this->ask(['question' => 'Comment le back-office est-il protégé ?', 'locale' => 'fr']);
+
+        self::assertStringNotContainsStringIgnoringCase('cloudflare', (string) json_encode($fr));
+        self::assertStringNotContainsStringIgnoringCase('traefik', (string) json_encode($fr));
+        self::assertStringStartsWith('Les détails de configuration de sécurité des systèmes de Horlynat ne sont pas publiés.', $fr['answer']);
+        self::assertStringEndsWith('[Envoyer un message](/contact?mode=direct).', $fr['answer']);
+        self::assertSame([], $fr['suggestions']);
+        self::assertFalse($fr['degraded'], 'Refus de contenu, pas une panne.');
+        // Tracé pour l'admin : on sait que le verrou a joué (et donc que le corpus est à nettoyer).
+        $reason = $this->em->getConnection()->fetchOne('SELECT block_reason FROM ai_assistant_conversation_log ORDER BY id DESC LIMIT 1');
+        self::assertSame('security_config_blocked', $reason);
+
+        $en = $this->ask(['question' => 'How is it protected?', 'locale' => 'en']);
+        self::assertStringStartsWith('Security configuration details for Horlynat\'s systems are not published.', $en['answer']);
+        self::assertStringEndsWith('[Send a message](/contact?mode=direct).', $en['answer']);
+
+        // Une réponse saine passe intacte.
+        $this->claudeText = "Il cite la 2FA et OWASP parmi ses compétences.\n###SUGGESTIONS###\n- Et l'audit ?";
+        $ok = $this->ask(['question' => 'Ses compétences sécurité ?', 'locale' => 'fr']);
+        self::assertSame('Il cite la 2FA et OWASP parmi ses compétences.', $ok['answer']);
+        self::assertSame(['Et l\'audit ?'], $ok['suggestions']);
     }
 
     /**
