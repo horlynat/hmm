@@ -44,6 +44,10 @@ describe("getSkillDomains — domaines de compétence du back-office", () => {
       offerSlugs: ["audit"],
       proofProjectSlug: "portail",
     });
+    apiFetch.mockResolvedValue({ member: [{ ...row, toolsEn: ["Penetration testing"] }] });
+    const [enTools] = (await getSkillDomains("en")) ?? [];
+    expect(enTools.tools).toEqual(["Penetration testing"]);
+    apiFetch.mockResolvedValue({ member: [row] });
     const [fr] = (await getSkillDomains("fr")) ?? [];
     expect(fr.title).toBe("Cybersécurité");
     expect(apiFetch).toHaveBeenCalledWith("/skill_domains", expect.objectContaining({ tags: ["skill-domains"] }));
