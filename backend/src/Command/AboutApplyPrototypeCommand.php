@@ -126,7 +126,9 @@ final class AboutApplyPrototypeCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $content = $this->repository->getContent();
+        // Aperçu en lecture seule : sans ligne en base, tout est « à changer » et
+        // rien n'est créé ; la ligne n'est créée qu'avec --force.
+        $content = $this->repository->findFirst() ?? new AboutContent();
 
         $changes = [];
         foreach (self::TEXTS as $field => [$fr, $en]) {
@@ -159,6 +161,7 @@ final class AboutApplyPrototypeCommand extends Command
             return Command::SUCCESS;
         }
 
+        $content = $this->repository->getContent();
         self::applyTo($content);
         $violations = $this->validator->validate($content);
         if (\count($violations) > 0) {

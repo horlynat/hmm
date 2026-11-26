@@ -110,11 +110,17 @@ function localizeProjectInfo(info: RawProjectInfo | null, locale: string): Proje
  * les pages `/en/*` rendaient du contenu français). Toujours faire remonter
  * `locale` depuis `params` plutôt que de le résoudre ici.
  */
-export async function getProjects(locale: string): Promise<Project[]> {
+/**
+ * `strict` : une API injoignable lève une erreur au lieu de renvoyer une liste
+ * vide — pour les pages qui ne doivent jamais être mises en cache amputées
+ * (cf. SiteAbout). Sans `strict`, comportement tolérant inchangé.
+ */
+export async function getProjects(locale: string, options: { strict?: boolean } = {}): Promise<Project[]> {
   const payload = await apiFetch<unknown>("/projects", {
     tags: ["projects"],
     revalidate: PROJECTS_REVALIDATE_SECONDS,
   });
+  if (payload === null && options.strict) throw new Error("API /projects indisponible.");
   return extractCollection<RawProject>(payload).map(({ titleEn, descriptionEn, info, ...project }) => ({
     ...project,
     title: pickLocalized(project.title, titleEn, locale),

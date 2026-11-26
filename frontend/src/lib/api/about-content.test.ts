@@ -97,4 +97,16 @@ describe("getAboutContent — champs de la refonte R5", () => {
     expect(en?.pathLede).toBe("Des maths à l'entreprise");
     expect(en?.projectsTitle).toBe("");
   });
+
+  it("API injoignable : null ; base sans ligne : contenu vide (jamais d'erreur permanente)", async () => {
+    apiFetch.mockResolvedValue(null);
+    expect(await getAboutContent("fr")).toBeNull();
+
+    apiFetch.mockResolvedValue({ member: [] });
+    const empty = await getAboutContent("en");
+    expect(empty?.heroTitle).toBe("");
+    expect(empty?.skillsTitle).toBe("");
+    expect(empty?.journeyStats).toEqual([]);
+    expect(empty?.profileImagePath).toBeNull();
+  });
 });

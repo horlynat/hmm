@@ -41,13 +41,16 @@ class SkillDomainType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $offers = [];
-        foreach ($this->em->getRepository(Offer::class)->findBy([], ['position' => 'ASC', 'id' => 'ASC']) as $offer) {
-            $offers[$offer->getTitle().($offer->isPublished() ? '' : ' (non publiée)')] = $offer->getSlug();
+        // Seules les offres publiées et les réalisations publiques sont proposées :
+        // l'API publique des domaines n'expose ainsi jamais un slug non public.
+        foreach ($this->em->getRepository(Offer::class)->findBy(['published' => true], ['position' => 'ASC', 'id' => 'ASC']) as $offer) {
+            $offers[$offer->getTitle()] = $offer->getSlug();
         }
         $projects = [];
         foreach ($this->em->getRepository(Project::class)->findBy([], ['id' => 'ASC']) as $project) {
-            $public = \in_array($project->getStatus(), [ProjectStatusEnum::IN_PROGRESS, ProjectStatusEnum::COMPLETED], true);
-            $projects[$project->getTitle().($public ? '' : ' (non publique)')] = $project->getSlug();
+            if (\in_array($project->getStatus(), [ProjectStatusEnum::IN_PROGRESS, ProjectStatusEnum::COMPLETED], true)) {
+                $projects[$project->getTitle()] = $project->getSlug();
+            }
         }
 
         $text = static fn (string $label, bool $required = false, ?string $help = null): array => ['label' => $label, 'required' => $required, 'help' => $help, 'empty_data' => ''];
@@ -64,8 +67,8 @@ class SkillDomainType extends AbstractType
             ->add('doItemsEn', TextareaType::class, ['label' => 'Ce que je fais pour vous (anglais)', 'required' => false, 'attr' => ['rows' => 4]])
             ->add('tools', TextareaType::class, ['label' => 'Outils du moment', 'required' => false, 'help' => 'Un outil par ligne (20 au plus). Jamais d\'outil qui révèle la configuration de vos systèmes.', 'attr' => ['rows' => 4]])
             ->add('toolsEn', TextareaType::class, ['label' => 'Outils du moment (anglais, si différents)', 'required' => false, 'attr' => ['rows' => 4]])
-            ->add('offerSlugs', ChoiceType::class, ['label' => 'Offres liées (4 au plus)', 'choices' => $offers, 'multiple' => true, 'expanded' => true, 'required' => false, 'help' => 'Seules les offres publiées s\'affichent sur le site.'])
-            ->add('proofProjectSlug', ChoiceType::class, ['label' => 'Réalisation qui sert de preuve', 'choices' => $projects, 'required' => false, 'placeholder' => '— Aucune —', 'help' => 'Affichée seulement si elle est publique.'])
+            ->add('offerSlugs', ChoiceType::class, ['label' => 'Offres liées (4 au plus)', 'choices' => $offers, 'multiple' => true, 'expanded' => true, 'required' => false, 'help' => 'Offres publiées seulement.'])
+            ->add('proofProjectSlug', ChoiceType::class, ['label' => 'Réalisation qui sert de preuve', 'choices' => $projects, 'required' => false, 'placeholder' => '— Aucune —', 'help' => 'Réalisations publiques seulement.'])
         ;
 
         foreach (['doItems' => false, 'doItemsEn' => true, 'tools' => false, 'toolsEn' => true] as $field => $nullable) {

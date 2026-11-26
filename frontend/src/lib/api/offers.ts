@@ -78,11 +78,17 @@ function localizeOffer(raw: RawOffer, locale: string): Offer {
  * `locale` est un paramètre explicite — cf. commentaire dans projects.ts
  * (bug de mémoïsation de `getLocale()` pendant `next build`).
  */
-export async function getOffers(locale: string): Promise<Offer[]> {
+/**
+ * `strict` : une API injoignable lève une erreur au lieu de renvoyer une liste
+ * vide — pour les pages qui ne doivent jamais être mises en cache amputées
+ * (cf. SiteAbout). Sans `strict`, comportement tolérant inchangé.
+ */
+export async function getOffers(locale: string, options: { strict?: boolean } = {}): Promise<Offer[]> {
   const payload = await apiFetch<unknown>("/offers", {
     tags: ["offers"],
     revalidate: OFFERS_REVALIDATE_SECONDS,
   });
+  if (payload === null && options.strict) throw new Error("API /offers indisponible.");
 
   return extractCollection<RawOffer>(payload)
     .map((raw) => localizeOffer(raw, locale))

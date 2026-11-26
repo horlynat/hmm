@@ -127,9 +127,9 @@ class SeedContentCommand extends Command
         // cf. app:about:apply-prototype) ; le reste ci-dessous.
         \App\Command\AboutApplyPrototypeCommand::applyTo($c);
         $c->setSkillsTitle('Quatre domaines, un même niveau d’exigence')
-            ->setSkillsTitleEn('Four areas, one standard of rigour')
+            ->setSkillsTitleEn('Four fields, one standard of excellence')
             ->setSkillsLede('Choisissez un domaine : ce que je fais pour vous, mes outils du moment, les offres et la preuve associées.')
-            ->setSkillsLedeEn('Choose an area: what I do for you, my current tools, the related services and proof.')
+            ->setSkillsLedeEn('Pick a field: what I do for you, my current tools, and the related services and proof.')
             ->setSkillsNote('Liste indicative : j’apprends en continu les technologies que chaque projet exige.')
             ->setSkillsNoteEn('Indicative list: I keep learning the technologies each project requires.')
             ->setProjectsTitle('Des plateformes conçues, livrées et exploitées')
@@ -139,7 +139,7 @@ class SeedContentCommand extends Command
             ->setPathTitle('Des mathématiques à l\'entreprise')
             ->setPathTitleEn('From mathematics to business')
             ->setPathLede('Informatique, assurance puis entrepreneuriat : un parcours qui m\'a appris à construire et à anticiper les risques.')
-            ->setPathLedeEn('IT, insurance, then entrepreneurship: a path that taught me to build and to anticipate risks.')
+            ->setPathLedeEn('Computing, insurance, then entrepreneurship: a path that taught me to build and to anticipate risks.')
             ->setLearningText('Chaque projet m’amène à apprendre : nouvelles technologies, nouvelles menaces, nouvelles réglementations. Objectif à terme : un doctorat consacré à l’intelligence artificielle.')
             ->setLearningTextEn('Every project teaches me something new: technologies, threats, regulations. Long-term goal: a doctorate in artificial intelligence.')
             ->setJourneyStats([

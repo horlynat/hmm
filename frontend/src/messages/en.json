@@ -113,11 +113,6 @@
       "empty": "Projects will appear here as soon as they're published.",
       "cta": "See all projects"
     },
-    "testimonials": {
-      "eyebrow": "Testimonials",
-      "title": "What clients say",
-      "empty": "Testimonials will appear here as soon as they're published."
-    },
     "blog": {
       "eyebrow": "Blog",
       "title": "Technical notes and lessons learned",

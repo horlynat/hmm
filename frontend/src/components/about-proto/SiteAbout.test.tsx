@@ -33,10 +33,14 @@ const about = vi.fn();
 const domains = vi.fn();
 vi.mock("@/lib/api/about-content", () => ({ getAboutContent: () => about() }));
 vi.mock("@/lib/api/skill-domains", () => ({ getSkillDomains: () => domains() }));
-vi.mock("@/lib/api/experiences", () => ({ getExperiences: async () => [] }));
-vi.mock("@/lib/api/courses", () => ({ getCourses: async () => [] }));
-vi.mock("@/lib/api/offers", () => ({ getOffers: async () => [{ slug: "audit", title: "Audit" }] }));
-vi.mock("@/lib/api/projects", () => ({ getProjects: async () => [{ slug: "portail", title: "Portail", status: "termine" }] }));
+const experiences = vi.fn();
+const courses = vi.fn();
+const projects = vi.fn();
+const strictFlags: unknown[] = [];
+vi.mock("@/lib/api/experiences", () => ({ getExperiences: (_l: string, o: unknown) => (strictFlags.push(o), experiences()) }));
+vi.mock("@/lib/api/courses", () => ({ getCourses: (_l: string, o: unknown) => (strictFlags.push(o), courses()) }));
+vi.mock("@/lib/api/offers", () => ({ getOffers: async (_l: string, o: unknown) => (strictFlags.push(o), [{ slug: "audit", title: "Audit" }]) }));
+vi.mock("@/lib/api/projects", () => ({ getProjects: (_l: string, o: unknown) => (strictFlags.push(o), projects()) }));
 
 const { SiteAbout } = await import("./SiteAbout");
 
@@ -58,6 +62,10 @@ describe("SiteAbout — page À propos pilotée par le back-office", () => {
   beforeEach(() => {
     about.mockResolvedValue(content({ heroTitle: "Ingénieur et", heroTitleAccent: "architecte logiciel." }));
     domains.mockResolvedValue([domain]);
+    experiences.mockResolvedValue([]);
+    courses.mockResolvedValue([]);
+    projects.mockResolvedValue([{ slug: "portail", title: "Portail", status: "termine" }]);
+    strictFlags.length = 0;
   });
 
   it("titre, sections et domaines viennent du back-office (plus de textes en dur)", async () => {
@@ -93,5 +101,30 @@ describe("SiteAbout — page À propos pilotée par le back-office", () => {
     about.mockResolvedValue(content());
     domains.mockResolvedValue(null);
     await expect(SiteAbout({ locale: "fr" })).rejects.toThrow(/indisponible/);
+  });
+
+  it("toutes les listes sont lues en mode strict : une API en panne bloque la régénération", async () => {
+    render(await SiteAbout({ locale: "fr" }));
+    expect(strictFlags).toEqual([{ strict: true }, { strict: true }, { strict: true }, { strict: true }]);
+
+    projects.mockRejectedValue(new Error("API /projects indisponible."));
+    await expect(SiteAbout({ locale: "fr" })).rejects.toThrow(/indisponible/);
+  });
+
+  it("sous-menu : jamais de lien vers une section masquée ; colonnes vides du parcours masquées", async () => {
+    domains.mockResolvedValue([]);
+    projects.mockResolvedValue([]);
+    about.mockResolvedValue(content({ learningText: "" }));
+    const { container } = render(await SiteAbout({ locale: "fr" }));
+
+    const links = [...container.querySelectorAll("nav.sub a")].map((a) => a.getAttribute("href") ?? "");
+    expect(links.some((h) => h.includes("competences"))).toBe(false);
+    expect(links.some((h) => h.includes("realisations"))).toBe(false);
+    expect(links.some((h) => h.includes("parcours"))).toBe(true);
+    expect(container.querySelectorAll(".pgrid > div")).toHaveLength(0);
+
+    experiences.mockResolvedValue([{ id: 1, role: "Responsable", company: "X", startDate: "2021-01-01", endDate: null, description: "" }]);
+    const again = render(await SiteAbout({ locale: "fr" }));
+    expect(again.container.querySelectorAll(".pgrid > div")).toHaveLength(1);
   });
 });
