@@ -12,8 +12,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
  * minimum requis pour un code de permission donné (ex: ARTICLE_EDIT).
  *
  * Ne couvre QUE les Voters de pur seuil de rôle sans logique métier mêlée
- * (Article, Contact, Course, Dashboard, Finance, Quote, Skill, SupportTicket,
- * Testimonial — cf. AbstractRoleVoter). Volontairement absents de ce
+ * (Article, Contact, Course, Dashboard, Finance, Quote, Skill, SupportTicket
+ * — cf. AbstractRoleVoter). Volontairement absents de ce
  * catalogue : ProjectVoter/UserVoter (seuils mélangés à des garde-fous
  * critiques : auto-suppression, protection Super Admin, verrou d'état de
  * projet) et SecurityVoter/SettingsVoter (gouvernent la sécurité et les

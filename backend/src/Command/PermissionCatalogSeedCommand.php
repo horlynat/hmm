@@ -85,13 +85,6 @@ class PermissionCatalogSeedCommand extends Command
         'SUPPORT_TICKET_RESOLVE' => ['label' => 'Résoudre un ticket de support', 'category' => 'Support', 'defaultRole' => 'ROLE_MODERATOR'],
         'SUPPORT_TICKET_DELETE' => ['label' => 'Supprimer un ticket de support', 'category' => 'Support', 'defaultRole' => 'ROLE_MANAGER'],
 
-        // Témoignages (TestimonialVoter)
-        'TESTIMONIAL_VIEW' => ['label' => 'Voir les témoignages', 'category' => 'Témoignages', 'defaultRole' => 'ROLE_MODERATOR'],
-        'TESTIMONIAL_CREATE' => ['label' => 'Créer un témoignage', 'category' => 'Témoignages', 'defaultRole' => 'ROLE_MODERATOR'],
-        'TESTIMONIAL_EDIT' => ['label' => 'Modifier un témoignage', 'category' => 'Témoignages', 'defaultRole' => 'ROLE_MODERATOR'],
-        'TESTIMONIAL_APPROVE' => ['label' => 'Approuver un témoignage', 'category' => 'Témoignages', 'defaultRole' => 'ROLE_MODERATOR'],
-        'TESTIMONIAL_REJECT' => ['label' => 'Refuser un témoignage', 'category' => 'Témoignages', 'defaultRole' => 'ROLE_MODERATOR'],
-        'TESTIMONIAL_DELETE' => ['label' => 'Supprimer un témoignage', 'category' => 'Témoignages', 'defaultRole' => 'ROLE_MANAGER'],
     ];
 
     public function __construct(

@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Domaines de compétence{% endblock %}
+
+{% block body %}
+	{% set n = domains|length %}
+	<twig:PageHeader title="Domaines de compétence" :subtitle="n ~ ' domaine' ~ (n > 1 ? 's' : '') ~ ' — les onglets « Compétences » de la page À propos.'" icon="ti-layout-grid">
+		<a href="{{ path('admin_skill_domain_create') }}" class="btn btn-primary gap-2">
+			<span class="ti ti-plus" aria-hidden="true"></span>
+			<span>Ajouter un domaine</span>
+		</a>
+	</twig:PageHeader>
+
+	<div class="table-wrap">
+		<table class="table">
+			<caption class="sr-only">Liste des domaines de compétence</caption>
+			<thead>
+				<tr>
+					<th scope="col" class="w-16">Ordre</th>
+					<th scope="col">Domaine</th>
+					<th scope="col" class="w-40 text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for domain in domains %}
+					<tr>
+						<td class="font-mono text-xs opacity-70">{{ domain.position }}</td>
+						<td>
+							<div class="font-bold text-(--color-brand-dark)">{{ domain.title }}</div>
+							<div class="text-xs opacity-70 mt-0.5">{{ domain.short }}</div>
+						</td>
+						<td>
+							<div class="flex items-center justify-end gap-1">
+								<a href="{{ path('admin_skill_domain_update', {'id': domain.id}) }}" class="btn btn-ghost btn-icon text-amber-600" aria-label="Modifier {{ domain.title }}">
+									<span class="ti ti-edit text-lg" aria-hidden="true"></span>
+								</a>
+								<twig:DeleteModal :id="domain.id" :action="path('admin_skill_domain_delete', {id: domain.id})" :token="csrf_token('admin_skill_domain_delete_' ~ domain.id)" :label="domain.title" entity="ce domaine" />
+							</div>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="3"><twig:EmptyState text="Aucun domaine : la section Compétences est masquée sur le site." icon="ti-layout-grid" /></td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% endblock %}

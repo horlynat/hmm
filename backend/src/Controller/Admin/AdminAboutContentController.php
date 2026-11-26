@@ -17,8 +17,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
- * Édition du contenu narratif de la page "À propos" (hero, profil, bio,
- * vision, différenciateurs, à-côtés, appel à l'action) — ligne unique,
+ * Édition des textes de la page "À propos" (en-tête, vision, qui je suis,
+ * titres de sections, parcours, appel à l'action) — ligne unique,
  * cf. AdminConfigController.
  *
  * 🔒 Sécurité : réservé à ROLE_ADMIN.
@@ -48,14 +48,6 @@ class AdminAboutContentController extends AbstractController
                 $content->setProfileImagePath($result['path']);
             }
 
-            $content->setBeyondLanguages($this->parseLines((string) $form->get('beyondLanguages')->getData()));
-            $languagesEn = $this->parseLines((string) $form->get('beyondLanguagesEn')->getData());
-            $content->setBeyondLanguagesEn($languagesEn ?: null);
-
-            $content->setBeyondInterests($this->parseLines((string) $form->get('beyondInterests')->getData()));
-            $interestsEn = $this->parseLines((string) $form->get('beyondInterestsEn')->getData());
-            $content->setBeyondInterestsEn($interestsEn ?: null);
-
             $user = $this->getUser();
             $content->setUpdatedAt(new \DateTimeImmutable());
             $content->setUpdatedBy($user instanceof User ? $user : null);
@@ -81,11 +73,5 @@ class AdminAboutContentController extends AbstractController
             'content' => $content,
             'form' => $form,
         ]);
-    }
-
-    /** @return string[] */
-    private function parseLines(string $raw): array
-    {
-        return array_values(array_filter(array_map('trim', preg_split('/\r?\n/', $raw) ?: [])));
     }
 }

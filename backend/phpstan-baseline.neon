@@ -180,8 +180,3 @@ parameters:
 			count: 1
 			path: src/State/QuoteRequestCreateProcessor.php
 
-		-
-			message: '#^Class App\\State\\TestimonialCreateProcessor implements generic interface ApiPlatform\\State\\ProcessorInterface but does not specify its types\: T1, T2$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/State/TestimonialCreateProcessor.php

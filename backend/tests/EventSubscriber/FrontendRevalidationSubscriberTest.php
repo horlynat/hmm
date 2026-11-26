@@ -16,7 +16,7 @@ use App\Entity\ProjectInfo;
 use App\Entity\Skill;
 use App\Entity\SkillCategory;
 use App\Entity\Tag;
-use App\Entity\Testimonial;
+use App\Entity\SkillDomain;
 use App\Entity\User;
 use App\EventSubscriber\FrontendRevalidationSubscriber;
 use App\Message\RevalidateFrontendMessage;
@@ -70,7 +70,7 @@ final class FrontendRevalidationSubscriberTest extends TestCase
         yield 'Skill' => [new Skill(), ['skills']];
         yield 'SkillCategory (invalide aussi skills)' => [new SkillCategory(), ['skill-categories', 'skills']];
         yield 'HomeContent' => [new HomeContent(), ['home-content']];
-        yield 'Testimonial' => [new Testimonial(), ['testimonials']];
+        yield 'SkillDomain' => [new SkillDomain(), ['skill-domains']];
         yield 'Course' => [new Course(), ['courses']];
         yield 'AboutContent' => [new AboutContent(), ['about-content']];
         yield 'AiAssistantSettings' => [new AiAssistantSettings(), ['ai-assistant']];
@@ -78,7 +78,6 @@ final class FrontendRevalidationSubscriberTest extends TestCase
         yield 'Offer' => [new Offer(), ['offers']];
         yield 'Media rattaché à un Project' => [(new Media())->setProject(new Project()), ['projects']];
         yield 'Media rattaché à un Article' => [(new Media())->setArticle(new Article()), ['articles']];
-        yield 'Media rattaché à un Testimonial' => [(new Media())->setTestimonial(new Testimonial()), ['testimonials']];
     }
 
     public function testUnrelatedEntityIsIgnored(): void
@@ -121,10 +120,10 @@ final class FrontendRevalidationSubscriberTest extends TestCase
         });
 
         $subscriber = new FrontendRevalidationSubscriber($bus);
-        $subscriber->postRemove($this->createArgs(new Testimonial()));
+        $subscriber->postRemove($this->createArgs(new SkillDomain()));
         $subscriber->postFlush();
 
-        $this->assertSame(['testimonials'], $dispatched);
+        $this->assertSame(['skill-domains'], $dispatched);
     }
 
     /**
@@ -145,14 +144,14 @@ final class FrontendRevalidationSubscriberTest extends TestCase
             return new Envelope($message);
         });
 
-        $media = new Media(); // ni project, ni article, ni testimonial
+        $media = new Media(); // ni project, ni article
 
         $subscriber = new FrontendRevalidationSubscriber($bus);
         $subscriber->postRemove($this->createArgs($media));
         $subscriber->postFlush();
 
         sort($dispatched);
-        $this->assertSame(['articles', 'projects', 'testimonials'], $dispatched);
+        $this->assertSame(['articles', 'projects'], $dispatched);
     }
 
     public function testEmptyFlushDispatchesNothing(): void

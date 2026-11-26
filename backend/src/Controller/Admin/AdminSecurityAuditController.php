@@ -65,7 +65,8 @@ class AdminSecurityAuditController extends AbstractController
 
     /** Types d'entités trackées, dans l'ordre d'affichage du filtre. */
     private const TYPES = [
-        'Project', 'Invoice', 'Article', 'Skill', 'SkillCategory', 'Tag', 'Course', 'Experience',
+        'Project', 'Invoice', 'Article', 'Skill', 'SkillCategory', 'SkillDomain', 'Tag', 'Course', 'Experience',
+        // Testimonial : entité supprimée (2026-11-26), gardé pour filtrer l'historique.
         'Testimonial', 'ContactMessage', 'QuoteRequest', 'User', 'BlockedIp', 'LoginHistory', 'FailedLoginAttempt',
         'PermissionDefinition',
     ];

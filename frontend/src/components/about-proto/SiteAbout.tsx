@@ -6,6 +6,7 @@ import { getCourses } from "@/lib/api/courses";
 import { getExperiences } from "@/lib/api/experiences";
 import { getOffers } from "@/lib/api/offers";
 import { getProjects } from "@/lib/api/projects";
+import { getSkillDomains } from "@/lib/api/skill-domains";
 import { sortProjectsForDisplay } from "@/lib/projects/sortForDisplay";
 import { getExcerpt } from "@/lib/text";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -20,8 +21,10 @@ import { SkillTabs, type SkillDomain } from "./SkillTabs";
  * .sub .vision .vm3 .hzn .ab .pts .skt #realisations .pstat .pgrid .ptl
  * .plearn`), alimentée par le back-office : textes (Admin › À propos,
  * FR/EN), expériences, formations, réalisations et offres publiées.
- * Les domaines de compétence (texte, outils) viennent des traductions ;
- * leurs offres et leur preuve ne sont liées que si elles sont publiées.
+ * Tous les textes viennent du back-office (Contenu › Page « À propos » et
+ * Domaines de compétence) ; seuls les petits libellés (« Ma vision »,
+ * « Expérience »…) restent dans les traductions. Offres et preuve d'un
+ * domaine ne sont liées que si elles sont publiées.
  */
 const year = (iso: string) => new Date(iso).getUTCFullYear();
 
@@ -39,34 +42,57 @@ function courseYears(c: Course): string {
 }
 
 export async function SiteAbout({ locale }: { locale: string }) {
-  const [t, tl, about, experiences, courses, offers, projects] = await Promise.all([
-    getTranslations({ locale, namespace: "aboutPage" }),
-    getTranslations({ locale, namespace: "catalog" }),
-    getAboutContent(locale),
-    getExperiences(locale),
-    getCourses(locale),
-    getOffers(locale),
-    getProjects(locale),
-  ]);
+  const [t, tl, about, rawDomains, experiences, courses, offers, projects] =
+    await Promise.all([
+      getTranslations({ locale, namespace: "aboutPage" }),
+      getTranslations({ locale, namespace: "catalog" }),
+      getAboutContent(locale),
+      getSkillDomains(locale),
+      getExperiences(locale, { strict: true }),
+      getCourses(locale, { strict: true }),
+      getOffers(locale, { strict: true }),
+      getProjects(locale, { strict: true }),
+    ]);
   // `new Date()`, pas `Date.now()` (même convention que Footer.tsx pour
   // l'année courante) : page revalidée toutes les heures (cf. page.tsx),
   // donc cette lecture de l'heure reste fraîche en pratique.
   const now = new Date().getTime();
-  const monthYear = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", { month: "long", year: "numeric" });
+  const monthYear = new Intl.DateTimeFormat(
+    locale === "en" ? "en-GB" : "fr-FR",
+    { month: "long", year: "numeric" },
+  );
 
-  const domains: SkillDomain[] = (
-    t.raw("domains") as (Omit<SkillDomain, "offers" | "proof"> & { offers: string[]; proof: string })[]
-  ).map((d) => {
-    const proof = d.proof ? projects.find((p) => p.slug === d.proof) : undefined;
+  // API injoignable (build ou régénération) : on refuse de produire une page
+  // amputée. En régénération, Next garde alors la dernière bonne version au
+  // lieu de mettre en cache une page vide (incident du 2026-11-26).
+  if (about === null || rawDomains === null) {
+    throw new Error("API À propos indisponible : page non régénérée.");
+  }
+
+  const domains: SkillDomain[] = rawDomains.map((d) => {
+    const proof = d.proofProjectSlug
+      ? projects.find((p) => p.slug === d.proofProjectSlug)
+      : undefined;
     return {
-      ...d,
-      offers: d.offers.map((slug) => offers.find((o) => o.slug === slug)).filter((o) => o !== undefined),
+      icon: d.icon,
+      title: d.title,
+      short: d.short,
+      text: d.text,
+      do: d.do,
+      tools: d.tools,
+      offers: d.offerSlugs
+        .map((slug) => offers.find((o) => o.slug === slug))
+        .filter((o) => o !== undefined),
       proof: proof ? { slug: proof.slug, title: proof.title } : null,
     };
   });
 
-  const pillars = about ? [about.visionPillar, about.missionPillar, about.ambitionPillar] : [];
-  const horizon = about ? [about.visionTodayText, about.horizonMidText, about.visionTomorrowText] : [];
+  const pillars = about
+    ? [about.visionPillar, about.missionPillar, about.ambitionPillar]
+    : [];
+  const horizon = about
+    ? [about.visionTodayText, about.horizonMidText, about.visionTomorrowText]
+    : [];
   const why = about
     ? [
         [about.why1Title, about.why1Desc],
@@ -77,9 +103,20 @@ export async function SiteAbout({ locale }: { locale: string }) {
         [about.why5Title, about.why5Desc],
       ].filter(([b]) => b)
     : [];
-  const sortedExperiences = [...experiences].sort((a, b) => b.startDate.localeCompare(a.startDate));
-  const sortedCourses = [...courses].sort((a, b) => b.startDate.localeCompare(a.startDate));
-  const sub = ["vision", "qui", "competences", "realisations", "parcours"] as const;
+  const sortedExperiences = [...experiences].sort((a, b) =>
+    b.startDate.localeCompare(a.startDate),
+  );
+  const sortedCourses = [...courses].sort((a, b) =>
+    b.startDate.localeCompare(a.startDate),
+  );
+  // Sous-menu : seulement les sections réellement affichées (jamais de lien mort).
+  const sub = (
+    ["vision", "qui", "competences", "realisations", "parcours"] as const
+  ).filter(
+    (id) =>
+      (id !== "competences" || domains.length > 0) &&
+      (id !== "realisations" || projects.length > 0),
+  );
 
   return (
     <>
@@ -92,17 +129,26 @@ export async function SiteAbout({ locale }: { locale: string }) {
             {about && (
               <>
                 <h1>
-                  {about.heroTitle} <span className="grad">{about.heroTitleAccent}</span>
+                  {about.heroTitle}{" "}
+                  <span className="grad">{about.heroTitleAccent}</span>
                 </h1>
                 <p>{about.heroSub}</p>
               </>
             )}
             <div className="row4" style={{ marginTop: "28px" }}>
-              <a className="b b-w" href={whatsappLink(t("talkMessage"))} target="_blank" rel="noopener noreferrer">
+              <a
+                className="b b-w"
+                href={whatsappLink(t("talkMessage"))}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <ProtoIcon name="wa" />
                 {t("talk")}
               </a>
-              <Link className="b b-g" href={{ pathname: "/a-propos", hash: "realisations" }}>
+              <Link
+                className="b b-g"
+                href={{ pathname: "/a-propos", hash: "realisations" }}
+              >
                 {t("seeProjects")}
               </Link>
             </div>
@@ -111,7 +157,13 @@ export async function SiteAbout({ locale }: { locale: string }) {
             <div className="pfr">
               <div className="pph">
                 {about?.profileImagePath ? (
-                  <Image src={about.profileImagePath} alt={about.profileName} fill sizes="380px" style={{ objectFit: "cover" }} />
+                  <Image
+                    src={about.profileImagePath}
+                    alt={about.profileName}
+                    fill
+                    sizes="380px"
+                    style={{ objectFit: "cover" }}
+                  />
                 ) : (
                   <SilhouetteArt />
                 )}
@@ -188,7 +240,7 @@ export async function SiteAbout({ locale }: { locale: string }) {
               <h2 className="h2s" style={{ marginTop: "16px" }}>
                 {about.bioTitle}
               </h2>
-              {[about.bioP1, about.bioP2, about.bioP3].filter(Boolean).map((p) => (
+              {[about.bioP1, about.bioP2].filter(Boolean).map((p) => (
                 <p key={p}>{p}</p>
               ))}
             </div>
@@ -209,26 +261,31 @@ export async function SiteAbout({ locale }: { locale: string }) {
         </section>
       )}
 
-      <section className="sec tint" id="competences">
-        <div className="w">
-          <div className="sh">
-            <span className="kick">{t("skillsKick")}</span>
-            <h2>{t("skillsTitle")}</h2>
-            <p>{t("skillsLede")}</p>
+      {domains.length > 0 && (
+        <section className="sec tint" id="competences">
+          <div className="w">
+            <div className="sh">
+              <span className="kick">{t("skillsKick")}</span>
+              {about.skillsTitle && <h2>{about.skillsTitle}</h2>}
+              {about.skillsLede && <p>{about.skillsLede}</p>}
+            </div>
+            <SkillTabs domains={domains} note={about.skillsNote} />
           </div>
-          <SkillTabs domains={domains} />
-        </div>
-      </section>
+        </section>
+      )}
 
       {projects.length > 0 && (
         <section className="sec" id="realisations">
           <div className="w">
             <div className="sh">
               <span className="kick">{t("projectsKick")}</span>
-              <h2>{t("projectsTitle")}</h2>
-              <p>{t("projectsLede")}</p>
+              {about.projectsTitle && <h2>{about.projectsTitle}</h2>}
+              {about.projectsLede && <p>{about.projectsLede}</p>}
             </div>
-            <ProjectsShowcase locale={locale} projects={sortProjectsForDisplay(projects)} />
+            <ProjectsShowcase
+              locale={locale}
+              projects={sortProjectsForDisplay(projects)}
+            />
           </div>
         </section>
       )}
@@ -237,8 +294,8 @@ export async function SiteAbout({ locale }: { locale: string }) {
         <div className="w">
           <div className="sh">
             <span className="kick">{t("pathKick")}</span>
-            <h2>{t("pathTitle")}</h2>
-            <p>{t("pathLede")}</p>
+            {about.pathTitle && <h2>{about.pathTitle}</h2>}
+            {about.pathLede && <p>{about.pathLede}</p>}
           </div>
           {about && about.journeyStats.length > 0 && (
             <div className="pstat">
@@ -251,65 +308,106 @@ export async function SiteAbout({ locale }: { locale: string }) {
             </div>
           )}
           <div className="pgrid">
-            <div>
-              <h3 className="pch">
-                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="7" width="20" height="14" rx="2" />
-                  <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2M2 13h20" />
-                </svg>
-                {t("experience")}
-              </h3>
-              <ol className="ptl">
-                {sortedExperiences.map((e) => (
-                  <li key={e.id} className={e.endDate ? "" : "now"}>
-                    <span className="py">{experienceYears(e)}</span>
-                    <div>
-                      <b>{e.role}</b>
-                      <small>{e.company}</small>
-                      {e.description && <p>{getExcerpt(e.description, 180)}</p>}
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
-            <div>
-              <h3 className="pch">
-                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 10 12 5 2 10l10 5 10-5z" />
-                  <path d="M6 12v5c3 2 9 2 12 0v-5" />
-                </svg>
-                {t("education")}
-              </h3>
-              <ol className="ptl">
-                {sortedCourses.map((c) => {
-                  const upcoming = new Date(c.startDate).getTime() > now;
-                  const details = [c.institution, c.description ? getExcerpt(c.description, 100) : ""].filter(Boolean).join(" · ");
-                  return (
-                    <li key={c.id} className={upcoming ? "next" : ""}>
-                      <span className="py">
-                        {upcoming ? t("from", { date: monthYear.format(new Date(c.startDate)) }) : courseYears(c)}
-                        {upcoming && <span className="soon2">{t("soon")}</span>}
-                      </span>
+            {sortedExperiences.length > 0 && (
+              <div>
+                <h3 className="pch">
+                  <svg
+                    aria-hidden="true"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="2" y="7" width="20" height="14" rx="2" />
+                    <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2M2 13h20" />
+                  </svg>
+                  {t("experience")}
+                </h3>
+                <ol className="ptl">
+                  {sortedExperiences.map((e) => (
+                    <li key={e.id} className={e.endDate ? "" : "now"}>
+                      <span className="py">{experienceYears(e)}</span>
                       <div>
-                        <b>{c.title}</b>
-                        {details && <small>{details}</small>}
+                        <b>{e.role}</b>
+                        <small>{e.company}</small>
+                        {e.description && (
+                          <p>{getExcerpt(e.description, 180)}</p>
+                        )}
                       </div>
                     </li>
-                  );
-                })}
-              </ol>
-              {about?.learningText && (
-                <div className="plearn">
-                  <b>{t("learning")}</b>
-                  <span>{about.learningText}</span>
-                </div>
-              )}
-            </div>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {(sortedCourses.length > 0 || about.learningText) && (
+              <div>
+                <h3 className="pch">
+                  <svg
+                    aria-hidden="true"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M22 10 12 5 2 10l10 5 10-5z" />
+                    <path d="M6 12v5c3 2 9 2 12 0v-5" />
+                  </svg>
+                  {t("education")}
+                </h3>
+                <ol className="ptl">
+                  {sortedCourses.map((c) => {
+                    const upcoming = new Date(c.startDate).getTime() > now;
+                    const details = [
+                      c.institution,
+                      c.description ? getExcerpt(c.description, 100) : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ");
+                    return (
+                      <li key={c.id} className={upcoming ? "next" : ""}>
+                        <span className="py">
+                          {upcoming
+                            ? t("from", {
+                                date: monthYear.format(new Date(c.startDate)),
+                              })
+                            : courseYears(c)}
+                          {upcoming && (
+                            <span className="soon2">{t("soon")}</span>
+                          )}
+                        </span>
+                        <div>
+                          <b>{c.title}</b>
+                          {details && <small>{details}</small>}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+                {about.learningText && (
+                  <div className="plearn">
+                    <b>{t("learning")}</b>
+                    <span>{about.learningText}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      <ProtoCta locale={locale} title={about?.ctaTitle || undefined} text={about?.ctaSub || undefined} />
+      <ProtoCta
+        locale={locale}
+        title={about?.ctaTitle || undefined}
+        text={about?.ctaSub || undefined}
+      />
     </>
   );
 }

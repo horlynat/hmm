@@ -214,21 +214,27 @@ final class AiAssistantOwnerProfileTest extends WebTestCase
     }
 
     /**
-     * 2e contre-audit : seuls les champs AFFICHÉS sur la page (donc relus) font
-     * foi — ceux saisis au back-office mais visibles nulle part n'y entrent pas.
+     * Les onglets « Compétences » de la page (Domaines de compétence) sont
+     * affichés : l'assistant les reçoit, dans leur ordre, en texte simple —
+     * jamais les identifiants internes (slugs d'offres, de réalisation).
      */
-    public function testFieldsNotDisplayedOnTheAboutPageNeverReachTheProfile(): void
+    public function testSkillDomainsReachTheProfileInTheirOrder(): void
     {
-        foreach (['profileLocation' => 'NONAFF-LIEU', 'profileLanguages' => 'NONAFF-LANGUES', 'profileWorkMode' => 'NONAFF-MODE', 'profileAlso' => 'NONAFF-AUSSI', 'heroEyebrow' => 'NONAFF-SURTITRE'] as $field => $value) {
-            $this->set($this->about(), $field, $value);
-        }
-        $this->set($this->about(), 'beyondInterests', ['NONAFF-INTERET']);
-        $this->set($this->about(), 'beyondLanguages', ['NONAFF-LANGUE']);
+        $this->em->persist((new \App\Entity\SkillDomain())
+            ->setPosition(-1)->setIcon('lock')->setTitle('DOMAINE-TEST')->setTitleEn('TEST-AREA')
+            ->setText('Présentation du domaine.')->setDoItems(['Auditer', 'Durcir'])->setTools(['OWASP'])
+            ->setOfferSlugs(['slug-offre-interne'])->setProofProjectSlug('slug-preuve-interne'));
         $this->em->flush();
 
-        $this->ask('Qui est Horlynat ?');
+        $this->ask('Quelles sont ses compétences ?');
+        $profile = $this->profileBlock();
 
-        self::assertStringNotContainsString('NONAFF', $this->profileBlock());
+        self::assertStringContainsString("Domaines de compétence\n- DOMAINE-TEST : Présentation du domaine. Ce qu'il fait : Auditer ; Durcir. Outils du moment : OWASP.", $profile);
+        self::assertStringNotContainsString('slug-offre-interne', $profile);
+        self::assertStringNotContainsString('slug-preuve-interne', $profile);
+
+        $this->ask('What are his skills?', 'en');
+        self::assertStringContainsString('- TEST-AREA : Présentation du domaine. What he does: Auditer ; Durcir. Current tools: OWASP.', $this->profileBlock());
     }
 
     public function testAlwaysLearningSitsWithEducationAndIncompleteItemsAreDroppedLikeOnThePage(): void
@@ -287,6 +293,9 @@ final class AiAssistantOwnerProfileTest extends WebTestCase
         // partage cette connexion et voit la table vide ; aucune autre ne voit rien.
         $conn = $this->em->getConnection();
         $conn->executeStatement('DELETE FROM about_content');
+        // Rien d'autre de renseigné non plus (domaines, formations) : profil vide.
+        $conn->executeStatement('DELETE FROM skill_domain');
+        $conn->executeStatement('DELETE FROM course');
         $this->em->clear();
 
         $this->ask('Qui est Horlynat ?');

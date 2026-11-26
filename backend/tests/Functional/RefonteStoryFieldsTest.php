@@ -345,7 +345,7 @@ final class RefonteStoryFieldsTest extends FunctionalTestCase
         $this->client->submit($form, $values + ['about_content[why5Title]' => '', 'about_content[why5Desc]' => '']);
         self::assertResponseRedirects('/admin/content/about/');
         $this->em()->clear();
-        self::assertNull(static::getContainer()->get(AboutContentRepository::class)->getContent()->getWhy5Title());
+        self::assertEmpty(static::getContainer()->get(AboutContentRepository::class)->getContent()->getWhy5Title(), 'Vide (chaîne vide ou null) : le site masque le point.');
 
         $crawler = $this->client->request('GET', '/admin/content/about/');
         $form = $crawler->filter('form[name="about_content"]')->form();

@@ -179,7 +179,8 @@ final class AboutContentR5Test extends FunctionalTestCase
         yield 'vision en UTF-8 invalide' => [['about_content[visionPillar]' => "x\xC3\x28"]];
         // Champ obligatoire vidé (attribut HTML `required` contourné) : avant,
         // null arrivait dans un setter `string` => TypeError => 500.
-        yield 'bio obligatoire vide' => [['about_content[bioP3]' => '']];
+        yield 'nom obligatoire vide' => [['about_content[profileName]' => '']];
+        yield 'sous-titre obligatoire vide' => [['about_content[heroSub]' => '']];
         yield 'titre obligatoire blanc' => [['about_content[heroTitle]' => '   ']];
     }
 
