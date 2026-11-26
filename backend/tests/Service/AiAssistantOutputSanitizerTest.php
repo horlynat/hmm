@@ -157,6 +157,8 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(["De\u{200D}bian"])]
     #[\PHPUnit\Framework\Attributes\TestWith(["Mono\u{200B}log"])]
     #[\PHPUnit\Framework\Attributes\TestWith(["Supervision Net\u{200B}data."])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['alertes betterstack.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['supervision netdata.'])]
     public function testFlagsDeployedSecurityConfiguration(string $answer): void
     {
         $result = (new AiAssistantOutputSanitizer())->sanitize($answer);
@@ -192,6 +194,7 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(['Une crowd security.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Licence Apache 2.0.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Pas un monologue.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Accès : admin / admin / user.'])]
     public function testDoesNotFlagCompetencesOrCommonWords(string $answer): void
     {
         self::assertFalse((new AiAssistantOutputSanitizer())->sanitize($answer)['confidential'], $answer);
