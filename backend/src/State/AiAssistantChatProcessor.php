@@ -123,7 +123,10 @@ final class AiAssistantChatProcessor implements ProcessorInterface
             // Toujours Sonnet (cf. docblock de classe), corpus complet (mis en
             // cache côté ClaudeClient).
             $chunks = $this->chunkRepository->findAllPublic();
-            $systemPrompt = $this->buildSystemPrompt($chunks, $locale, $this->offerCatalog->render($locale), $this->offerCatalog->renderDetails($locale), $this->ownerProfile->render($locale));
+            // Défense en profondeur : même les textes publics (catalogue, profil)
+            // passent le filtre de configuration avant d'atteindre le modèle.
+            $s = $this->outputSanitizer;
+            $systemPrompt = $this->buildSystemPrompt($chunks, $locale, $s->withoutSecurityConfig($this->offerCatalog->render($locale)), $s->withoutSecurityConfig($this->offerCatalog->renderDetails($locale)), $s->withoutSecurityConfig($this->ownerProfile->render($locale)));
             $result = $this->claudeClient->ask($systemPrompt, $data->getHistory(), $question, true);
         } catch (\Throwable $e) {
             $this->logger->error('AiAssistantChatProcessor : pipeline conversationnel en échec.', ['error' => $e->getMessage()]);
@@ -147,7 +150,7 @@ final class AiAssistantChatProcessor implements ProcessorInterface
         // réponse qui n'a jamais été montrée au visiteur. Le front garde alors les
         // puces précédentes plutôt que de vider la barre (cf. AiAssistantWidget).
         // Refus écrit par le modèle (consigne suivie) : remplacé par le texte
-        // canonique, sans suggestions — strictement identique au refus du verrou.
+        // canonique, sans suggestions — identique, pour le refus « produit », à celui du verrou.
         $answer = $this->outputSanitizer->canonicalRefusal($answer) ?? $answer;
         $suggestions = ($sanitized['leaked'] || $confidential || $this->outputSanitizer->isFixedRefusal($answer))
             ? []
@@ -220,7 +223,7 @@ final class AiAssistantChatProcessor implements ProcessorInterface
         // questionnaire de devis) ; libellé distinct du bouton WhatsApp « Écrire
         // à Horlynat » du mode dégradé.
         $contactLink = 'en' === $locale ? '[Send a message](/contact?mode=direct)' : '[Envoyer un message](/contact?mode=direct)';
-        // Refus imposés mot pour mot : identiques à ceux du verrou de sortie (anti-oracle).
+        // Refus imposés mot pour mot : le refus « produit » est aussi celui du verrou de sortie (anti-oracle).
         $productRefusal = $this->outputSanitizer->confidentialRefusal($locale);
         $clientRefusal = $this->outputSanitizer->clientRefusal($locale);
 

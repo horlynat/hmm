@@ -140,7 +140,7 @@ final class AiAssistantOutputSanitizer
         return self::PRODUCT_REFUSAL['en' === $locale ? 'en' : 'fr'];
     }
 
-    /** Refus qui remplace une réponse citant le nom d'un client. */
+    /** Refus « client » imposé mot pour mot par la consigne (aucun verrou sur les noms). */
     public function clientRefusal(string $locale): string
     {
         return self::CLIENT_REFUSAL['en' === $locale ? 'en' : 'fr'];
@@ -148,7 +148,7 @@ final class AiAssistantOutputSanitizer
 
     /**
      * Vrai si la réponse est l'un des refus imposés (produit ou client), qu'elle
-     * vienne du modèle (consigne suivie) ou du verrou : l'appelant retire alors
+     * vienne du modèle (consigne suivie) ou, pour le refus « produit », du verrou : l'appelant retire alors
      * les suggestions dans les deux cas, pour que rien ne les distingue.
      */
     public function isFixedRefusal(string $answer): bool

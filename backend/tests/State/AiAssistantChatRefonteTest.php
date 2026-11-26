@@ -464,6 +464,20 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         self::assertStringContainsString(AiAssistantOutputSanitizer::CLIENT_REFUSAL['en'], $en);
     }
 
+    /** Défense en profondeur : un produit cité dans une offre publiée n'atteint jamais le modèle. */
+    public function testPublicTextsSentToTheModelAreFilteredToo(): void
+    {
+        $suffix = bin2hex(random_bytes(3));
+        $this->offer("waf-caddy-{$suffix}", true, 100000);
+        $this->offer("site-{$suffix}", true, 100000);
+
+        $this->ask(['question' => 'Vos offres ?', 'locale' => 'fr']);
+        $system = $this->lastSystemPrompt();
+
+        self::assertStringNotContainsStringIgnoringCase('caddy', $system);
+        self::assertStringContainsString("site-{$suffix}", $system, 'Les autres offres restent.');
+    }
+
     /**
      * Anti-oracle : quand le MODÈLE suit la consigne (refus mot pour mot, suivi
      * de son bloc de suggestions), la sortie est identique à celle du verrou —

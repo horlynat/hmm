@@ -121,7 +121,7 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         $effectiveQuestion = '' !== $question ? $question : $this->defaultSeedQuestion($locale);
 
         try {
-            $systemPrompt = $this->buildSystemPrompt($resolved['title'], $resolved['content'], $data->getContentType(), $locale);
+            $systemPrompt = $this->buildSystemPrompt($this->outputSanitizer->withoutSecurityConfig($resolved['title']), $resolved['content'], $data->getContentType(), $locale);
             $result = $this->claudeClient->ask($systemPrompt, $data->getHistory(), $effectiveQuestion, true);
         } catch (\Throwable $e) {
             $this->logger->error('AiContentSummaryProcessor : pipeline en échec.', ['error' => $e->getMessage()]);
