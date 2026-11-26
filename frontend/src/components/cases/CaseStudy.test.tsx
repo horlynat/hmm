@@ -82,7 +82,7 @@ describe("CaseStudy — récit du prototype (pCase)", () => {
       }),
     );
     expect(container.querySelector(".res")?.textContent).toBe("Une société opérationnelle dès son lancement.");
-    expect(container.querySelectorAll(".br3 > div")).toHaveLength(3);
+    expect(container.querySelectorAll(".brief .br3 > div")).toHaveLength(3);
     expect([...container.querySelectorAll(".chap p.t")].map((p) => p.textContent)).toEqual(["Le contexte.", "Le défi.", "Une plateforme unique."]);
     expect(container.querySelector(".t-rich")).toBeNull(); // le récit remplace la description HTML
     expect(container.querySelector(".road li p")?.textContent).toBe("Lister les publics.");
@@ -93,17 +93,47 @@ describe("CaseStudy — récit du prototype (pCase)", () => {
     expect(getByText("Pourquoi certains détails ne sont pas publiés")).toBeTruthy();
   });
 
-  it("retombe sur les anciens champs d'une fiche antérieure au récit", async () => {
+  it("présente simplement une fiche antérieure au récit : jamais la description longue ni la pile technique", async () => {
+    const description =
+      "<h2>Le projet</h2><p>Un portail qui présente le travail. Il qualifie les demandes.</p><h2>Sécurité</h2><p>Périmètre Cloudflare, Traefik, ROLE_SUPER_ADMIN.</p>";
     const { container } = await renderCase(
-      project({ objectives: ["Simplifier le parcours"], challenges: [{ problem: "Pic", solution: "Verrou optimiste" }] }),
+      project(
+        {
+          role: "Mon rôle — Architecte logiciel",
+          objectives: ["Simplifier le parcours"],
+          challenges: [
+            { problem: "Pic de charge", solution: "Verrou optimiste" },
+            { problem: "", solution: "Sans problème : ignoré" },
+          ],
+          results: [
+            { label: "En production : Accessible publiquement", value: null },
+            { label: "Délai", value: "6 semaines" },
+          ],
+          techStack: [{ name: "Infrastructure — Docker Compose, Traefik, Cloudflare" }],
+        },
+        description,
+      ),
     );
+    const text = container.textContent ?? "";
+    // Zéro information de configuration : ni la description longue, ni la pile.
+    expect(container.querySelector(".t-rich")).toBeNull();
+    expect(container.querySelector(".chips")).toBeNull();
+    expect(text).not.toMatch(/Cloudflare|Traefik|ROLE_|Docker/);
+    // En tête : le premier paragraphe seulement (le titre « Le projet » est ignoré).
+    expect(text).toContain("Un portail qui présente le travail. Il qualifie les demandes.");
+    // Repères : rôle sans le préfixe répété, résultats chiffrés.
+    expect([...container.querySelectorAll(".facts4 dd")].map((d) => d.textContent)).toEqual(["Architecte logiciel", "6 semaines"]);
+    // Défis relevés : problème → solution, numérotés ; une entrée incomplète est ignorée.
+    expect([...container.querySelectorAll(".defis b")].map((b) => b.textContent)).toEqual(["Pic de charge"]);
+    expect(container.querySelector(".defis p")?.textContent).toBe("Verrou optimiste");
+    // Ce que ça apporte : « Titre : texte » → titre en gras.
+    expect(container.querySelector(".liv b")?.textContent).toBe("En production : ");
+    expect(container.querySelector(".liv span")?.textContent).toBe("En production : Accessible publiquement");
+    // Les objectifs bruts ne remplacent plus la démarche.
+    expect(container.querySelector(".road")).toBeNull();
     expect(container.querySelector(".res")).toBeNull();
-    expect(container.querySelector(".br3")).toBeNull();
-    expect(container.querySelector(".t-rich")?.textContent).toBe("Description du projet.");
-    expect(container.querySelector(".road li b")?.textContent).toBe("Simplifier le parcours");
-    expect(container.querySelector(".liv span")?.textContent).toBe("Verrou optimiste");
-    expect(container.querySelector(".gal")).toBeNull();
-    expect(container.querySelector(".disc")).toBeNull();
+    // Note de confidentialité toujours présente.
+    expect(container.querySelector(".disc")).not.toBeNull();
   });
 
   it("garde visibles les images au-delà des légendes", async () => {
@@ -121,5 +151,32 @@ describe("CaseStudy — récit du prototype (pCase)", () => {
     );
     expect(container.querySelector("img[onerror]")).toBeNull();
     expect(container.querySelector(".res")?.textContent).toBe(evil);
+  });
+});
+
+describe("CaseStudy — utilitaires de texte", async () => {
+  const { leadSentences, splitLabel, withoutLabelPrefix, firstParagraph } = await import("@/lib/projects/caseText");
+
+  it("coupe à une fin de phrase, sinon à un mot entier avec « … »", () => {
+    expect(leadSentences("Court.", 50)).toBe("Court.");
+    expect(leadSentences("Première phrase ici. Deuxième phrase bien plus longue que la limite.", 40)).toBe("Première phrase ici.");
+    expect(leadSentences("Un texte sans aucune ponctuation qui dépasse largement", 30)).toBe("Un texte sans aucune…");
+  });
+
+  it("sépare « Titre : texte » sans casser un texte ordinaire", () => {
+    expect(splitLabel("En production : Accessible")).toEqual({ title: "En production", text: "Accessible" });
+    expect(splitLabel("Bilingual: FR and EN")).toEqual({ title: "Bilingual", text: "FR and EN" });
+    expect(splitLabel("Aucun deux-points ici")).toEqual({ title: null, text: "Aucun deux-points ici" });
+  });
+
+  it("retire seulement un préfixe qui répète le libellé", () => {
+    expect(withoutLabelPrefix("Mon rôle — Architecte", "Mon rôle")).toBe("Architecte");
+    expect(withoutLabelPrefix("Architecte", "Mon rôle")).toBe("Architecte");
+    expect(withoutLabelPrefix("Mon rôle", "Mon rôle")).toBe("Mon rôle");
+  });
+
+  it("prend le premier paragraphe, entités décodées", () => {
+    expect(firstParagraph("<h2>Titre</h2><p>L&#39;essentiel.</p><p>Suite</p>")).toBe("L'essentiel.");
+    expect(firstParagraph("Texte brut")).toBe("Texte brut");
   });
 });
