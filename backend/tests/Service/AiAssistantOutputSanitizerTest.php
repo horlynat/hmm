@@ -215,6 +215,7 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(['React : 2 réalisations, Next.js 10 écrans.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['React 3 années.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Il a mené un audit de sécurité.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['He steadfastly refused shortcuts.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Un audit d\'infrastructure, dès le départ.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['An audit data review.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['The team also caters to SMEs.'])]

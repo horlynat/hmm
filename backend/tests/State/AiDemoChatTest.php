@@ -201,6 +201,8 @@ final class AiDemoChatTest extends WebTestCase
     public function testContextualSuggestionsAreReturnedAndNeverShownInTheBubble(): void
     {
         $this->claudeText = "Oui, sac de 25 kg à 18 000 FCFA.\n###SUGGESTIONS###\n- Je prends 2 sacs\n- Vous livrez à Bacongo ?\n- **Paiement** par MoMo ?\n###EVENT### none";
+        // Démo fictive, sans corpus du portfolio : aucun filtre « configuration »
+        // (une boutique peut parler de « sa caisse sous Ubuntu 22.04 »).
 
         self::assertSame(200, $this->post(['message' => 'Vous avez du riz ?', 'locale' => 'fr']));
 
@@ -508,5 +510,13 @@ final class AiDemoChatTest extends WebTestCase
 
         // Le quota de l'assistant du site reste intact.
         self::assertSame(200, $this->post(['question' => 'Quels sont vos délais ?', 'locale' => 'fr'], '/api/assistant/chat'));
+    }
+
+    public function testDemoSuggestionsAreNotFilteredForSecurityConfiguration(): void
+    {
+        $this->claudeText = "Oui.\n###SUGGESTIONS###\n- Votre caisse tourne sous Ubuntu 22.04 ?\n- Je prends 2 sacs\n###EVENT### none";
+        $this->post(['message' => 'Vous avez du riz ?']);
+
+        self::assertSame(['Votre caisse tourne sous Ubuntu 22.04 ?', 'Je prends 2 sacs'], $this->json()['suggestions'] ?? null);
     }
 }

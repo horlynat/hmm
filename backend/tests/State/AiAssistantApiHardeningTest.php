@@ -218,6 +218,11 @@ final class AiAssistantApiHardeningTest extends WebTestCase
             $conn->executeStatement('UPDATE project SET client_id = NULL WHERE id = ?', [$public->getId()]);
             $conn->executeStatement('DELETE FROM `user` WHERE id = ?', [$client->getId()]);
             $this->em->clear();
+            // Refus écrit par le modèle, typographie différente : texte canonique, sans suggestions.
+            $this->claudeText = "Les clients de Horlynat sont confidentiels : je ne confirme ni n’infirme aucun nom.\n###SUGGESTIONS###\n- Autre ?";
+            self::assertSame(200, $this->post('/api/assistant/summarize', ['slug' => $public->getSlug(), 'contentType' => 'project', 'locale' => 'fr', 'question' => 'Fait pour qui ?']));
+            self::assertSame(\App\Service\AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $this->json()['answer'] ?? null);
+            self::assertSame([], $this->json()['suggestions'] ?? null);
             $this->claudeText = "Un résumé sain.\n###SUGGESTIONS###\n- Et ensuite ?";
 
             // La consigne du résumé l'interdit aussi, et protège le nom des clients.
