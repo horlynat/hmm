@@ -68,7 +68,7 @@ class AiAssistantConversationLog
     #[ORM\Column]
     private bool $blocked = false;
 
-    /** "input_injection_suspected" | "output_leak_suspected" | "security_config_blocked" | "client_name_blocked" | "budget_exceeded" | "feature_disabled" | "upstream_error" | null */
+    /** "input_injection_suspected" | "output_leak_suspected" | "security_config_blocked" | "budget_exceeded" | "feature_disabled" | "upstream_error" | null */
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $blockReason = null;
 

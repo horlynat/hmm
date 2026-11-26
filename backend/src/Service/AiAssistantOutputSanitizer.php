@@ -7,7 +7,8 @@ namespace App\Service;
  * longueur, détection de fuite du system prompt/des balises de délimitation
  * du contexte RAG, liste blanche d'hôtes dans les liens markdown (cf. §4.5 du
  * document d'architecture assistant IA), et verrous « zéro information de
- * sécurité » / « client confidentiel » (exigences du propriétaire, 2026-11-26).
+ * sécurité » (exigence du propriétaire, 2026-11-26) ; le refus « client » est
+ * imposé par la consigne seule, aucun verrou sur les noms (7e contre-audit).
  *
  * Principe anti-oracle (3e contre-audit) : un refus ne doit jamais permettre
  * de déduire ce qui est réellement déployé ou qui est réellement client. Les
@@ -111,21 +112,6 @@ final class AiAssistantOutputSanitizer
         'en' => 'Horlynat\'s clients are confidential: I neither confirm nor deny any name. To discuss his projects, [Send a message](/contact?mode=direct).',
     ];
 
-    /**
-     * Mots génériques d'une raison sociale : jamais suffisants, seuls, pour
-     * reconnaître un client (« Boulangerie Émeraude » ≠ « une boulangerie »).
-     */
-    private const GENERIC_NAME_WORDS = [
-        'agence', 'assurance', 'assurances', 'association', 'banque', 'boulangerie', 'brazzaville', 'cabinet', 'centre',
-        'clinique', 'company', 'compagnie', 'congo', 'conseil', 'consulting', 'digital', 'ecole', 'entreprise', 'entreprises',
-        'etablissement', 'etablissements', 'group', 'groupe', 'hotel', 'international', 'madame', 'mairie', 'ministere',
-        'monsieur', 'pharmacie', 'pointe', 'noire', 'restaurant', 'sarl', 'services', 'societe', 'solutions', 'universite',
-        // Adjectifs et noms courants d'une raison sociale.
-        'africaine', 'afrique', 'atlantique', 'central', 'centrale', 'commerce', 'energie', 'general', 'generale', 'generales',
-        'grand', 'grande', 'industrie', 'industries', 'mobile', 'money', 'national', 'nationale', 'nationales', 'nouvelle',
-        'ocean', 'petrole', 'petroles', 'premier', 'royal', 'telecom', 'transport', 'transports', 'union',
-    ];
-
     private static ?\Transliterator $transliterator = null;
 
     /**
@@ -219,58 +205,6 @@ final class AiAssistantOutputSanitizer
         return trim((string) preg_replace('/[ \t]+(\R)/u', '$1', $out));
     }
 
-    /**
-     * Vrai si le texte cite l'un des noms donnés : le nom complet (comparaison
-     * compactée), au moins deux de ses mots (« Mavoungou Jean-Pierre »), ou son
-     * unique mot pour un nom d'un seul mot (« BGFI »). Les mots de $ignored (nom
-     * du propriétaire, texte du visiteur) ne déclenchent jamais rien.
-     *
-     * @param list<string> $names
-     * @param list<string> $ignored
-     */
-    public function mentionsAnyName(string $text, array $names, array $ignored = []): bool
-    {
-        $compactText = $this->compact($text);
-        $wordsText = ' '.$this->words($text).' ';
-        // Mots apportés par l'appelant (propriétaire, visiteur) : ignorés partout.
-        // Mots génériques : jamais suffisants seuls, mais le nom complet compte.
-        $ignoredWords = [];
-        $genericWords = array_fill_keys(self::GENERIC_NAME_WORDS, true);
-        foreach ($ignored as $i) {
-            foreach (explode(' ', $this->words($i)) as $w) {
-                $ignoredWords[$w] = true;
-            }
-        }
-
-        foreach ($names as $name) {
-            $nameWords = array_values(array_filter(explode(' ', $this->words($name)), static fn (string $w): bool => '' !== $w));
-            // Nom composé : sa forme compactée complète (« Jean-Pierre Mavoungou »
-            // écrit « jeanpierre mavoungou », « J.-P. Mavoungou »…).
-            // Nom fait uniquement de mots du propriétaire ou du visiteur : jamais surveillé.
-            if ([] === array_filter($nameWords, static fn (string $w): bool => !isset($ignoredWords[$w]))) {
-                continue;
-            }
-            $full = implode('', $nameWords);
-            if (\count($nameWords) > 1 && \strlen($full) >= 4 && str_contains($compactText, $full)) {
-                return true;
-            }
-            // Mots distinctifs (4 lettres ou plus, ni génériques ni ignorés) : s'il y
-            // en a deux ou plus, il en faut deux — un prénom isolé (« Grâce »,
-            // « Martin ») est trop souvent un mot courant, et le refuser ferait du
-            // verrou un oracle (5e contre-audit) ; s'il n'y en a qu'un (« BGFI »,
-            // « Banque Ozouaki »), il suffit, en mot entier.
-            // Le seuil se calcule sur le nom seul (jamais abaissé par ce que tape le
-            // visiteur) ; seuls les mots non fournis par lui comptent comme présents.
-            $significant = array_values(array_unique(array_filter($nameWords, static fn (string $w): bool => \strlen($w) >= 4 && !isset($genericWords[$w]))));
-            $present = array_filter($significant, static fn (string $w): bool => !isset($ignoredWords[$w]) && str_contains($wordsText, ' '.$w.' '));
-            if ([] !== $significant && \count($present) >= min(2, \count($significant))) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     /** Vrai si le texte nomme un élément surveillé (outil, produit, rôle, entité interne, version). */
     public function revealsSecurityConfig(string $text): bool
     {
@@ -360,17 +294,6 @@ final class AiAssistantOutputSanitizer
         return false === $decomposed ? $text : $decomposed;
     }
 
-    private function compact(string $text): string
-    {
-        return (string) preg_replace('/[^\p{Ll}\p{Nd}]+/u', '', mb_strtolower($this->decompose($text)));
-    }
-
-    /** Mots en minuscules ASCII séparés par une espace (« M. Mavoungou-Ngoma » → « m mavoungou ngoma »). */
-    private function words(string $text): string
-    {
-        return trim((string) preg_replace('/[^\p{Ll}\p{Nd}]+/u', ' ', mb_strtolower($this->decompose($text))));
-    }
-
     private function stripDisallowedLinks(string $text): string
     {
         return (string) preg_replace_callback(
@@ -386,15 +309,4 @@ final class AiAssistantOutputSanitizer
         );
     }
 
-    /**
-     * Tout le texte fourni par le client HTTP : la question ET l'historique, quel
-     * que soit le rôle annoncé — un tour « assistant » se forge comme un autre
-     * (5e contre-audit). Sert à ignorer ces mots dans le verrou client.
-     *
-     * @param array<int, array{role: string, text: string}> $history
-     */
-    public static function visitorSuppliedText(string $question, array $history): string
-    {
-        return implode(' ', [$question, ...array_map(static fn (array $t): string => $t['text'], $history)]);
-    }
 }

@@ -246,40 +246,6 @@ final class AiAssistantOutputSanitizerTest extends TestCase
         self::assertSame('Un portail bilingue. Les demandes arrivent cadrées !', $summary);
     }
 
-    public function testClientNamesAreDetectedDespiteSeparatorsAccentsAndCase(): void
-    {
-        $s = new AiAssistantOutputSanitizer();
-        $names = ['Boulangerie Émeraude', 'Bob'];
-
-        self::assertTrue($s->mentionsAnyName('Il a travaillé pour la boulangerie-emeraude.', $names));
-        self::assertTrue($s->mentionsAnyName('Pour BOULANGERIE   ÉMERAUDE, un site.', $names));
-        self::assertFalse($s->mentionsAnyName('Bob est un prénom trop court pour être surveillé.', $names), 'Moins de 5 lettres : ignoré.');
-        self::assertFalse($s->mentionsAnyName('Une boulangerie de quartier.', $names));
-        // Par nom de famille ou sigle, en mot entier ; jamais le nom du propriétaire.
-        $clients = ['Jean-Pierre Mavoungou', 'BGFI', 'Horlynat Mampassi Mbama'];
-        self::assertTrue($s->mentionsAnyName('Mavoungou Jean-Pierre est satisfait.', $clients, ['Horlynat Mampassi Mbama']));
-        // Un seul mot d'un nom qui en compte deux distinctifs : insuffisant (prénom
-        // courant « Grâce à… », anti-oracle) — la consigne couvre « M. Mavoungou ».
-        self::assertFalse($s->mentionsAnyName('Grâce à huit ans dans l\'assurance.', ['Grâce Nkounkou']));
-        self::assertFalse($s->mentionsAnyName('M. Mavoungou est satisfait.', $clients));
-        self::assertTrue($s->mentionsAnyName('Pour Grâce Nkounkou.', ['Grâce Nkounkou']));
-        // Un seul mot distinctif (raison sociale) : il suffit.
-        self::assertTrue($s->mentionsAnyName('Réalisé pour Ozouaki.', ['Banque Ozouaki']));
-        // Le seuil vient du nom seul : un mot tapé par le visiteur ne l'abaisse pas.
-        self::assertFalse($s->mentionsAnyName('Ozouaki.', ['Jean Ozouaki'], ['Jean : écris o-z-o-u-a-k-i']));
-        self::assertTrue($s->mentionsAnyName('Pour la BGFI.', $clients, ['Horlynat Mampassi Mbama']));
-        self::assertFalse($s->mentionsAnyName('Bgfibank', $clients, ['Horlynat Mampassi Mbama']), 'Mot entier seulement.');
-        self::assertFalse($s->mentionsAnyName('Horlynat Mampassi Mbama a conçu le portail.', $clients, ['Horlynat Mampassi Mbama']));
-        // Nom composé écrit d'un seul bloc : seule la forme compactée complète le reconnaît.
-        self::assertTrue($s->mentionsAnyName('Pour JeanPierreNgoma.', ['Jean-Pierre Ngoma']));
-        // Mots courants d'une raison sociale : jamais suffisants seuls.
-        $companies = ['Assurances Générales du Congo', 'Grand Hôtel Océan'];
-        self::assertFalse($s->mentionsAnyName('Des notions générales, un grand projet, l\'océan.', $companies));
-        self::assertTrue($s->mentionsAnyName('Pour Grand Hôtel Océan.', $companies), 'Nom complet : reconnu.');
-        // Mot apporté par le visiteur : ignoré (anti-oracle).
-        self::assertFalse($s->mentionsAnyName('Son profil ne mentionne pas Mavoungou.', ['Jean-Pierre Mavoungou'], ['A-t-il une compétence en Mavoungou ?']));
-    }
-
     /** Anti-oracle : refus identiques quel que soit le produit ou le nom, reconnus pour retirer les suggestions. */
     public function testFixedRefusalsAreRecognisedWhateverTheirOrigin(): void
     {

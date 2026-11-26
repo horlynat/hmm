@@ -520,22 +520,4 @@ class ProjectRepository extends ServiceEntityRepository
         ], $rows);
     }
 
-    /**
-     * Noms des clients des réalisations publiques : l'assistant ne doit jamais
-     * les citer (client confidentiel, décision du 2026-11-26).
-     *
-     * @return list<string>
-     */
-    public function findPublicClientNames(): array
-    {
-        $rows = $this->createQueryBuilder('p')
-            ->select('c.fullName')
-            ->join('p.client', 'c')
-            ->andWhere('p.status IN (:statuses)')
-            ->setParameter('statuses', \App\Doctrine\ProjectVisibilityExtension::PUBLIC_STATUSES)
-            ->getQuery()
-            ->getSingleColumnResult();
-
-        return array_values(array_unique(array_filter(array_map(static fn (mixed $n): string => trim((string) $n), $rows), static fn (string $n): bool => '' !== $n)));
-    }
 }

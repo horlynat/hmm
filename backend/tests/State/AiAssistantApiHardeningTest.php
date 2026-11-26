@@ -214,27 +214,6 @@ final class AiAssistantApiHardeningTest extends WebTestCase
             self::assertStringNotContainsString('Caddy', $this->claudeBody);
             self::assertStringContainsString('Description confidentielle', $this->claudeBody, 'Le reste du contenu part bien.');
 
-            // Client de la réalisation cité : même verrou que le chat.
-            $client = (new User())->setEmail("client-{$suffix}@example.test")->setFullName("Banque Ozouaki {$suffix}");
-            $client->setPassword('!');
-            $this->em->persist($client);
-            $this->em->flush();
-            // Client absent du contenu envoyé au modèle : rien à protéger, et réagir
-            // ferait du verrou un oracle — réponse normale.
-            $this->em->getConnection()->executeStatement('UPDATE project SET client_id = ? WHERE id = ?', [$client->getId(), $public->getId()]);
-            $this->claudeText = "Réalisé pour la banque Ozouaki {$suffix}.\n###SUGGESTIONS###\n- Et ensuite ?";
-            self::assertSame(200, $this->post('/api/assistant/summarize', ['slug' => $public->getSlug(), 'contentType' => 'project', 'locale' => 'fr']));
-            self::assertSame("Réalisé pour la banque Ozouaki {$suffix}.", $this->json()['answer'] ?? null);
-            // Nommé dans le contenu envoyé au modèle : verrou actif (sinon inconnu du modèle, rien à protéger).
-            $this->em->getConnection()->executeStatement('UPDATE project SET client_id = ?, description = ? WHERE id = ?', [$client->getId(), "<p>Réalisé pour la Banque Ozouaki {$suffix}.</p>", $public->getId()]);
-            $this->claudeText = "Réalisé pour la banque Ozouaki {$suffix}.\n###SUGGESTIONS###\n- Et ensuite ?";
-            self::assertSame(200, $this->post('/api/assistant/summarize', ['slug' => $public->getSlug(), 'contentType' => 'project', 'locale' => 'fr']));
-            self::assertSame(\App\Service\AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $this->json()['answer'] ?? null);
-            self::assertSame([], $this->json()['suggestions'] ?? null);
-            $conn = $this->em->getConnection();
-            $conn->executeStatement('UPDATE project SET client_id = NULL WHERE id = ?', [$public->getId()]);
-            $conn->executeStatement('DELETE FROM `user` WHERE id = ?', [$client->getId()]);
-            $this->em->clear();
             // Refus écrit par le modèle, typographie différente : texte canonique, sans suggestions.
             $this->claudeText = "Les clients de Horlynat sont confidentiels : je ne confirme ni n’infirme aucun nom.\n###SUGGESTIONS###\n- Autre ?";
             self::assertSame(200, $this->post('/api/assistant/summarize', ['slug' => $public->getSlug(), 'contentType' => 'project', 'locale' => 'fr', 'question' => 'Fait pour qui ?']));

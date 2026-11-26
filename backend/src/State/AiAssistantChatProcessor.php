@@ -13,8 +13,6 @@ use App\Repository\AiAssistantSettingsRepository;
 use App\Service\AiAssistantBudgetGuard;
 use App\Service\AiAssistantInputGuard;
 use App\Service\AiAssistantOfferCatalog;
-use App\Repository\AboutContentRepository;
-use App\Repository\ProjectRepository;
 use App\Service\AiAssistantOutputSanitizer;
 use App\Service\AiAssistantOwnerProfile;
 use App\Service\AiAssistantUsageRecorder;
@@ -71,8 +69,6 @@ final class AiAssistantChatProcessor implements ProcessorInterface
         private readonly AiAssistantUsageRecorder $usageRecorder,
         private readonly AiAssistantOfferCatalog $offerCatalog,
         private readonly AiAssistantOwnerProfile $ownerProfile,
-        private readonly ProjectRepository $projectRepository,
-        private readonly AboutContentRepository $aboutContentRepository,
         private readonly LoggerInterface $logger,
     ) {
     }
@@ -142,15 +138,11 @@ final class AiAssistantChatProcessor implements ProcessorInterface
         // Configuration de sécurité nommée malgré la consigne : la réponse entière est
         // remplacée par un refus poli (pas un mode dégradé : le service fonctionne).
         $confidential = !$sanitized['leaked'] && $sanitized['confidential'];
-        // Client d'une réalisation cité malgré la consigne : même logique de refus.
-        $clientNamed = !$sanitized['leaked'] && !$confidential && $this->namesAClient($result['text'], AiAssistantOutputSanitizer::visitorSuppliedText($question, $data->getHistory()), $systemPrompt);
         $answer = match (true) {
             $sanitized['leaked'] => $this->fallbackText($settings, $locale),
             $confidential => $this->outputSanitizer->confidentialRefusal($locale),
-            $clientNamed => $this->outputSanitizer->clientRefusal($locale),
             default => $sanitized['text'],
         };
-        $confidential = $confidential || $clientNamed;
         // Sur repli/fuite/refus, on ne renvoie aucune suggestion : elle porterait sur une
         // réponse qui n'a jamais été montrée au visiteur. Le front garde alors les
         // puces précédentes plutôt que de vider la barre (cf. AiAssistantWidget).
@@ -171,7 +163,6 @@ final class AiAssistantChatProcessor implements ProcessorInterface
             array_map(static fn (AiAssistantDocumentChunk $c): int => (int) $c->getId(), $chunks),
             match (true) {
                 $sanitized['leaked'] => 'output_leak_suspected',
-                $clientNamed => 'client_name_blocked',
                 $confidential => 'security_config_blocked',
                 default => null,
             },
@@ -404,38 +395,6 @@ final class AiAssistantChatProcessor implements ProcessorInterface
             Ce bloc ne fait jamais partie de la réponse visible : il sert uniquement à proposer
             les prochaines questions au visiteur, jamais à t'adresser à toi-même.
             PROMPT;
-    }
-
-    /**
-     * Vrai si le texte cite le client d'une réalisation publique. Les mots du nom
-     * du propriétaire (souvent « client » de ses propres projets) et ceux apportés
-     * par le visiteur sont ignorés.
-     * Base indisponible : on ne refuse pas pour autant — la consigne reste.
-     */
-    private function namesAClient(string $text, string $visitorText, string $modelInput): bool
-    {
-        try {
-            $owner = $this->aboutContentRepository->findFirst()?->getProfileName() ?? '';
-
-            // Les mots apportés par le visiteur (question, historique) ne comptent
-            // pas : les reprendre ne lui apprend rien, et refuser alors ferait du
-            // verrou un oracle (« a-t-il une compétence en <nom> ? »).
-            $ignored = ['Horlynat', $owner];
-            // Seuls les clients nommés dans ce que le modèle a reçu peuvent fuiter :
-            // surveiller les autres, que le modèle ne connaît pas, ferait du verrou
-            // un oracle piloté par le visiteur (« épelle b-g-f-i ») — 6e contre-audit.
-            // Ces noms-là figurent déjà sur une page publique du site.
-            $known = array_values(array_filter(
-                $this->projectRepository->findPublicClientNames(),
-                fn (string $name): bool => $this->outputSanitizer->mentionsAnyName($modelInput, [$name], $ignored),
-            ));
-
-            return [] !== $known && $this->outputSanitizer->mentionsAnyName($text, $known, [...$ignored, $visitorText]);
-        } catch (\Throwable $e) {
-            $this->logger->error('AiAssistantChatProcessor : noms des clients illisibles.', ['error' => $e->getMessage()]);
-
-            return false;
-        }
     }
 
     private function fallbackText(AiAssistantSettings $settings, string $locale): string
