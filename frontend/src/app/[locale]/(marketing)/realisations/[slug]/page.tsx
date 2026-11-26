@@ -6,9 +6,9 @@ import { getMediaUrl } from "@/lib/media";
 import { jsonLdScript } from "@/lib/json-ld";
 import { siteConfig } from "@/config/site";
 import { resolveOgLocale, SITE_URL } from "@/lib/metadata";
-import { getArticleExcerpt } from "@/lib/sanitize";
 import { sortProjectsForDisplay } from "@/lib/projects/sortForDisplay";
 import { CaseStudy } from "@/components/cases/CaseStudy";
+import { pageTitle, shareDescription, shareImage } from "@/lib/projects/share";
 import { getPathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
@@ -36,15 +36,10 @@ export async function generateMetadata({
   // `[locale]/opengraph-image.tsx` — référencée explicitement (Next.js ne la
   // rattache pas automatiquement quand la route définit son propre
   // `openGraph`, cf. commentaire dans lib/metadata.ts).
-  const image = project.info?.coverImage
-    ? getMediaUrl(project.info.coverImage.filePath)
-    : `${SITE_URL}/${locale}/opengraph-image`;
+  const image = shareImage(project.info?.coverImage?.filePath, locale);
 
-  // `description` peut désormais contenir du HTML structuré (éditeur riche
-  // admin, cf. rich_text_controller.js côté backend) — extrait un résumé
-  // texte brut pour les meta description / Open Graph / Twitter, qui
-  // n'acceptent pas de balisage.
-  const excerpt = getArticleExcerpt(project.description);
+  // Texte brut (les meta n'acceptent pas de balisage), jamais coupé en plein mot.
+  const excerpt = shareDescription(project.info?.result, project.description);
 
   // Canonical et hreflang propres à la fiche : sans eux, la page hérite de
   // ceux du layout racine (l'accueil) et les moteurs la traitent comme un
@@ -56,7 +51,7 @@ export async function generateMetadata({
   );
 
   return {
-    title: project.title,
+    title: pageTitle(project.title),
     description: excerpt,
     alternates: { canonical: url, languages },
     openGraph: {
@@ -99,14 +94,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     null;
 
   const image = project.info?.coverImage ? getMediaUrl(project.info.coverImage.filePath) : undefined;
+  // Pas de `keywords` tirés de la pile technique : zéro information de configuration.
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CreativeWork",
     name: project.title,
-    description: getArticleExcerpt(project.description),
+    description: shareDescription(project.info?.result, project.description),
     image: image ? [image] : undefined,
     author: { "@type": "Person", name: siteConfig.name },
-    keywords: project.info?.techStack.length ? project.info.techStack.map((s) => s.name).join(", ") : undefined,
     url: project.link || undefined,
   };
 

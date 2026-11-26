@@ -2223,11 +2223,14 @@
     "startTitle": "Le problème à résoudre",
     "stepsKick": "La démarche",
     "stepsTitle": "Comment j’ai procédé",
+    "challengesKick": "Les défis relevés",
+    "challengesTitle": "Ce qu’il fallait résoudre",
+    "benefitsKick": "Ce que ça apporte",
+    "benefitsTitle": "Les résultats",
     "resultKick": "Le résultat",
     "resultTitle": "Ce qui a été livré",
     "galleryKick": "En images",
     "galleryTitle": "Galerie",
-    "techKick": "Technologies",
     "role": "Mon rôle",
     "sameKick": "Pour vous",
     "sameTitle": "Vous avez un besoin semblable ?",
@@ -2243,7 +2246,7 @@
     "mbarMessage": "Bonjour Horlynat, j'ai un projet semblable à « {title} ».",
     "galleryPending": "Capture réelle à venir",
     "discreetTitle": "Pourquoi certains détails ne sont pas publiés",
-    "discreetText": "Cette plateforme est en production. Par principe de sécurité, son architecture et ses mesures de protection ne sont pas décrites publiquement. Je les présente volontiers lors d’un échange confidentiel."
+    "discreetText": "Par principe de sécurité, l’architecture technique et les mesures de protection de mes réalisations ne sont jamais décrites publiquement. Je les présente volontiers lors d’un échange confidentiel."
   },
   "aboutPage": {
     "crumb": "À propos",

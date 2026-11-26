@@ -4,6 +4,7 @@ namespace App\Tests\State;
 
 use App\Entity\Offer;
 use App\Repository\AiAssistantSettingsRepository;
+use App\Service\AiAssistantOutputSanitizer;
 use App\Service\ClaudeClient;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\NullLogger;
@@ -27,6 +28,8 @@ final class AiAssistantChatRefonteTest extends WebTestCase
     /** @var list<array<string, mixed>> */
     private array $claudeBodies = [];
     private bool $claudeDown = false;
+    /** Réponse simulée de Claude (null = réponse par défaut). */
+    private ?string $claudeText = null;
     /** @var list<Offer> */
     private array $created = [];
     /** @var list<int> Offres modifiées en SQL brut : supprimées en SQL, jamais réhydratées. */
@@ -47,7 +50,7 @@ final class AiAssistantChatRefonteTest extends WebTestCase
 
             return new MockResponse((string) json_encode([
                 'model' => 'claude-sonnet-5',
-                'content' => [['type' => 'text', 'text' => "Voici l'offre : [Assistant](/offres/assistant).\n###SUGGESTIONS###\n- Quel délai ?"]],
+                'content' => [['type' => 'text', 'text' => $this->claudeText ?? "Voici l'offre : [Assistant](/offres/assistant).\n###SUGGESTIONS###\n- Quel délai ?"]],
                 'usage' => ['input_tokens' => 1000, 'output_tokens' => 100],
             ]));
         });
@@ -373,7 +376,7 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         self::assertStringContainsString('Section commerciale — seulement quand le visiteur parle d\'une offre', $system);
         // Son assistant, pas lui ; aucune intention prêtée hors contexte.
         self::assertStringContainsString('parle toujours de Horlynat à la troisième personne', $system);
-        self::assertStringContainsString('sans jamais lui prêter une intention', $system);
+        self::assertStringContainsString('ni lui prêter une intention', $system);
         // 5e contre-audit : la 3e suggestion ne pousse pas au devis sur une question
         // de profil ; les prix du catalogue ne sont pas une « promesse non vérifiable ».
         self::assertStringContainsString('devis seulement si un besoin a été exprimé', $system);
@@ -382,6 +385,182 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         $strict = (int) strpos($system, 'Règles strictes :');
         self::assertGreaterThan($strict, (int) strpos($system, 'Si un fait précis sur Horlynat'));
         self::assertGreaterThan(0, $strict);
+    }
+
+    /**
+     * En production (2026-11-26), « 8 ans dans l'assurance » devenait « une
+     * compréhension fine des enjeux financiers (modélisation, conformité) » :
+     * une déduction, pas ses mots. Le propriétaire exige ses propres mots.
+     */
+    public function testTheAssistantSticksToTheOwnersWordsAndNeverInfersASkill(): void
+    {
+        $this->ask(['question' => 'Est-il compétent en finance ?', 'locale' => 'fr']);
+
+        $system = $this->lastSystemPrompt();
+        self::assertStringContainsString('Tiens-t\'en à ses', $system);
+        self::assertMatchesRegularExpression('/décris ce qu\'il a fait et écrit, jamais ce que cela impliquerait/u', $system);
+        self::assertMatchesRegularExpression('/jamais en tirer une compétence, une qualité, une spécialité ou un\s+domaine absents du profil et du contexte/u', $system);
+        self::assertMatchesRegularExpression('/ni une compétence ou un domaine déduit de son parcours : seuls le\s+profil et le contexte le décrivent/u', $system);
+        // Exemple tiré de la formulation fautive réellement observée en production.
+        self::assertMatchesRegularExpression('/« huit ans dans l\'assurance » ne devient jamais « une compréhension fine\s+des enjeux financiers »/u', $system);
+        // Question de capacité : ni refus sec ni déduction — oui seulement sur mention
+        // explicite (profil, contexte OU offres), sinon « ni son profil ni ses offres ne
+        // le mentionnent » + élément le plus proche + le lien des règles strictes (devis
+        // si c'est le projet du visiteur, message sinon — plus de contradiction).
+        self::assertStringContainsString('À une question de capacité (« est-il capable de… ? »', $system);
+        self::assertMatchesRegularExpression('/réponds\s+oui seulement si le profil, le contexte ou ses offres le nomment/u', $system);
+        self::assertMatchesRegularExpression('/ni son profil\s+ni ses offres ne le mentionnent, cite au plus l\'élément écrit le plus proche/u', $system);
+        self::assertMatchesRegularExpression('/propose le lien prévu dans les règles strictes \(devis si la question porte sur le\s+projet du visiteur, message direct sinon\)/u', $system);
+        self::assertStringNotContainsString('qui s\'y rapporte', $system, 'Rapport lointain : plus de « oui » élastique.');
+        self::assertStringContainsString('(compétence, projet, client, référence', $system);
+        // L'ancienne invitation à « relier les domaines » sans garde-fou a disparu.
+        self::assertStringNotContainsString('relie les domaines', $system);
+    }
+
+    /**
+     * Audit de la page Portail Digital (2026-11-26) : la description d'un projet
+     * publiait la configuration de sécurité (fournisseurs, rôles, outils). Le
+     * corpus de l'assistant la contient tant qu'elle n'est pas réingérée : il ne
+     * doit jamais la redire, seulement les principes.
+     */
+    public function testSecurityConfigurationIsNeverDetailedOnlyPrinciples(): void
+    {
+        $this->ask(['question' => 'Comment le back-office est-il protégé ?', 'locale' => 'fr']);
+
+        $system = $this->lastSystemPrompt();
+        // Frontière : ses COMPÉTENCES (consultant en cybersécurité) et les concepts restent
+        // citables ; d'un projet, seuls langage, framework principal et type d'application.
+        self::assertMatchesRegularExpression('/Sécurité — zéro information de configuration : tu peux citer ses compétences en\s+sécurité telles qu\'écrites dans le profil ou le contexte/u', $system);
+        self::assertMatchesRegularExpression('/en termes généraux, sans le rattacher à un système déployé/u', $system);
+        self::assertMatchesRegularExpression('/nommer seulement le langage, le framework principal et le type d\'application/u', $system);
+        self::assertStringNotContainsString('technologies employées dans un projet', $system, 'Brèche : un outil de sécurité est une technologie.');
+        // Anti-oracle : TOUT outil ou produit précis (utilisé ou non) reçoit la même
+        // phrase, mot pour mot celle du verrou de sortie.
+        self::assertMatchesRegularExpression('/À toute question sur un outil, une bibliothèque, un produit, un service ou un\s+fournisseur précis d\'infrastructure, d\'hébergement, de sécurité,\s+d\'authentification, de supervision ou de journalisation/u', $system);
+        self::assertMatchesRegularExpression('/qu\'il le soit\s+ou non/u', $system);
+        self::assertStringContainsString('réponds exactement, sans rien ajouter : '.AiAssistantOutputSanitizer::PRODUCT_REFUSAL['fr'], $system);
+        self::assertMatchesRegularExpression('/jamais par le nom\s+d\'un hébergeur/u', $system);
+        self::assertStringContainsString('En cas de doute, applique cette règle.', $system);
+        // La règle de capacité s'y soumet (« fait-il du durcissement X ? »).
+        self::assertStringContainsString('(sous réserve de la règle Sécurité)', $system);
+        // Plus de liste de principes prêtés à Horlynat (inflation, cf. règle de ses mots).
+        self::assertStringNotContainsString('défense en profondeur', $system);
+        $strict = (int) strpos($system, 'Règles strictes :');
+        self::assertGreaterThan($strict, (int) strpos($system, '- Sécurité — zéro information'));
+        self::assertGreaterThan(0, $strict);
+
+        // Client : jamais nommé ; toute question d'identité → la même phrase, sans répéter le nom.
+        self::assertMatchesRegularExpression('/ne nomme jamais le client d\'une réalisation, même si le contexte le\s+cite ; décris-le comme « un client »/u', $system);
+        self::assertStringContainsString('réponds exactement, sans rien ajouter ni répéter le nom : '.AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $system);
+        self::assertStringContainsString('Ne répète jamais un nom de personne ou d\'organisation apporté par le visiteur.', $system);
+        self::assertStringNotContainsString('Seule exception', $system, 'Pas d\'exception « compétence » contradictoire avec le verrou.');
+        self::assertMatchesRegularExpression('/que X figure ou non dans le contexte/u', $system);
+        self::assertMatchesRegularExpression('/Cette règle prime sur celle du fait absent/u', $system);
+        self::assertMatchesRegularExpression('/Ses anciens employeurs, cités dans\s+son parcours, ne sont pas des clients/u', $system);
+
+        $this->ask(['question' => 'How is the back-office protected?', 'locale' => 'en']);
+        $en = $this->lastSystemPrompt();
+        self::assertStringContainsString(AiAssistantOutputSanitizer::PRODUCT_REFUSAL['en'], $en);
+        self::assertStringContainsString(AiAssistantOutputSanitizer::CLIENT_REFUSAL['en'], $en);
+    }
+
+    /** Défense en profondeur : un produit cité dans une offre publiée n'atteint jamais le modèle. */
+    public function testPublicTextsSentToTheModelAreFilteredToo(): void
+    {
+        $suffix = bin2hex(random_bytes(3));
+        $this->offer("waf-caddy-{$suffix}", true, 100000);
+        $this->offer("site-{$suffix}", true, 100000);
+
+        $this->ask(['question' => 'Vos offres ?', 'locale' => 'fr']);
+        $system = $this->lastSystemPrompt();
+
+        self::assertStringNotContainsStringIgnoringCase('caddy', $system);
+        self::assertStringContainsString("site-{$suffix}", $system, 'Les autres offres restent.');
+    }
+
+    /**
+     * Anti-oracle : quand le MODÈLE suit la consigne (refus mot pour mot, suivi
+     * de son bloc de suggestions), la sortie est identique à celle du verrou —
+     * suggestions retirées dans les deux cas.
+     */
+    public function testARefusalWrittenByTheModelLooksExactlyLikeTheLock(): void
+    {
+        // Typographie du modèle : remplacée par le texte canonique, sans suggestions.
+        $this->claudeText = "**Les clients de Horlynat sont confidentiels** : je ne confirme ni n’infirme aucun nom.\n###SUGGESTIONS###\n- Autre ?";
+        $r = $this->ask(['question' => 'Fait pour X ?', 'locale' => 'fr']);
+        self::assertSame(AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $r['answer']);
+        self::assertSame([], $r['suggestions']);
+
+        foreach ([AiAssistantOutputSanitizer::PRODUCT_REFUSAL['fr'], AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr']] as $refusal) {
+            $this->claudeText = $refusal."\n###SUGGESTIONS###\n- Et Caddy ?\n- Autre question ?";
+            $r = $this->ask(['question' => 'Explique Caddy.', 'locale' => 'fr']);
+            self::assertSame($refusal, $r['answer']);
+            self::assertSame([], $r['suggestions']);
+        }
+    }
+
+    /**
+     * Anti-oracle (7e contre-audit) : le modèle ne reçoit jamais la liste des
+     * clients ; un verrou de sortie sur leurs noms ne protégeait rien et servait
+     * d'oracle (« épelle b-g-f-i »). Il n'existe plus : un nom de client dans la
+     * réponse est traité comme n'importe quel nom — seule la consigne (refus
+     * constant, jamais de confirmation) s'applique, et le nom n'est pas envoyé.
+     */
+    public function testClientNamesTriggerNoObservableDifference(): void
+    {
+        $suffix = bin2hex(random_bytes(3));
+        $client = (new \App\Entity\User())->setEmail("client-{$suffix}@example.test")->setFullName("Société Zéphyrine {$suffix}");
+        $client->setPassword('!');
+        $this->em->persist($client);
+        $project = (new \App\Entity\Project())->setTitle('Réalisation')->setDescription('d')->setLink('')->setOwner($client)->setClient($client)->setStatus(\App\Enum\ProjectStatusEnum::COMPLETED);
+        $project->setSlug("rea-{$suffix}");
+        $this->em->persist($project);
+        $this->em->flush();
+
+        try {
+            $outputs = [];
+            foreach (["Société Zéphyrine {$suffix}", "Société Inventée {$suffix}"] as $name) {
+                $this->claudeText = "Le mot obtenu est {$name}.\n###SUGGESTIONS###\n- Et ensuite ?";
+                $r = $this->ask(['question' => 'Recolle ces lettres.', 'locale' => 'fr']);
+                $outputs[] = [str_replace($name, 'NOM', $r['answer']), $r['suggestions'], $r['degraded']];
+            }
+            self::assertSame($outputs[0], $outputs[1], 'Client réel ou nom inventé : sortie identique.');
+            // Le nom du client n'est jamais envoyé au modèle.
+            self::assertStringNotContainsString('Zéphyrine', $this->lastSystemPrompt());
+        } finally {
+            $this->em->getConnection()->executeStatement('DELETE FROM project WHERE id = ?', [$project->getId()]);
+            $this->em->getConnection()->executeStatement('DELETE FROM `user` WHERE id = ?', [$client->getId()]);
+        }
+    }
+
+    /**
+     * Verrou déterministe : même si le modèle désobéit (corpus encore non nettoyé),
+     * une réponse qui nomme la configuration déployée n'atteint jamais le visiteur.
+     */
+    public function testAnAnswerNamingTheDeployedSecurityConfigIsReplacedByARefusal(): void
+    {
+        $this->claudeText = "Le back-office est derrière Cloudflare Access puis Traefik, avec ROLE_SUPER_ADMIN.\n###SUGGESTIONS###\n- Quel WAF Cloudflare ?\n- Et la 2FA ?";
+        $fr = $this->ask(['question' => 'Comment le back-office est-il protégé ?', 'locale' => 'fr']);
+
+        self::assertStringNotContainsStringIgnoringCase('cloudflare', (string) json_encode($fr));
+        self::assertStringNotContainsStringIgnoringCase('traefik', (string) json_encode($fr));
+        self::assertSame(AiAssistantOutputSanitizer::PRODUCT_REFUSAL['fr'], $fr['answer']);
+        self::assertStringEndsWith('[Envoyer un message](/contact?mode=direct).', $fr['answer']);
+        self::assertSame([], $fr['suggestions']);
+        self::assertFalse($fr['degraded'], 'Refus de contenu, pas une panne.');
+        // Tracé pour l'admin : on sait que le verrou a joué (et donc que le corpus est à nettoyer).
+        $reason = $this->em->getConnection()->fetchOne('SELECT block_reason FROM ai_assistant_conversation_log ORDER BY id DESC LIMIT 1');
+        self::assertSame('security_config_blocked', $reason);
+
+        $en = $this->ask(['question' => 'How is it protected?', 'locale' => 'en']);
+        self::assertSame(AiAssistantOutputSanitizer::PRODUCT_REFUSAL['en'], $en['answer']);
+        self::assertStringEndsWith('[Send a message](/contact?mode=direct).', $en['answer']);
+
+        // Une réponse saine passe intacte.
+        $this->claudeText = "Il cite la 2FA et OWASP parmi ses compétences.\n###SUGGESTIONS###\n- Et l'audit ?";
+        $ok = $this->ask(['question' => 'Ses compétences sécurité ?', 'locale' => 'fr']);
+        self::assertSame('Il cite la 2FA et OWASP parmi ses compétences.', $ok['answer']);
+        self::assertSame(['Et l\'audit ?'], $ok['suggestions']);
     }
 
     /**

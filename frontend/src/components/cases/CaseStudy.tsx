@@ -4,8 +4,7 @@ import { Link } from "@/i18n/navigation";
 import type { Offer, Project } from "@/lib/types";
 import { formatFcfa } from "@/lib/format/fcfa";
 import { getMediaUrl } from "@/lib/media";
-import { getExcerpt } from "@/lib/text";
-import { sanitizeArticleHtml } from "@/lib/sanitize";
+import { firstParagraph, leadSentences, splitLabel, withoutLabelPrefix } from "@/lib/projects/caseText";
 import { whatsappLink } from "@/lib/whatsapp";
 import { ProtoIcon } from "@/components/proto/ProtoSvg";
 import { ProtoCta } from "@/components/proto/ProtoSections";
@@ -13,12 +12,15 @@ import { ProjectImage } from "@/components/landing/SiteHome";
 
 /**
  * Étude de cas d'une réalisation — markup du prototype (pCase : `.ph.cx .cxg
- * .res .device .brief .br3 .facts4 .story .chap .road .liv .gal .disc .chips
- * .same .nxp .mbar`), alimentée par la fiche projet du back-office
- * (ProjectInfo) : résultat, bref en trois temps, repères (rôle + résultats
- * chiffrés), point de départ, démarche, livrables, galerie légendée, note
- * « projet discret », technologies. Chaque bloc sans donnée est masqué ; les
- * fiches antérieures au récit retombent sur description, objectifs et défis.
+ * .res .device .brief .br3 .facts4 .story .chap .road .liv .gal .disc .same
+ * .nxp .mbar`), alimentée par la fiche projet du back-office (ProjectInfo).
+ *
+ * Présentation volontairement simple (demande du propriétaire, 2026-11-26) :
+ * résultat, bref, repères, point de départ, démarche, défis relevés, ce que
+ * ça apporte, livrables, galerie. Chaque bloc sans donnée est masqué.
+ * Jamais rendus en public, par principe « zéro information de sécurité » :
+ * la description HTML longue (seul un court résumé en tête) et la pile
+ * technique détaillée — ces champs restent saisissables au back-office.
  */
 export function httpUrl(value: string | null): string | null {
   if (!value) return null;
@@ -47,17 +49,19 @@ export async function CaseStudy({
     getTranslations({ locale, namespace: "catalog" }),
   ]);
   const info = p.info;
+  // Repères : rôle + résultats chiffrés (avec valeur). Les résultats sans valeur
+  // (phrases « Titre : texte ») vont dans « Ce que ça apporte ».
   const facts = [
-    ...(info?.role ? [{ label: t("role"), value: info.role }] : []),
-    ...(info?.results ?? []).map((r) => ({ label: r.label, value: r.value ?? "" })),
+    ...(info?.role ? [{ label: t("role"), value: withoutLabelPrefix(info.role, t("role")) }] : []),
+    ...(info?.results ?? []).filter((r) => r.value).map((r) => ({ label: r.label, value: r.value ?? "" })),
   ].slice(0, 4);
-  const steps: { title: string; text: string | null }[] =
-    info && info.steps.length > 0 ? info.steps : (info?.objectives ?? []).map((o) => ({ title: o, text: null }));
-  const deliverables = info && info.deliverables.length > 0 ? info.deliverables : (info?.challenges ?? []).map((c) => c.solution).filter(Boolean);
+  const benefits = (info?.results ?? []).filter((r) => !r.value && r.label.trim() !== "").map((r) => splitLabel(r.label));
+  const steps = info?.steps ?? [];
+  const challenges = (info?.challenges ?? []).filter((c) => c.problem && c.solution);
+  const deliverables = info?.deliverables ?? [];
   const captions = info?.galleryCaptions ?? [];
-  const stack = info?.techStack ?? [];
   const gallery = (p.media ?? []).filter((m) => m.type === "image" || (m.mimeType ?? "").startsWith("image/"));
-  const html = sanitizeArticleHtml(p.description);
+  const summary = leadSentences(firstParagraph(p.description), 300);
   // Liens saisis au back-office : seulement http(s), jamais javascript:/data:.
   const link = httpUrl(p.link);
   const repo = httpUrl(info?.repoUrl ?? null);
@@ -75,7 +79,7 @@ export async function CaseStudy({
               <span className="tag">{tp(`status.${p.status}`)}</span>
               <h1>{p.title}</h1>
               {info?.result && <p className="res">{info.result}</p>}
-              <p>{getExcerpt(p.description, 320)}</p>
+              {summary && <p>{summary}</p>}
               {(link || repo) && (
                 <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "20px" }}>
                   {link && (
@@ -128,22 +132,13 @@ export async function CaseStudy({
 
       <section className="sec">
         <div className="w story">
-          {info?.context || info?.stake ? (
+          {(info?.context || info?.stake) && (
             <div className="chap">
               <span className="kick">{t("startKick")}</span>
               <h2>{t("startTitle")}</h2>
               {info.context && <p className="t">{info.context}</p>}
               {info.stake && <p className="t">{info.stake}</p>}
             </div>
-          ) : (
-            html && (
-              <div className="chap">
-                <span className="kick">{t("startKick")}</span>
-                <h2>{t("startTitle")}</h2>
-                {/* HTML du back-office, assaini (liste blanche) avant rendu. */}
-                <div className="t-rich" dangerouslySetInnerHTML={{ __html: html }} />
-              </div>
-            )
           )}
 
           {steps.length > 0 && (
@@ -158,6 +153,40 @@ export async function CaseStudy({
                   </li>
                 ))}
               </ol>
+            </div>
+          )}
+
+          {challenges.length > 0 && (
+            <div className="chap">
+              <span className="kick">{t("challengesKick")}</span>
+              <h2>{t("challengesTitle")}</h2>
+              <div className="br3 defis">
+                {challenges.map((c, k) => (
+                  <div key={k}>
+                    <span className="n">{k + 1}</span>
+                    <b>{c.problem}</b>
+                    <p>{c.solution}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {benefits.length > 0 && (
+            <div className="chap">
+              <span className="kick">{t("benefitsKick")}</span>
+              <h2>{t("benefitsTitle")}</h2>
+              <div className="liv">
+                {benefits.map((r, k) => (
+                  <div key={k}>
+                    <ProtoIcon name="ok" />
+                    <span>
+                      {r.title && <b>{r.title} : </b>}
+                      {r.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -231,28 +260,15 @@ export async function CaseStudy({
             </div>
           )}
 
-          {info?.discreet && (
-            <div className="disc">
-              <ProtoIcon name="lock" />
-              <div>
-                <b>{t("discreetTitle")}</b>
-                <p>{t("discreetText")}</p>
-              </div>
+          {/* Note toujours affichée : aucune fiche ne publie son architecture ni ses
+              protections (principe « zéro information de sécurité »). */}
+          <div className="disc">
+            <ProtoIcon name="lock" />
+            <div>
+              <b>{t("discreetTitle")}</b>
+              <p>{t("discreetText")}</p>
             </div>
-          )}
-
-          {stack.length > 0 && (
-            <div className="chap">
-              <span className="kick">{t("techKick")}</span>
-              <div className="chips">
-                {stack.map((s) => (
-                  <span key={s.name} className="chip">
-                    {s.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+          </div>
 
           {offer && (
             <Link className="same" href={{ pathname: "/offres/[slug]", params: { slug: offer.slug } }}>
