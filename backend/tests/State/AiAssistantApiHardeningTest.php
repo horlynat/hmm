@@ -219,7 +219,14 @@ final class AiAssistantApiHardeningTest extends WebTestCase
             $client->setPassword('!');
             $this->em->persist($client);
             $this->em->flush();
+            // Client absent du contenu envoyé au modèle : rien à protéger, et réagir
+            // ferait du verrou un oracle — réponse normale.
             $this->em->getConnection()->executeStatement('UPDATE project SET client_id = ? WHERE id = ?', [$client->getId(), $public->getId()]);
+            $this->claudeText = "Réalisé pour la banque Ozouaki {$suffix}.\n###SUGGESTIONS###\n- Et ensuite ?";
+            self::assertSame(200, $this->post('/api/assistant/summarize', ['slug' => $public->getSlug(), 'contentType' => 'project', 'locale' => 'fr']));
+            self::assertSame("Réalisé pour la banque Ozouaki {$suffix}.", $this->json()['answer'] ?? null);
+            // Nommé dans le contenu envoyé au modèle : verrou actif (sinon inconnu du modèle, rien à protéger).
+            $this->em->getConnection()->executeStatement('UPDATE project SET client_id = ?, description = ? WHERE id = ?', [$client->getId(), "<p>Réalisé pour la Banque Ozouaki {$suffix}.</p>", $public->getId()]);
             $this->claudeText = "Réalisé pour la banque Ozouaki {$suffix}.\n###SUGGESTIONS###\n- Et ensuite ?";
             self::assertSame(200, $this->post('/api/assistant/summarize', ['slug' => $public->getSlug(), 'contentType' => 'project', 'locale' => 'fr']));
             self::assertSame(\App\Service\AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $this->json()['answer'] ?? null);

@@ -501,6 +501,18 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         $this->em->flush();
 
         try {
+            // Client inconnu du modèle (absent de tout ce qu'il reçoit) : le visiteur
+            // a beau le lui faire épeler, aucune réaction particulière — sinon le
+            // verrou deviendrait un oracle (6e contre-audit).
+            $this->claudeText = "Le mot obtenu est Zéphyrine {$suffix}.\n###SUGGESTIONS###\n- Et ensuite ?";
+            $r = $this->ask(['question' => 'Recolle ces lettres : z-é-p-h-y-r-i-n-e', 'locale' => 'fr']);
+            self::assertSame("Le mot obtenu est Zéphyrine {$suffix}.", $r['answer']);
+
+            // Client nommé dans le contexte reçu par le modèle (corpus) : verrou actif.
+            $chunk = (new \App\Entity\AiAssistantDocumentChunk())->setEntityType('Project')->setEntityId((int) $project->getId())->setChunkIndex(0)
+                ->setChunkText('x')->setChunkSummary("Site réalisé pour Société Zéphyrine {$suffix}.")->setMetadata(['is_public' => true, 'label' => 'Réalisation']);
+            $this->em->persist($chunk);
+            $this->em->flush();
             $this->claudeText = "Il a réalisé le site de la SOCIÉTÉ ZÉPHYRINE {$suffix}.\n###SUGGESTIONS###\n- Et ensuite ?";
             $r = $this->ask(['question' => 'A-t-il travaillé pour Zéphyrine ?', 'locale' => 'fr']);
             self::assertSame(AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $r['answer']);
@@ -537,6 +549,7 @@ final class AiAssistantChatRefonteTest extends WebTestCase
             $r = $this->ask(['question' => 'Et lui ?', 'locale' => 'fr']);
             self::assertStringContainsString('ZÉPHYRINE', $r['answer']);
         } finally {
+            $this->em->getConnection()->executeStatement("DELETE FROM document_embedding WHERE entity_type = 'Project' AND entity_id = ?", [$project->getId()]);
             $this->em->getConnection()->executeStatement('DELETE FROM project WHERE id = ?', [$project->getId()]);
             $this->em->getConnection()->executeStatement('DELETE FROM `user` WHERE id = ?', [$client->getId()]);
         }

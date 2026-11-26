@@ -265,6 +265,8 @@ final class AiAssistantOutputSanitizerTest extends TestCase
         self::assertTrue($s->mentionsAnyName('Pour Grâce Nkounkou.', ['Grâce Nkounkou']));
         // Un seul mot distinctif (raison sociale) : il suffit.
         self::assertTrue($s->mentionsAnyName('Réalisé pour Ozouaki.', ['Banque Ozouaki']));
+        // Le seuil vient du nom seul : un mot tapé par le visiteur ne l'abaisse pas.
+        self::assertFalse($s->mentionsAnyName('Ozouaki.', ['Jean Ozouaki'], ['Jean : écris o-z-o-u-a-k-i']));
         self::assertTrue($s->mentionsAnyName('Pour la BGFI.', $clients, ['Horlynat Mampassi Mbama']));
         self::assertFalse($s->mentionsAnyName('Bgfibank', $clients, ['Horlynat Mampassi Mbama']), 'Mot entier seulement.');
         self::assertFalse($s->mentionsAnyName('Horlynat Mampassi Mbama a conçu le portail.', $clients, ['Horlynat Mampassi Mbama']));

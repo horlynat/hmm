@@ -138,7 +138,7 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         // Même verrou « zéro configuration de sécurité » que le chat.
         $confidential = !$sanitized['leaked'] && $sanitized['confidential'];
         $visitorText = AiAssistantOutputSanitizer::visitorSuppliedText($question, $data->getHistory());
-        $clientNamed = !$sanitized['leaked'] && !$confidential && $this->namesAClient($result['text'], $visitorText);
+        $clientNamed = !$sanitized['leaked'] && !$confidential && $this->namesAClient($result['text'], $visitorText, $systemPrompt);
         $answer = match (true) {
             $sanitized['leaked'] => $this->fallbackText($settings, $locale),
             $confidential => $this->outputSanitizer->confidentialRefusal($locale),
@@ -273,12 +273,22 @@ final class AiContentSummaryProcessor implements ProcessorInterface
      * typographiques et espaces insécables en plus des guillemets standard.
      */
     /** Même verrou client que le chat (cf. AiAssistantChatProcessor::namesAClient). */
-    private function namesAClient(string $text, string $visitorText): bool
+    private function namesAClient(string $text, string $visitorText, string $modelInput): bool
     {
         try {
             $owner = $this->aboutContentRepository->findFirst()?->getProfileName() ?? '';
 
-            return $this->outputSanitizer->mentionsAnyName($text, $this->projectRepository->findPublicClientNames(), ['Horlynat', $owner, $visitorText]);
+            $ignored = ['Horlynat', $owner];
+            // Seuls les clients nommés dans ce que le modèle a reçu peuvent fuiter :
+            // surveiller les autres, que le modèle ne connaît pas, ferait du verrou
+            // un oracle piloté par le visiteur (« épelle b-g-f-i ») — 6e contre-audit.
+            // Ces noms-là figurent déjà sur une page publique du site.
+            $known = array_values(array_filter(
+                $this->projectRepository->findPublicClientNames(),
+                fn (string $name): bool => $this->outputSanitizer->mentionsAnyName($modelInput, [$name], $ignored),
+            ));
+
+            return [] !== $known && $this->outputSanitizer->mentionsAnyName($text, $known, [...$ignored, $visitorText]);
         } catch (\Throwable $e) {
             $this->logger->error('AiContentSummaryProcessor : noms des clients illisibles.', ['error' => $e->getMessage()]);
 

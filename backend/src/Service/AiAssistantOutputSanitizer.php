@@ -259,8 +259,10 @@ final class AiAssistantOutputSanitizer
             // « Martin ») est trop souvent un mot courant, et le refuser ferait du
             // verrou un oracle (5e contre-audit) ; s'il n'y en a qu'un (« BGFI »,
             // « Banque Ozouaki »), il suffit, en mot entier.
-            $significant = array_values(array_unique(array_filter($nameWords, static fn (string $w): bool => \strlen($w) >= 4 && !isset($ignoredWords[$w]) && !isset($genericWords[$w]))));
-            $present = array_filter($significant, static fn (string $w): bool => str_contains($wordsText, ' '.$w.' '));
+            // Le seuil se calcule sur le nom seul (jamais abaissé par ce que tape le
+            // visiteur) ; seuls les mots non fournis par lui comptent comme présents.
+            $significant = array_values(array_unique(array_filter($nameWords, static fn (string $w): bool => \strlen($w) >= 4 && !isset($genericWords[$w]))));
+            $present = array_filter($significant, static fn (string $w): bool => !isset($ignoredWords[$w]) && str_contains($wordsText, ' '.$w.' '));
             if ([] !== $significant && \count($present) >= min(2, \count($significant))) {
                 return true;
             }
