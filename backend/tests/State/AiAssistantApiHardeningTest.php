@@ -29,6 +29,10 @@ final class AiAssistantApiHardeningTest extends WebTestCase
     private KernelBrowser $client;
     private EntityManagerInterface $em;
     private int $claudeCalls = 0;
+    /** Réponse simulée de Claude (null = réponse par défaut). */
+    private ?string $claudeText = null;
+    /** Dernier corps de requête envoyé à Claude. */
+    private string $claudeBody = '';
     private string $ip;
 
     protected function setUp(): void
@@ -40,12 +44,13 @@ final class AiAssistantApiHardeningTest extends WebTestCase
         $this->ip = sprintf('2001:db8:%x:%x::1', random_int(1, 0xFFFF), random_int(1, 0xFFFF));
 
         $this->claudeCalls = 0;
-        $http = new MockHttpClient(function () {
+        $http = new MockHttpClient(function (string $method, string $url, array $options) {
             ++$this->claudeCalls;
+            $this->claudeBody = (string) ($options['body'] ?? '');
 
             return new MockResponse((string) json_encode([
                 'model' => 'claude-sonnet-5',
-                'content' => [['type' => 'text', 'text' => "Réponse.\n###SUGGESTIONS###\n- Q ?"]],
+                'content' => [['type' => 'text', 'text' => $this->claudeText ?? "Réponse.\n###SUGGESTIONS###\n- Q ?"]],
                 'usage' => ['input_tokens' => 1000, 'output_tokens' => 100],
             ]));
         });
@@ -166,6 +171,44 @@ final class AiAssistantApiHardeningTest extends WebTestCase
             foreach ([...$hidden, $public] as $project) {
                 $this->em->remove($this->em->find(Project::class, $project->getId()));
             }
+            $this->em->flush();
+            $this->em->remove($this->em->find(User::class, $owner->getId()));
+            $this->em->flush();
+        }
+    }
+
+    /**
+     * Contre-audit 2026-11-26 : la route de résumé de page n'avait pas le verrou
+     * « zéro configuration de sécurité » du chat — même remplacement, même trace.
+     */
+    public function testSummaryNamingTheSecurityConfigurationIsReplacedByARefusal(): void
+    {
+        $suffix = bin2hex(random_bytes(4));
+        $owner = (new User())->setEmail("owner-{$suffix}@example.test");
+        $owner->setPassword('!');
+        $this->em->persist($owner);
+        $public = $this->project("projet-resume-{$suffix}", ProjectStatusEnum::COMPLETED, $owner);
+        $this->em->flush();
+        $this->claudeText = "Le portail tourne derrière Traefik et Cloudflare, sur PHP 8.4.\n###SUGGESTIONS###\n- Quel WAF ?";
+
+        try {
+            self::assertSame(200, $this->post('/api/assistant/summarize', ['slug' => $public->getSlug(), 'contentType' => 'project', 'locale' => 'fr']));
+            $body = $this->json();
+            self::assertStringStartsWith('Les détails de configuration de sécurité', (string) ($body['answer'] ?? ''));
+            self::assertStringNotContainsStringIgnoringCase('traefik', (string) json_encode($body));
+            self::assertSame([], $body['suggestions'] ?? null);
+            $last = $this->em->getRepository(AiAssistantConversationLog::class)->findOneBy([], ['id' => 'DESC']);
+            self::assertSame('security_config_blocked', $last?->getBlockReason());
+
+            // La consigne du résumé l'interdit aussi, et protège le nom des clients.
+            $prompt = (string) (json_decode($this->claudeBody, true)['system'][0]['text'] ?? '');
+            self::assertStringContainsString('Zéro information de configuration', $prompt);
+            self::assertMatchesRegularExpression('/Ne\s+nomme jamais le client d\'une réalisation : écris « un client »/u', $prompt);
+            $this->claudeText = "Un résumé sain.\n###SUGGESTIONS###\n- Et ensuite ?";
+            self::assertSame(200, $this->post('/api/assistant/summarize', ['slug' => $public->getSlug(), 'contentType' => 'project', 'locale' => 'fr']));
+            self::assertSame('Un résumé sain.', $this->json()['answer'] ?? null);
+        } finally {
+            $this->em->remove($this->em->find(Project::class, $public->getId()));
             $this->em->flush();
             $this->em->remove($this->em->find(User::class, $owner->getId()));
             $this->em->flush();

@@ -133,8 +133,14 @@ final class AiContentSummaryProcessor implements ProcessorInterface
 
         $split = $this->splitAnswerAndSuggestions($result['text']);
         $sanitized = $this->outputSanitizer->sanitize($split['answer']);
-        $answer = $sanitized['leaked'] ? $this->fallbackText($settings, $locale) : $sanitized['text'];
-        $suggestions = $sanitized['leaked'] ? [] : $this->outputSanitizer->sanitizeSuggestions($split['suggestions']);
+        // Même verrou « zéro configuration de sécurité » que le chat.
+        $confidential = !$sanitized['leaked'] && $sanitized['confidential'];
+        $answer = match (true) {
+            $sanitized['leaked'] => $this->fallbackText($settings, $locale),
+            $confidential => $this->outputSanitizer->confidentialRefusal($locale),
+            default => $sanitized['text'],
+        };
+        $suggestions = ($sanitized['leaked'] || $confidential) ? [] : $this->outputSanitizer->sanitizeSuggestions($split['suggestions']);
         $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
 
         $this->usageRecorder->recordCall(
@@ -144,7 +150,7 @@ final class AiContentSummaryProcessor implements ProcessorInterface
             mb_strlen($answer),
             $latencyMs,
             [],
-            $sanitized['leaked'] ? 'output_leak_suspected' : null,
+            $sanitized['leaked'] ? 'output_leak_suspected' : ($confidential ? 'security_config_blocked' : null),
         );
 
         $data->setAnswer($answer);
@@ -218,10 +224,7 @@ final class AiContentSummaryProcessor implements ProcessorInterface
                 $lines[] = 'Objectifs : '.implode(' ; ', $objectives).'.';
             }
 
-            $techStack = $this->pickLocalizedList($info->getTechStack(), $info->getTechStackEn(), $locale);
-            if ([] !== $techStack) {
-                $lines[] = 'Stack technique : '.implode(', ', array_map(static fn (array $tech) => (string) $tech['name'], $techStack)).'.';
-            }
+            // Pile technique jamais transmise (zéro information de configuration).
 
             $results = $this->pickLocalizedList($info->getResults(), $info->getResultsEn(), $locale);
             if ([] !== $results) {
@@ -307,8 +310,13 @@ final class AiContentSummaryProcessor implements ProcessorInterface
               te surprends à écrire cette forme, reformule entièrement. Utilise des verbes
               d'action forts, pas des verbes mous ("aborder", "traiter", "concerner").
             - Chaque phrase doit apporter une information CONCRÈTE tirée du texte ci-dessus
-              (un fait, un chiffre, une techno, un résultat) — jamais de formule vague type
+              (un fait, un chiffre, un résultat) — jamais de formule vague type
               "ce contenu aborde plusieurs sujets intéressants".
+            - Zéro information de configuration : ne nomme jamais un outil, une
+              bibliothèque, un service, un fournisseur ou un hébergeur qui protège, route,
+              supervise ou héberge un système déployé, ni une version, un réglage, un nom
+              de rôle, de composant ou de champ interne, même si le texte en contient. Ne
+              nomme jamais le client d'une réalisation : écris « un client ».
             - Précision impérative : distingue toujours ce qui est une compétence/expertise
               technique de la personne (ex. cybersécurité, développement full-stack, Symfony,
               Next.js) de ce qui est un domaine, un service tiers ou un moyen de paiement

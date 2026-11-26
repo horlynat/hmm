@@ -35,11 +35,34 @@ final class AiAssistantOutputSanitizer
      */
     private const SECURITY_CONFIG_PATTERNS = [
         '/\bubuntu\b/iu',
+        '/\bdebian\b/iu',
         '/\bmonolog(?!ue)/iu',
-        '/\bBetter\s*Stack\b/u',
-        '/\brole[\s_-]*(?:user|editor|moderator|manager|admin|super)/iu',
+        '/\bBetter[\s_-]*Stack\b/u',
+        '/\bAccess\s+Zero\s*Trust\b/iu',
+        // Noms de rôles internes : forme de code (ROLE_X, role-admin), jamais le
+        // mot « rôle » ordinaire (« son rôle administratif », « a role user… »).
+        '/\bROLE_[A-Z_]+\b/u',
+        '/\brole[_-](?:user|editor|moderator|manager|admin|super[_-]?admin)\b/iu',
+        '/\bSUPER[_\s-]?ADMIN\b/u',
         '/\b(?:ProjectExpense|ProjectHistory|ProjectTask|TimeEntry|SupportTicket)\b/u',
+        // Versions des composants (recherche de vulnérabilités connues).
+        '/\b(?:PHP|Symfony|API\s*Platform|Doctrine|MySQL|MariaDB|PostgreSQL|Next\.?js|Node(?:\.js)?|React|Ubuntu|Debian|Nginx|Apache|Redis|Docker)\s*v?\d+(?:\.\d+)*\b/iu',
     ];
+
+    /**
+     * Lettres cyrilliques et grecques visuellement identiques à une lettre latine :
+     * la translittération phonétique (С → S) ne suffit pas, on replie par la forme
+     * (у → u : aucun terme surveillé ne contient de « y », « Ubуntu » doit tomber).
+     */
+    private const CONFUSABLES = [
+        'а' => 'a', 'в' => 'b', 'с' => 'c', 'е' => 'e', 'һ' => 'h', 'і' => 'i', 'ј' => 'j', 'к' => 'k', 'м' => 'm', 'н' => 'h', 'о' => 'o', 'р' => 'p', 'ѕ' => 's', 'т' => 't', 'у' => 'u', 'х' => 'x', 'ԁ' => 'd', 'ӏ' => 'l',
+        'А' => 'A', 'В' => 'B', 'С' => 'C', 'Е' => 'E', 'Н' => 'H', 'І' => 'I', 'Ј' => 'J', 'К' => 'K', 'М' => 'M', 'О' => 'O', 'Р' => 'P', 'Ѕ' => 'S', 'Т' => 'T', 'У' => 'U', 'Х' => 'X',
+        'α' => 'a', 'ο' => 'o', 'ι' => 'i', 'κ' => 'k', 'ν' => 'v', 'ρ' => 'p', 'τ' => 't', 'υ' => 'u', 'χ' => 'x', 'ε' => 'e',
+        'Α' => 'A', 'Β' => 'B', 'Ε' => 'E', 'Η' => 'H', 'Ι' => 'I', 'Κ' => 'K', 'Μ' => 'M', 'Ν' => 'N', 'Ο' => 'O', 'Ρ' => 'P', 'Τ' => 'T', 'Υ' => 'Y', 'Χ' => 'X', 'Ζ' => 'Z',
+    ];
+
+    /** Hiérarchie de rôles recopiée en clair (« USER, EDITOR, MODERATOR… ») : 3 jetons distincts ou plus. */
+    private const ROLE_TOKENS = '/\b(USER|EDITOR|MODERATOR|MANAGER|ADMIN)\b/u';
 
     /**
      * @return array{text: string, leaked: bool, confidential: bool}
@@ -61,13 +84,24 @@ final class AiAssistantOutputSanitizer
         return ['text' => $text, 'leaked' => $leaked, 'confidential' => $this->revealsSecurityConfig($rawAnswer)];
     }
 
+    /** Refus fixe qui remplace une réponse nommant la configuration de sécurité. */
+    public function confidentialRefusal(string $locale): string
+    {
+        return 'en' === $locale
+            ? 'Security configuration details for Horlynat\'s systems are not published. To talk about his security approach, [Send a message](/contact?mode=direct).'
+            : 'Les détails de configuration de sécurité des systèmes de Horlynat ne sont pas publiés. Pour échanger sur son approche de la sécurité, [Envoyer un message](/contact?mode=direct).';
+    }
+
     /** Vrai si le texte nomme un élément de la configuration de sécurité déployée. */
     public function revealsSecurityConfig(string $text): bool
     {
         // Lettres et chiffres seuls, après décomposition des accents et des formes de
         // compatibilité (pleine chasse, ligatures) : « Ｔｒａｅｆｉｋ », « Tr-æfik »… Les
         // marques diacritiques détachées (\p{Mn}) tombent avec le reste.
-        $decomposed = \Normalizer::normalize($text, \Normalizer::FORM_KD);
+        // Homoglyphes cyrilliques/grecs (« Сloudflare », « Trаefik ») repliés vers
+        // l'ASCII avant toute comparaison.
+        $latin = \Transliterator::create('Any-Latin; Latin-ASCII')?->transliterate(strtr($text, self::CONFUSABLES));
+        $decomposed = \Normalizer::normalize(false === $latin || null === $latin ? $text : $latin, \Normalizer::FORM_KD);
         $decomposed = false === $decomposed ? $text : $decomposed;
         $compact = (string) preg_replace('/[^\p{Ll}\p{Nd}]+/u', '', mb_strtolower($decomposed));
         foreach (self::SECURITY_CONFIG_COMPACT as $term) {
@@ -80,6 +114,9 @@ final class AiAssistantOutputSanitizer
             if (1 === preg_match($pattern, $plain)) {
                 return true;
             }
+        }
+        if (preg_match_all(self::ROLE_TOKENS, $plain, $m) > 0 && \count(array_unique($m[1])) >= 3) {
+            return true;
         }
 
         return false;

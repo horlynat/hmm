@@ -161,9 +161,8 @@ final class AiAssistantIngestionService
             if ([] !== $info->getObjectives()) {
                 $parts[] = 'Objectifs : ' . implode(', ', $info->getObjectives());
             }
-            if ([] !== $info->getTechStack()) {
-                $parts[] = 'Stack technique : ' . implode(', ', array_column($info->getTechStack(), 'name'));
-            }
+            // Pile technique jamais ingérée : elle décrit la configuration d'un
+            // système déployé (zéro information de sécurité, 2026-11-26).
             foreach ($info->getChallenges() as $challenge) {
                 $parts[] = sprintf('Défi : %s — Solution : %s', $challenge['problem'] ?? '', $challenge['solution'] ?? '');
             }

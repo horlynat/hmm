@@ -27,6 +27,8 @@ final class AiAssistantIngestionVisibilityTest extends KernelTestCase
 {
     private EntityManagerInterface $em;
     private int $geminiCalls = 0;
+    /** @var list<string> Corps des requêtes envoyées à Gemini. */
+    private array $geminiBodies = [];
     /** @var list<object> */
     private array $created = [];
 
@@ -58,8 +60,9 @@ final class AiAssistantIngestionVisibilityTest extends KernelTestCase
 
     private function service(): AiAssistantIngestionService
     {
-        $http = new MockHttpClient(function () {
+        $http = new MockHttpClient(function (string $method, string $url, array $options) {
             ++$this->geminiCalls;
+            $this->geminiBodies[] = (string) ($options['body'] ?? '');
 
             return new MockResponse((string) json_encode([
                 'candidates' => [['content' => ['parts' => [['text' => 'Résumé de test.']]]]],
@@ -128,6 +131,30 @@ final class AiAssistantIngestionVisibilityTest extends KernelTestCase
 
         self::assertSame(1, $this->geminiCalls);
         self::assertCount(1, $this->chunks()->findByEntity('Project', (int) $project->getId()));
+    }
+
+    /**
+     * Zéro information de configuration (2026-11-26) : la pile technique d'un
+     * projet décrit un système déployé — elle n'est jamais envoyée à l'IA.
+     */
+    public function testTechStackIsNeverSentToTheAi(): void
+    {
+        $project = $this->project(ProjectStatusEnum::IN_PROGRESS);
+        $info = (new \App\Entity\ProjectInfo())
+            ->setRole('Architecte')
+            ->setTechStack([['name' => 'Infrastructure — Traefik, Cloudflare Access', 'reason' => 'WAF']]);
+        $project->setInfo($info);
+        $this->em->persist($info);
+        $this->em->flush();
+        $this->created[] = $info;
+
+        $this->service()->ingest('Project', (int) $project->getId());
+
+        self::assertSame(1, $this->geminiCalls);
+        $sent = implode("\n", $this->geminiBodies);
+        self::assertStringContainsString('Architecte', $sent, 'Le reste de la fiche est bien ingéré.');
+        self::assertStringNotContainsString('Traefik', $sent);
+        self::assertStringNotContainsString('Stack technique', $sent);
     }
 
     public function testDeletedProjectLeavesTheAssistant(): void

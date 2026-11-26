@@ -447,6 +447,10 @@ final class AiAssistantChatRefonteTest extends WebTestCase
         self::assertGreaterThan($strict, (int) strpos($system, '- Sécurité — zéro information'));
         self::assertGreaterThan(0, $strict);
 
+        // Client d'une réalisation : jamais nommé ; son nom demandé → « confidentiel ».
+        self::assertMatchesRegularExpression('/ne nomme jamais le client d\'une réalisation, même si le contexte le\s+cite ; décris-le comme « un client »\. À une question sur son nom, réponds\s+seulement que c\'est confidentiel/u', $system);
+        self::assertMatchesRegularExpression('/Ses anciens employeurs, cités dans son\s+parcours, ne sont pas des clients/u', $system);
+
         $this->ask(['question' => 'How is the back-office protected?', 'locale' => 'en']);
         self::assertMatchesRegularExpression('/puis propose \[Send a message\]\(\/contact\?mode=direct\)\. Un détail de configuration/u', $this->lastSystemPrompt());
     }
