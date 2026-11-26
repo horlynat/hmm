@@ -200,6 +200,26 @@ final class AiAssistantApiHardeningTest extends WebTestCase
             $last = $this->em->getRepository(AiAssistantConversationLog::class)->findOneBy([], ['id' => 'DESC']);
             self::assertSame('security_config_blocked', $last?->getBlockReason());
 
+            // La configuration du contenu résumé n'est jamais envoyée à Claude.
+            self::assertStringNotContainsString('Traefik', $this->claudeBody);
+            self::assertStringContainsString('Description confidentielle', $this->claudeBody, 'Le reste du contenu part bien.');
+
+            // Client de la réalisation cité : même verrou que le chat.
+            $client = (new User())->setEmail("client-{$suffix}@example.test")->setFullName("Banque Ozouaki {$suffix}");
+            $client->setPassword('!');
+            $this->em->persist($client);
+            $public->setClient($client);
+            $this->em->flush();
+            $this->claudeText = "Réalisé pour Ozouaki.\n###SUGGESTIONS###\n- Et ensuite ?";
+            self::assertSame(200, $this->post('/api/assistant/summarize', ['slug' => $public->getSlug(), 'contentType' => 'project', 'locale' => 'fr']));
+            self::assertSame(\App\Service\AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $this->json()['answer'] ?? null);
+            self::assertSame([], $this->json()['suggestions'] ?? null);
+            $conn = $this->em->getConnection();
+            $conn->executeStatement('UPDATE project SET client_id = NULL WHERE id = ?', [$public->getId()]);
+            $conn->executeStatement('DELETE FROM `user` WHERE id = ?', [$client->getId()]);
+            $this->em->clear();
+            $this->claudeText = "Un résumé sain.\n###SUGGESTIONS###\n- Et ensuite ?";
+
             // La consigne du résumé l'interdit aussi, et protège le nom des clients.
             $prompt = (string) (json_decode($this->claudeBody, true)['system'][0]['text'] ?? '');
             self::assertStringContainsString('Zéro information de configuration', $prompt);
@@ -244,7 +264,7 @@ final class AiAssistantApiHardeningTest extends WebTestCase
         $project = (new Project())
             ->setOwner($owner)
             ->setTitle('Projet '.$slug)
-            ->setDescription('Description confidentielle de '.$slug)
+            ->setDescription('<p>Description confidentielle de '.$slug.'.</p><p>Routage par Traefik.</p>')
             ->setLink('https://example.com')
             ->setBudget('100.00')
             ->setStatus($status);

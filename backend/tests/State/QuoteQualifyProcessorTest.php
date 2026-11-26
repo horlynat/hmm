@@ -153,6 +153,19 @@ final class QuoteQualifyProcessorTest extends TestCase
         self::assertSame(['Question A ?', 'Question B ?'], $result->getQuestions());
     }
 
+    /** Une question sur le système du prospect est légitime ici (pas de filtre « configuration »). */
+    public function testQuestionsAboutTheProspectSystemAreKept(): void
+    {
+        $httpClient = new MockHttpClient(new MockResponse(json_encode([
+            'content' => [['type' => 'text', 'text' => '["Votre site tourne-t-il sous PHP 7.4 ?", "Utilisez-vous Cloudflare ?"]']],
+            'usage' => ['input_tokens' => 10, 'output_tokens' => 10],
+        ])));
+
+        $result = $this->process($this->processor($httpClient), $this->resource());
+
+        self::assertSame(['Votre site tourne-t-il sous PHP 7.4 ?', 'Utilisez-vous Cloudflare ?'], $result->getQuestions());
+    }
+
     public function testClaudeUnreachableFallsBackToEmptyArray(): void
     {
         $httpClient = new MockHttpClient(function () {

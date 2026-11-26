@@ -499,6 +499,16 @@ final class AiAssistantChatRefonteTest extends WebTestCase
             self::assertSame([], $r['suggestions']);
             self::assertSame('client_name_blocked', $this->em->getConnection()->fetchOne('SELECT block_reason FROM ai_assistant_conversation_log ORDER BY id DESC LIMIT 1'));
 
+            // Le nom du propriétaire (souvent « client » de ses propres projets) n'est jamais refusé.
+            $client->setFullName("Horlynat Zéphyrine{$suffix}");
+            $this->em->flush();
+            $this->claudeText = "Horlynat a conçu ce portail.\n###SUGGESTIONS###\n- Et ensuite ?";
+            $r = $this->ask(['question' => 'Qui a conçu le portail ?', 'locale' => 'fr']);
+            self::assertSame('Horlynat a conçu ce portail.', $r['answer']);
+            $client->setFullName("Société Zéphyrine {$suffix}");
+            $this->em->flush();
+            $this->claudeText = "Il a réalisé le site de la SOCIÉTÉ ZÉPHYRINE {$suffix}.\n###SUGGESTIONS###\n- Et ensuite ?";
+
             // Projet non public : son client n'est pas surveillé (il n'est pas dans le corpus).
             $project->setStatus(\App\Enum\ProjectStatusEnum::SUSPENDED);
             $this->em->getConnection()->executeStatement('UPDATE project SET status = ? WHERE id = ?', ['suspendu', $project->getId()]);

@@ -239,6 +239,8 @@ final class AiAssistantOutputSanitizerTest extends TestCase
         self::assertTrue($s->mentionsAnyName('Pour la BGFI.', $clients, ['Horlynat Mampassi Mbama']));
         self::assertFalse($s->mentionsAnyName('Bgfibank', $clients, ['Horlynat Mampassi Mbama']), 'Mot entier seulement.');
         self::assertFalse($s->mentionsAnyName('Horlynat Mampassi Mbama a conçu le portail.', $clients, ['Horlynat Mampassi Mbama']));
+        // Nom composé écrit d'un seul bloc : seule la forme compactée complète le reconnaît.
+        self::assertTrue($s->mentionsAnyName('Pour JeanPierreNgoma.', ['Jean-Pierre Ngoma']));
     }
 
     /** Anti-oracle : refus identiques quel que soit le produit ou le nom, reconnus pour retirer les suggestions. */
@@ -258,6 +260,8 @@ final class AiAssistantOutputSanitizerTest extends TestCase
         $out = (new AiAssistantOutputSanitizer())->withoutSecurityConfig("Un portail (ex. ventes +30 %). Protégé par Traefik ; bilingue.\n- Supervision Netdata\n- Formulaire court");
 
         self::assertSame("Un portail (ex. ventes +30 %). bilingue.\n- Formulaire court", $out);
+        // « ex. » ne coupe pas la phrase : la phrase entière, qui nomme un outil, part.
+        self::assertSame('Fin.', (new AiAssistantOutputSanitizer())->withoutSecurityConfig('Outils retenus, ex. Traefik pour le routage. Fin.'));
     }
 
     public function testLinksToInternalSubdomainsAreUnlinked(): void
