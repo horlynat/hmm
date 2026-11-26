@@ -46,6 +46,7 @@ final class AiAssistantIngestionService
         private readonly GeminiIngestionClient $geminiClient,
         private readonly AiAssistantDocumentChunkRepository $chunkRepository,
         private readonly LoggerInterface $logger,
+        private readonly AiAssistantOutputSanitizer $outputSanitizer = new AiAssistantOutputSanitizer(),
     ) {
     }
 
@@ -99,12 +100,15 @@ final class AiAssistantIngestionService
         $this->chunkRepository->deleteByEntity($entityType, $entityId);
         $this->entityManager->flush();
 
+        // Deuxième barrière (la consigne de Gemini est la première) : toute phrase
+        // du résumé qui nomme la configuration de sécurité est retirée avant
+        // stockage — c'est ce résumé, et lui seul, qui atteint le chat public.
         $chunk = (new AiAssistantDocumentChunk())
             ->setEntityType($entityType)
             ->setEntityId($entityId)
             ->setChunkIndex(0)
             ->setChunkText($sourceText)
-            ->setChunkSummary($summary['summary'])
+            ->setChunkSummary($this->outputSanitizer->withoutSecurityConfig($summary['summary']))
             ->setMetadata(['is_public' => true, 'label' => $this->extractLabel($entityType, $entity)]);
 
         $this->entityManager->persist($chunk);
@@ -151,7 +155,9 @@ final class AiAssistantIngestionService
             return '';
         }
 
-        $parts = [$entity->getTitle(), $entity->getDescription()];
+        // Texte brut : le HTML de l'éditeur riche n'a rien à faire dans un résumé.
+        $text = html_entity_decode(strip_tags((string) preg_replace('/<[^>]*>/', '$0 ', $entity->getDescription())), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
+        $parts = [$entity->getTitle(), trim((string) preg_replace('/\s+/u', ' ', $text))];
 
         $info = $entity->getInfo();
         if (null !== $info) {

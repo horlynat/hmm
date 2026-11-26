@@ -26,7 +26,15 @@ final class AiAssistantOutputSanitizer
      * Comparés sur le texte compacté (minuscules, lettres et chiffres seuls) pour
      * résister aux séparateurs (« Cloud-flare », « t r a e f i k », « Zero_Trust »).
      */
-    private const SECURITY_CONFIG_COMPACT = ['traefik', 'cloudflare', 'lexik', 'scheb', 'netdata', 'uptimerobot', 'crowdsec', 'fail2ban', 'honeypot', 'champleurre', 'fullstrict'];
+    private const SECURITY_CONFIG_COMPACT = [
+        'traefik', 'cloudflare', 'lexik', 'scheb', 'uptimerobot', 'ubuntu', 'debian', 'monolog',
+        'champleurre', 'fullstrict', 'accesszerotrust', 'zerotrustaccess',
+        // Composants réellement déployés (composer.json, infra) — contre-audit 5dd6646.
+        'adminer', 'ntfy', 'nelmio', 'drenso', 'socat',
+    ];
+
+    /** Mots courants qui contiennent un terme surveillé une fois compactés : neutralisés avant comparaison. */
+    private const COMPACT_SAFE_WORDS = ['monologue'];
 
     /**
      * Termes ambigus une fois compactés (« a better stack », « monologue », « each
@@ -34,19 +42,24 @@ final class AiAssistantOutputSanitizer
      * noms d'entités internes, seulement sous leur forme de code (CamelCase).
      */
     private const SECURITY_CONFIG_PATTERNS = [
-        '/\bubuntu\b/iu',
-        '/\bdebian\b/iu',
-        '/\bmonolog(?!ue)/iu',
+        // Mots qui existent aussi dans la langue courante une fois compactés
+        // (« Internet data », « crowd security ») : frontières de mot exigées.
+        '/\bnetdata\b/iu',
+        '/\bcrowdsec\b/iu',
+        '/\bfail2ban\b/iu',
+        // « Better Stack » (le service) ou « betterstack », jamais « a better stack ».
         '/\bBetter[\s_-]*Stack\b/u',
-        '/\bAccess\s+Zero\s*Trust\b/iu',
+        '/\bbetter[_-]?stack\b(?<!better stack)/iu',
         // Noms de rôles internes : forme de code (ROLE_X, role-admin), jamais le
         // mot « rôle » ordinaire (« son rôle administratif », « a role user… »).
         '/\bROLE_[A-Z_]+\b/u',
         '/\brole[_-](?:user|editor|moderator|manager|admin|super[_-]?admin)\b/iu',
-        '/\bSUPER[_\s-]?ADMIN\b/u',
+        '/\bsuper[_\s-]?admin\b/iu',
         '/\b(?:ProjectExpense|ProjectHistory|ProjectTask|TimeEntry|SupportTicket)\b/u',
-        // Versions des composants (recherche de vulnérabilités connues).
-        '/\b(?:PHP|Symfony|API\s*Platform|Doctrine|MySQL|MariaDB|PostgreSQL|Next\.?js|Node(?:\.js)?|React|Ubuntu|Debian|Nginx|Apache|Redis|Docker)\s*v?\d+(?:\.\d+)*\b/iu',
+        // Versions des composants (recherche de vulnérabilités connues) : « PHP 8.4 »,
+        // « Symfony (8.1) », « Next.js@16 », « PHP version 8 », « v2 »… mais jamais un
+        // nombre qui compte autre chose (« PHP 8 ans », « React 3 projets », « 9/10 »).
+        '/\b(?:PHP|Symfony|API\s*Platform|Doctrine|MySQL|MariaDB|PostgreSQL|Next\.?js|Node(?:\.js)?|React|Nginx|Redis|Docker(?:\s*Compose)?)[\s(@:_,-]*(?:(?:en\s+)?version\s*|v\.?\s*)?(?:\d+\.\d+(?:\.\d+)*|v\d+|\d+(?!\d|[.,]\d|\/|\s*(?:ans?|années?|years?|jours?|days?|mois|months?|semaines?|weeks?|projets?|projects?|pages?|fois|times|FCFA|XAF|%|sur|out)\b))/iu',
     ];
 
     /**
@@ -61,8 +74,11 @@ final class AiAssistantOutputSanitizer
         'Α' => 'A', 'Β' => 'B', 'Ε' => 'E', 'Η' => 'H', 'Ι' => 'I', 'Κ' => 'K', 'Μ' => 'M', 'Ν' => 'N', 'Ο' => 'O', 'Ρ' => 'P', 'Τ' => 'T', 'Υ' => 'Y', 'Χ' => 'X', 'Ζ' => 'Z',
     ];
 
-    /** Hiérarchie de rôles recopiée en clair (« USER, EDITOR, MODERATOR… ») : 3 jetons distincts ou plus. */
-    private const ROLE_TOKENS = '/\b(USER|EDITOR|MODERATOR|MANAGER|ADMIN)\b/u';
+    /**
+     * Hiérarchie de rôles recopiée en liste (« USER, EDITOR et MODERATOR »,
+     * « user / admin / manager ») : 3 jetons distincts ou plus, enchaînés.
+     */
+    private const ROLE_LIST = '/\b(?:user|editor|moderator|manager|admin)s?\b(?:\s*(?:,|\/|;|\bet\b|\band\b|\bou\b|\bor\b)\s*\b(?:user|editor|moderator|manager|admin)s?\b){2,}/iu';
 
     /**
      * @return array{text: string, leaked: bool, confidential: bool}
@@ -92,6 +108,54 @@ final class AiAssistantOutputSanitizer
             : 'Les détails de configuration de sécurité des systèmes de Horlynat ne sont pas publiés. Pour échanger sur son approche de la sécurité, [Envoyer un message](/contact?mode=direct).';
     }
 
+    /**
+     * Retire d'un texte (résumé ingéré) chaque phrase qui nomme la configuration
+     * de sécurité, et garde les autres telles quelles.
+     */
+    public function withoutSecurityConfig(string $text): string
+    {
+        $sentences = preg_split('/(?<=[.!?…])\s+/u', trim($text)) ?: [$text];
+        $kept = array_filter($sentences, fn (string $s): bool => !$this->revealsSecurityConfig($s));
+
+        return implode(' ', $kept);
+    }
+
+    /** Refus fixe qui remplace une réponse citant le nom d'un client. */
+    public function clientRefusal(string $locale): string
+    {
+        return 'en' === $locale
+            ? 'The names of Horlynat\'s clients are confidential. To discuss his projects, [Send a message](/contact?mode=direct).'
+            : 'Le nom des clients de Horlynat est confidentiel. Pour échanger sur ses réalisations, [Envoyer un message](/contact?mode=direct).';
+    }
+
+    /**
+     * Vrai si le texte cite l'un des noms donnés (comparaison compactée, mêmes
+     * replis que le verrou de sécurité : séparateurs, accents, homoglyphes).
+     * Les noms de moins de 5 lettres sont ignorés (faux positifs certains).
+     *
+     * @param list<string> $names
+     */
+    public function mentionsAnyName(string $text, array $names): bool
+    {
+        $compactText = $this->compact($text);
+        foreach ($names as $name) {
+            $n = $this->compact($name);
+            if (\strlen($n) >= 5 && str_contains($compactText, $n)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function compact(string $text): string
+    {
+        $latin = \Transliterator::create('Any-Latin; Latin-ASCII')?->transliterate(strtr($text, self::CONFUSABLES));
+        $decomposed = \Normalizer::normalize(false === $latin || null === $latin ? $text : $latin, \Normalizer::FORM_KD);
+
+        return (string) preg_replace('/[^\p{Ll}\p{Nd}]+/u', '', mb_strtolower(false === $decomposed ? $text : $decomposed));
+    }
+
     /** Vrai si le texte nomme un élément de la configuration de sécurité déployée. */
     public function revealsSecurityConfig(string $text): bool
     {
@@ -103,20 +167,28 @@ final class AiAssistantOutputSanitizer
         $latin = \Transliterator::create('Any-Latin; Latin-ASCII')?->transliterate(strtr($text, self::CONFUSABLES));
         $decomposed = \Normalizer::normalize(false === $latin || null === $latin ? $text : $latin, \Normalizer::FORM_KD);
         $decomposed = false === $decomposed ? $text : $decomposed;
-        $compact = (string) preg_replace('/[^\p{Ll}\p{Nd}]+/u', '', mb_strtolower($decomposed));
+        $lower = str_replace(self::COMPACT_SAFE_WORDS, ' ', mb_strtolower($decomposed));
+        $compact = (string) preg_replace('/[^\p{Ll}\p{Nd}]+/u', '', $lower);
         foreach (self::SECURITY_CONFIG_COMPACT as $term) {
             if (str_contains($compact, $term)) {
                 return true;
             }
         }
-        $plain = (string) preg_replace('/\p{Mn}+/u', '', $decomposed);
+        // Marques diacritiques et caractères invisibles (espace de largeur nulle,
+        // trait d'union conditionnel, liant…) retirés avant les motifs.
+        $plain = (string) preg_replace('/[\p{Mn}\p{Cf}]+/u', '', $decomposed);
         foreach (self::SECURITY_CONFIG_PATTERNS as $pattern) {
             if (1 === preg_match($pattern, $plain)) {
                 return true;
             }
         }
-        if (preg_match_all(self::ROLE_TOKENS, $plain, $m) > 0 && \count(array_unique($m[1])) >= 3) {
-            return true;
+        if (preg_match_all(self::ROLE_LIST, $plain, $lists) > 0) {
+            foreach ($lists[0] as $list) {
+                preg_match_all('/\b(user|editor|moderator|manager|admin)s?\b/iu', $list, $tokens);
+                if (\count(array_unique(array_map('strtolower', $tokens[1]))) >= 3) {
+                    return true;
+                }
+            }
         }
 
         return false;

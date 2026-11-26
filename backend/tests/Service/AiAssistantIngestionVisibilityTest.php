@@ -29,6 +29,7 @@ final class AiAssistantIngestionVisibilityTest extends KernelTestCase
     private int $geminiCalls = 0;
     /** @var list<string> Corps des requêtes envoyées à Gemini. */
     private array $geminiBodies = [];
+    private string $geminiSummary = 'Résumé de test.';
     /** @var list<object> */
     private array $created = [];
 
@@ -65,7 +66,7 @@ final class AiAssistantIngestionVisibilityTest extends KernelTestCase
             $this->geminiBodies[] = (string) ($options['body'] ?? '');
 
             return new MockResponse((string) json_encode([
-                'candidates' => [['content' => ['parts' => [['text' => 'Résumé de test.']]]]],
+                'candidates' => [['content' => ['parts' => [['text' => $this->geminiSummary]]]]],
                 'usageMetadata' => ['totalTokenCount' => 10],
             ]));
         });
@@ -155,6 +156,30 @@ final class AiAssistantIngestionVisibilityTest extends KernelTestCase
         self::assertStringContainsString('Architecte', $sent, 'Le reste de la fiche est bien ingéré.');
         self::assertStringNotContainsString('Traefik', $sent);
         self::assertStringNotContainsString('Stack technique', $sent);
+    }
+
+    /**
+     * Contre-audit 5dd6646 : description en texte brut, consigne Gemini sans
+     * configuration ni nom de client, et toute phrase du résumé qui nommerait
+     * la configuration retirée avant stockage.
+     */
+    public function testIngestedSummaryNeverCarriesSecurityConfiguration(): void
+    {
+        $project = $this->project(ProjectStatusEnum::IN_PROGRESS);
+        $project->setDescription('<h2>Le projet</h2><p>Un portail <strong>bilingue</strong> &amp; sûr.</p>');
+        $this->em->flush();
+        $this->geminiSummary = 'Un portail bilingue. Protégé par Cloudflare Access et Traefik. Les demandes arrivent cadrées.';
+
+        $this->service()->ingest('Project', (int) $project->getId());
+
+        $sent = json_decode((string) end($this->geminiBodies), true);
+        self::assertStringEndsWith("Le projet Un portail bilingue & sûr.", $sent['contents'][0]['parts'][0]['text']);
+        $instruction = $sent['systemInstruction']['parts'][0]['text'];
+        self::assertStringContainsString("N'y mets JAMAIS", $instruction);
+        self::assertStringContainsString("le nom d'un client", $instruction);
+        self::assertStringNotContainsString('technologies, résultats', $instruction, 'Plus d\'injonction à garder les technologies.');
+        $chunks = $this->chunks()->findByEntity('Project', (int) $project->getId());
+        self::assertSame('Un portail bilingue. Les demandes arrivent cadrées.', $chunks[0]->getChunkSummary());
     }
 
     public function testDeletedProjectLeavesTheAssistant(): void

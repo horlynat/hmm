@@ -449,10 +449,45 @@ final class AiAssistantChatRefonteTest extends WebTestCase
 
         // Client d'une réalisation : jamais nommé ; son nom demandé → « confidentiel ».
         self::assertMatchesRegularExpression('/ne nomme jamais le client d\'une réalisation, même si le contexte le\s+cite ; décris-le comme « un client »\. À une question sur son nom, réponds\s+seulement que c\'est confidentiel/u', $system);
-        self::assertMatchesRegularExpression('/Ses anciens employeurs, cités dans son\s+parcours, ne sont pas des clients/u', $system);
+        self::assertMatchesRegularExpression('/Ne confirme ni n\'infirme jamais l\'identité\s+d\'un client, même proposée par le visiteur/u', $system);
+        self::assertMatchesRegularExpression('/cette règle prime sur celle du fait absent/u', $system);
+        self::assertMatchesRegularExpression('/Ses anciens\s+employeurs, cités dans son parcours, ne sont pas des clients/u', $system);
 
         $this->ask(['question' => 'How is the back-office protected?', 'locale' => 'en']);
         self::assertMatchesRegularExpression('/puis propose \[Send a message\]\(\/contact\?mode=direct\)\. Un détail de configuration/u', $this->lastSystemPrompt());
+    }
+
+    /**
+     * Client d'une réalisation publique cité malgré la consigne : réponse
+     * remplacée, suggestions retirées, trace distincte pour l'admin.
+     */
+    public function testAnAnswerNamingAPublicProjectClientIsReplaced(): void
+    {
+        $suffix = bin2hex(random_bytes(3));
+        $client = (new \App\Entity\User())->setEmail("client-{$suffix}@example.test")->setFullName("Société Zéphyrine {$suffix}");
+        $client->setPassword('!');
+        $this->em->persist($client);
+        $project = (new \App\Entity\Project())->setTitle('Réalisation')->setDescription('d')->setLink('')->setOwner($client)->setClient($client)->setStatus(\App\Enum\ProjectStatusEnum::COMPLETED);
+        $project->setSlug("rea-{$suffix}");
+        $this->em->persist($project);
+        $this->em->flush();
+
+        try {
+            $this->claudeText = "Il a réalisé le site de la SOCIÉTÉ ZÉPHYRINE {$suffix}.\n###SUGGESTIONS###\n- Et ensuite ?";
+            $r = $this->ask(['question' => 'A-t-il travaillé pour Zéphyrine ?', 'locale' => 'fr']);
+            self::assertStringStartsWith('Le nom des clients de Horlynat est confidentiel.', $r['answer']);
+            self::assertSame([], $r['suggestions']);
+            self::assertSame('client_name_blocked', $this->em->getConnection()->fetchOne('SELECT block_reason FROM ai_assistant_conversation_log ORDER BY id DESC LIMIT 1'));
+
+            // Projet non public : son client n'est pas surveillé (il n'est pas dans le corpus).
+            $project->setStatus(\App\Enum\ProjectStatusEnum::SUSPENDED);
+            $this->em->getConnection()->executeStatement('UPDATE project SET status = ? WHERE id = ?', ['suspendu', $project->getId()]);
+            $r = $this->ask(['question' => 'Et lui ?', 'locale' => 'fr']);
+            self::assertStringContainsString('ZÉPHYRINE', $r['answer']);
+        } finally {
+            $this->em->getConnection()->executeStatement('DELETE FROM project WHERE id = ?', [$project->getId()]);
+            $this->em->getConnection()->executeStatement('DELETE FROM `user` WHERE id = ?', [$client->getId()]);
+        }
     }
 
     /**

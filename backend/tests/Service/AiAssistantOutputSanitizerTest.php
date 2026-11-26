@@ -110,7 +110,6 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(['Alertes Better Stack.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Bannissement par fail2ban.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Agent CrowdSec.'])]
-    #[\PHPUnit\Framework\Attributes\TestWith(['Un champ honeypot.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Un champ leurre dans le formulaire.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['TLS en mode Full (Strict).'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Un VPS Ubuntu 24.'])]
@@ -137,6 +136,27 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(['Les entités TimeEntry et Invoice.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['La table SupportTicket.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Les ProjectExpense.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['PHP version 8.4'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Symfony (8.1)'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['PHP-8.4'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Next.js@16'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Le cadre Symfony, version 8'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Docker Compose v2'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['U b u n t u'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Ub-untu'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Une base Adminer.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Alertes ntfy.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['En-têtes via Nelmio.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Accès Zero Trust Access.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Un compte super admin.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Le rôle SuperAdmin.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Les rôles user, editor, moderator et admin.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Supervision Netdata.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Agent CrowdSec.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(["Ubu\u{200B}ntu"])]
+    #[\PHPUnit\Framework\Attributes\TestWith(["De\u{200D}bian"])]
+    #[\PHPUnit\Framework\Attributes\TestWith(["Mono\u{200B}log"])]
+    #[\PHPUnit\Framework\Attributes\TestWith(["Supervision Net\u{200B}data."])]
     public function testFlagsDeployedSecurityConfiguration(string $answer): void
     {
         $result = (new AiAssistantOutputSanitizer())->sanitize($answer);
@@ -160,6 +180,18 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(['Formé à la cybersécurité en 2026, certification IA en 2025.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Le principe du moindre privilège et le modèle zero trust.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Relances, factures (invoices), rapports.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['PHP 8 ans d\'expérience.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['React 3 projets livrés.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['PHP 9/10 et React 8/10.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Docker 21 jours.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Offre React 1 page à 150 000 FCFA.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Skilled in react 4 years.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['USER experience designer, puis MANAGER et ADMIN.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Le concept de honeypot, expliqué.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Un Internet data center.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Une crowd security.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Licence Apache 2.0.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['Pas un monologue.'])]
     public function testDoesNotFlagCompetencesOrCommonWords(string $answer): void
     {
         self::assertFalse((new AiAssistantOutputSanitizer())->sanitize($answer)['confidential'], $answer);
@@ -170,5 +202,23 @@ final class AiAssistantOutputSanitizerTest extends TestCase
         $suggestions = (new AiAssistantOutputSanitizer())->sanitizeSuggestions(['- Quel WAF Cloudflare ?', '- Et ses projets ?']);
 
         self::assertSame(['Et ses projets ?'], $suggestions);
+    }
+
+    public function testSecurityConfigSentencesAreRemovedFromAnIngestedSummary(): void
+    {
+        $summary = (new AiAssistantOutputSanitizer())->withoutSecurityConfig('Un portail bilingue. Il passe derrière Traefik et Cloudflare. Les demandes arrivent cadrées !  Rôles USER, EDITOR et ADMIN.');
+
+        self::assertSame('Un portail bilingue. Les demandes arrivent cadrées !', $summary);
+    }
+
+    public function testClientNamesAreDetectedDespiteSeparatorsAccentsAndCase(): void
+    {
+        $s = new AiAssistantOutputSanitizer();
+        $names = ['Boulangerie Émeraude', 'Bob'];
+
+        self::assertTrue($s->mentionsAnyName('Il a travaillé pour la boulangerie-emeraude.', $names));
+        self::assertTrue($s->mentionsAnyName('Pour BOULANGERIE   ÉMERAUDE, un site.', $names));
+        self::assertFalse($s->mentionsAnyName('Bob est un prénom trop court pour être surveillé.', $names), 'Moins de 5 lettres : ignoré.');
+        self::assertFalse($s->mentionsAnyName('Une boulangerie de quartier.', $names));
     }
 }

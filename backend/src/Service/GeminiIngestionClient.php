@@ -39,10 +39,14 @@ final class GeminiIngestionClient
                 'json' => [
                     'systemInstruction' => [
                         'parts' => [[
-                            'text' => "Tu résumes du contenu de portfolio professionnel pour alimenter un assistant IA. "
-                                . 'Produis un résumé factuel, concis (5-8 phrases maximum), en français, qui ne perd '
-                                . "aucune information concrète (chiffres, technologies, résultats). N'invente rien qui "
-                                . "n'est pas dans le texte fourni. Réponds uniquement avec le résumé, sans préambule.",
+                            'text' => "Tu résumes du contenu de portfolio professionnel pour alimenter un assistant IA public. "
+                                . 'Produis un résumé factuel, concis (5-8 phrases maximum), en français, qui garde '
+                                . "les informations concrètes utiles (chiffres, résultats, démarche, langage et framework principal). "
+                                . "N'y mets JAMAIS : un outil, une bibliothèque, un service, un fournisseur ou un hébergeur qui "
+                                . "protège, route, supervise ou héberge un système ; une version ; un réglage ; un nom de rôle, "
+                                . "de composant ou de champ interne ; le nom d'un client (écris « un client »). Décris la sécurité "
+                                . "seulement par ses principes. N'invente rien qui n'est pas dans le texte fourni. "
+                                . "Réponds uniquement avec le résumé, sans préambule.",
                         ]],
                     ],
                     'contents' => [[
