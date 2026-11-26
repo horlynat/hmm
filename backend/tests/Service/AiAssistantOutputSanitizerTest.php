@@ -226,6 +226,7 @@ final class AiAssistantOutputSanitizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(['Docker 2.5 ans d\'usage.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['For children some help.'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['Let us encrypt everything, in general.'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['React : 16.75/20, note PHP : 15.25/20.'])]
     public function testDoesNotFlagCompetencesOrCommonWords(string $answer): void
     {
         self::assertFalse((new AiAssistantOutputSanitizer())->sanitize($answer)['confidential'], $answer);
@@ -256,7 +257,14 @@ final class AiAssistantOutputSanitizerTest extends TestCase
         self::assertFalse($s->mentionsAnyName('Une boulangerie de quartier.', $names));
         // Par nom de famille ou sigle, en mot entier ; jamais le nom du propriétaire.
         $clients = ['Jean-Pierre Mavoungou', 'BGFI', 'Horlynat Mampassi Mbama'];
-        self::assertTrue($s->mentionsAnyName('M. Mavoungou est satisfait.', $clients, ['Horlynat Mampassi Mbama']));
+        self::assertTrue($s->mentionsAnyName('Mavoungou Jean-Pierre est satisfait.', $clients, ['Horlynat Mampassi Mbama']));
+        // Un seul mot d'un nom qui en compte deux distinctifs : insuffisant (prénom
+        // courant « Grâce à… », anti-oracle) — la consigne couvre « M. Mavoungou ».
+        self::assertFalse($s->mentionsAnyName('Grâce à huit ans dans l\'assurance.', ['Grâce Nkounkou']));
+        self::assertFalse($s->mentionsAnyName('M. Mavoungou est satisfait.', $clients));
+        self::assertTrue($s->mentionsAnyName('Pour Grâce Nkounkou.', ['Grâce Nkounkou']));
+        // Un seul mot distinctif (raison sociale) : il suffit.
+        self::assertTrue($s->mentionsAnyName('Réalisé pour Ozouaki.', ['Banque Ozouaki']));
         self::assertTrue($s->mentionsAnyName('Pour la BGFI.', $clients, ['Horlynat Mampassi Mbama']));
         self::assertFalse($s->mentionsAnyName('Bgfibank', $clients, ['Horlynat Mampassi Mbama']), 'Mot entier seulement.');
         self::assertFalse($s->mentionsAnyName('Horlynat Mampassi Mbama a conçu le portail.', $clients, ['Horlynat Mampassi Mbama']));

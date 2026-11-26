@@ -137,7 +137,7 @@ final class AiContentSummaryProcessor implements ProcessorInterface
         $sanitized = $this->outputSanitizer->sanitize($split['answer']);
         // Même verrou « zéro configuration de sécurité » que le chat.
         $confidential = !$sanitized['leaked'] && $sanitized['confidential'];
-        $visitorText = implode(' ', [$question, ...array_map(static fn (array $t): string => 'user' === $t['role'] ? $t['text'] : '', $data->getHistory())]);
+        $visitorText = AiAssistantOutputSanitizer::visitorSuppliedText($question, $data->getHistory());
         $clientNamed = !$sanitized['leaked'] && !$confidential && $this->namesAClient($result['text'], $visitorText);
         $answer = match (true) {
             $sanitized['leaked'] => $this->fallbackText($settings, $locale),
@@ -245,7 +245,7 @@ final class AiContentSummaryProcessor implements ProcessorInterface
             }
         }
 
-        return implode("\n", array_filter($lines, static fn (string $line) => '' !== $line));
+        return $this->outputSanitizer->withoutSecurityConfig(implode("\n", array_filter($lines, static fn (string $line) => '' !== $line)));
     }
 
     private function pickLocalized(string $fr, ?string $en, string $locale): string

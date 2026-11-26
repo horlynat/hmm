@@ -202,15 +202,25 @@ final class AiAssistantApiHardeningTest extends WebTestCase
 
             // La configuration du contenu résumé n'est jamais envoyée à Claude.
             self::assertStringNotContainsString('Traefik', $this->claudeBody);
+            // Toutes les lignes du contenu passent le filtre, pas seulement la description.
+            $this->em->clear();
+            $public = $this->em->find(Project::class, $public->getId());
+            self::assertNotNull($public);
+            $public->getInfo() ?? $public->setInfo(new \App\Entity\ProjectInfo());
+            $public->getInfo()->setRole('Architecte, derrière Caddy');
+            $this->em->persist($public->getInfo());
+            $this->em->flush();
+            self::assertSame(200, $this->post('/api/assistant/summarize', ['slug' => $public->getSlug(), 'contentType' => 'project', 'locale' => 'fr']));
+            self::assertStringNotContainsString('Caddy', $this->claudeBody);
             self::assertStringContainsString('Description confidentielle', $this->claudeBody, 'Le reste du contenu part bien.');
 
             // Client de la réalisation cité : même verrou que le chat.
             $client = (new User())->setEmail("client-{$suffix}@example.test")->setFullName("Banque Ozouaki {$suffix}");
             $client->setPassword('!');
             $this->em->persist($client);
-            $public->setClient($client);
             $this->em->flush();
-            $this->claudeText = "Réalisé pour Ozouaki.\n###SUGGESTIONS###\n- Et ensuite ?";
+            $this->em->getConnection()->executeStatement('UPDATE project SET client_id = ? WHERE id = ?', [$client->getId(), $public->getId()]);
+            $this->claudeText = "Réalisé pour la banque Ozouaki {$suffix}.\n###SUGGESTIONS###\n- Et ensuite ?";
             self::assertSame(200, $this->post('/api/assistant/summarize', ['slug' => $public->getSlug(), 'contentType' => 'project', 'locale' => 'fr']));
             self::assertSame(\App\Service\AiAssistantOutputSanitizer::CLIENT_REFUSAL['fr'], $this->json()['answer'] ?? null);
             self::assertSame([], $this->json()['suggestions'] ?? null);

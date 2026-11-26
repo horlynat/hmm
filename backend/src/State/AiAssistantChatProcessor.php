@@ -143,7 +143,7 @@ final class AiAssistantChatProcessor implements ProcessorInterface
         // remplacée par un refus poli (pas un mode dégradé : le service fonctionne).
         $confidential = !$sanitized['leaked'] && $sanitized['confidential'];
         // Client d'une réalisation cité malgré la consigne : même logique de refus.
-        $clientNamed = !$sanitized['leaked'] && !$confidential && $this->namesAClient($result['text'], $this->visitorText($question, $data->getHistory()));
+        $clientNamed = !$sanitized['leaked'] && !$confidential && $this->namesAClient($result['text'], AiAssistantOutputSanitizer::visitorSuppliedText($question, $data->getHistory()));
         $answer = match (true) {
             $sanitized['leaked'] => $this->fallbackText($settings, $locale),
             $confidential => $this->outputSanitizer->confidentialRefusal($locale),
@@ -379,8 +379,6 @@ final class AiAssistantChatProcessor implements ProcessorInterface
               comparer, ou savoir s'il est utilisé, chez lui ou chez un client, qu'il le soit
               ou non —, ainsi que sur une version, un réglage, un nom de rôle, de composant
               ou de champ interne, réponds exactement, sans rien ajouter : {$productRefusal}
-              Seule exception : un outil qui figure parmi ses compétences écrites se cite
-              comme compétence (« il le maîtrise »), jamais pour dire où ni s'il est déployé.
               Ne nomme jamais de tels éléments toi-même, même si le contexte en contient.
               L'hébergement proposé dans une offre se décrit par sa fiche, jamais par le nom
               d'un hébergeur. En cas de doute, applique cette règle.
@@ -428,23 +426,6 @@ final class AiAssistantChatProcessor implements ProcessorInterface
 
             return false;
         }
-    }
-
-    /**
-     * Texte écrit par le visiteur (question et ses tours d'historique).
-     *
-     * @param array<int, array{role: string, text: string}> $history
-     */
-    private function visitorText(string $question, array $history): string
-    {
-        $parts = [$question];
-        foreach ($history as $turn) {
-            if ('user' === $turn['role']) {
-                $parts[] = $turn['text'];
-            }
-        }
-
-        return implode(' ', $parts);
     }
 
     private function fallbackText(AiAssistantSettings $settings, string $locale): string

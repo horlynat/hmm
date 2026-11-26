@@ -75,7 +75,7 @@ final class AiAssistantOutputSanitizer
         // une forme de version — « 8.4 », « v2 », « version 8 » — jamais un nombre
         // seul, qui compte presque toujours autre chose (« PHP 8 ans », « Docker
         // (2024) », « React 3 projets », « 9.5/10 »).
-        '/\b(?:PHP|Symfony|API\s*Platform|Doctrine|MySQL|MariaDB|PostgreSQL|Next\.?js|Node(?:\.js)?|React|Redis|Docker(?:\s*Compose)?)[\s(@:_,-]*(?:(?:en\s+)?version\s*\d+(?:\.\d+)*|v\.?\s*\d+(?:\.\d+)*|\d+\.\d+(?:\.\d+)*(?!\s*(?:\/|ans?\b|years?\b|mois\b|months?\b)))/iu',
+        '/\b(?:PHP|Symfony|API\s*Platform|Doctrine|MySQL|MariaDB|PostgreSQL|Next\.?js|Node(?:\.js)?|React|Redis|Docker(?:\s*Compose)?)[\s(@:_,-]*(?:(?:en\s+)?version\s*\d+(?:\.\d+)*|v\.?\s*\d+(?:\.\d+)*|\d+\.\d+(?:\.\d+)*(?!\d|\s*(?:\/|ans?\b|years?\b|mois\b|months?\b)))/iu',
     ];
 
     /**
@@ -178,7 +178,7 @@ final class AiAssistantOutputSanitizer
      */
     public function canonicalRefusal(string $answer): ?string
     {
-        $normalize = static fn (string $t): string => (string) preg_replace('/\s+/u', ' ', trim(str_replace(['’', '‘', '*', '_'], ["'", "'", '', ''], $t)));
+        $normalize = static fn (string $t): string => ltrim((string) preg_replace('/\s+/u', ' ', trim(str_replace(['’', '‘', '*', '_', '«', '»', '"', '“', '”'], ["'", "'", '', '', '', '', '', '', ''], $t))), " :-–—.");
         $normalized = $normalize($answer);
         foreach ([...array_values(self::PRODUCT_REFUSAL), ...array_values(self::CLIENT_REFUSAL)] as $refusal) {
             $firstSentence = $normalize((string) preg_split('/[.:]/u', $refusal, 2)[0]);
@@ -221,9 +221,9 @@ final class AiAssistantOutputSanitizer
 
     /**
      * Vrai si le texte cite l'un des noms donnés : le nom complet (comparaison
-     * compactée) ou l'un de ses mots de 4 lettres ou plus (frontières de mot :
-     * « M. Mavoungou », « Mavoungou Jean-Pierre »). Les mots de $ignored (nom du
-     * propriétaire) ne déclenchent jamais rien.
+     * compactée), au moins deux de ses mots (« Mavoungou Jean-Pierre »), ou son
+     * unique mot pour un nom d'un seul mot (« BGFI »). Les mots de $ignored (nom
+     * du propriétaire, texte du visiteur) ne déclenchent jamais rien.
      *
      * @param list<string> $names
      * @param list<string> $ignored
@@ -254,11 +254,15 @@ final class AiAssistantOutputSanitizer
             if (\count($nameWords) > 1 && \strlen($full) >= 4 && str_contains($compactText, $full)) {
                 return true;
             }
-            // Chaque mot de 4 lettres ou plus, en mot entier (« M. Mavoungou »).
-            foreach ($nameWords as $word) {
-                if (\strlen($word) >= 4 && !isset($ignoredWords[$word]) && !isset($genericWords[$word]) && str_contains($wordsText, ' '.$word.' ')) {
-                    return true;
-                }
+            // Mots distinctifs (4 lettres ou plus, ni génériques ni ignorés) : s'il y
+            // en a deux ou plus, il en faut deux — un prénom isolé (« Grâce »,
+            // « Martin ») est trop souvent un mot courant, et le refuser ferait du
+            // verrou un oracle (5e contre-audit) ; s'il n'y en a qu'un (« BGFI »,
+            // « Banque Ozouaki »), il suffit, en mot entier.
+            $significant = array_values(array_unique(array_filter($nameWords, static fn (string $w): bool => \strlen($w) >= 4 && !isset($ignoredWords[$w]) && !isset($genericWords[$w]))));
+            $present = array_filter($significant, static fn (string $w): bool => str_contains($wordsText, ' '.$w.' '));
+            if ([] !== $significant && \count($present) >= min(2, \count($significant))) {
+                return true;
             }
         }
 
@@ -378,5 +382,17 @@ final class AiAssistantOutputSanitizer
             },
             $text,
         );
+    }
+
+    /**
+     * Tout le texte fourni par le client HTTP : la question ET l'historique, quel
+     * que soit le rôle annoncé — un tour « assistant » se forge comme un autre
+     * (5e contre-audit). Sert à ignorer ces mots dans le verrou client.
+     *
+     * @param array<int, array{role: string, text: string}> $history
+     */
+    public static function visitorSuppliedText(string $question, array $history): string
+    {
+        return implode(' ', [$question, ...array_map(static fn (array $t): string => $t['text'], $history)]);
     }
 }
