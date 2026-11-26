@@ -61,7 +61,7 @@ export async function CaseStudy({
   const deliverables = info?.deliverables ?? [];
   const captions = info?.galleryCaptions ?? [];
   const gallery = (p.media ?? []).filter((m) => m.type === "image" || (m.mimeType ?? "").startsWith("image/"));
-  const summary = leadSentences(firstParagraph(p.description), 300);
+  const summary = leadSentences(firstParagraph(p.description), 220);
   // Liens saisis au back-office : seulement http(s), jamais javascript:/data:.
   const link = httpUrl(p.link);
   const repo = httpUrl(info?.repoUrl ?? null);
@@ -117,7 +117,7 @@ export async function CaseStudy({
               </div>
             )}
             {facts.length > 0 && (
-              <dl className="facts4" style={info && info.brief.length > 0 ? undefined : { marginTop: 0 }}>
+              <dl className={`facts4 n${facts.length}`} style={info && info.brief.length > 0 ? undefined : { marginTop: 0 }}>
                 {facts.map((f) => (
                   <div key={f.label + f.value}>
                     <dt>{f.label}</dt>
@@ -160,15 +160,17 @@ export async function CaseStudy({
             <div className="chap">
               <span className="kick">{t("challengesKick")}</span>
               <h2>{t("challengesTitle")}</h2>
-              <div className="br3 defis">
+              <ol className="dfs">
                 {challenges.map((c, k) => (
-                  <div key={k}>
+                  <li key={k}>
                     <span className="n">{k + 1}</span>
-                    <b>{c.problem}</b>
-                    <p>{c.solution}</p>
-                  </div>
+                    <div>
+                      <b>{c.problem}</b>
+                      <p>{c.solution}</p>
+                    </div>
+                  </li>
                 ))}
-              </div>
+              </ol>
             </div>
           )}
 
@@ -176,7 +178,7 @@ export async function CaseStudy({
             <div className="chap">
               <span className="kick">{t("benefitsKick")}</span>
               <h2>{t("benefitsTitle")}</h2>
-              <div className="liv">
+              <div className="liv ben">
                 {benefits.map((r, k) => (
                   <div key={k}>
                     <ProtoIcon name="ok" />
