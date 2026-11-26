@@ -131,6 +131,18 @@ final class SkillDomainAndPrototypeTest extends FunctionalTestCase
         self::assertSame($before + 1, (int) $this->em()->getConnection()->fetchOne('SELECT COUNT(*) FROM skill_domain'));
     }
 
+    /** L'entité se défend seule (hors formulaire) : icône inventée, slug forgé, bidi. */
+    public function testEntityRejectsForgedValuesEvenOutsideTheForm(): void
+    {
+        $validator = static::getContainer()->get(\Symfony\Component\Validator\Validator\ValidatorInterface::class);
+        $ok = (new SkillDomain())->setTitle('OK');
+        self::assertCount(0, $validator->validate($ok));
+
+        self::assertGreaterThan(0, \count($validator->validate((new SkillDomain())->setTitle('OK')->setIcon('<script>'))));
+        self::assertGreaterThan(0, \count($validator->validate((new SkillDomain())->setTitle('OK')->setProofProjectSlug('../admin'))));
+        self::assertGreaterThan(0, \count($validator->validate((new SkillDomain())->setTitle('OK')->setTools(["a\u{202E}b"]))));
+    }
+
     public function testDomainsScreenIsAdminOnlyAndDeleteNeedsCsrf(): void
     {
         $this->loginAs('ROLE_EDITOR');
