@@ -145,6 +145,12 @@ final class SkillDomainAndPrototypeTest extends FunctionalTestCase
 
         $this->client->request('POST', "/admin/content/skill-domains/{$id}/delete", ['_token' => 'faux']);
         self::assertSame(1, (int) $this->em()->getConnection()->fetchOne('SELECT COUNT(*) FROM skill_domain WHERE id = ?', [$id]), 'Jeton invalide : rien supprimé.');
+
+        $crawler = $this->client->request('GET', '/admin/content/skill-domains/');
+        $token = (string) $crawler->filter('form[action$="/'.$id.'/delete"] input[name="_token"]')->attr('value');
+        $this->client->request('POST', "/admin/content/skill-domains/{$id}/delete", ['_token' => $token]);
+        self::assertResponseRedirects('/admin/content/skill-domains/');
+        self::assertSame(0, (int) $this->em()->getConnection()->fetchOne('SELECT COUNT(*) FROM skill_domain WHERE id = ?', [$id]), 'Jeton valide : supprimé.');
     }
 
     public function testPublicApiListsDomainsInOrderAndRefusesWrites(): void
