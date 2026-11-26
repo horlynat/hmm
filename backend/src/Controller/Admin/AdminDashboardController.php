@@ -18,7 +18,6 @@ use App\Repository\ProjectRepository;
 use App\Repository\QuoteRequestRepository;
 use App\Repository\SkillRepository;
 use App\Repository\SupportTicketRepository;
-use App\Repository\TestimonialRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\DashboardVoter;
 use App\Service\LiveSessionStateResolver;
@@ -55,7 +54,6 @@ class AdminDashboardController extends AbstractController
         SkillRepository $skillRepository,
         CourseRepository $courseRepository,
         ExperienceRepository $experienceRepository,
-        TestimonialRepository $testimonialRepository,
         FailedLoginAttemptRepository $failedLoginAttemptRepository,
         InvoiceRepository $invoiceRepository,
         ProjectExpenseRepository $projectExpenseRepository,
@@ -188,7 +186,6 @@ class AdminDashboardController extends AbstractController
         $experiencesCount = $experienceRepository->count([]);
 
         // ── Modération ──────────────────────────────────────────────────────
-        $pendingTestimonialsCount = count($testimonialRepository->findPending());
 
         // ── Finance ─────────────────────────────────────────────────────────
         // Mêmes requêtes que AdminFinanceController::index() (module Finance)
@@ -236,7 +233,6 @@ class AdminDashboardController extends AbstractController
             'skillsCount' => $skillsCount,
             'coursesCount' => $coursesCount,
             'experiencesCount' => $experiencesCount,
-            'pendingTestimonialsCount' => $pendingTestimonialsCount,
             'overdueInvoicesCount' => $overdueInvoicesCount,
             'pendingExpensesCount' => $pendingExpensesCount,
             'openTicketsCount' => $openTicketsCount,

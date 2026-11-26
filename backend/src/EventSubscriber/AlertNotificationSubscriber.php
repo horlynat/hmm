@@ -4,7 +4,6 @@ namespace App\EventSubscriber;
 
 use App\Entity\ContactMessage;
 use App\Entity\QuoteRequest;
-use App\Entity\Testimonial;
 use App\Enum\NotificationPriorityEnum;
 use App\Service\AdminAlertNotifier;
 use Doctrine\Common\EventSubscriber;
@@ -13,7 +12,7 @@ use Doctrine\Persistence\Event\LifecycleEventArgs;
 use Doctrine\Persistence\ObjectManager;
 
 /**
- * Alerte l'admin à la création d'un ContactMessage / QuoteRequest / Testimonial,
+ * Alerte l'admin à la création d'un ContactMessage / QuoteRequest,
  * quelle que soit l'origine (API Platform côté front public, ou back-office) :
  * postPersist est le seul point de passage commun à ces deux chemins.
  *
@@ -65,11 +64,6 @@ class AlertNotificationSubscriber implements EventSubscriber
                     $entity->getPhone(),
                     $entity->getMessage(),
                 ),
-            ],
-            $entity instanceof Testimonial => [
-                'priority' => NotificationPriorityEnum::LOW,
-                'subject' => 'Nouveau témoignage à valider',
-                'content' => sprintf('%s a laissé un témoignage en attente de validation.', $entity->getAuthor()),
             ],
             default => null,
         };

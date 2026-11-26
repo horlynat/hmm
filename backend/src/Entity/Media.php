@@ -62,11 +62,6 @@ class Media
     #[Groups(['api_admin'])]
     private ?Project $project = null;
 
-    #[ORM\ManyToOne(inversedBy: 'media')]
-    #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['api_admin'])]
-    private ?Testimonial $testimonial = null;
-
     // ── Getters / Setters ─────────────────────────────────────────────────────
 
     public function getId(): ?int { return $this->id; }
@@ -101,8 +96,6 @@ class Media
     public function getProject(): ?Project { return $this->project; }
     public function setProject(?Project $project): static { $this->project = $project; return $this; }
 
-    public function getTestimonial(): ?Testimonial { return $this->testimonial; }
-    public function setTestimonial(?Testimonial $testimonial): static { $this->testimonial = $testimonial; return $this; }
 
     // ── Méthode privée ────────────────────────────────────────────────────────
 

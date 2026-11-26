@@ -124,14 +124,6 @@ export interface Course {
   endDate: string;
 }
 
-export interface Testimonial {
-  id: number;
-  author: string;
-  content: string;
-  rating: string | null;
-  media: Media[];
-}
-
 /** Une étape du calendrier d'une offre (ex. { day: "J1", text: "Échange..." }). */
 export interface OfferCalendarStep {
   day: string;

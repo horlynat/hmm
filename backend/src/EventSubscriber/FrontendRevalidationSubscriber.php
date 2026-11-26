@@ -17,7 +17,6 @@ use App\Entity\Skill;
 use App\Entity\SkillDomain;
 use App\Entity\SkillCategory;
 use App\Entity\Tag;
-use App\Entity\Testimonial;
 use App\Message\RevalidateFrontendMessage;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Events;
@@ -109,27 +108,25 @@ class FrontendRevalidationSubscriber implements EventSubscriber
             return;
         }
 
-        // Un Media appartient à UN SEUL des trois (project/article/testimonial,
+        // Un Media appartient à UN SEUL des deux (project/article,
         // cf. App\Entity\Media) — mais à la suppression, la relation peut déjà
         // être détachée avant le flush (Project::removeMedia() fait
         // $media->setProject(null) avant l'appel à EntityManager::remove(),
         // donc postRemove ne peut plus lire le propriétaire via le getter). Dans
-        // ce cas on invalide les trois tags par prudence plutôt que de rater
+        // ce cas on invalide les deux tags par prudence plutôt que de rater
         // silencieusement l'invalidation — même logique défensive que pour
         // SkillCategory ci-dessus.
         if ($entity instanceof Media) {
-            $owner = $entity->getProject() ?? $entity->getArticle() ?? $entity->getTestimonial();
+            $owner = $entity->getProject() ?? $entity->getArticle();
             $mediaTag = match (true) {
                 $owner instanceof Project => 'projects',
                 $owner instanceof Article => 'articles',
-                $owner instanceof Testimonial => 'testimonials',
                 default => null,
             };
 
             if (null === $mediaTag) {
                 $this->push('projects');
                 $this->push('articles');
-                $this->push('testimonials');
 
                 return;
             }
@@ -145,7 +142,6 @@ class FrontendRevalidationSubscriber implements EventSubscriber
             $entity instanceof Experience => 'experiences',
             $entity instanceof Skill => 'skills',
             $entity instanceof HomeContent => 'home-content',
-            $entity instanceof Testimonial => 'testimonials',
             $entity instanceof Course => 'courses',
             $entity instanceof AboutContent => 'about-content',
             $entity instanceof SkillDomain => 'skill-domains',
